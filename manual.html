@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How to use the vocabulary app</title>
+<style>
+:root{
+  --bg:#fffdfb; --ink:#1b1a18; --muted:#6f6c66; --faint:#a5a29b;
+  --line:#e7e3dc; --panel:#faf8f5; --coral:#c04d26;
+  --again:#a8372b; --good:#2b7049; --easy:#6a5cc0;
+  --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1230; --ink:#e9ecf8; --muted:#a3abd0; --faint:#7780ab;
+    --line:#2a3169; --panel:#181d47; --coral:#ff8a5c;
+    --again:#ff8175; --good:#5ecb92; --easy:#b0a4ff;
+  }
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0 auto; padding:34px 22px 90px; max-width:37rem;
+  background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:16.5px; line-height:1.62;
+  -webkit-text-size-adjust:100%;
+}
+h1{font-family:var(--serif); font-weight:400; font-size:2.05rem; line-height:1.2; margin:0 0 6px}
+.sub{color:var(--muted); font-size:15px; margin:0 0 34px}
+h2{font-family:var(--serif); font-weight:400; font-size:1.42rem; line-height:1.25;
+   margin:44px 0 12px; padding-top:22px; border-top:1px solid var(--line)}
+h3{font-size:1rem; font-weight:600; margin:26px 0 6px}
+p{margin:0 0 14px}
+ul{margin:0 0 14px; padding-left:20px}
+li{margin-bottom:7px}
+strong{font-weight:600}
+em{font-style:italic}
+.lead{font-size:17.5px}
+.key{display:inline-block; padding:1px 8px; border-radius:6px; font-weight:600; font-size:14.5px}
+.k-again{background:rgba(176,59,46,.11); color:var(--again)}
+.k-good{background:rgba(47,125,79,.12); color:var(--good)}
+.k-easy{background:rgba(122,107,207,.13); color:var(--easy)}
+table{width:100%; border-collapse:collapse; margin:6px 0 18px; font-size:15px}
+th,td{text-align:left; padding:8px 9px 8px 0; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-weight:600; color:var(--muted); font-size:13px; text-transform:uppercase; letter-spacing:.05em}
+td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; white-space:nowrap}
+.box{background:var(--panel); border:1px solid var(--line); border-radius:12px;
+     padding:15px 17px; margin:20px 0}
+.box p:last-child{margin-bottom:0}
+.box h3{margin-top:0}
+.toc{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin-bottom:8px}
+.toc ol{margin:0; padding-left:19px}
+.toc li{margin-bottom:3px}
+.toc a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--line)}
+.term{font-family:var(--serif); font-size:1.05em}
+.foot{margin-top:52px; padding-top:20px; border-top:1px solid var(--line);
+      color:var(--faint); font-size:13.5px}
+</style>
+</head>
+<body>
+
+<h1>How to use the vocabulary app</h1>
+<p class="sub">Latin and Greek · everything you need to know, in order of how much it matters</p>
+
+<div class="toc">
+<ol>
+  <li><a href="#idea">The one idea behind it</a></li>
+  <li><a href="#buttons">The three buttons</a></li>
+  <li><a href="#surprises">Two things that will surprise you</a></li>
+  <li><a href="#when">When words come back</a></li>
+  <li><a href="#front">The front screen</a></li>
+  <li><a href="#routine">A sensible daily routine</a></li>
+  <li><a href="#backup">Backing up — read this one</a></li>
+  <li><a href="#settings">Every setting, one line each</a></li>
+  <li><a href="#wrong">If something looks wrong</a></li>
+</ol>
+</div>
+
+<h2 id="idea">1. The one idea behind it</h2>
+<p class="lead">The app shows you a word. You try to remember it. You say how that went. It works out when to show you the word again — soon if you struggled, much later if you didn't.</p>
+<p>That's the whole system. Everything else is detail.</p>
+<p>The reason it spaces things out is that a word you review the moment before you'd have forgotten it sticks far better than one you review while it's still fresh. Reviewing something you already know solidly is close to wasted effort. So when the app tells you a word isn't due for two months, it isn't neglecting it — it's saying you don't need it yet, and it's usually right.</p>
+
+<h2 id="buttons">2. The three buttons</h2>
+<p>After you reveal the answer, you tell the app how it went.</p>
+<table>
+  <tr><td><span class="key k-again">Again</span></td><td>You didn't know it, or you got it wrong.</td></tr>
+  <tr><td><span class="key k-good">Good</span></td><td>You got there, but it took effort.</td></tr>
+  <tr><td><span class="key k-easy">Easy</span></td><td>You knew it straight away, no hesitation.</td></tr>
+</table>
+<p>Each button shows the interval it will produce, so you can see the consequence before you commit to it.</p>
+
+<div class="box">
+<h3>The only way to break this</h3>
+<p>Press <strong>Easy</strong> on a word you actually half-guessed. Everything the app does rests on your grades being honest. If you're generous, it schedules words too far out, you forget them, and you'll conclude the app doesn't work. Being harsh on yourself costs you a few extra reviews. Being generous costs you the word.</p>
+<p>The rule for words with several meanings: count it as known if you produced the first meaning plus one other. Otherwise press Again.</p>
+</div>
+
+<h2 id="surprises">3. Two things that will surprise you</h2>
+
+<h3>A new word won't leave until you press Easy</h3>
+<p>Press <span class="key k-good">Good</span> on a word you're meeting for the first time and it comes back in ten minutes — not tomorrow. It keeps circling back until you press <span class="key k-easy">Easy</span>. So a day's batch of new words stays in front of you until you've genuinely got each one, which is what you asked for. The same applies to a word you've just failed.</p>
+<p>This only affects words being learned or relearned. A word that's settled into a normal rhythm behaves normally — Good moves it along.</p>
+
+<h3>Taking too long is recorded as a lower grade</h3>
+<p>The app times the gap between seeing the word and revealing the answer. It never shows a clock and never interrupts you.</p>
+<ul>
+  <li>Under ten seconds — your grade stands.</li>
+  <li>Ten to thirty seconds — Easy is recorded as Good.</li>
+  <li>Over thirty seconds — Easy is recorded as Good, and Good is recorded as a weaker pass.</li>
+</ul>
+<p>Nothing is ever recorded <em>higher</em> than what you pressed, and Again is never altered. When a grade does get adjusted, a brief message tells you. If you put the phone down mid-card, that card's timing is discarded rather than counted against you. You can switch the whole thing off in settings.</p>
+
+<h2 id="when">4. When words come back</h2>
+<p>Rough guide. The exact number depends on the word's own history, so treat these as the shape of it rather than a promise.</p>
+
+<h3>A word you've never seen</h3>
+<table>
+  <tr><th>You press</th><th>Comes back in</th></tr>
+  <tr><td>Again</td><td>1 minute</td></tr>
+  <tr><td>Good</td><td>10 minutes</td></tr>
+  <tr><td>Easy</td><td>8 days</td></tr>
+</table>
+
+<h3>A word already in the rotation</h3>
+<table>
+  <tr><th>Currently due every</th><th>Again</th><th>Good</th><th>Easy</th></tr>
+  <tr><td>3 days</td><td>10 min</td><td>12 d</td><td>21 d</td></tr>
+  <tr><td>10 days</td><td>10 min</td><td>5 wk</td><td>8 wk</td></tr>
+  <tr><td>1 month</td><td>10 min</td><td>3 mo</td><td>5 mo</td></tr>
+  <tr><td>3 months</td><td>10 min</td><td>8 mo</td><td>1 yr</td></tr>
+</table>
+<p>A word you've failed before grows more slowly than one you've always got — roughly half these figures. The app tracks that per word, without you having to do anything.</p>
+
+<h3>Words carried over from your audit</h3>
+<table>
+  <tr><th>You marked it</th><th>First appears</th><th>Then, if Good</th></tr>
+  <tr><td>review</td><td>after 1 day</td><td>3 days</td></tr>
+  <tr><td>know well</td><td>after 3 weeks</td><td>about 2½ months</td></tr>
+</table>
+
+<h3>When you fail a word you'd learned</h3>
+<p>A word due every month, failed, drops back to about two days' worth of strength and returns in ten minutes. Getting back to a month takes several sessions. That's the real cost of a lapse, and the real argument for grading honestly the first time.</p>
+
+<h2 id="front">5. The front screen</h2>
+<ul>
+  <li><strong>Part chips</strong> — which parts of the book are in play. Switch parts off to hold them back. Do this <em>before</em> you start a part, not after: switching a part off later hides words you've already begun, and they'll be overdue when you switch it back on.</li>
+  <li><strong>Known / Shaky / Unseen</strong> — which of your audit groups can supply new words. Known is off by default, so you won't be shown words you already ticked. This only affects words that haven't started yet; anything already in the rotation carries on regardless.</li>
+  <li><strong>Direction</strong> — Latin to English, or English to Latin. English to Latin stays locked until a word's forward card has held steady for a fortnight, because producing a word is much harder than recognising it. That's why the reverse direction is empty at first.</li>
+  <li><strong>New words today</strong> — a stepper that changes today's allowance only, without touching your normal setting.</li>
+  <li><strong>Start</strong> — tells you how many words are waiting.</li>
+  <li><strong>Study days</strong> — a dot for each of the last five weeks' days, and your current run.</li>
+  <li><strong>Pace</strong> — how many words you've met, how many are left, the date you'd finish at your recent rate, how that lands against the start of term, and what one day off costs.</li>
+  <li><strong>Where you stand</strong> — how many words are in each stage, and how often you've been right over the last month. Open <strong>Timing</strong> underneath for how quickly you've been answering.</li>
+</ul>
+
+<h2 id="routine">6. A sensible daily routine</h2>
+<p>Open it once a day and clear what's due. That's it. The app is designed around the assumption that you show up daily; if you skip days the work doesn't vanish, it piles up.</p>
+<ul>
+  <li><strong>Do the reviews before the new words.</strong> The app already orders it that way. If a day is going to be short, doing reviews and no new words is far better than the reverse.</li>
+  <li><strong>If you fall behind</strong>, don't try to clear everything at once. Set new words to 0 for a few days and just work through the backlog.</li>
+  <li><strong>Watch the "right but slow" count</strong> in the Timing panel. Those are the words about to fail, before they fail.</li>
+  <li><strong>Remember the tail.</strong> New words you add today generate reviews for months. Adding 50 a day through September means carrying a few hundred reviews a day through Michaelmas. If you want term to be lighter, ease off the new words in September rather than after term starts.</li>
+</ul>
+
+<div class="box">
+<h3>Tap targets</h3>
+<p>The buttons are bigger than they look — the invisible tappable area extends well above each one and into the gaps, so you don't need to aim. Tapping anywhere on the card reveals the answer, and for a fraction of a second afterwards the buttons ignore taps, so a reveal can't accidentally grade the card.</p>
+<p>Made a mistake? The arrow at the top right undoes the last rating, up to forty back.</p>
+</div>
+
+<h2 id="backup">7. Backing up — read this one</h2>
+<p>Everything lives on your phone. There is no account and no server. Losing it means losing every interval the app has learned about you, which is worth much more than the word list itself.</p>
+<p>Three things protect you, in increasing order of reliability:</p>
+<ul>
+  <li><strong>It saves after every single rating</strong>, into two separate places in the browser, and checks the save actually landed. If it ever fails you'll see a red warning on the front screen — act on it.</li>
+  <li><strong>It downloads a backup file every hundred ratings.</strong> On iPhone this lands in Files → Downloads. If that folder syncs to iCloud Drive, this is a genuine off-device backup.</li>
+  <li><strong>Optional sync to a private GitHub gist.</strong> Fill in a gist id and a token in settings and every save is pushed there automatically. This is the only truly reliable option, and the only one that lets you use the same progress on two devices.</li>
+</ul>
+<div class="box">
+<p><strong>Install it to your Home Screen.</strong> Open it in Safari, tap Share, then Add to Home Screen, and use it from that icon rather than from a browser tab. Safari deletes stored data for websites you haven't visited in a week; installed apps are exempt. This matters more than anything else on this page.</p>
+</div>
+
+<h2 id="settings">8. Every setting, one line each</h2>
+<table>
+  <tr><td><strong>New words a day</strong></td><td>How many unseen words can start each day.</td></tr>
+  <tr><td><strong>Target retention</strong></td><td>How often you want to be right when a word comes up. Higher means shorter gaps and more work. 90% is a sensible default.</td></tr>
+  <tr><td><strong>Longest interval</strong></td><td>Nothing will be scheduled further out than this. Lower it to force everything through one more pass before a deadline.</td></tr>
+  <tr><td><strong>Appearance</strong></td><td>Light, dark, or follow your phone.</td></tr>
+  <tr><td><strong>Unlock the reverse direction after</strong></td><td>How long a word must hold in the forward direction before you meet it backwards. 0 removes the gate.</td></tr>
+  <tr><td><strong>Let hesitation adjust the grade</strong></td><td>The timing rule from section 3. Off records exactly what you press.</td></tr>
+  <tr><td><strong>Clearing a word for the day</strong></td><td>Whether Good is enough to release a new word, or only Easy is.</td></tr>
+  <tr><td><strong>Consecutive good days before release</strong></td><td>Forces a word to a daily rhythm until you've got it right this many days running. Leave at 0 — it is very expensive and works against the spacing that makes the whole thing effective.</td></tr>
+  <tr><td><strong>Weekly review day</strong></td><td>Nudges medium-length intervals onto one weekday, by up to three days either way.</td></tr>
+  <tr><td><strong>Head start for known words</strong></td><td>How long before a word you ticked in the audit is first tested.</td></tr>
+  <tr><td><strong>Introduce unseen before shaky</strong></td><td>Hardest words first, rather than working through in book order.</td></tr>
+  <tr><td><strong>Michaelmas begins</strong></td><td>Feeds the countdown on the front screen. Nothing else uses it.</td></tr>
+  <tr><td><strong>Export / restore</strong></td><td>Save a backup file, or load one back in.</td></tr>
+  <tr><td><strong>Set aside</strong></td><td>Words you've failed eight times get flagged. Setting one aside stops it appearing until you bring it back.</td></tr>
+  <tr><td><strong>Erase all progress</strong></td><td>Downloads a backup first, then wipes the device.</td></tr>
+</table>
+
+<h2 id="wrong">9. If something looks wrong</h2>
+
+<h3>English to Latin is empty</h3>
+<p>That's deliberate. Reverse cards unlock only after the forward card has held for a fortnight. The front screen tells you how many are waiting. Set the unlock threshold to 0 in settings if you'd rather have them all now.</p>
+
+<h3>I've suddenly got hundreds due</h3>
+<p>Either you missed some days, or a big batch you learned together has come due together. Set new words to 0 until it clears. Don't skip the backlog — those are the words at the exact moment they're worth reviewing.</p>
+
+<h3>An interval looks far too long</h3>
+<p>A long gap is only ever given to a word the app has good evidence you know. If it genuinely feels wrong, press a lower grade next time you see it — that's the correction mechanism, and it works immediately. If it feels wrong across the board, raise target retention a little.</p>
+
+<h3>I've been away a fortnight</h3>
+<p>Just start again. Overdue words are handled properly — the app knows how long it's been, and getting one right after a long gap counts for more than getting it right on time.</p>
+
+<h3>A word keeps beating me</h3>
+<p>After eight failures it gets flagged. At that point the answer isn't more repetitions — set it aside and learn it another way, then bring it back.</p>
+
+<h3>The counts changed when I toggled something</h3>
+<p>Part and group chips filter which words can <em>start</em>. They never hide a word already in the rotation, and they never affect anything you've already rated.</p>
+
+<p class="foot">Both apps work the same way. Greek has no parts and no audit groups, so those chips don't appear, and it starts entirely from scratch. Your Latin and Greek progress are stored separately and can't affect each other.</p>
+
+</body>
+</html>

@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Greek">
+<meta name="theme-color" content="#ffffff">
+<title>Greek</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#faf8f5; --ink:#1b1a18; --muted:#77746e; --faint:#a5a29b;
+  --line:#e7e3dc; --coral:#d85a30; --accent-soft:#fdf3ee; --raise:#ffffff;
+  --again:#b03b2e; --again-bg:#fbecea; --again-br:#f0d6d1;
+  --good:#2f7d4f;  --good-bg:#eaf4ee;  --good-br:#d2e4d8;
+  --easy:#7a6bcf;  --easy-bg:#efedfa;  --easy-br:#ddd8f2;
+  --amber:#b07715;
+  --warn-bg:#fdf1ea; --warn-br:#f2d9c9; --warn-ink:#7a4520;
+  --bad-bg:#fbecea;  --bad-br:#f0d0cb;  --bad-ink:#8a2f24; --toast:#1b1a18;
+  --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+}
+html[data-theme="dark"]{
+  --bg:#0e1230; --panel:#181d47; --ink:#e9ecf8; --muted:#a3abd0; --faint:#7780ab;
+  --line:#2a3169; --coral:#ff8a5c; --accent-soft:#241a3f; --raise:#1f2555;
+  --again:#ff8175; --again-bg:#3a1c26; --again-br:#5a2a35;
+  --good:#5ecb92;  --good-bg:#12332c;  --good-br:#1e4d40;
+  --easy:#b0a4ff;  --easy-bg:#26205a;  --easy-br:#3a3080;
+  --amber:#e0aa4a;
+  --warn-bg:#2c2340; --warn-br:#453562; --warn-ink:#e8c79f;
+  --bad-bg:#38202c;  --bad-br:#5a2f3c;  --bad-ink:#ffb3a8; --toast:#2c3477;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:16px; -webkit-font-smoothing:antialiased;
+  -webkit-user-select:none; user-select:none;
+  touch-action:manipulation;
+}
+#app{height:100dvh;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);}
+.screen{flex:1;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+
+/* ---------- top bar ---------- */
+.bar{display:flex;align-items:center;gap:10px;height:52px;padding:0 12px;flex:0 0 auto}
+.bar .icon{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border-radius:12px;color:var(--muted);font-size:19px}
+.bar .icon:active{background:var(--panel)}
+.bar .title{flex:1;text-align:center;font-size:15px;font-weight:500;letter-spacing:.01em}
+.counts{display:flex;gap:12px;justify-content:center;font-size:14px;font-variant-numeric:tabular-nums}
+.counts b{font-weight:600}
+.c-new{color:var(--coral)} .c-lrn{color:var(--amber)} .c-due{color:var(--good)}
+
+/* ---------- card ---------- */
+.cardarea{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:16px 22px;min-height:0;position:relative;overflow:hidden}
+.prompt{font-family:var(--serif);font-size:33px;line-height:1.28;text-align:center;word-break:break-word}
+.prompt.eng{font-family:var(--sans);font-size:27px;line-height:1.32;font-weight:400}
+.multi{position:absolute;top:14px;right:16px;width:26px;height:26px;border-radius:50%;
+  border:1px solid var(--line);color:var(--faint);font-size:13px;
+  display:none;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.multi.on{display:flex}
+.rule{width:56px;height:1px;background:var(--line);margin:26px 0}
+.answer{font-size:21px;line-height:1.42;text-align:center;color:var(--ink);opacity:0;
+  transition:opacity .13s ease-out;max-width:34em}
+.answer.on{opacity:1}
+.answer .alt{display:block;margin-top:7px}
+.answer.lat{font-family:var(--serif);font-size:25px}
+.hintline{margin-top:22px;font-size:13px;color:var(--faint);height:16px}
+.leechtag{margin-top:10px;font-size:12px;color:var(--amber)}
+
+/* ---------- rating row ---------- */
+.rateRow{flex:0 0 auto;display:flex;gap:9px;padding:10px 12px 14px}
+.rate{position:relative;flex:1;height:60px;border-radius:15px;border:1px solid var(--line);
+  background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+/* enlarged invisible hit area — visual pill unchanged, tappable region reaches up and to the edges */
+.rate::before{content:"";position:absolute;top:-26px;bottom:-14px;left:-5px;right:-5px}
+.rate .lbl{font-size:16px;font-weight:500;line-height:1.1}
+.rate .ivl{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.1}
+.rate:active{filter:brightness(.94)}
+#bAgain{background:var(--again-bg);border-color:var(--again-br)} #bAgain .lbl{color:var(--again)}
+#bGood{background:var(--good-bg);border-color:var(--good-br)}   #bGood .lbl{color:var(--good)}
+#bEasy{background:var(--easy-bg);border-color:var(--easy-br)}   #bEasy .lbl{color:var(--easy)}
+.revealRow{flex:0 0 auto;padding:10px 12px 14px}
+.revealBtn{position:relative;width:100%;height:60px;border-radius:15px;border:1px solid var(--line);
+  background:var(--panel);font-size:16px;color:var(--muted)}
+.revealBtn::before{content:"";position:absolute;top:-26px;bottom:-14px;left:-5px;right:-5px}
+.hidden{display:none !important}
+
+/* ---------- home ---------- */
+.home{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 28px}
+.wordmark{font-family:var(--serif);font-size:30px;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:22px}
+.dirs{display:flex;gap:10px;margin-bottom:20px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.chips.hide{display:none}
+.chip{position:relative;padding:9px 15px;border:1px solid var(--line);border-radius:999px;
+  background:var(--panel);font-size:14px;color:var(--muted)}
+.chip::before{content:"";position:absolute;top:-7px;bottom:-7px;left:-3px;right:-3px}
+.chip.on{background:var(--accent-soft);border-color:var(--coral);color:var(--coral)}
+.dir{flex:1;border:1px solid var(--line);border-radius:14px;padding:13px 12px;background:var(--panel);text-align:left}
+.dir.sel{border-color:var(--coral);background:var(--accent-soft)}
+.dir .dt{font-size:15px;font-weight:500;margin-bottom:5px}
+.dir .dd{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.startBtn{position:relative;width:100%;height:58px;border-radius:15px;background:var(--coral);color:#fff;
+  font-size:17px;font-weight:500;margin-bottom:18px}
+.startBtn::before{content:"";position:absolute;top:-16px;bottom:-12px;left:-6px;right:-6px}
+.startBtn:disabled{background:var(--panel);color:var(--faint);border:1px solid var(--line)}
+.toast{color:#fff}
+.sect{margin-top:26px}
+.stepper{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);
+  border-radius:14px;background:var(--panel);padding:0 6px;height:56px;margin-bottom:12px}
+.stepper .sl{padding-left:10px;font-size:15px;color:var(--muted)}
+.stepper .sv{font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;min-width:2.6em;text-align:center}
+.stepper button{position:relative;width:52px;height:46px;border-radius:11px;font-size:23px;color:var(--coral)}
+.stepper button::before{content:"";position:absolute;top:-8px;bottom:-8px;left:-4px;right:-4px}
+.stepper button:active{background:var(--raise)}
+.pace{font-size:14.5px;line-height:1.62;color:var(--ink)}
+.pace .n{font-weight:600;font-variant-numeric:tabular-nums}
+.pace .cost{color:var(--muted);margin-top:7px;display:block}
+.motto{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.motto .la{font-family:var(--serif);font-style:italic;font-size:17.5px;line-height:1.45}
+.motto .en{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5}
+.sect h2{font-size:13px;font-weight:500;color:var(--faint);text-transform:uppercase;
+  letter-spacing:.07em;margin:0 0 11px}
+.strip{display:flex;flex-wrap:wrap;gap:5px}
+.dot{width:15px;height:15px;border-radius:4px;background:var(--panel);border:1px solid var(--line)}
+.dot.did{background:var(--coral);border-color:var(--coral)}
+.dot.today{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--coral)}
+.statRow{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
+.statRow:last-child{border-bottom:none}
+.statRow span{color:var(--muted)}
+.statRow b{font-weight:500;font-variant-numeric:tabular-nums}
+.fold{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.fold summary{font-size:13px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;
+  list-style:none;cursor:pointer;padding:6px 0}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::after{content:" +";color:var(--faint)}
+.fold[open] summary::after{content:" \2212"}
+.note{font-size:13px;color:var(--muted);line-height:1.55;margin-top:12px}
+.warn{background:var(--warn-bg);border:1px solid var(--warn-br);border-radius:12px;padding:11px 13px;
+  font-size:13.5px;line-height:1.5;color:var(--warn-ink);margin-bottom:16px}
+.warn.bad{background:var(--bad-bg);border-color:var(--bad-br);color:var(--bad-ink)}
+
+/* ---------- settings ---------- */
+.set{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 40px}
+.field{padding:14px 0;border-bottom:1px solid var(--line)}
+.field label{display:block;font-size:15px;margin-bottom:5px}
+.field .fh{font-size:13px;color:var(--muted);line-height:1.5;margin-top:6px}
+.field input[type=number],.field input[type=text],.field input[type=password]{
+  width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 12px;
+  font-size:16px;background:var(--panel);color:var(--ink);font-family:inherit}
+.field input[type=range]{width:100%;height:34px}
+.field .sel{width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 10px;
+  font-size:16px;background:var(--panel);color:var(--ink);font-family:inherit}
+.act{position:relative;width:100%;height:52px;border-radius:13px;border:1px solid var(--line);
+  background:var(--panel);font-size:16px;margin-top:11px}
+.act::before{content:"";position:absolute;top:-9px;bottom:-9px;left:-4px;right:-4px}
+.act.danger{color:var(--again)}
+.act.primary{background:var(--coral);color:#fff;border-color:var(--coral)}
+.done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0 30px;text-align:center;gap:8px}
+.done .big{font-family:var(--serif);font-size:27px}
+.done .small{font-size:14.5px;color:var(--muted);line-height:1.6}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(22px + env(safe-area-inset-bottom));
+  background:var(--toast);color:#fff;font-size:14px;padding:11px 17px;border-radius:11px;opacity:0;
+  transition:opacity .2s;pointer-events:none;z-index:50;max-width:84%;text-align:center}
+.toast.on{opacity:.95}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ HOME ============ -->
+  <section id="scHome" class="screen on">
+    <div class="bar">
+      <div class="icon" style="visibility:hidden">·</div>
+      <div class="title"></div>
+      <button class="icon" id="toSettings" aria-label="Settings">&#9881;</button>
+    </div>
+    <div class="home">
+      <div class="wordmark" id="wordmark"></div>
+      <div class="sub" id="homeSub">—</div>
+      <div id="homeWarn"></div>
+
+      <div class="chips" id="chips"></div>
+      <div class="chips" id="bchips"></div>
+      <div class="dirs">
+        <button class="dir sel" id="dirLtoE"><div class="dt" id="dtL"></div><div class="dd" id="ddL">—</div></button>
+        <button class="dir" id="dirEtoL"><div class="dt" id="dtE"></div><div class="dd" id="ddE">—</div></button>
+      </div>
+      <div class="stepper">
+        <span class="sl">New words today</span>
+        <div style="display:flex;align-items:center">
+          <button id="capMinus" aria-label="Fewer">&minus;</button>
+          <span class="sv" id="capVal">25</span>
+          <button id="capPlus" aria-label="More">+</button>
+        </div>
+      </div>
+      <button class="startBtn" id="startBtn">Start</button>
+
+      <div class="sect">
+        <h2>Study days</h2>
+        <div class="strip" id="strip"></div>
+        <div class="note" id="streakNote">—</div>
+      </div>
+
+      <div class="sect">
+        <h2>Pace</h2>
+        <div class="pace" id="pace"></div>
+        <div class="motto"><div class="la" id="mottoLa"></div><div class="en" id="mottoEn"></div></div>
+      </div>
+
+      <div class="sect">
+        <h2>Where you stand</h2>
+        <div id="statList"></div>
+        <details class="fold" id="timingFold">
+          <summary>Timing</summary>
+          <div id="timingBody"></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STUDY ============ -->
+  <section id="scStudy" class="screen">
+    <div class="bar">
+      <button class="icon" id="toHome" aria-label="Back">&#8249;</button>
+      <div class="title"><div class="counts" id="counts"></div></div>
+      <button class="icon" id="undoBtn" aria-label="Undo">&#8630;</button>
+    </div>
+    <div class="cardarea" id="cardArea">
+      <div class="multi" id="multi">2</div>
+      <div class="prompt" id="prompt"></div>
+      <div class="rule"></div>
+      <div class="answer" id="answer"></div>
+      <div class="leechtag hidden" id="leechTag">set this one aside — it keeps slipping</div>
+      <div class="hintline" id="hintline"></div>
+    </div>
+    <div class="revealRow" id="revealRow">
+      <button class="revealBtn" id="revealBtn">Show answer</button>
+    </div>
+    <div class="rateRow hidden" id="rateRow">
+      <button class="rate" id="bAgain"><span class="lbl">Again</span><span class="ivl" id="iAgain"></span></button>
+      <button class="rate" id="bGood"><span class="lbl">Good</span><span class="ivl" id="iGood"></span></button>
+      <button class="rate" id="bEasy"><span class="lbl">Easy</span><span class="ivl" id="iEasy"></span></button>
+    </div>
+  </section>
+
+  <!-- ============ DONE ============ -->
+  <section id="scDone" class="screen">
+    <div class="bar">
+      <button class="icon" id="toHome2" aria-label="Back">&#8249;</button>
+      <div class="title"></div>
+      <div class="icon" style="visibility:hidden">·</div>
+    </div>
+    <div class="done">
+      <div class="big" id="doneBig">Nothing due</div>
+      <div class="small" id="doneSmall"></div>
+      <button class="act" id="doneMore" style="max-width:230px;margin-top:20px">Ten more words</button>
+      <button class="act" id="doneBack" style="max-width:230px">Back</button>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section id="scSet" class="screen">
+    <div class="bar">
+      <button class="icon" id="toHome3" aria-label="Back">&#8249;</button>
+      <div class="title">Settings</div>
+      <div class="icon" style="visibility:hidden">·</div>
+    </div>
+    <div class="set">
+      <div class="field">
+        <label for="fNew">New words a day</label>
+        <input type="number" id="fNew" min="0" max="200" step="5" inputmode="numeric">
+        <div class="fh">Caps how many unseen words enter the rotation each day. Words carried over from the audit come first.</div>
+      </div>
+      <div class="field">
+        <label for="fRet">Target retention — <b id="fRetVal">90%</b></label>
+        <input type="range" id="fRet" min="80" max="95" step="1">
+        <div class="fh">How often you want to succeed at review time. Lower means fewer reviews and more forgetting.</div>
+      </div>
+      <div class="field">
+        <label for="fMax">Longest interval (days)</label>
+        <input type="number" id="fMax" min="30" max="36500" step="30" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="fTheme">Appearance</label>
+        <select id="fTheme" class="sel">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="auto">Match the system</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fGate">Unlock the reverse direction after</label>
+        <input type="number" id="fGate" min="0" max="180" step="7" inputmode="numeric">
+        <div class="fh">Days a forward card must be holding before its reverse card can appear. 0 removes the gate and opens everything at once. Production is harder than recognition, so this stops you meeting a word backwards before it has settled.</div>
+      </div>
+      <div class="field">
+        <label for="fTiming">Let hesitation adjust the grade</label>
+        <select id="fTiming" class="sel">
+          <option value="1">Yes — a slow answer is recorded one grade lower</option>
+          <option value="0">No — record exactly what I press</option>
+        </select>
+        <div class="fh">Over 30 seconds, Easy is recorded as Good and Good as Hard. Between 10 and 30, Easy is recorded as Good. Nothing is ever promoted, and a failure is never altered.</div>
+      </div>
+      <div class="field">
+        <label for="fEasy">Clearing a word for the day</label>
+        <select id="fEasy" class="sel">
+          <option value="1">Only Easy clears it — Good repeats in 10 minutes</option>
+          <option value="0">Good is enough</option>
+        </select>
+        <div class="fh">Applies while a word is still being drilled, not to mature reviews.</div>
+      </div>
+      <div class="field">
+        <label for="fDrill">Consecutive good days before release</label>
+        <input type="number" id="fDrill" min="0" max="14" step="1" inputmode="numeric">
+        <div class="fh">0 switches this off and lets the scheduler choose. Any higher number holds a word at a one-day interval until you have got it right that many days running; one failure restarts the count. Costly — check the front screen load before setting this above 3.</div>
+      </div>
+      <div class="field">
+        <label for="fRevDay">Weekly review day</label>
+        <select id="fRevDay" class="sel">
+          <option value="-1">None — spread reviews evenly</option>
+          <option value="0">Sunday</option><option value="1">Monday</option>
+          <option value="2">Tuesday</option><option value="3">Wednesday</option>
+          <option value="4">Thursday</option><option value="5">Friday</option>
+          <option value="6">Saturday</option>
+        </select>
+        <div class="fh">Nudges intervals between 3 and 21 days onto that weekday, by up to three days either way. Longer intervals are left alone so the day cannot fill up without limit.</div>
+      </div>
+      <div class="field">
+        <label for="fKnown">Head start for words you marked known</label>
+        <input type="number" id="fKnown" min="1" max="365" step="7" inputmode="numeric">
+        <div class="fh">Days before a known word is first tested. Only applies to words not yet introduced. Longer means they surface as an occasional spot-check rather than a lesson.</div>
+      </div>
+      <div class="field">
+        <label for="fWeak">Introduce unseen words before shaky ones</label>
+        <select id="fWeak" class="sel">
+          <option value="0">No — work through in list order</option>
+          <option value="1">Yes — hardest first</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fTerm">Michaelmas begins</label>
+        <input type="date" id="fTerm">
+        <div class="fh">Used for the countdown on the front screen. Nothing else depends on it.</div>
+      </div>
+      <div class="field">
+        <label>Backups</label>
+        <button class="act" id="expBtn">Export a backup file</button>
+        <button class="act" id="impBtn">Restore from a file</button>
+        <input type="file" id="impFile" accept="application/json,.json" class="hidden">
+        <div class="fh" id="backupNote">—</div>
+      </div>
+      <div class="field">
+        <label for="fAuto">Export automatically every N ratings</label>
+        <input type="number" id="fAuto" min="0" max="2000" step="25" inputmode="numeric">
+        <div class="fh">Set to 0 to switch off. On iPhone the file lands in Files → Downloads; point that at iCloud Drive and this becomes an offsite backup. Safari may ask to confirm each download.</div>
+      </div>
+      <div class="field">
+        <label for="fGistId">Sync to a private GitHub gist (optional)</label>
+        <input type="text" id="fGistId" placeholder="gist id" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <input type="password" id="fGistTok" placeholder="fine-grained token, gists scope" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-top:9px">
+        <button class="act" id="pushBtn">Push to gist now</button>
+        <button class="act" id="pullBtn">Pull from gist</button>
+        <div class="fh">Off unless you fill both fields. The token is stored on this device only, but anything on the device can read it — scope it to gists alone and revoke it if the phone goes astray.</div>
+      </div>
+      <div class="field">
+        <label>Set aside</label>
+        <div class="fh" id="leechNote">—</div>
+        <button class="act" id="unsuspBtn">Bring all set-aside words back</button>
+      </div>
+      <div class="field">
+        <label>Start over</label>
+        <button class="act danger" id="resetBtn">Erase all progress</button>
+        <div class="fh">Downloads a backup first, then clears everything on this device.</div>
+      </div>
+      <div class="field">
+        <label>Instructions</label>
+        <a class="act" href="manual.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit">How this works</a>
+        <div class="fh">Opens the manual, if it is sitting alongside this file.</div>
+      </div>
+      <div class="field" style="border-bottom:none">
+        <div class="fh">Grading rule: for a word with several glosses, count it as recalled if you produced the first sense plus one other. Otherwise press Again.</div>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA=[["ἀγαθός -ή -όν","good","All",-1],["ἄγαλμα -ατος, τό","glory","All",-1],["ἄγαν","too much","All",-1],["ἀγανακτέω","be annoyed at","All",-1],["ἄγγελος -ου, ὁ","messenger","All",-1],["ἀγγέλλω","announce","All",-1],["ἀγείρω","collect","All",-1],["ἀγνοέω","not to know","All",-1],["ἁγνός -ή -όν","holy","All",-1],["ἀγορά -ᾶς, ἡ","market-place","All",-1],["ἀγορεύω","say","All",-1],["ἄγριος -α -ον","wild","All",-1],["ἄγω","lead","All",-1],["ἀγών -ῶνος, ὁ","contest","All",-1],["ἀγωνίζομαι","contend","All",-1],["ἀδελφός -οῦ, ὁ","brother","All",-1],["ἀδελφή -ῆς, ἡ","sister","All",-1],["ἀδικία -ας, ἡ","injustice","All",-1],["ἄδικος -ον","unjust","All",-1],["ἀδικέω","(do) wrong","All",-1],["ἀδύνατος -ον","impossible","All",-1],["ᾄδω","sing","All",-1],["ἀεί, αἰεί","always","All",-1],["ἄθλιος -α -ον","wretched","All",-1],["ἆθλον -ου, τό","prize","All",-1],["ἀθυμέω","be disheartened","All",-1],["ἀθυμία -ας, ἡ","despondency","All",-1],["ἀθροίζω","collect","All",-1],["αἰδῶς -οῦς, ἡ","sense of shame, reverence","All",-1],["αἰδέομαι","reverence","All",-1],["αἰθήρ -έρος, ὁ/ἡ","(upper) air","All",-1],["αἷμα -ατος, τό","blood","All",-1],["αἰνέω","praise","All",-1],["αἱρέω","take; mid. choose","All",-1],["αἴρω","raise, set out","All",-1],["αἰσθάνομαι","perceive (+ gen.)","All",-1],["αἰσχρός -ά -όν","disgraceful","All",-1],["αἰσχύνη -ης, ἡ","shame","All",-1],["αἰσχύνομαι","be ashamed at","All",-1],["αἰτέω","ask, beg","All",-1],["αἰτία -ας, ἡ","cause, blame","All",-1],["αἴτιος -α -ον","responsible, guilty","All",-1],["αἰτιάομαι","blame, accuse (+ acc. of person, gen. of thing)","All",-1],["αἰχμάλωτος -ον","prisoner","All",-1],["ἀκμή -ῆς, ἡ","point","All",-1],["ἀκολουθέω","follow (+ dat.)","All",-1],["ἀκοντιστής -οῦ, ὁ","javelin-thrower","All",-1],["ἀκοντίζω","hurl javelins (at)","All",-1],["ἀκούω","hear (+ gen. of person)","All",-1],["ἀκριβής -ές","accurate","All",-1],["ἄκρος -α -ον","top","All",-1],["ἀκτή -ῆς, ἡ","shore","All",-1],["ἄκων -ουσα -ον","unwilling","All",-1],["ἄλγος -ους, τό","pain","All",-1],["ἀλήθεια -ας, ἡ","truth","All",-1],["ἀληθής -ές","true","All",-1],["ἁλίσκομαι","be captured, be taken","All",-1],["ἀλλήλους -ας -α","one another","All",-1],["ἄλλος -η -ον","other","All",-1],["ἄλλως","in vain, otherwise","All",-1],["ἅμα","at the same time, together","All",-1],["ἅμαξα -ης, ἡ","wagon","All",-1],["ἁμαρτάνω","make a mistake, err","All",-1],["ἀμείνων -ον","better","All",-1],["ἅμιλλα -ης","contest","All",-1],["ἀμύνω","ward off; mid. resist","All",-1],["ἄμφω","both","All",-1],["ἀμφότερος -α -ον","both","All",-1],["ἀναβαίνω","board, go on board (ship)","All",-1],["ἀναγιγνώσκω","read, recognise","All",-1],["ἀνάγκη -ης, ἡ","necessity","All",-1],["ἀναγκαῖος -α -ον","necessary","All",-1],["ἀναγκάζω","compel","All",-1],["ἀναιδής -ές","shameless","All",-1],["ἀναλίσκω","spend","All",-1],["ἄναξ -κτος, ὁ","lord, master","All",-1],["ἀνάσσω","rule","All",-1],["ἀναχωρέω","retreat, go back","All",-1],["ἀνδραποδίζω","enslave","All",-1],["ἄνεμος -ου, ὁ","wind","All",-1],["ἀνέχομαι","endure, hold out","All",-1],["ἀνήρ ἀνδρός, ὁ","man (as opposed a woman)","All",-1],["ἀνδρεῖος -α -ον","brave","All",-1],["ἄνθος -ους, τό","flower","All",-1],["ἄνθρωπος -ου, ὁ","human, person","All",-1],["ἀνίημι","let go, relax","All",-1],["ἀνοίγνυμι","open","All",-1],["ἀνόσιος -ον","unholy","All",-1],["ἀξία -ας, ἡ","worth, worthiness","All",-1],["ἄξιος -α -ον","worthy","All",-1],["ἀξιόω","deem worthy","All",-1],["ἀπαλλάττω","set free, escape","All",-1],["ἀπαντάω","meet (+ dat.)","All",-1],["ἅπας -ασα -αν","all together","All",-1],["ἅπαξ","once","All",-1],["ἄπειρος -ον","inexperienced, ignorant of (+gen.)","All",-1],["ἀπεχθάνομαι","be hated","All",-1],["ἀπέχω","be distant","All",-1],["ἁπλῶς","simply","All",-1],["ἀποδίδομαι","sell","All",-1],["ἀποθνῄσκω","die, be killed","All",-1],["ἀποκρίνομαι","reply","All",-1],["ἀποκτείνω","kill","All",-1],["ἀπόλλυμι","destroy; mid. die","All",-1],["ἀπολογέομαι","defend oneself","All",-1],["ἀπορία -ας, ἡ","difficulty, lack","All",-1],["ἀπορέω","be at a loss","All",-1],["ἀποστέλλω","send away","All",-1],["ἀποστερέω","deprive (+ acc. of person, gen. of thing)","All",-1],["ἀπροσδόκητος -ον","unexpected","All",-1],["ἅπτομαι","lay hold of, touch (+ gen.)","All",-1],["ἄργυρος -ου, ὁ","silver","All",-1],["ἀργυροῦς -ᾶ, -οῦν","(made of) silver","All",-1],["ἀρέσκω","please (+ dat.)","All",-1],["ἀρετή -ῆς, ἡ","virtue","All",-1],["ἀριθμός -οῦ, ὁ","number","All",-1],["ἄριστος -η -ον","best","All",-1],["ἀρκέω","suffice","All",-1],["ἅρμα -ατος, τό","chariot","All",-1],["ἁρπάζω","seize","All",-1],["ἄρτι, ἀρτίως","lately, recently","All",-1],["ἀρχή -ῆς, ἡ","beginning; rule","All",-1],["ἀρχαῖος -α -ον","ancient","All",-1],["ἄρχω","rule; mid. begin (+ gen.)","All",-1],["ἀσθενής -ές","weak","All",-1],["ἀσκέω","adorn, exercise","All",-1],["ἄσμενος -η -ον","glad","All",-1],["ἀσπίς -ίδος, ἡ","shield","All",-1],["ἄστυ -εως, τό","city","All",-1],["ἀσφαλής -ές","safe","All",-1],["ἄτη -ης, ἡ","madness","All",-1],["αὖ, αὖθις","again","All",-1],["αὐλίζομαι","encamp","All",-1],["αὐξάνω","increase","All",-1],["αὐτίκα","immediately","All",-1],["ἄφθονος -ον","bounteous, ungrudging","All",-1],["ἀφίημι","let go","All",-1],["ἀφικνέομαι","arrive","All",-1],["ἀφίσταμαι","revolt","All",-1],["ἄφνω","suddenly","All",-1],["βαίνω","go","All",-1],["βάλλω","throw","All",-1],["βάρβαρος -ον","foreign, barbarous","All",-1],["βαρύς -εῖα -ύ","heavy","All",-1],["βασιλεύς -έως, ὁ","king","All",-1],["βέβαιος -α -ον","firm, sure","All",-1],["βέλος -ους, τό","weapon","All",-1],["βία -ας, ἡ","force","All",-1],["βιάζω","compel","All",-1],["βίβλος -ου, ἡ","book","All",-1],["βίος -ου, ὁ","life","All",-1],["βίοτος -ου, ὁ","life","All",-1],["βλάβη -ης, ἡ","hurt","All",-1],["βλάπτω","harm, injure","All",-1],["βλέπω","see","All",-1],["βοή -ῆς, ἡ","shout","All",-1],["βοηθέω","help (+ dat.)","All",-1],["βοήθεια -ας, ἡ","help, aid, reinforcements","All",-1],["βουλεύω","take counsel","All",-1],["βούλομαι","wish, want","All",-1],["βοῦς βοός, ὁ/ἡ","ox/cow","All",-1],["βραχύς -εῖα -ύ","short","All",-1],["βροτός -οῦ, ὁ","mortal","All",-1],["βωμός -οῦ, ὁ","altar","All",-1],["γαμέω","marry","All",-1],["γελάω","laugh","All",-1],["γενναῖος -α -ον","noble","All",-1],["γένος -ους, τό","race","All",-1],["γέρας -ως, τό","privilege","All",-1],["γῆρας -ως, τό","old age","All",-1],["γεραιός -ή -όν","elderly, old","All",-1],["γέρων -οντος, ὁ","old man","All",-1],["γέφυρα -ας, ἡ","bridge","All",-1],["γῆ -ῆς, ἡ","earth","All",-1],["γαῖα -ας, ἡ","earth","All",-1],["γίγνομαι","become, happen","All",-1],["γιγνώσκω","ascertain, get to know","All",-1],["γνώμη -ης, ἡ","mind, judgment","All",-1],["γλυκύς -εῖα, -ύ","sweet","All",-1],["γλῶττα -ης, ἡ","tongue, language","All",-1],["γράφω","write","All",-1],["γράμμα -ατος, τό","letter (of alphabet); (in pl.) writings","All",-1],["γυμνός -ή -όν","naked, unarmed, defenceless","All",-1],["γυνή γυναικός, ἡ","woman","All",-1],["δαίμων -ονος, ὁ","god, spirit","All",-1],["δακρύ -ύος, τό","tear","All",-1],["δακρύω","cry","All",-1],["δάμαρ -αρτος, ἡ","wife","All",-1],["δαπάνη -ης, ἡ","expense","All",-1],["δέδοικα","fear","All",-1],["δεῖ","it is necessary","All",-1],["δείκνυμι","show","All",-1],["δειλός -ή -όν","cowardly","All",-1],["δεῖμα -ατος, τό","fear","All",-1],["δεινός -ή -όν","terrible, clever (at)","All",-1],["δεῖπνον -ου, τό","meal","All",-1],["δέμας, τό","body, bodily frame","All",-1],["δένδρον, -ου, τό","tree","All",-1],["δεξιός -ά -όν","right","All",-1],["δεσμός -οῦ, ὁ","bonds","All",-1],["δεσμώτης, -ου, ὁ","prisoner","All",-1],["δεσμωτήριον -ου, τό","prison","All",-1],["δέσποινα -ης, ἡ","mistress","All",-1],["δεσπότης -ου, ὁ","master","All",-1],["δέχομαι","receive","All",-1],["δέω","bind","All",-1],["δέω","want, need (+ gen.)","All",-1],["δῆλος -η -ον","clear","All",-1],["δηλόω","show","All",-1],["δῆμος -ου, ὁ","people","All",-1],["δίαιτα -ης, ἡ","way of life","All",-1],["διάνοια -ας, ἡ","mind, intention","All",-1],["διαφθείρω","destroy","All",-1],["διδάσκω","teach","All",-1],["δίδωμι","give","All",-1],["δῶρον -ου, τό","gift","All",-1],["δίκη -ης, ἡ","justice","All",-1],["δίκην διδόναι","be punished, pay the penalty","All",-1],["δίκαιος -α -ον","just","All",-1],["διπλοῦς -ῆ -οῦν","two-fold","All",-1],["δίχα (adv.)","apart","All",-1],["διώκω","pursue","All",-1],["δίωξις -εως, ἡ","pursuit","All",-1],["δοκέω","think; impers. it seems good (+ dat.)","All",-1],["δόξα -ας, ἡ","glory, opinion, renown","All",-1],["δόλος -ου, ὁ","cunning, trickery","All",-1],["δόμος, ὁ","house","All",-1],["δόρυ δόρατος or δορός, τό","spear","All",-1],["δοῦλος -η -ον","slave","All",-1],["δράω","do","All",-1],["δρόμος -ου, ὁ","course, running","All",-1],["δύναμις -εως, ἡ","power","All",-1],["δύναμαι","be able","All",-1],["δυνατός -ή -όν","able","All",-1],["δύστηνος -ον","wretched","All",-1],["δυστυχής -ές","unfortunate","All",-1],["δῶμα -ατος, τό","house","All",-1],["ἔαρ ἦρος, τό","spring","All",-1],["ἐάω","allow","All",-1],["ἐγγύς (adv. and prep. + gen.)","near","All",-1],["ἐγείρω","rouse, stir up","All",-1],["ἐγκαλέω","accuse (+ dat.)","All",-1],["ἔγχος -ους, τό","sword","All",-1],["ἐθέλω, θέλω","wish, want","All",-1],["ἔθνος -ους, τό","race (of people)","All",-1],["εἶδος -ους, τό","form","All",-1],["εἰκός, τό","reasonable","All",-1],["εἰκότως","naturally, probably","All",-1],["εἴκω","yield","All",-1],["εἰμί","be","All",-1],["εἶμι","shall go","All",-1],["εἴργω","prevent, hinder, shut out","All",-1],["εἰρήνη -ης, ἡ","peace","All",-1],["εἴωθα","be accustomed","All",-1],["ἕκαστος -η -ον","each","All",-1],["ἑκάτερος -α -ον","each of two","All",-1],["ἐκκλησία -ας, ἡ","assembly","All",-1],["ἐκπλήττω","strike with panic","All",-1],["ἔκπληξις -εως, ἡ","panic","All",-1],["ἐκτός (adv. and prep. + gen.)","outside","All",-1],["ἑκών -οῦσα –όν","willing","All",-1],["ἐλάττων -ον","smaller, fewer","All",-1],["ἐλαύνω","drive","All",-1],["ἐλάχιστος -η -ον","smallest, least, fewest","All",-1],["ἐλέγχω","examine, refute","All",-1],["ἐλευθερία -ας, ἡ","freedom","All",-1],["ἐλεύθερος -α -ον","free","All",-1],["ἐλπίς, ίδος, ἡ","hope","All",-1],["ἐλπίζω","hope","All",-1],["ἔμπειρος -ον","experienced in (+gen.)","All",-1],["ἐμποδών","in the way, in one’s path","All",-1],["ἐναντίος -α -ον","opposite, hostile","All",-1],["ἐνδεής -ές","lacking, in want","All",-1],["ἔνδον","within","All",-1],["ἐνιαυτός -οῦ, ὁ","year","All",-1],["ἔνιοι -αι -α","some","All",-1],["ἐνίοτε","sometimes","All",-1],["ἐντός (adv. and prep. + gen.)","inside","All",-1],["ἐξαίφνης","suddenly","All",-1],["ἐξαπατάω","deceive","All",-1],["ἔξεστι","it is lawful (+ dat.)","All",-1],["ἐξετάζω","examine, review (an army)","All",-1],["ἐξέτασις -εως, ἡ","review","All",-1],["ἔξω","outside","All",-1],["ἔοικα","seem, be like","All",-1],["ἑορτή -ῆς, ἡ","feast","All",-1],["ἐπαινέω","praise","All",-1],["ἐπανέρχομαι","return","All",-1],["ἐπείγω","urge on, hasten","All",-1],["ἔπειτα, εἶτα","then, next","All",-1],["ἐπιεικής -ές","fair, reasonable, equitable","All",-1],["ἐπιθυμία -ας, ἡ","desire","All",-1],["ἐπιθυμέω","desire (+ gen.)","All",-1],["ἐπιλανθάνομαι","forget (+ gen.)","All",-1],["ἐπιστήμη -ης, ἡ","knowledge, understanding","All",-1],["ἐπίσταμαι","understand","All",-1],["ἐπιστολή -ῆς, ἡ","letter","All",-1],["ἐπιτήδειος -α -ον","convenient, useful","All",-1],["ἐπιτήδεια, τά","provisions","All",-1],["ἐπιτρέπω","entrust","All",-1],["ἕπομαι","follow","All",-1],["ἔπος -ους, τό","word","All",-1],["ἔργον -ου, τό","work","All",-1],["ἐργάζομαι","work","All",-1],["ἔρημος -η -ον","deserted","All",-1],["ἔρις -ιδος, ἡ","strife","All",-1],["ἔρχομαι","come, go","All",-1],["ἔρως -ωτος, ὁ","love","All",-1],["ἐρωτάω","ask (a question)","All",-1],["ἐσθής -ῆτος, ἡ","clothing","All",-1],["ἐσθίω","eat","All",-1],["ἐσθλός -ή -όν","noble, good","All",-1],["ἑσπέρα -ας, ἡ","evening","All",-1],["ἑστία -ας, ἡ","hearth","All",-1],["ἐσχάρα -ας, ἡ","hearth","All",-1],["ἔσχατος -η -ον","last","All",-1],["ἑταῖρος -ου, ὁ","companion","All",-1],["ἕτερος -α -ον","one or other of two","All",-1],["ἔτι","still","All",-1],["ἕτοιμος -η -ον","ready","All",-1],["ἔτος -ους, τό","year","All",-1],["εὖ","well","All",-1],["εὐγενής -ές","noble, well-born","All",-1],["εὐδαίμων -ον","fortunate","All",-1],["εὐεργέτης -ου, ὁ","benefactor","All",-1],["εὐθύς","immediately, straightaway","All",-1],["εὐκλεής -ές","glorious, well-renowned","All",-1],["εὐμενής -ές","favourable","All",-1],["εὔνους -ουν","loyal","All",-1],["εὐπρεπής -ές","seemly, glorious","All",-1],["εὑρίσκω","find, invent","All",-1],["εὐρύς -εῖα -ύ","broad, wide","All",-1],["εὐτυχής -ές","fortunate","All",-1],["εὔχομαι","pray","All",-1],["εὐχή -ῆς, ἡ","prayer","All",-1],["ἐχθρός -ά -όν","hostile; a private enemy","All",-1],["ἔχω","have","All",-1],["ἕως ἕω, ἡ","dawn","All",-1],["ζάω","live","All",-1],["ζεύγνυμι","yoke","All",-1],["ζύγον -ου, τό","yoke","All",-1],["ζηλόω","envy","All",-1],["ζημία -ας, ἡ","penalty","All",-1],["ζητέω","seek","All",-1],["ἥβη -ης, ἡ","youth","All",-1],["ἡγεμών -όνος, ὁ","leader","All",-1],["ἡγέομαι","lead (+ dat.), consider","All",-1],["ἤδη","already","All",-1],["ἥδομαι","enjoy, take pleasure, rejoice","All",-1],["ἡδονή -ῆς, ἡ","pleasure","All",-1],["ἡδῦς -εῖα -ύ","sweet","All",-1],["ἦθος -ους, τό","custom","All",-1],["ἥκιστα","least","All",-1],["ἥκω","have come","All",-1],["ἥλιος -ου, ὁ","sun","All",-1],["ἡμέρα -ας, ἡ","day","All",-1],["ἦμαρ -ατος, τό","day","All",-1],["ἥμισυς -εια -υ","half","All",-1],["ἤπειρος -ου, ἡ","mainland","All",-1],["ἡσυχαῖος -α -ον","quiet","All",-1],["ἥσυχος -ον","quiet","All",-1],["ἡσυχία -ας, ἡ","quiet","All",-1],["ἡσυχάζω","be quiet","All",-1],["ἡττάομαι","be defeated","All",-1],["ἥττων -ον","less","All",-1],["θάλαμος -ου, ὁ","(bed)room","All",-1],["θάλαττα -ης, ἡ","sea","All",-1],["θάνατος -ου, ὁ","death","All",-1],["θάπτω","bury","All",-1],["θάρσος -εος, τό (θράσος -εος, τό)","courage","All",-1],["θαρσέω (θαρρέω)","be encouraged","All",-1],["θρασύς -εῖα -ύ","bold","All",-1],["θάττων -ον","quicker","All",-1],["θαῦμα -ατος, τό","wonder, marvel","All",-1],["θαυμάζω","wonder (at)","All",-1],["θεάομαι","look at","All",-1],["θεός -οῦ, ὁ","god","All",-1],["θεά -ᾶς, ἡ","goddess","All",-1],["θεῖος -α -ον","divine, godlike","All",-1],["θεράπων -οντος, ὁ","servant","All",-1],["θεραπεύω","attend (as servant)","All",-1],["θερμός -ή -όν","hot","All",-1],["θέρος -ους, τό","summer","All",-1],["θεωρέω","look at","All",-1],["θηράω","hunt","All",-1],["θηρεύω","hunt","All",-1],["θήρ θηρός, ὁ","wild beast","All",-1],["θηρίον -ου, τό","wild beast","All",-1],["θνητός -ή -όν","mortal","All",-1],["θόρυβος -ου, ὁ","uproar, clamour","All",-1],["θρηνέω","lament, mourn","All",-1],["θρόνος -ου, ὁ","seat","All",-1],["θυγάτηρ θυγατρός, ἡ","daughter","All",-1],["θυμός -οῦ, ὁ","spirit, heart","All",-1],["θύρα -ας, ἡ","door","All",-1],["θύω","sacrifice","All",-1],["θώραξ -ακος, ὁ","breastplate","All",-1],["ἰατρός -οῦ, ὁ","doctor","All",-1],["ἴδιος -α -ον","one’s own","All",-1],["ἰδοῦ","behold!","All",-1],["ἱερός -ά -όν","holy, sacred","All",-1],["ἵημι","send forth","All",-1],["ἱκανός -ή -όν","sufficient","All",-1],["ἱκέτης -ου, ὁ","suppliant","All",-1],["ἱκετεύω","beseech","All",-1],["ἵππος -ου, ὁ","horse","All",-1],["ἵππος, ἡ","cavalry","All",-1],["ἱππεύς -έως, ὁ","horseman","All",-1],["ἴσος -η -ον","equal","All",-1],["ἵστημι","make to stand; (intransitive and mid.) stand","All",-1],["ἰσχύς -ύος, ἡ","strength","All",-1],["ἰσχυρός -ά -όν","strong","All",-1],["ἴσως","perhaps","All",-1],["καθαίρω","cleanse, purify","All",-1],["καθαρός -ά -όν","pure","All",-1],["καθεύδω","sleep","All",-1],["κάθημαι","sit","All",-1],["καθέζομαι","sit","All",-1],["καινός -ή -όν","new","All",-1],["καιρός -οῦ ὁ","right time","All",-1],["καίω","burn","All",-1],["κακός -ή -όν","bad","All",-1],["καλέω","call","All",-1],["καλός -ή -όν","beautiful","All",-1],["κάμνω","toil","All",-1],["κάρα, τό","head","All",-1],["καρδία -ας, ἡ","heart","All",-1],["καρπός -οῦ, ὁ","fruit","All",-1],["κάρτα","very much","All",-1],["καρτερός -ά -όν","strong","All",-1],["καρτερέω","endure","All",-1],["καταγιγνώκω","accuse, condemn (+ gen. of pers., acc. of thing)","All",-1],["κατακρίνομαι","condemn (+ acc. of pers.)","All",-1],["κατάσκοπος -ου, ὁ","spy","All",-1],["καταστρέφομαι","subdue","All",-1],["καταφρονέω","despise (+ gen.)","All",-1],["κατέχω","restrain, hold back","All",-1],["κατηγορέω","accuse (+ gen. of pers., acc. of thing)","All",-1],["κεῖμαι","lie","All",-1],["κελεύω","order","All",-1],["κενός -ή -όν","empty","All",-1],["κέρας -ατος (or -ως), τό","horn; wing (of an army)","All",-1],["κεραυνός -οῦ, ὁ","thunderbolt","All",-1],["κέρδος -ους, τό","profit, gain","All",-1],["κεφαλή -ῆς, ἡ","head","All",-1],["κῆρυξ -υκος, ὁ","herald","All",-1],["κηρύττω","announce","All",-1],["κίνδυνος -ου, ὁ","danger","All",-1],["κινέω","move","All",-1],["κλαίω","weep, cry","All",-1],["κλείω","shut, close","All",-1],["κλεός, τό (nom., acc. only)","glory","All",-1],["κλέπτω","steal","All",-1],["κλίνω","bend, incline, make to lean","All",-1],["κλύω","hear","All",-1],["κοινός -ή -όν","common, shared","All",-1],["κοίρανος -ου, ὁ","master","All",-1],["κολάζω","punish","All",-1],["κομίζω","convey, carry, bring","All",-1],["κόπτω","cut","All",-1],["κόρη -ης, ἡ","maiden","All",-1],["κόρυς -υθος, ἡ","helmet","All",-1],["κοσμέω","adorn, arrange","All",-1],["κόσμος -ου, ὁ","order, adornment","All",-1],["κρατέω","rule, conquer (+ gen.)","All",-1],["κράτος -ους, τό","strength, might","All",-1],["κρείττων -ον","better, stronger","All",-1],["κρήνη -ης, ἡ","spring, fount","All",-1],["κρίνω","judge","All",-1],["κριτής -οῦ, ὁ","judge","All",-1],["κρύπτω","hide","All",-1],["κρυφαῖος -α -ον","secret, hidden","All",-1],["κτάομαι","obtain","All",-1],["κτείνω","kill","All",-1],["κυβερνήτης -ου, ὁ","steersman","All",-1],["κῦδος -ους, τό","glory","All",-1],["κύκλος -ου, ὁ","circle","All",-1],["κῦμα -ατος, τό","wave","All",-1],["κυρέω","meet with (+ gen.), happen","All",-1],["κύριος -ου, ὁ","lord","All",-1],["κύων κυνός, ὁ","dog","All",-1],["κωλύω","hinder","All",-1],["κώμη -ης, ἡ","village","All",-1],["κώπη -ης, ἡ","oar","All",-1],["λαγχάνω","obtain by lot","All",-1],["λαμβάνω","take","All",-1],["λαμπρός -ά -όν","bright","All",-1],["λανθάνω","lie hid, escape notice (of)","All",-1],["λάθρᾳ","secretly","All",-1],["λέγω","say","All",-1],["λειμών -ῶνος, ὁ","meadow","All",-1],["λείπω","leave","All",-1],["λευκός -ή -όν","white","All",-1],["λεύσσω","behold","All",-1],["λέχος -ους, τό","bed","All",-1],["λέων -οντος, ὁ","lion","All",-1],["λήγω","cease, desist","All",-1],["λῃστής -οῦ, ὁ","pirate","All",-1],["λίαν","too much","All",-1],["λίθος -ου, ὁ","stone","All",-1],["λιμήν -ένος, ὁ","harbour","All",-1],["λίμνη -ης, ἡ","marsh","All",-1],["λίττομαι","beg","All",-1],["λόγος -ου, ὁ","word","All",-1],["λογίζομαι","consider","All",-1],["λοιδορέω","abuse","All",-1],["τὸ λοιπόν","the future","All",-1],["λύπη -ης, ἡ","grief","All",-1],["λύω","loose","All",-1],["μάκαρ -αρος, ὁ (μάκαιρα, ἡ)","blessed","All",-1],["μακάριος -α -ον","blessed","All",-1],["μακρός -ά -όν","large, long","All",-1],["μάλα, μάλιστα","especially, very much","All",-1],["μᾶλλον","rather, more","All",-1],["μανθάνω","learn","All",-1],["μανία -ας, ἡ","madness","All",-1],["μαίνομαι","be mad","All",-1],["μάντις -εως, ἡ","prophet","All",-1],["μαρτύρομαι","(bear) witness","All",-1],["μάταιος -α -ον","foolish, vain","All",-1],["μάτην","in vain","All",-1],["μάχη -ης, ἡ","battle","All",-1],["μάχομαι","fight (+ dat.)","All",-1],["μέγας μεγάλη μέγα","big, great","All",-1],["μέγεθος -ους, τό","size","All",-1],["μεθίημι","let go, release","All",-1],["μείζων -ον","greater","All",-1],["μέλαθρα, τά","house","All",-1],["μέλας μέλαινα μέλαν","black","All",-1],["μέλει","it is a care for (+ dat.)","All",-1],["μέλλω","intend","All",-1],["μέμνημαι","remember (+ gen.)","All",-1],["μνήμη -ης, ἡ","memory","All",-1],["μέμφομαι","blame","All",-1],["μένω","remain","All",-1],["μίμνω","remain","All",-1],["μέρος -ους, τό","part","All",-1],["μέσος -η -ον","middle","All",-1],["μεστός -ή -όν","full","All",-1],["μεταβάλλω","change","All",-1],["μεταξύ","between","All",-1],["μεταπέμπομαι","send for","All",-1],["μετέχω","have a share in (+ gen.)","All",-1],["μέτριος -α -ον","moderate","All",-1],["μῆκος -ους, τό","length","All",-1],["μήτηρ μητρός, ἡ","mother","All",-1],["μηχανή -ῆς, ἡ","device, contrivance","All",-1],["μηχανάομαι","contrive","All",-1],["μικρός -ά -όν (= σμικρός)","small","All",-1],["μισέω","hate","All",-1],["μισθός -οῦ, ὁ","hire, reward","All",-1],["μοῖρα -ας, ἡ","fate, part","All",-1],["μόλις, μόγις","scarcely","All",-1],["μολεῖν (strong aorist)","go","All",-1],["μόνος -η -ον (= μοῦνος)","alone","All",-1],["μόχθος -ου, ὁ","toil","All",-1],["μῦθος -ου, ὁ","word","All",-1],["μυρίος -α -ον","countless","All",-1],["μωρός -ά -όν","foolish, stupid","All",-1],["ναί","yes","All",-1],["ναίω","dwell","All",-1],["ναός, ὁ (= νεώς)","temple","All",-1],["ναῦς νεώς, ἡ","ship","All",-1],["ναύτης -ου, ὁ","sailor","All",-1],["ναύτικον, -ου, τό","fleet","All",-1],["ναυμαχέω","fight a sea-battle","All",-1],["νεανίας -ου, ὁ","young man","All",-1],["νεκρός -οῦ, ὁ","corpse","All",-1],["νέμω","distribute, manage","All",-1],["νέος -α -ον","new, fresh, young","All",-1],["νεωστί","recently, lately","All",-1],["νῆσος -ου, ἡ","island","All",-1],["νικάω","conquer","All",-1],["νίκη -ης, ἡ","victory","All",-1],["νομίζω","consider, think","All",-1],["νόμος -ου, ὁ","law","All",-1],["νόσος -ου, ἡ","illness, disease","All",-1],["νοσέω","be ill","All",-1],["νοῦς νοῦ, ὁ","mind","All",-1],["νοέω","have in mind, recognise","All",-1],["νύμφη -ης, ἡ","bride, maiden","All",-1],["νύξ νυκτός, ἡ","night","All",-1],["ξανθός -ή -όν","yellow, fair (of hair)","All",-1],["ξένος -ου, ὁ","stranger","All",-1],["ξίφος -ους, τό","sword","All",-1],["ξύλον -ου, τό","wood, timber","All",-1],["ὁδός -οῦ, ἡ","road","All",-1],["ὀδούς ὀδόντος, ὁ","tooth","All",-1],["ὀδύνη -ης, ἡ","pain","All",-1],["ὀδύρομαι","lament","All",-1],["οἶδα","know","All",-1],["οἰκέω","dwell, inhabit","All",-1],["οἶκος -ου, ὁ, οἰκία -ας, ἡ","house","All",-1],["οἰκεῖος -α -ον","belonging to home","All",-1],["οἰκέτης -ου, ὁ","servant","All",-1],["οἰκτείρω","pity","All",-1],["οἶκτος -ου, ὁ","pity","All",-1],["οἶμαι, οἴομαι","think","All",-1],["οἴμοι","alas","All",-1],["οἶνος -ου, ὁ","wine","All",-1],["οἷος τ’ εἰμί","am able","All",-1],["οἴχομαι","am gone","All",-1],["ὀκνέω","shrink from","All",-1],["ὄκνος -ου, ὁ","hesitation","All",-1],["ὄλβος -ου, ὁ","wealth, happiness","All",-1],["ὄλβιος -α -ον","happy","All",-1],["ὀλίγος -η -ον","small; (in pl.) few","All",-1],["ὀλιγωρέω","despise, disdain","All",-1],["ὄλλυμι","destroy","All",-1],["ὄλεθρος -ου, ὁ","destruction","All",-1],["ὅλος -η -ον","whole","All",-1],["ὀλοφύρομαι","lament","All",-1],["ὁμιλέω","associate with","All",-1],["ὁμιλία -ας, ἡ","intercourse, interaction","All",-1],["ὄμμα -ατος, τό","eye","All",-1],["ὄμνυμι","swear","All",-1],["ὅμοιος -α -ον","like","All",-1],["ὁμολογέω","agree","All",-1],["ὅμως","nevertheless","All",-1],["ὄναρ, τό (nom., acc. only), ὄνειρος -ου, ὁ","dream","All",-1],["ὄνειδος -ους, τό","reproach","All",-1],["ὀνειδίζω","revile (+ dat.)","All",-1],["ὄνομα -ατος, τό","name","All",-1],["ὀνομάζω","name","All",-1],["ὀξύς -εῖα, ύ","sharp","All",-1],["ὄπισθε","behind","All",-1],["ὅπλα, τά","weapons, arms","All",-1],["ὁπλίζω","arm","All",-1],["ὁπλίτης -ου, ὁ","heavily-armed soldier, hoplite","All",-1],["ὁράω","see","All",-1],["ὀργή -ῆς, ἡ","anger","All",-1],["ὀργίζομαι","be angry","All",-1],["ὀρθός -ή -όν","right, just","All",-1],["ὁρμάω","rush; mid. set out","All",-1],["ὄρνις -ιθος, ὁ","bird","All",-1],["ὄρος -ους, τό","mountain","All",-1],["ὅρος -ου, ὁ","boundary, marker","All",-1],["ὅσιος -α -ον","holy","All",-1],["ὀσμή -ῆς, ἡ","smell, scent","All",-1],["οὐδαμοῦ, μηδαμοῦ","nowhere","All",-1],["οὐδαμῶς, μηδαμῶς","in no way","All",-1],["οὐδέ, μηδέ","not even, nor","All",-1],["οὐδείς οὐδεμία οὐδέν, μηδείς κτλ.","no one","All",-1],["οὐδέποτε (οὔποτε), μηδέποτε (μήποτε)","never","All",-1],["οὐκέτι, μηκέτι","no longer","All",-1],["οὔπω, μήπω","not yet","All",-1],["οὐρανός -οῦ, ὁ","heaven","All",-1],["οὕτως","so, thus","All",-1],["ὀφείλω","owe","All",-1],["ὀφθαλμός -οῦ, ὁ","eye","All",-1],["ὄχλος -ου, ὁ","crowd","All",-1],["ὀψέ","late","All",-1],["ὄψις -εως, ἡ","sight","All",-1],["παῖς παιδός, ὁ/ἡ","child","All",-1],["παιδεύω","educate","All",-1],["πάλαι","formerly","All",-1],["παλαιός -ά -όν","old","All",-1],["πάλιν","back, again","All",-1],["πανταχοῦ","everywhere","All",-1],["πάνυ","altogether, very","All",-1],["παραινέω","advise","All",-1],["παρακελεύομαι","exhort, encourage (+ dat.)","All",-1],["παρασκευάζω","prepare","All",-1],["παρασκευή -ῆς, ἡ","preparation","All",-1],["παραυτίκα","immediately","All",-1],["πάρειμι","am present","All",-1],["πάρεστι","it is possible (+ dat.)","All",-1],["παρέχω","provide","All",-1],["παρθένος -ου, ἡ","maiden","All",-1],["παρίημι","let slip, let go","All",-1],["πάρος","formerly","All",-1],["πᾶς πᾶσα πᾶν","all","All",-1],["πάσχω","suffer","All",-1],["πάθος -ους, τό","suffering","All",-1],["πατήρ πατρός, ὁ","father","All",-1],["πατρῷος -α -ον","of a father","All",-1],["πατρίς -ίδος, ἡ","fatherland","All",-1],["παύω","stop","All",-1],["πεδίον -ου, τό","plain","All",-1],["πεζός -ή -όν","on foot; (w. art.) infantry","All",-1],["πείθω","persuade; mid. obey (+ dat.)","All",-1],["πειράομαι","try","All",-1],["πεῖρα -ας, ἡ","attempt","All",-1],["πέλαγος -ους, τό","sea","All",-1],["πέλας, πλησίον","near","All",-1],["πελταστής -οῦ, ὁ","targeteer, peltast","All",-1],["πέμπω","send","All",-1],["πένης -ητος","poor","All",-1],["πένθος -ους, τό","grief","All",-1],["πέπλος -ου, ὁ","robe","All",-1],["πεπρωμένος -η -ον","fated","All",-1],["περαίνω","accomplish","All",-1],["περιγίγνομαι","survive","All",-1],["πέτρα -ας, ἡ","rock","All",-1],["πηγή -ῆς, ἡ","spring, fount","All",-1],["πῆμα -ατος, τό","suffering","All",-1],["πημονή -ῆς, ἡ","suffering","All",-1],["πιέζω","oppress","All",-1],["πικρός -ά -όν","bitter","All",-1],["πίμπλημι","fill","All",-1],["πίνω","drink","All",-1],["πίπτω","fall","All",-1],["πιστεύω","believe, trust (+ dat.)","All",-1],["πιστός -ή -όν","faithful","All",-1],["πλείων -ον","more","All",-1],["πλεῖστος -η -ον","most","All",-1],["πλέω","sail","All",-1],["πλοῖον -ου, τό","ship","All",-1],["πλοῦς -οῦ, ὁ","voyage","All",-1],["πλῆθος -ους, τό","crowd","All",-1],["πλήρης -ες","full","All",-1],["πληρόω","fill","All",-1],["πλούσιος -α -ον","wealthy, rich","All",-1],["πλοῦτος -ου, ὁ","wealth","All",-1],["πνέω","breathe, blow","All",-1],["πνεῦμα -ατος, τό","breath, wind, spirit","All",-1],["πόθος -ου, ὁ","desire","All",-1],["ποθέω","desire","All",-1],["ποιέω","do","All",-1],["περὶ πολλοῦ ποιεῖσθαι","reckon at great value","All",-1],["ποιμήν -ένος, ὁ","shepherd","All",-1],["πολέμιοι, οἱ","enemy","All",-1],["πόλεμος -ου, ὁ","war","All",-1],["πολιορκέω","besiege","All",-1],["πόλις -εως, ἡ","city","All",-1],["πολίτης, -ου, ὁ","citizen","All",-1],["πολλάκις","often","All",-1],["πολύς πολλή πολύ","much","All",-1],["πονηρός -ά -όν","evil, baneful","All",-1],["πόνος -ου, ὁ","toil","All",-1],["πορεύομαι","march, journey","All",-1],["πορίζω","provide","All",-1],["πόρρω","far","All",-1],["πόσις, ὁ","husband","All",-1],["ποταμός -οῦ, ὁ","river","All",-1],["πότμος -ου, ὁ","fate","All",-1],["πούς ποδός, ὁ","foot","All",-1],["πράττω","do","All",-1],["πρᾶγμα -ατος, τό","thing, deed","All",-1],["πρέπει","it is fitting (+ dat.)","All",-1],["πρέσβυς -εως, ὁ","old man, ambassador","All",-1],["πρίν","before","All",-1],["πρόγονος -ου, ὁ","ancestor","All",-1],["προδίδωμι","betray","All",-1],["προθυμία -ας, ἡ","eagerness","All",-1],["πρόθυμος -ον","eager","All",-1],["προσβάλλω","attack (+ dat.)","All",-1],["προσβολή -ῆς, ἡ","attack","All",-1],["προσήκει","it is fitting (+ dat.)","All",-1],["πρόσθεν","before","All",-1],["πρότερον","formerly","All",-1],["πρόφασις -εως, ἡ","excuse","All",-1],["προχωρέω","advance","All",-1],["πρῷ (adv.)","early","All",-1],["πρῶτος -η -ον","first","All",-1],["πτερόν, -οῦ, τό","wing","All",-1],["πυκνός -ή -όν","frequent, thick","All",-1],["πύλη -ης, ἡ","gate","All",-1],["πυνθάνομαι","perceive, ascertain","All",-1],["πῦρ πυρός, τό","fire","All",-1],["πωλέω","sell","All",-1],["ῥᾴδιος -α -ον","easy","All",-1],["ῥᾴθυμος -ον","lazy","All",-1],["ῥέω","flow","All",-1],["ῥήγνυμι","break","All",-1],["ῥήτωρ -ορος, ὁ","orator","All",-1],["ῥίπτω","throw","All",-1],["ῥώμη -ης, ἡ","strength","All",-1],["σάλπιγξ -ιγγος, ἡ","trumpet","All",-1],["σαφής -ές","clear","All",-1],["σέβας, τό (nom., acc. only)","honour, respect","All",-1],["σέβομαι","worship, honour, venerate","All",-1],["σελήνη -ης, ἡ","moon","All",-1],["σεμνός -ή -όν","holy, sacred","All",-1],["σημεῖον -ου, τό","sign","All",-1],["σημαίνω","show","All",-1],["σθένος -ους, τό","strength","All",-1],["σθένω","be strong","All",-1],["σιγή -ῆς, ἡ","silence","All",-1],["σιγάομαι","be silent","All",-1],["σίδηρος -ου, ὁ","iron","All",-1],["σῖτος -ου, ὁ","corn, provisions","All",-1],["σιωπή -ῆς, ἡ","silence","All",-1],["σκεύη, τὰ","baggage","All",-1],["σκηνή -ῆς, ἡ","tent","All",-1],["σκληρός -ά -όν","harsh","All",-1],["σκοπέω","look at","All",-1],["σκότος -ου, ὁ","darkness","All",-1],["σοφός -ή -όν","wise","All",-1],["σοφία -ας, ἡ","wisdom","All",-1],["σπεύδω","hasten","All",-1],["σπουδή -ῆς, ἡ","eagerness, zeal","All",-1],["σπονδαί, αἱ","truce","All",-1],["σπένδω","make a libation; mid. make peace or a truce","All",-1],["στάσις -εως, ἡ","revolt","All",-1],["στέγος -ους, τό, στέγη -ης, ἡ","house","All",-1],["στείχω","go","All",-1],["στενάζω","mourn","All",-1],["στένω","mourn","All",-1],["στενός -ή -όν","narrow","All",-1],["στερίσκω","deprive of","All",-1],["στέρνον -ου, τό","breast","All",-1],["στέφανος -ου, ὁ","garland","All",-1],["στόλος -ου, ὁ","expedition","All",-1],["στέλλω","equip, dispatch","All",-1],["στόμα -ατος, τό","mouth","All",-1],["στρατός -οῦ, ὁ","army","All",-1],["στρατία -ας, ἡ","army","All",-1],["στράτευμα -ατος, τό","army","All",-1],["στρατηγός -οῦ, ὁ","general","All",-1],["στρατιώτης -οῦ, ὁ","soldier","All",-1],["στρατοπεδεύομαι","encamp","All",-1],["στρατόπεδον -ου, τό","camp","All",-1],["στρέφω","turn","All",-1],["στύγος -ους, τό","hatred","All",-1],["στυγέω","hate","All",-1],["συγγενής -ές","related, kindred","All",-1],["συγγιγνώσκω","pardon (+ dat.)","All",-1],["συγγνώμη -ης, ἡ","pardon","All",-1],["συγχωρέω","agree","All",-1],["συλλέγω","collect, gather","All",-1],["συμβαίνω","happen, agree","All",-1],["συμβουλεύω","counsel","All",-1],["σύμμαχος -ον","ally","All",-1],["συμφέρει","it is expedient (+ dat.)","All",-1],["σύμφορος -ον","expedient","All",-1],["συμφορά -ᾶς, ἡ","disaster, calamity; chance","All",-1],["συνεχῶς","continually","All",-1],["σφαγή -ῆς, ἡ","slaughter","All",-1],["σφάζω","kill","All",-1],["σφάλλω","overthrow, trip up, baffle","All",-1],["σφόδρα","exceedingly","All",-1],["σχεδόν","almost","All",-1],["σχῆμα -ατος, τό","form, shape, figure","All",-1],["σχολή -ῆς, ἡ","leisure","All",-1],["σῴζω","save","All",-1],["σωτηρία -ας, ἡ","safety, salvation","All",-1],["σῶμα -ατος, τό","body","All",-1],["σώφρων -ον","prudent","All",-1],["σωφροσύνη -ης, ἡ","prudence","All",-1],["τάλας τάλαινα τάλαν","wretched","All",-1],["ταπεινός -ή -όν","humble","All",-1],["ταράττω","confuse, confound, throw into disarray","All",-1],["ταραχή -ῆς, ἡ","confusion, disarray","All",-1],["τάττω","arrange, order","All",-1],["τάξις -εως, ἡ","array, rank","All",-1],["ταῦρος -ου, ὁ","bull","All",-1],["τάφος -ου, ὁ","tomb","All",-1],["τάφρος -ου, ἡ","ditch","All",-1],["ταχῦς -εῖα -ύ","swift, quick","All",-1],["τεῖχος -ους, τό","wall","All",-1],["τειχίζω","fortify","All",-1],["τεκμήριον -ου, τό","proof","All",-1],["τέκνον -ου, τό","child","All",-1],["τελευτάω","accomplish, end, die","All",-1],["τέλος -ους, τό","end","All",-1],["τέμνω","cut","All",-1],["τερπνός -ή -όν","pleasant, enjoyable","All",-1],["τέχνη -ης, ἡ","skill, art","All",-1],["τηρέω","watch (for)","All",-1],["τίθημι","place, put","All",-1],["τίκτω","beget","All",-1],["τιμάω","honour","All",-1],["τιμή -ῆς, ἡ","honour","All",-1],["τιμωρέω","avenge, punish","All",-1],["τιμωρία -ας, ἡ","revenge, punishment","All",-1],["τιτρώσκω","wound","All",-1],["τραῦμα -ατος, τό","wound","All",-1],["τλήμων -ον","wretched","All",-1],["τοιοῦτος τοιαύτη τοιοῦτο","such, of such a kind","All",-1],["τοῖος τοία τοῖον","such, of such a kind","All",-1],["τολμάω","dare","All",-1],["τόλμα -ης, ἡ","dare","All",-1],["τόξον -ου, τό","bow","All",-1],["τοξότης -ου, ὁ","bowman, archer","All",-1],["τόπος -ου, ὁ","place","All",-1],["τοσοῦτος τοσαύτη τοσοῦτο","so great, so big","All",-1],["τόσος -η -ον","so great, so big","All",-1],["τραχύς -εῖα -ύ","rough, harsh","All",-1],["τρέπω","turn","All",-1],["τρέφω","nourish","All",-1],["τρέχω","run","All",-1],["τριήρης -ους, ἡ","trireme","All",-1],["τρόπαιον -ου, τό","trophy","All",-1],["τρόπος -ου, ὁ","manner, way","All",-1],["τυγχάνω","happen, meet with (+ gen.)","All",-1],["τύχη -ης, ἡ","chance","All",-1],["τύπτω","strike","All",-1],["τύραννος -ου, ὁ","king","All",-1],["ὕβρις -εως, ἡ","insolence","All",-1],["ὑβρίζω","insult","All",-1],["ὑγιής -ές","healthy","All",-1],["ὕδωρ -ατος, τό","water","All",-1],["υἱός -οῦ, ὁ","son","All",-1],["ὕλη -ης, ἡ","wood","All",-1],["ὑπάρχω","be at hand, suffice","All",-1],["ὑπερβάλλω","excel","All",-1],["ὑπήκοος -ον","subject to, obeying (+ gen.)","All",-1],["ὑπηρετέω","serve","All",-1],["ὑπηρέτης -ου, ὁ","servant","All",-1],["ὑπισχνέομαι","promise","All",-1],["ὕπνος -ου, ὁ","sleep","All",-1],["ὑποψία -ας, ἡ","suspicion","All",-1],["ὑποπτεύω","suspect","All",-1],["ὕστερος -α -ον (= ὑστεραῖος -α -ον)","following, later","All",-1],["ὑψηλός -ή -όν","high","All",-1],["ὕψος -ους, τό","height","All",-1],["φαίνω","show; pass. appear","All",-1],["φανερός -ά -όν","clear","All",-1],["φάρμακον -ου, τό","drug, poison","All",-1],["φαῦλος -η -ον","mean, worthless","All",-1],["φέγγος -ους, τό","the light","All",-1],["φείδομαι","spare (+ gen.)","All",-1],["φέρω","bear, carry","All",-1],["φεῦ","alas","All",-1],["φεύγω","flee","All",-1],["φυγή -ῆς, ἡ","flight","All",-1],["φυγάς -άδος, ὁ","(one in) exile","All",-1],["φημί","say","All",-1],["φήμη -ης, ἡ","utterance, saying, report","All",-1],["φθάνω","anticipate","All",-1],["φθέγγομαι","utter","All",-1],["φθίνω","waste, destroy","All",-1],["φθόνος -ου, ὁ","envy, jealousy","All",-1],["φθονέω","envy, grudge","All",-1],["φιλέω","love","All",-1],["φίλιος -α -ον","friendly","All",-1],["φίλος -η -ον","dear; (with art.) friend","All",-1],["φλόξ φλόγος, ἡ","flame","All",-1],["φόβος -ου, ὁ","fear","All",-1],["φοβέομαι","be afraid","All",-1],["φονεύω","slaughter","All",-1],["φόνος -ου, ὁ","slaughter","All",-1],["φράζω","tell","All",-1],["φρήν φρενός, ἡ","mind","All",-1],["φρονέω","think, intend","All",-1],["φροντίς -ίδος, ἡ","thought, attention","All",-1],["φρόνιμος -ον","prudent","All",-1],["φρουρέω","guard","All",-1],["φυλάττω","guard","All",-1],["φύλαξ -ακος, ὁ","guard","All",-1],["φύσις -εως, ἡ","nature","All",-1],["φύω","beget","All",-1],["φωνή -ῆς, ἡ","voice","All",-1],["φῶς φάους, τό","the light","All",-1],["χαίρω","rejoice","All",-1],["χαλεπός -ή -όν","difficult","All",-1],["χαλκός -οῦ, ὁ","bronze","All",-1],["χάρις -ιτος, ἡ","favour, thanks","All",-1],["χειμών -ῶνος, ὁ","winter, storm","All",-1],["χείρ χειρός, ἡ","hand","All",-1],["χθών χθονός, ἡ","land","All",-1],["χράομαι","use (+ dat.)","All",-1],["χρήσιμος -η -ον","useful","All",-1],["χρή","it is necessary","All",-1],["χρεία -ας, ἡ","use, need","All",-1],["χρῄζω","long for","All",-1],["χρῆμα -ατος, τό","thing; (pl.) money","All",-1],["χρηστός -ή -όν","useful, good","All",-1],["χρόνος -ου, ὁ","time","All",-1],["χρυσός -οῦ, ὁ","gold","All",-1],["χρώς χρωτός, ὁ","flesh","All",-1],["χώρα -ας, ἡ","place, land","All",-1],["χῶρος -ου, ὁ","place, land","All",-1],["χωρίον -ου, τό","place, land","All",-1],["χωρέω","go","All",-1],["χωρίς","apart","All",-1],["ψευδής -ές","lying, false","All",-1],["ψεύδω","deceive; pass. lie","All",-1],["ψῆφος -ου, ἡ","vote","All",-1],["ψηφίζω","vote","All",-1],["ψιλός -ή -όν","bare, lightly armed","All",-1],["ψυχή -ῆς, ἡ","soul","All",-1],["ὧδε","thus, in this way","All",-1],["ὠθέω","push","All",-1],["ὠκεανός -οῦ, ὁ","ocean","All",-1],["ὠμός -ή -όν","savage","All",-1],["ὠνέομαι","buy","All",-1],["ὥρα -ας, ἡ","season","All",-1],["ὥσπερ","just as, as if","All",-1],["ὠφελέω","benefit, help","All",-1],["ὠφελία -ας, ἡ","help","All",-1],["ὠφέλιμος -ον","helping","All",-1]];
+const DECK={"name": "Λέξεις", "fwd": "Greek → English", "rev": "English → Greek", "mottos": [["μελέτη τὸ πᾶν.", "Practice is everything. — Periander"], ["χαλεπὰ τὰ καλά.", "What is fine is hard. — Plato"], ["ἀρχὴ ἥμισυ παντός.", "The beginning is half of the whole."], ["μηδὲν ἄγαν.", "Nothing in excess. — the Delphic maxim"], ["πάθει μάθος.", "Learning comes through suffering. — Aeschylus"], ["ὁ βίος βραχύς, ἡ δὲ τέχνη μακρή.", "Life is short, the craft long. — Hippocrates"], ["σπεῦδε βραδέως.", "Hasten slowly."], ["δὶς καὶ τρὶς τὸ καλόν.", "The good thing twice and three times over."], ["γνῶθι σεαυτόν.", "Know thyself. — the Delphic maxim"], ["ἓν οἶδα ὅτι οὐδὲν οἶδα.", "I know one thing: that I know nothing. — after Socrates"]]};
+
+
+/* ======================= FSRS ======================= */
+const P=[0.212,1.2931,2.3065,8.2956,6.4133,0.8334,3.0194,0.001,1.8722,0.1666,0.796,
+         1.4835,0.0614,0.2629,1.6483,0.6014,1.8729,0.5425,0.0912,0.0658,0.1542];
+const DECAY=-P[20], FACTOR=Math.pow(0.9,1/DECAY)-1;
+const MIN=60000, HOUR=3600000, DAY=86400000;
+const ROLLOVER=4*HOUR;
+const dayKey=ts=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-ROLLOVER)/DAY);
+const LEARN_STEPS=[1*MIN,10*MIN], RELEARN_STEPS=[10*MIN];
+const S_MIN=0.001;
+const AGAIN=1, HARD=2, GOOD=3, EASY=4;
+
+const clampD=d=>Math.min(Math.max(d,1),10);
+const clampS=s=>Math.max(s,S_MIN);
+const initS=r=>clampS(P[r-1]);
+const initD=(r,clamp)=>{const d=P[4]-Math.exp(P[5]*(r-1))+1; return clamp?clampD(d):d;};
+
+function retrievability(c,now){
+  if(c.s==null||c.last==null) return 0;
+  const el=Math.max((now-c.last)/DAY,0);
+  return Math.pow(1+FACTOR*el/c.s, DECAY);
+}
+function nextInterval(s,st){
+  let d=(s/FACTOR)*(Math.pow(st.retention,1/DECAY)-1);
+  d=Math.round(d);
+  return Math.min(Math.max(d,1),st.maxIvl);
+}
+function shortTermS(s,r){
+  let inc=Math.exp(P[17]*(r-3+P[18]))*Math.pow(s,-P[19]);
+  if(r===GOOD||r===EASY) inc=Math.max(inc,1);
+  return clampS(s*inc);
+}
+function nextD(d,r){
+  const a1=initD(EASY,false);
+  const delta=-(P[6]*(r-3));
+  const a2=d+(10-d)*delta/9;
+  return clampD(P[7]*a1+(1-P[7])*a2);
+}
+function forgetS(d,s,R){
+  const long=P[11]*Math.pow(d,-P[12])*(Math.pow(s+1,P[13])-1)*Math.exp((1-R)*P[14]);
+  const short=s/Math.exp(P[17]*P[18]);
+  return Math.min(long,short);
+}
+function recallS(d,s,R,r){
+  const hard=(r===HARD)?P[15]:1, easy=(r===EASY)?P[16]:1;
+  return s*(1+Math.exp(P[8])*(11-d)*Math.pow(s,-P[9])*(Math.exp((1-R)*P[10])-1)*hard*easy);
+}
+function nextS(d,s,R,r){
+  return clampS(r===AGAIN?forgetS(d,s,R):recallS(d,s,R,r));
+}
+
+// c.st: 'L' learning, 'R' review, 'X' relearning
+function schedule(card,rating,now,st){
+  const c=Object.assign({},card);
+  const daysSince=(c.last!=null)?Math.floor((now-c.last)/DAY):null;
+  let ivl=0;
+  const toReview=()=>{c.st='R';c.step=null;ivl=nextInterval(c.s,st)*DAY;};
+  const steps=(c.st==='L')?LEARN_STEPS:RELEARN_STEPS;
+
+  if(c.st==='L'||c.st==='X'){
+    if(c.s==null||c.d==null){ c.s=initS(rating); c.d=initD(rating,true); }
+    else if(daysSince!=null&&daysSince<1){ c.s=shortTermS(c.s,rating); c.d=nextD(c.d,rating); }
+    else { c.s=nextS(c.d,c.s,retrievability(c,now),rating); c.d=nextD(c.d,rating); }
+    if(steps.length===0||(c.step>=steps.length&&rating!==AGAIN)) toReview();
+    else if(rating===AGAIN){ c.step=0; ivl=steps[0]; }
+    else if(rating===GOOD){
+      if(c.step+1===steps.length) toReview();
+      else { c.step+=1; ivl=steps[c.step]; }
+    } else toReview();                                  // Easy
+  } else {                                              // Review
+    if(daysSince!=null&&daysSince<1) c.s=shortTermS(c.s,rating);
+    else c.s=nextS(c.d,c.s,retrievability(c,now),rating);
+    c.d=nextD(c.d,rating);
+    if(rating===AGAIN){
+      c.lapses=(c.lapses||0)+1;
+      if(RELEARN_STEPS.length===0) ivl=nextInterval(c.s,st)*DAY;
+      else { c.st='X'; c.step=0; ivl=RELEARN_STEPS[0]; }
+    } else ivl=nextInterval(c.s,st)*DAY;
+  }
+  // ---- drill layer: same-day repetition and consecutive-day requirement ----
+  const dk=dayKey(now);
+  const drillN=st.drillDays|0;
+  const inDrill=(drillN>0 && (c.streak|0)<drillN) || card.st==='L' || card.st==='X';
+  if(rating===AGAIN){ c.streak=0; }
+  else if(c.lastDay!==dk){ c.streak=(c.streak|0)+1; }
+  c.lastDay=dk;
+  if(st.requireEasy && inDrill && rating===GOOD){
+    ivl=10*MIN;                                   // Good is not enough to clear the day
+    c.st=card.st; c.step=card.step; c.streak=card.streak|0; c.lastDay=card.lastDay;
+  } else if(drillN>0 && (c.streak|0)<drillN && rating!==AGAIN && ivl>DAY){
+    ivl=DAY;                                      // hold at one day until the run is complete
+  }
+  c.last=now; c.due=now+ivl; c.reps=(c.reps||0)+1;
+  // ---- weekly review day: nudge mid-range intervals onto the chosen weekday ----
+  if(st.reviewDay>=0 && ivl>=3*DAY && ivl<=21*DAY){
+    const d0=new Date(c.due); let delta=(st.reviewDay-d0.getDay());
+    if(delta>3) delta-=7; if(delta<-3) delta+=7;
+    if(c.due+delta*DAY>now+2*DAY) c.due+=delta*DAY;
+  }
+  return {card:c, ivl:c.due-now};
+}
+
+/* ======================= data model ======================= */
+const KEY='vocabula.greek.v1';                     // a study day starts at 04:00 local
+const today=()=>dayKey(Date.now());
+
+const norm=s=>s.trim().toLowerCase().replace(/\s+/g,' ');
+
+// build the two card sets from DATA: rows are [term, gloss, section, seed]
+const CARDS=[];               // {id, dir, idx:[entry indices], q, a, sec}
+(function build(){
+  DATA.forEach((row,i)=>{
+    CARDS.push({id:'L'+i, dir:'L', idx:[i], q:row[0], a:row[1], sec:row[2], seed:row[3]});
+  });
+  const groups={};
+  DATA.forEach((row,i)=>{ (groups[norm(row[1])] ||= []).push(i); });
+  Object.keys(groups).forEach(k=>{
+    const g=groups[k];
+    CARDS.push({id:'E'+g[0], dir:'E', idx:g, q:DATA[g[0]][1],
+                a:g.map(i=>DATA[i][0]), sec:DATA[g[0]][2], seed:-1});
+  });
+})();
+const SECTIONS=[...new Set(DATA.map(r=>r[2]))];
+// audit bucket per card; a merged reverse card takes its weakest member
+const BUCKET_NAME={2:'known',1:'shaky',0:'unseen'};
+CARDS.forEach(c=>{
+  const seeds=c.idx.map(i=>{const v=DATA[i][3]; return (v===2||v===1)?v:0;});
+  c.bucket=BUCKET_NAME[Math.min.apply(null,seeds)];
+});
+const HAS_BUCKETS=CARDS.some(c=>c.bucket!=='unseen');
+const BY_ID={}; CARDS.forEach(c=>BY_ID[c.id]=c);
+const SIBLINGS={};            // entry index -> [card ids]
+CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
+
+const defaults={
+  version:2, created:Date.now(),
+  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, autoEvery:100, gistId:'', gistTok:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14},
+  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', cards:{}, log:[], days:{}, sinceExport:0, lastExport:null
+};
+let S=null;
+
+function freshCard(c){
+  const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
+            reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null};
+  if(c.dir==='L'&&(c.seed===1||c.seed===2)){
+    st.st='R'; st.step=null;
+    st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
+    st.d = initD(c.seed===1?AGAIN:GOOD,true);
+    // give the seed a review date so retrievability is sane on first sight:
+    // without a last_review the model reads it as fully forgotten and over-rewards the first pass
+    st.last = Date.now();
+    st.due  = st.last + st.s*DAY;
+  }
+  return st;
+}
+function cardState(id){                       // materialise: use when writing
+  return S.cards[id] || (S.cards[id]=freshCard(BY_ID[id]));
+}
+function peek(id){                            // read-only: does not write to the store
+  return S.cards[id] || freshCard(BY_ID[id]);
+}
+
+/* ======================= storage ======================= */
+let idb=null;
+function openIDB(){
+  return new Promise(res=>{
+    try{
+      const r=indexedDB.open('vocabula',1);
+      r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+      r.onsuccess=()=>{idb=r.result;res(idb);};
+      r.onerror=()=>res(null);
+    }catch(e){res(null);}
+  });
+}
+function idbPut(v){
+  if(!idb) return;
+  try{ idb.transaction('kv','readwrite').objectStore('kv').put(v,'main'); }catch(e){}
+}
+function idbGet(){
+  return new Promise(res=>{
+    if(!idb) return res(null);
+    try{
+      const r=idb.transaction('kv','readonly').objectStore('kv').get('main');
+      r.onsuccess=()=>res(r.result||null); r.onerror=()=>res(null);
+    }catch(e){res(null);}
+  });
+}
+let storageOK=true, saveTimer=null;
+function save(){
+  const json=JSON.stringify(S);
+  try{
+    localStorage.setItem(KEY,json);
+    storageOK = localStorage.getItem(KEY)===json;   // read-back check
+  }catch(e){ storageOK=false; }
+  idbPut(S);
+  if(S.settings.gistId&&S.settings.gistTok){
+    clearTimeout(saveTimer); saveTimer=setTimeout(()=>pushGist(true),6000);
+  }
+  renderWarn();
+}
+function normalise(o){
+  if(!o||typeof o!=='object') return null;
+  const s=Object.assign({},defaults,o);
+  s.settings=Object.assign({},defaults.settings,o.settings||{});
+  s.cards=o.cards&&typeof o.cards==='object'?o.cards:{};
+  s.log=Array.isArray(o.log)?o.log:[];
+  s.days=o.days&&typeof o.days==='object'?o.days:{};
+  for(const k in s.cards){
+    const c=s.cards[k];
+    if(!c||!BY_ID[k]){ delete s.cards[k]; continue; }
+    c.reps|=0; c.lapses|=0; c.buried|=0;
+    if(typeof c.due!=='number') c.due=0;
+    if(c.st!=='L'&&c.st!=='R'&&c.st!=='X') c.st='L';
+  }
+  return s;
+}
+async function load(){
+  await openIDB();
+  let a=null,b=null;
+  try{ a=normalise(JSON.parse(localStorage.getItem(KEY))); }catch(e){}
+  b=normalise(await idbGet());
+  if(a&&b) S=(b.log.length>a.log.length)?b:a;
+  else S=a||b||JSON.parse(JSON.stringify(defaults));
+  if(!a&&!b) save();
+}
+
+/* ======================= queue ======================= */
+function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
+// a reverse card unlocks only once every forward sibling is holding
+function gateOpen(c){
+  const g=S.settings.gateDays|0;
+  if(c.dir!=='E'||g<=0) return true;
+  return c.idx.every(i=>{
+    const fs=S.cards['L'+i];
+    return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
+  });
+}
+const BUCKETS=['known','shaky','unseen'];
+function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
+function available(cs,c,now,d){
+  if(cs.susp) return false;
+  if(cs.buried>d) return false;
+  if(!activeParts().includes(c.sec)) return false;
+  if(cs.reps===0&&!activeBuckets().includes(c.bucket)) return false;   // filter applies to new words only
+  if(cs.reps===0&&!gateOpen(c)) return false;
+  return true;
+}
+function buildQueue(dir){
+  const now=Date.now(), d=today();
+  const learn=[], due=[], fresh=[], seeded=[];
+  const introducedToday=(S.days[d]&&S.days[d].intro)||0;
+  const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
+  for(const c of CARDS){
+    if(c.dir!==dir) continue;
+    const cs=peek(c.id);
+    if(!available(cs,c,now,d)) continue;
+    if(cs.reps===0){ (cs.s!=null?seeded:fresh).push(c.id); continue; }
+    if(cs.st==='L'||cs.st==='X'){ if(cs.due<=now+20000) learn.push(c.id); }
+    else if(cs.due<=now) due.push(c.id);
+  }
+  due.sort((a,b)=>peek(a).due-peek(b).due);
+  learn.sort((a,b)=>peek(a).due-peek(b).due);
+  const room=Math.max(capToday-introducedToday,0);
+  const order=S.settings.weakFirst ? fresh.concat(seeded) : seeded.concat(fresh);
+  const intro=order.slice(0,room);
+  return {learn,due,intro,seededTotal:seeded.length,freshTotal:fresh.length};
+}
+let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], donePoll=null, cardDirty=false;
+
+function refresh(){ Q=buildQueue(S.dir); }
+
+function pick(){
+  refresh();
+  const now=Date.now();
+  const ready=Q.learn.filter(id=>peek(id).due<=now);
+  if(ready.length) return ready[0];
+  if(Q.due.length) return Q.due[0];
+  if(Q.intro.length) return Q.intro[0];
+  return null;                               // a learning step may still be pending
+}
+
+/* ======================= UI ======================= */
+const $=id=>document.getElementById(id);
+function applyTheme(){
+  let t=S.theme||'light';
+  if(t==='auto') t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+  document.documentElement.dataset.theme=t;
+  const m=document.querySelector('meta[name=theme-color]');
+  if(m) m.setAttribute('content', t==='dark'?'#0e1230':'#ffffff');
+  document.documentElement.style.background = t==='dark'?'#0e1230':'#ffffff';
+}
+const show=name=>{
+  ['scHome','scStudy','scDone','scSet'].forEach(s=>$(s).classList.toggle('on',s===name));
+};
+function toast(msg,ms){
+  const t=$('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),ms||2200);
+}
+function fmtIvl(ms){
+  if(ms<HOUR) return Math.max(1,Math.round(ms/MIN))+'m';
+  if(ms<DAY)  return Math.round(ms/HOUR)+'h';
+  const d=Math.round(ms/DAY);
+  if(d<31) return d+'d';
+  if(d<365) return Math.round(d/30.4)+'mo';
+  const y=d/365; return (y<10?y.toFixed(1):Math.round(y))+'y';
+}
+function renderCounts(){
+  const n=Q.intro.length, l=Q.learn.length, r=Q.due.length;
+  $('counts').innerHTML='<span class="c-new"><b>'+n+'</b> new</span>'+
+                        '<span class="c-lrn"><b>'+l+'</b> learning</span>'+
+                        '<span class="c-due"><b>'+r+'</b> due</span>';
+}
+function renderCard(){
+  const c=BY_ID[current], cs=peek(current);
+  $('prompt').className='prompt'+(c.dir==='E'?' eng':'');
+  $('prompt').style.fontFamily=(c.dir==='E')?'':'var(--serif)';
+  $('prompt').textContent=c.q;
+  const m=$('multi');
+  if(c.dir==='E'&&c.idx.length>1){ m.textContent=c.idx.length; m.classList.add('on'); }
+  else m.classList.remove('on');
+  const ans=$('answer');
+  ans.className='answer'+(c.dir==='E'?' lat':'');
+  ans.innerHTML='';
+  if(c.dir==='E') c.a.forEach((x,i)=>{
+    const el=document.createElement('span'); el.className=i?'alt':''; el.textContent=x; ans.appendChild(el);
+  });
+  else ans.textContent=c.a;
+  $('leechTag').classList.toggle('hidden',(cs.lapses||0)<8);
+  $('hintline').textContent = cs.reps===0 ? (cs.s!=null?'carried over from the audit':'first time') : '';
+  $('revealRow').classList.remove('hidden');
+  $('rateRow').classList.add('hidden');
+  ans.classList.remove('on');
+  shownAt=Date.now(); thinkMs=null; cardDirty=false;
+  renderCounts();
+}
+function reveal(){
+  if(!$('rateRow').classList.contains('hidden')) return;
+  $('answer').classList.add('on');
+  $('revealRow').classList.add('hidden');
+  $('rateRow').classList.remove('hidden');
+  revealAt=Date.now();
+  const t=revealAt-shownAt;
+  thinkMs=(cardDirty||t<120||t>300000)?null:t;    // discard if you looked away
+  const cs=peek(current), now=Date.now(), st=S.settings;
+  [[AGAIN,'iAgain'],[GOOD,'iGood'],[EASY,'iEasy']].forEach(([r,el])=>{
+    $(el).textContent=fmtIvl(schedule(cs,adjustGrade(r,thinkMs),now,st).ivl);
+  });
+}
+const BRACKETS=[['instant',0,2000],['under 10s',2000,10000],['10 to 30s',10000,30000],['over 30s',30000,Infinity]];
+function bracketOf(ms){ return ms==null?-1:BRACKETS.findIndex(b=>ms>=b[1]&&ms<b[2]); }
+// hesitation maps onto the grade, never straight onto the interval:
+// the scheduler is fitted to grades, so this keeps the adjustment on-model
+function adjustGrade(r,ms){
+  if(!S.settings.useTiming||ms==null||r===AGAIN) return r;
+  const b=bracketOf(ms);
+  if(b===3) return r===EASY?GOOD:(r===GOOD?HARD:r);
+  if(b===2) return r===EASY?GOOD:r;
+  return r;
+}
+function rate(pressed){
+  if(Date.now()-revealAt<260) return;              // guard: the reveal tap must not grade
+  const r=adjustGrade(pressed,thinkMs);
+  const now=Date.now(), c=BY_ID[current], cs=cardState(current);
+  undoStack.push({id:current, before:JSON.parse(JSON.stringify(cs)),
+                  day:JSON.parse(JSON.stringify(S.days[today()]||{})), logLen:S.log.length});
+  if(undoStack.length>40) undoStack.shift();
+  const first=cs.reps===0;
+  const res=schedule(cs,r,now,st_());
+  S.cards[current]=res.card;
+  S.log.push([current,r,now,Math.round(res.ivl/1000),thinkMs]);
+  if(r!==pressed) toast(pressed===EASY?'Recorded as Good — that one took a while':'Recorded as Hard — that one took a while',1600);
+  const d=today();
+  const rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
+  rec.n++; if(first) rec.intro++;
+  if(cs.st==='R'){ rec.tot++; if(r!==AGAIN) rec.ok++; }
+  // bury the same word in the other direction until tomorrow
+  c.idx.forEach(i=>(SIBLINGS[i]||[]).forEach(sid=>{
+    if(sid!==current&&BY_ID[sid].dir!==c.dir){ const s2=cardState(sid); if(s2.buried<d+1) s2.buried=d+1; }
+  }));
+  S.sinceExport=(S.sinceExport||0)+1;
+  save();
+  if(S.settings.autoEvery>0&&S.sinceExport>=S.settings.autoEvery) doExport(true);
+  next();
+}
+const st_=()=>S.settings;
+function next(){
+  current=pick();
+  if(!current){ renderDone(); return; }
+  renderCard();
+}
+function undo(){
+  const u=undoStack.pop();
+  if(!u){ toast('Nothing to undo'); return; }
+  S.cards[u.id]=u.before;
+  S.days[today()]=u.day;
+  S.log.length=u.logLen;
+  S.sinceExport=Math.max((S.sinceExport||1)-1,0);
+  save();
+  current=u.id;
+  show('scStudy'); renderCard();
+}
+function renderDone(){
+  refresh();
+  const d=today(), rec=S.days[d]||{n:0};
+  const soon=Q.learn.length;
+  const ap0=activeParts();
+  const tomorrow=CARDS.filter(c=>c.dir===S.dir&&ap0.includes(c.sec)).reduce((n,c)=>{
+    const cs=S.cards[c.id]; if(!cs||cs.susp||cs.reps===0) return n;
+    return n+((cs.due>Date.now()&&dayKey(cs.due)<=d+1)?1:0);
+  },0);
+  $('doneBig').textContent = soon? 'Almost there' : 'Nothing due';
+  $('doneSmall').innerHTML = soon
+    ? (soon+' word'+(soon===1?' is':'s are')+' still in short-term steps — they come back in a minute or two.')
+    : (rec.n||0)+' ratings today.<br>'+tomorrow+' due tomorrow in this direction.';
+  const ap=activeParts(); const anyNew=CARDS.some(c=>c.dir===S.dir&&ap.includes(c.sec)&&(!S.cards[c.id]||S.cards[c.id].reps===0));
+  $('doneMore').classList.toggle('hidden',!anyNew);
+  show('scDone');
+  clearInterval(donePoll);
+  if(soon) donePoll=setInterval(()=>{
+    if(!$('scDone').classList.contains('on')){clearInterval(donePoll);return;}
+    const id=pick();
+    if(id){ clearInterval(donePoll); current=id; renderCard(); show('scStudy'); }
+  },5000);
+}
+
+/* ======================= home ======================= */
+function dirStats(dir){
+  const ap=activeParts(); const all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
+  let unseen=0,learning=0,young=0,mature=0,susp=0;
+  all.forEach(c=>{
+    const cs=S.cards[c.id];
+    if(!cs||cs.reps===0){unseen++;return;}
+    if(cs.susp){susp++;return;}
+    if(cs.st!=='R') learning++;
+    else if(cs.s<21) young++;
+    else mature++;
+  });
+  return {total:all.length,unseen,learning,young,mature,susp};
+}
+function renderChips(){
+  const box=$('chips');
+  if(SECTIONS.length<2){ box.classList.add('hide'); return; }
+  box.classList.remove('hide'); box.innerHTML='';
+  const ap=activeParts();
+  SECTIONS.forEach(sec=>{
+    const b=document.createElement('button');
+    b.className='chip'+(ap.includes(sec)?' on':''); b.textContent=sec;
+    b.addEventListener('click',e=>{
+      e.preventDefault();
+      let cur=activeParts().slice();
+      cur = cur.includes(sec) ? cur.filter(x=>x!==sec) : cur.concat([sec]);
+      if(!cur.length) cur=[sec];
+      S.parts=SECTIONS.filter(x=>cur.includes(x));
+      save(); renderHome();
+    });
+    box.appendChild(b);
+  });
+}
+function renderBucketChips(){
+  const box=$('bchips');
+  if(!HAS_BUCKETS){ box.classList.add('hide'); return; }
+  box.classList.remove('hide'); box.innerHTML='';
+  const ap=activeParts(), ab=activeBuckets(), dir=S.dir;
+  const label={known:'Known',shaky:'Shaky',unseen:'Unseen'};
+  BUCKETS.forEach(bk=>{
+    const n=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec)&&c.bucket===bk
+                            &&(!S.cards[c.id]||S.cards[c.id].reps===0)).length;
+    const b=document.createElement('button');
+    b.className='chip'+(ab.includes(bk)?' on':'');
+    b.innerHTML=label[bk]+' <span style="opacity:.65">'+n+'</span>';
+    b.addEventListener('click',e=>{
+      e.preventDefault();
+      let cur=activeBuckets().slice();
+      cur = cur.includes(bk) ? cur.filter(x=>x!==bk) : cur.concat([bk]);
+      if(!cur.length) cur=[bk];
+      S.buckets=BUCKETS.filter(x=>cur.includes(x));
+      save(); renderHome();
+    });
+    box.appendChild(b);
+  });
+}
+function renderHome(){
+  refresh();
+  $('wordmark').textContent=DECK.name;
+  $('dtL').textContent=DECK.fwd; $('dtE').textContent=DECK.rev;
+  renderChips(); renderBucketChips();
+  const qL=buildQueue('L'), qE=buildQueue('E');
+  $('ddL').textContent=qL.due.length+qL.learn.length+qL.intro.length+' ready';
+  $('ddE').textContent=qE.due.length+qE.learn.length+qE.intro.length+' ready';
+  $('dirLtoE').classList.toggle('sel',S.dir==='L');
+  $('dirEtoL').classList.toggle('sel',S.dir==='E');
+  const q=S.dir==='L'?qL:qE;
+  const n=q.due.length+q.learn.length+q.intro.length;
+  $('startBtn').textContent=n?('Study '+n+' word'+(n===1?'':'s')):'Nothing due';
+  $('startBtn').disabled=!n;
+  const d=today(), rec=S.days[d]||{n:0};
+  $('homeSub').textContent=rec.n?(rec.n+' rated today'):'Nothing rated today yet';
+
+  // study-day strip, last 35 days
+  const strip=$('strip'); strip.innerHTML='';
+  for(let i=34;i>=0;i--){
+    const k=d-i, el=document.createElement('div');
+    el.className='dot'+((S.days[k]&&S.days[k].n)?' did':'')+(i===0?' today':'');
+    strip.appendChild(el);
+  }
+  let streak=0; for(let k=d;;k--){ if(S.days[k]&&S.days[k].n) streak++; else { if(k!==d) break; } if(d-k>3650) break; }
+  const s2=dirStats(S.dir);
+  $('capVal').textContent=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
+  renderPace();
+  renderWarn();
+  $('streakNote').textContent = streak? (streak+' day'+(streak===1?'':'s')+' running') : 'No streak yet — the first day starts it.';
+
+  const seen=s2.total-s2.unseen;
+  const lat=latencyStats();
+  const ret=(()=>{ let ok=0,tot=0; for(const k in S.days){ if(d-k<=30){ ok+=S.days[k].ok||0; tot+=S.days[k].tot||0; } }
+                   return tot?Math.round(100*ok/tot)+'%':'—'; })();
+  $('statList').innerHTML=
+    row('In rotation',seen+' of '+s2.total)+
+    row('Still to meet',s2.unseen)+
+    row('In short-term steps',s2.learning)+
+    row('Settling (under 3 weeks)',s2.young)+
+    row('Holding (3 weeks or more)',s2.mature)+
+    row('Recall rate, last 30 days',ret)+
+
+    (s2.susp?row('Set aside',s2.susp):'');
+  $('timingBody').innerHTML = lat.n<15
+    ? '<div class="note">Not enough answers yet — this fills in after about fifteen.</div>'
+    : row('Typical time to recall',(lat.med/1000).toFixed(1)+'s')+
+      BRACKETS.map((b,i)=>row(b[0][0].toUpperCase()+b[0].slice(1),
+        lat.counts[i]+' ('+Math.round(100*lat.counts[i]/lat.n)+'%)')).join('')+
+      '<div class="note">Time from seeing the word to revealing the answer, across your last '+lat.n+
+      ' successful answers in this direction. Failures are excluded.</div>';
+}
+const MOTTOS=DECK.mottos; function renderPace(){
+  const ap=activeParts(); const dir=S.dir, all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
+  const met=all.filter(c=>S.cards[c.id]&&S.cards[c.id].reps>0).length;
+  const left=all.length-met, d=today();
+  // observed pace: mean introductions across the last 14 days that had any study
+  let sum=0,n=0;
+  for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=(r.intro||0); n++; } }
+  const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
+  const rate=n?Math.max(sum/n,1):capToday;
+  const daysNeeded=left?Math.ceil(left/rate):0;
+  const finish=new Date(Date.now()+daysNeeded*DAY);
+  const term=new Date(S.settings.term+'T00:00:00');
+  const toTerm=Math.ceil((term-Date.now())/DAY);
+  const fmt=dt=>dt.toLocaleDateString(undefined,{day:'numeric',month:'long'});
+  const dirName=dir==='L'?DECK.fwd:DECK.rev;
+  let h='';
+  if(!left){
+    h='<span class="n">'+all.length+'</span> of '+all.length+' met in '+dirName+
+      '. Everything now is upkeep.';
+  } else {
+    h='<span class="n">'+met+'</span> of '+all.length+' met in '+dirName+
+      ', <span class="n">'+left+'</span> to go.'+
+      ' At '+(n?'your recent pace of '+Math.round(rate):capToday)+' a day the last one arrives <b>'+fmt(finish)+'</b>'+
+      (toTerm>0?(daysNeeded<=toTerm?' — '+(toTerm-daysNeeded)+' days before term.':' — '+(daysNeeded-toTerm)+' days after term begins.'):'.');
+    const skip=new Date(Date.now()+(daysNeeded+1)*DAY);
+    if(fmt(skip)!==fmt(finish)) h+='<span class="cost">A day off moves that to '+fmt(skip)+'.</span>';
+    else h+='<span class="cost">Every day off pushes that date back.</span>';
+  }
+  if(toTerm>0) h+='<span class="cost"><span class="n">'+toTerm+'</span> days until Michaelmas.</span>';
+  $('pace').innerHTML=h;
+  const m=MOTTOS[((d%MOTTOS.length)+MOTTOS.length)%MOTTOS.length];
+  $('mottoLa').textContent=m[0]; $('mottoEn').textContent=m[1];
+}
+function latencyStats(){
+  const pre=S.dir==='L'?'L':'E';
+  const v=[], counts=[0,0,0,0];
+  for(let i=S.log.length-1;i>=0&&v.length<200;i--){
+    const e=S.log[i];
+    if(e[4]==null||String(e[0])[0]!==pre||e[1]===AGAIN) continue;
+    v.push(e[4]); const b=bracketOf(e[4]); if(b>=0) counts[b]++;
+  }
+  if(v.length<15) return {med:0,n:v.length,counts:counts};
+  const sorted=v.slice().sort((a,b)=>a-b);
+  return {med:sorted[Math.floor(sorted.length/2)], n:v.length, counts:counts};
+}
+const row=(a,b)=>'<div class="statRow"><span>'+a+'</span><b>'+b+'</b></div>';
+function renderWarn(){
+  const w=$('homeWarn'); if(!w||!S) return; let h='';
+  if(S.dir==='E'&&S.settings.gateDays>0){
+    const q=buildQueue('E');
+    if(!(q.due.length+q.learn.length+q.intro.length)){
+      const locked=CARDS.filter(c=>c.dir==='E'&&!gateOpen(c)).length;
+      if(locked) h+='<div class="warn">'+locked+' reverse cards are waiting for their forward side to hold for '+
+                    S.settings.gateDays+' days. Settings can lower or remove that gate.</div>';
+    }
+  }
+  if(!storageOK) h+='<div class="warn bad">This device is refusing to save. Export a backup now and check that Safari is not in Private Browsing.</div>';
+  const since=S.sinceExport||0;
+  if(storageOK&&since>=150) h+='<div class="warn">'+since+' ratings since the last backup. Settings → Export a backup file.</div>';
+  w.innerHTML=h;
+}
+
+/* ======================= export / import ======================= */
+function doExport(auto){
+  try{
+    const blob=new Blob([JSON.stringify(S)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='vocabula-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);              // Safari needs it in the DOM
+    a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
+    S.sinceExport=0; S.lastExport=Date.now(); save();
+    if(!auto) toast('Backup saved'); else toast('Automatic backup saved');
+  }catch(e){ toast('Export failed — try again from Settings'); }
+}
+function doImport(file){
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      const inc=normalise(JSON.parse(fr.result));
+      if(!inc) throw 0;
+      if(inc.log.length<S.log.length &&
+         !confirm('That file has fewer reviews ('+inc.log.length+') than this device ('+S.log.length+'). Replace anyway?')) return;
+      S=inc; save(); renderHome(); toast('Restored '+S.log.length+' reviews');
+    }catch(e){ toast('That file could not be read'); }
+  };
+  fr.readAsText(file);
+}
+async function pushGist(quiet){
+  const {gistId,gistTok}=S.settings;
+  if(!gistId||!gistTok){ if(!quiet) toast('Fill in the gist id and token first'); return; }
+  try{
+    const r=await fetch('https://api.github.com/gists/'+gistId,{
+      method:'PATCH',
+      headers:{'Authorization':'Bearer '+gistTok,'Accept':'application/vnd.github+json'},
+      body:JSON.stringify({files:{'vocabula.json':{content:JSON.stringify(S)}}})
+    });
+    if(!r.ok) throw new Error(r.status);
+    S.sinceExport=0; S.lastExport=Date.now();
+    try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+    if(!quiet) toast('Pushed to gist');
+  }catch(e){ if(!quiet) toast('Gist push failed ('+e.message+')'); }
+}
+async function pullGist(){
+  const {gistId,gistTok}=S.settings;
+  if(!gistId||!gistTok){ toast('Fill in the gist id and token first'); return; }
+  try{
+    const r=await fetch('https://api.github.com/gists/'+gistId,
+      {headers:{'Authorization':'Bearer '+gistTok,'Accept':'application/vnd.github+json'}});
+    if(!r.ok) throw new Error(r.status);
+    const j=await r.json();
+    const f=j.files&&j.files['vocabula.json'];
+    if(!f) throw new Error('no vocabula.json');
+    const inc=normalise(JSON.parse(f.content));
+    if(inc.log.length<S.log.length&&!confirm('The gist has fewer reviews than this device. Replace anyway?')) return;
+    S=inc; save(); renderHome(); toast('Pulled '+S.log.length+' reviews');
+  }catch(e){ toast('Gist pull failed ('+e.message+')'); }
+}
+
+/* ======================= settings screen ======================= */
+function renderSet(){
+  const s=S.settings;
+  $('fNew').value=s.newPerDay; $('fRet').value=Math.round(s.retention*100);
+  $('fRetVal').textContent=Math.round(s.retention*100)+'%';
+  $('fMax').value=s.maxIvl; $('fAuto').value=s.autoEvery;
+  $('fGistId').value=s.gistId||''; $('fGistTok').value=s.gistTok||'';
+  $('fTerm').value=s.term||'2026-10-11';
+  $('fKnown').value=s.knownDays||21;
+  $('fEasy').value=s.requireEasy?'1':'0';
+  $('fTiming').value=s.useTiming?'1':'0';
+  $('fGate').value=s.gateDays|0;
+  $('fTheme').value=S.theme||'light';
+  $('fDrill').value=s.drillDays|0;
+  $('fRevDay').value=String(s.reviewDay===undefined?-1:s.reviewDay);
+  $('fWeak').value=s.weakFirst?'1':'0';
+  $('backupNote').textContent=(S.lastExport?
+      'Last backup '+new Date(S.lastExport).toLocaleString()+' · ':'No backup yet · ')+
+      (S.sinceExport||0)+' ratings since.';
+  const leeches=CARDS.filter(c=>{const cs=S.cards[c.id];return cs&&((cs.lapses||0)>=8||cs.susp);}).length;
+  $('leechNote').textContent=leeches?(leeches+' word'+(leeches===1?'':'s')+' keep lapsing. Words you set aside stop appearing until you bring them back.')
+                                    :'Nothing is being set aside. Words that lapse eight times get flagged.';
+}
+
+/* ======================= wiring ======================= */
+function tapZone(el,fn){
+  el.addEventListener('click',e=>{e.preventDefault();fn();});
+}
+tapZone($('cardArea'),()=>{ if($('rateRow').classList.contains('hidden')) reveal(); });
+tapZone($('revealBtn'),reveal);
+tapZone($('bAgain'),()=>rate(AGAIN));
+tapZone($('bGood'), ()=>rate(GOOD));
+tapZone($('bEasy'), ()=>rate(EASY));
+tapZone($('undoBtn'),undo);
+tapZone($('toHome'),()=>{renderHome();show('scHome');});
+tapZone($('toHome2'),()=>{renderHome();show('scHome');});
+tapZone($('toHome3'),()=>{renderHome();show('scHome');});
+tapZone($('doneBack'),()=>{renderHome();show('scHome');});
+tapZone($('toSettings'),()=>{renderSet();show('scSet');});
+tapZone($('dirLtoE'),()=>{S.dir='L';save();renderHome();});
+tapZone($('dirEtoL'),()=>{S.dir='E';save();renderHome();});
+tapZone($('startBtn'),()=>{undoStack=[];next();if(current)show('scStudy');});
+function bumpCap(delta){
+  const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
+  const cur=(rec.cap!=null)?rec.cap:S.settings.newPerDay;
+  rec.cap=Math.min(Math.max(cur+delta,0),400);
+  save(); renderHome();
+}
+tapZone($('capMinus'),()=>bumpCap(-5));
+tapZone($('capPlus'), ()=>bumpCap(5));
+tapZone($('doneMore'),()=>{
+  const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
+  rec.cap=((rec.cap!=null)?rec.cap:S.settings.newPerDay)+10;
+  save(); next(); if(current) show('scStudy'); else toast('No unseen words left in this direction');
+});
+tapZone($('expBtn'),()=>doExport(false));
+tapZone($('impBtn'),()=>$('impFile').click());
+$('impFile').addEventListener('change',e=>{ if(e.target.files[0]) doImport(e.target.files[0]); e.target.value=''; });
+tapZone($('pushBtn'),()=>pushGist(false));
+tapZone($('pullBtn'),pullGist);
+tapZone($('unsuspBtn'),()=>{
+  let n=0; for(const k in S.cards){ if(S.cards[k].susp){S.cards[k].susp=false;n++;} }
+  save(); renderSet(); toast(n?(n+' brought back'):'Nothing was set aside');
+});
+tapZone($('resetBtn'),()=>{
+  if(!confirm('Erase every rating and interval on this device? A backup downloads first.')) return;
+  doExport(true);
+  setTimeout(()=>{ S=JSON.parse(JSON.stringify(defaults)); save(); renderHome(); show('scHome'); toast('Erased'); },700);
+});
+$('fNew').addEventListener('change',e=>{S.settings.newPerDay=Math.max(0,e.target.value|0);save();});
+$('fRet').addEventListener('input',e=>{S.settings.retention=e.target.value/100;$('fRetVal').textContent=e.target.value+'%';});
+$('fRet').addEventListener('change',()=>save());
+$('fMax').addEventListener('change',e=>{S.settings.maxIvl=Math.max(30,e.target.value|0);save();});
+$('fAuto').addEventListener('change',e=>{S.settings.autoEvery=Math.max(0,e.target.value|0);save();});
+$('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyTheme();});
+$('fGate').addEventListener('change',e=>{S.settings.gateDays=Math.max(0,e.target.value|0);save();});
+$('fTiming').addEventListener('change',e=>{S.settings.useTiming=(e.target.value==='1');save();});
+$('fEasy').addEventListener('change',e=>{S.settings.requireEasy=(e.target.value==='1');save();});
+$('fDrill').addEventListener('change',e=>{S.settings.drillDays=Math.min(Math.max(e.target.value|0,0),14);save();});
+$('fRevDay').addEventListener('change',e=>{S.settings.reviewDay=parseInt(e.target.value,10);save();});
+$('fKnown').addEventListener('change',e=>{S.settings.knownDays=Math.max(1,e.target.value|0);save();});
+$('fWeak').addEventListener('change',e=>{S.settings.weakFirst=(e.target.value==='1');save();});
+$('fTerm').addEventListener('change',e=>{S.settings.term=e.target.value;save();});
+$('fGistId').addEventListener('change',e=>{S.settings.gistId=e.target.value.trim();save();});
+$('fGistTok').addEventListener('change',e=>{S.settings.gistTok=e.target.value.trim();save();});
+
+document.addEventListener('keydown',e=>{
+  if($('scStudy').classList.contains('on')){
+    if(e.key===' '||e.key==='Enter'){e.preventDefault();
+      if($('rateRow').classList.contains('hidden')) reveal();}
+    else if(!$('rateRow').classList.contains('hidden')){
+      if(e.key==='1') rate(AGAIN);
+      if(e.key==='2') rate(GOOD);
+      if(e.key==='3') rate(EASY);
+    }
+    if(e.key==='z'||e.key==='Z') undo();
+  }
+});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden) cardDirty=true;
+  if(!document.hidden&&$('scHome').classList.contains('on')) renderHome();
+});
+
+load().then(()=>{ applyTheme(); renderHome(); renderWarn(); show('scHome'); });
+if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S&&S.theme==='auto') applyTheme(); });
+</script>
+</body>
+</html>
