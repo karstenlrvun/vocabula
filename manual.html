@@ -172,13 +172,16 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 </div>
 
 <h2 id="backup">7. Backing up — read this one</h2>
-<p>Everything lives on your phone. There is no account and no server. Losing it means losing every interval the app has learned about you, which is worth much more than the word list itself.</p>
+<p>Everything lives on the device you are using. There is no account and no server. Losing it means losing every interval the app has learned about you, which is worth much more than the word list itself.</p>
 <p>Three things protect you, in increasing order of reliability:</p>
 <ul>
   <li><strong>It saves after every single rating</strong>, into two separate places in the browser, and checks the save actually landed. If it ever fails you'll see a red warning on the front screen — act on it.</li>
   <li><strong>It downloads a backup file every hundred ratings.</strong> On iPhone this lands in Files → Downloads. If that folder syncs to iCloud Drive, this is a genuine off-device backup.</li>
-  <li><strong>Optional sync to a private GitHub gist.</strong> Fill in a gist id and a token in settings and every save is pushed there automatically. This is the only truly reliable option, and the only one that lets you use the same progress on two devices.</li>
+  <li><strong>Optional sync to a private GitHub gist.</strong> Fill in a gist id and a token in settings and every save is pushed there automatically. This is the only truly reliable option, and the only one that lets you use the same progress on several devices. One gist serves both apps — Latin keeps its progress in <code>vocabula.json</code>, Greek in <code>vocabula-greek.json</code>.</li>
 </ul>
+<div class="box">
+<p><strong>Using it on more than one device.</strong> Put the same gist id and token into each one. Each device pushes a few seconds after you stop rating, and pulls by itself when you open the app or return to it from the background, so the iPad picks up what you did on the phone without your having to think about it. Two rules make this safe. It only adopts the gist copy when this device has nothing newer of its own, so an automatic pull can never swallow reviews you have just done. And if both sides have moved on — you studied on the phone and the iPad while one of them was offline — it refuses to guess, and tells you to choose with <em>Pull from gist</em> in settings. The two histories cannot be merged, so whichever side you pull, the other side's reviews since the split are lost; the fix is to finish a session on one device before starting on another.</p>
+</div>
 <div class="box">
 <p><strong>Install it to your Home Screen.</strong> Open it in Safari, tap Share, then Add to Home Screen, and use it from that icon rather than from a browser tab. Safari deletes stored data for websites you haven't visited in a week; installed apps are exempt. This matters more than anything else on this page.</p>
 </div>
@@ -197,7 +200,8 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <tr><td><strong>Head start for known words</strong></td><td>How long before a word you ticked in the audit is first tested.</td></tr>
   <tr><td><strong>Introduce unseen before shaky</strong></td><td>Hardest words first, rather than working through in book order.</td></tr>
   <tr><td><strong>Michaelmas begins</strong></td><td>Feeds the countdown on the front screen. Nothing else uses it.</td></tr>
-  <tr><td><strong>Export / restore</strong></td><td>Save a backup file, or load one back in.</td></tr>
+  <tr><td><strong>Export / restore</strong></td><td>Save a backup file, or load one back in. A file from the other language is refused rather than loaded over the top.</td></tr>
+  <tr><td><strong>Sync to a private gist</strong></td><td>The gist id and token. Pushes automatically, pulls when you open the app. Restoring or pulling never changes the id and token stored on this device.</td></tr>
   <tr><td><strong>Set aside</strong></td><td>Words you've failed eight times get flagged. Setting one aside stops it appearing until you bring it back.</td></tr>
   <tr><td><strong>Erase all progress</strong></td><td>Downloads a backup first, then wipes the device.</td></tr>
 </table>

@@ -45,6 +45,14 @@ body{
   padding-bottom:env(safe-area-inset-bottom);
   padding-left:env(safe-area-inset-left);
   padding-right:env(safe-area-inset-right);}
+/* wide screens (iPad, Mac): keep a phone-width column centred, roomier type */
+@media (min-width:700px){
+  #app{max-width:600px;margin:0 auto}
+  .prompt{font-size:38px}
+  .prompt.eng{font-size:30px}
+  .answer{font-size:23px}
+  .answer.lat{font-size:28px}
+}
 .screen{flex:1;display:none;flex-direction:column;min-height:0}
 .screen.on{display:flex}
 button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
@@ -470,7 +478,9 @@ function schedule(card,rating,now,st){
     else if(rating===GOOD){
       if(c.step+1===steps.length) toReview();
       else { c.step+=1; ivl=steps[c.step]; }
-    } else toReview();                                  // Easy
+    }
+    else if(rating===HARD){ c.step=Math.min(c.step|0,steps.length-1); ivl=steps[c.step]; }
+    else toReview();                                    // Easy
   } else {                                              // Review
     if(daysSince!=null&&daysSince<1) c.s=shortTermS(c.s,rating);
     else c.s=nextS(c.d,c.s,retrievability(c,now),rating);
@@ -488,7 +498,7 @@ function schedule(card,rating,now,st){
   if(rating===AGAIN){ c.streak=0; }
   else if(c.lastDay!==dk){ c.streak=(c.streak|0)+1; }
   c.lastDay=dk;
-  if(st.requireEasy && inDrill && rating===GOOD){
+  if(st.requireEasy && inDrill && (rating===GOOD||rating===HARD)){
     ivl=10*MIN;                                   // Good is not enough to clear the day
     c.st=card.st; c.step=card.step; c.streak=card.streak|0; c.lastDay=card.lastDay;
   } else if(drillN>0 && (c.streak|0)<drillN && rating!==AGAIN && ivl>DAY){
@@ -539,7 +549,8 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 const defaults={
   version:2, created:Date.now(),
   settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, autoEvery:100, gistId:'', gistTok:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14},
-  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', cards:{}, log:[], days:{}, sinceExport:0, lastExport:null
+  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
+  deck:KEY, lastSync:null, syncedLogLen:null
 };
 let S=null;
 
@@ -578,13 +589,13 @@ function openIDB(){
 }
 function idbPut(v){
   if(!idb) return;
-  try{ idb.transaction('kv','readwrite').objectStore('kv').put(v,'main'); }catch(e){}
+  try{ idb.transaction('kv','readwrite').objectStore('kv').put(v,KEY); }catch(e){}
 }
 function idbGet(){
   return new Promise(res=>{
     if(!idb) return res(null);
     try{
-      const r=idb.transaction('kv','readonly').objectStore('kv').get('main');
+      const r=idb.transaction('kv','readonly').objectStore('kv').get(KEY);
       r.onsuccess=()=>res(r.result||null); r.onerror=()=>res(null);
     }catch(e){res(null);}
   });
@@ -597,14 +608,16 @@ function save(){
     storageOK = localStorage.getItem(KEY)===json;   // read-back check
   }catch(e){ storageOK=false; }
   idbPut(S);
-  if(S.settings.gistId&&S.settings.gistTok){
-    clearTimeout(saveTimer); saveTimer=setTimeout(()=>pushGist(true),6000);
-  }
+  clearTimeout(saveTimer);
+  if(S.settings.gistId&&S.settings.gistTok) saveTimer=setTimeout(()=>pushGist(true),6000);
   renderWarn();
 }
 function normalise(o){
   if(!o||typeof o!=='object') return null;
+  // card ids are the same shape in both decks, so only this stamp can tell them apart
+  if(o.deck&&o.deck!==KEY) return null;
   const s=Object.assign({},defaults,o);
+  s.deck=KEY;
   s.settings=Object.assign({},defaults.settings,o.settings||{});
   s.cards=o.cards&&typeof o.cards==='object'?o.cards:{};
   s.log=Array.isArray(o.log)?o.log:[];
@@ -765,8 +778,9 @@ function rate(pressed){
   if(Date.now()-revealAt<260) return;              // guard: the reveal tap must not grade
   const r=adjustGrade(pressed,thinkMs);
   const now=Date.now(), c=BY_ID[current], cs=cardState(current);
-  undoStack.push({id:current, before:JSON.parse(JSON.stringify(cs)),
-                  day:JSON.parse(JSON.stringify(S.days[today()]||{})), logLen:S.log.length});
+  const frame={id:current, before:JSON.parse(JSON.stringify(cs)),
+               day:JSON.parse(JSON.stringify(S.days[today()]||{})), logLen:S.log.length, buried:[]};
+  undoStack.push(frame);
   if(undoStack.length>40) undoStack.shift();
   const first=cs.reps===0;
   const res=schedule(cs,r,now,st_());
@@ -779,7 +793,10 @@ function rate(pressed){
   if(cs.st==='R'){ rec.tot++; if(r!==AGAIN) rec.ok++; }
   // bury the same word in the other direction until tomorrow
   c.idx.forEach(i=>(SIBLINGS[i]||[]).forEach(sid=>{
-    if(sid!==current&&BY_ID[sid].dir!==c.dir){ const s2=cardState(sid); if(s2.buried<d+1) s2.buried=d+1; }
+    if(sid!==current&&BY_ID[sid].dir!==c.dir){
+      const s2=cardState(sid);
+      if(s2.buried<d+1){ frame.buried.push([sid,s2.buried]); s2.buried=d+1; }
+    }
   }));
   S.sinceExport=(S.sinceExport||0)+1;
   save();
@@ -796,6 +813,7 @@ function undo(){
   const u=undoStack.pop();
   if(!u){ toast('Nothing to undo'); return; }
   S.cards[u.id]=u.before;
+  (u.buried||[]).forEach(([sid,v])=>{ if(S.cards[sid]) S.cards[sid].buried=v; });
   S.days[today()]=u.day;
   S.log.length=u.logLen;
   S.sinceExport=Math.max((S.sinceExport||1)-1,0);
@@ -992,8 +1010,11 @@ function renderWarn(){
     }
   }
   if(!storageOK) h+='<div class="warn bad">This device is refusing to save. Export a backup now and check that Safari is not in Private Browsing.</div>';
-  const since=S.sinceExport||0;
-  if(storageOK&&since>=150) h+='<div class="warn">'+since+' ratings since the last backup. Settings → Export a backup file.</div>';
+  const since=S.sinceExport||0, syncing=!!(S.settings.gistId&&S.settings.gistTok);
+  if(storageOK&&!syncing&&since>=150) h+='<div class="warn">'+since+' ratings since the last backup. Settings → Export a backup file.</div>';
+  if(storageOK&&syncing&&S.lastSync&&Date.now()-S.lastSync>3*DAY)
+    h+='<div class="warn">The gist has not accepted a push since '+new Date(S.lastSync).toLocaleDateString()+
+       '. Check the token has not expired.</div>';
   w.innerHTML=h;
 }
 
@@ -1004,7 +1025,7 @@ function doExport(auto){
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
-    a.download='vocabula-'+new Date().toISOString().slice(0,10)+'.json';
+    a.download='vocabula-latin-'+new Date().toISOString().slice(0,10)+'.json';
     document.body.appendChild(a);              // Safari needs it in the DOM
     a.click();
     setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
@@ -1020,11 +1041,13 @@ function doImport(file){
       if(!inc) throw 0;
       if(inc.log.length<S.log.length &&
          !confirm('That file has fewer reviews ('+inc.log.length+') than this device ('+S.log.length+'). Replace anyway?')) return;
-      S=inc; save(); renderHome(); toast('Restored '+S.log.length+' reviews');
-    }catch(e){ toast('That file could not be read'); }
+      adopt(inc); renderHome(); toast('Restored '+S.log.length+' reviews');
+      if(S.settings.gistId&&S.settings.gistTok) pushGist(true);   // at once, or the next launch pull reverts the restore
+    }catch(e){ toast('That file could not be read — it may belong to the other deck'); }
   };
   fr.readAsText(file);
 }
+const GIST_FILE='vocabula.json';
 async function pushGist(quiet){
   const {gistId,gistTok}=S.settings;
   if(!gistId||!gistTok){ if(!quiet) toast('Fill in the gist id and token first'); return; }
@@ -1032,28 +1055,62 @@ async function pushGist(quiet){
     const r=await fetch('https://api.github.com/gists/'+gistId,{
       method:'PATCH',
       headers:{'Authorization':'Bearer '+gistTok,'Accept':'application/vnd.github+json'},
-      body:JSON.stringify({files:{'vocabula.json':{content:JSON.stringify(S)}}})
+      body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(S)}}})
     });
     if(!r.ok) throw new Error(r.status);
-    S.sinceExport=0; S.lastExport=Date.now();
+    S.lastSync=Date.now(); S.syncedLogLen=S.log.length;
     try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
     if(!quiet) toast('Pushed to gist');
   }catch(e){ if(!quiet) toast('Gist push failed ('+e.message+')'); }
 }
-async function pullGist(){
+// a restored copy must never carry another device's sync credentials
+function adopt(inc){
+  inc.settings.gistId=S.settings.gistId;
+  inc.settings.gistTok=S.settings.gistTok;
+  S=inc; S.lastSync=Date.now(); S.syncedLogLen=S.log.length; save();
+}
+async function fetchGist(quiet){
   const {gistId,gistTok}=S.settings;
-  if(!gistId||!gistTok){ toast('Fill in the gist id and token first'); return; }
   try{
     const r=await fetch('https://api.github.com/gists/'+gistId,
       {headers:{'Authorization':'Bearer '+gistTok,'Accept':'application/vnd.github+json'}});
     if(!r.ok) throw new Error(r.status);
     const j=await r.json();
-    const f=j.files&&j.files['vocabula.json'];
-    if(!f) throw new Error('no vocabula.json');
+    const f=j.files&&j.files[GIST_FILE];
+    if(!f) throw new Error('no '+GIST_FILE);
     const inc=normalise(JSON.parse(f.content));
-    if(inc.log.length<S.log.length&&!confirm('The gist has fewer reviews than this device. Replace anyway?')) return;
-    S=inc; save(); renderHome(); toast('Pulled '+S.log.length+' reviews');
-  }catch(e){ toast('Gist pull failed ('+e.message+')'); }
+    if(!inc) throw new Error('that file holds the other deck');
+    return inc;
+  }catch(e){ if(!quiet) toast('Gist pull failed ('+e.message+')'); return null; }
+}
+// syncedLogLen is the review count both sides last agreed on. Whichever side has grown
+// past it is the one holding new work; if both have, the histories have forked and
+// merging them is not possible, so ask rather than pick a winner.
+async function syncOnLaunch(){
+  if(!S.settings.gistId||!S.settings.gistTok) return;
+  const lenAtStart=S.log.length;
+  const inc=await fetchGist(true);
+  if(!inc) return;
+  if(S.log.length!==lenAtStart) return;              // rated while the fetch was in flight
+  const base=(S.syncedLogLen==null)?S.log.length:S.syncedLogLen;
+  const localMoved=S.log.length>base, remoteMoved=inc.log.length>base;
+  if(localMoved&&remoteMoved){
+    toast('This device and the gist have both moved on. Settings → Pull from gist to take the gist copy.',4000);
+  } else if(remoteMoved){
+    adopt(inc); renderHome();
+    toast('Synced — '+S.log.length+' reviews from your other device',2600);
+  } else if(localMoved){
+    pushGist(true);                                  // only this device moved; put it back
+  }
+}
+async function pullGist(){
+  const {gistId,gistTok}=S.settings;
+  if(!gistId||!gistTok){ toast('Fill in the gist id and token first'); return; }
+  const inc=await fetchGist(false);
+  if(!inc) return;
+  if(inc.log.length<S.log.length&&
+     !confirm('The gist has fewer reviews ('+inc.log.length+') than this device ('+S.log.length+'). Replace anyway?')) return;
+  adopt(inc); renderHome(); toast('Pulled '+S.log.length+' reviews');
 }
 
 /* ======================= settings screen ======================= */
@@ -1074,7 +1131,10 @@ function renderSet(){
   $('fWeak').value=s.weakFirst?'1':'0';
   $('backupNote').textContent=(S.lastExport?
       'Last backup '+new Date(S.lastExport).toLocaleString()+' · ':'No backup yet · ')+
-      (S.sinceExport||0)+' ratings since.';
+      (S.sinceExport||0)+' ratings since.'+
+      (S.settings.gistId&&S.settings.gistTok
+        ? '  Gist: '+(S.lastSync?'synced '+new Date(S.lastSync).toLocaleString():'not yet synced')+'.'
+        : '');
   const leeches=CARDS.filter(c=>{const cs=S.cards[c.id];return cs&&((cs.lapses||0)>=8||cs.susp);}).length;
   $('leechNote').textContent=leeches?(leeches+' word'+(leeches===1?'':'s')+' keep lapsing. Words you set aside stop appearing until you bring them back.')
                                     :'Nothing is being set aside. Words that lapse eight times get flagged.';
@@ -1157,10 +1217,10 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden) cardDirty=true;
-  if(!document.hidden&&$('scHome').classList.contains('on')) renderHome();
+  if(!document.hidden&&$('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
 });
 
-load().then(()=>{ applyTheme(); renderHome(); renderWarn(); show('scHome'); });
+load().then(()=>{ applyTheme(); renderHome(); renderWarn(); show('scHome'); syncOnLaunch(); });
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S&&S.theme==='auto') applyTheme(); });
 </script>
 </body>
