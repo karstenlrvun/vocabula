@@ -154,6 +154,8 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .fold summary::after{content:" +";color:var(--faint)}
 .fold[open] summary::after{content:" \2212"}
 .note{font-size:13px;color:var(--muted);line-height:1.55;margin-top:12px}
+.note.warnish{color:#b06a00}
+.note.bad{color:#c0392b}
 .warn{background:var(--warn-bg);border:1px solid var(--warn-br);border-radius:12px;padding:11px 13px;
   font-size:13.5px;line-height:1.5;color:var(--warn-ink);margin-bottom:16px}
 .warn.bad{background:var(--bad-bg);border-color:var(--bad-br);color:var(--bad-ink)}
@@ -219,6 +221,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       <div class="sect">
         <h2>Study days</h2>
         <div class="strip" id="strip"></div>
+        <div class="note" id="syncAge"></div>
         <div class="note" id="streakNote">—</div>
       </div>
 
@@ -226,6 +229,23 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         <h2>Pace</h2>
         <div class="pace" id="pace"></div>
         <div class="motto"><div class="la" id="mottoLa"></div><div class="en" id="mottoEn"></div></div>
+      </div>
+
+      <div class="sect">
+        <h2>The whole syllabus</h2>
+        <div id="syllabus"></div>
+        <details class="fold" id="partFold">
+          <summary>By part</summary>
+          <div id="partBody"></div>
+        </details>
+        <details class="fold" id="trueFold">
+          <summary>How well the model is predicting you</summary>
+          <div id="trueBody"></div>
+        </details>
+        <details class="fold" id="fcFold">
+          <summary>The next fortnight</summary>
+          <div id="fcBody"></div>
+        </details>
       </div>
 
       <div class="sect">
@@ -652,6 +672,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
+const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
 function available(cs,c,now,d){
@@ -672,7 +693,7 @@ function buildQueue(dir){
     const cs=peek(c.id);
     if(!available(cs,c,now,d)) continue;
     if(cs.reps===0){ (cs.s!=null?seeded:fresh).push(c.id); continue; }
-    if(cs.st==='L'||cs.st==='X'){ if(cs.due<=now+20000) learn.push(c.id); }
+    if(cs.st==='L'||cs.st==='X'){ if(cs.due<=now+AHEAD) learn.push(c.id); }
     else if(cs.due<=now) due.push(c.id);
   }
   due.sort((a,b)=>peek(a).due-peek(b).due);
@@ -693,7 +714,8 @@ function pick(){
   if(ready.length) return ready[0];
   if(Q.due.length) return Q.due[0];
   if(Q.intro.length) return Q.intro[0];
-  return null;                               // a learning step may still be pending
+  if(Q.learn.length) return Q.learn[0];      // learn ahead: nothing else is left today
+  return null;
 }
 
 /* ======================= UI ======================= */
@@ -800,7 +822,7 @@ function rate(pressed){
   }));
   S.sinceExport=(S.sinceExport||0)+1;
   save();
-  if(S.settings.autoEvery>0&&S.sinceExport>=S.settings.autoEvery) doExport(true);
+  autoBackup();
   next();
 }
 const st_=()=>S.settings;
@@ -814,7 +836,9 @@ function undo(){
   if(!u){ toast('Nothing to undo'); return; }
   S.cards[u.id]=u.before;
   (u.buried||[]).forEach(([sid,v])=>{ if(S.cards[sid]) S.cards[sid].buried=v; });
-  S.days[today()]=u.day;
+  { const d0=today(), keep=(S.days[d0]&&S.days[d0].cap!=null)?S.days[d0].cap:null;
+    S.days[d0]=(u.day&&u.day.n!=null)?u.day:{n:0,intro:0,ok:0,tot:0};
+    if(keep!=null) S.days[d0].cap=keep; }              // the day's allowance is a setting, not a rating
   S.log.length=u.logLen;
   S.sinceExport=Math.max((S.sinceExport||1)-1,0);
   save();
@@ -928,7 +952,9 @@ function renderHome(){
   let streak=0; for(let k=d;;k--){ if(S.days[k]&&S.days[k].n) streak++; else { if(k!==d) break; } if(d-k>3650) break; }
   const s2=dirStats(S.dir);
   $('capVal').textContent=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
+  renderSync();
   renderPace();
+  renderSyllabus();
   renderWarn();
   $('streakNote').textContent = streak? (streak+' day'+(streak===1?'':'s')+' running') : 'No streak yet — the first day starts it.';
 
@@ -999,6 +1025,137 @@ function latencyStats(){
   return {med:sorted[Math.floor(sorted.length/2)], n:v.length, counts:counts};
 }
 const row=(a,b)=>'<div class="statRow"><span>'+a+'</span><b>'+b+'</b></div>';
+
+/* ================= syllabus stats =================
+   Everything here ignores the part chips on purpose: the question is what you
+   know of the whole list, not of the slice currently switched on.            */
+function expectedAt(dir,when){
+  let sum=0,total=0,met=0;
+  for(const c of CARDS){
+    if(c.dir!==dir) continue;
+    total++;
+    const cs=S.cards[c.id];
+    if(!cs||cs.reps===0||cs.s==null||cs.last==null) continue;   // never met scores zero
+    met++;
+    if(cs.susp) continue;
+    sum+=retrievability(cs,when);
+  }
+  return {sum:sum,total:total,met:met};
+}
+function partTable(dir,when){
+  const acc={};
+  for(const c of CARDS){
+    if(c.dir!==dir) continue;
+    const a=acc[c.sec]||(acc[c.sec]={n:0,met:0,sum:0});
+    a.n++;
+    const cs=S.cards[c.id];
+    if(!cs||cs.reps===0) continue;
+    a.met++;
+    if(cs.susp||cs.s==null||cs.last==null) continue;
+    a.sum+=retrievability(cs,when);
+  }
+  return acc;
+}
+function trueRetention(){
+  // walk the log, using each card's previously scheduled interval as its maturity
+  const prev={}, out={young:[0,0], mature:[0,0]};
+  for(const e of S.log){
+    const id=e[0], r=e[1], ivlSec=e[3];
+    const p=prev[id];
+    if(p!=null && p>=1){                       // only count reviews, not same-day steps
+      const k=(p>=21)?'mature':'young';
+      out[k][1]++; if(r!==AGAIN) out[k][0]++;
+    }
+    prev[id]=ivlSec/86400;
+  }
+  return out;
+}
+function forecast(dir,days){
+  const d=today(), out=new Array(days).fill(0);
+  for(const c of CARDS){
+    if(c.dir!==dir) continue;
+    const cs=S.cards[c.id];
+    if(!cs||cs.reps===0||cs.susp||cs.due==null) continue;
+    const k=Math.floor((cs.due-Date.now())/DAY);
+    if(k<0) out[0]++; else if(k<days) out[k]++;
+  }
+  return out;
+}
+function renderSyllabus(){
+  const dir=S.dir, dirName=dir==='L'?DECK.fwd:DECK.rev;
+  const now=Date.now();
+  const term=new Date(S.settings.term+'T09:00:00').getTime();
+  const toTerm=Math.max(Math.ceil((term-now)/DAY),0);
+  const pc=x=>Math.round(x*100)+'%';
+
+  const nowS=expectedAt(dir,now);
+  const flr=expectedAt(dir,term);
+  const R=S.settings.retention;
+
+  // if you keep going: everything met by term day sits at about the target
+  const d=today(); let sum=0,n=0;
+  for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=(r.intro||0); n++; } }
+  const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
+  const pace=n?Math.max(sum/n,1):capToday;
+  const willMeet=Math.min(nowS.total, nowS.met+Math.round(pace*toTerm));
+  const keep=willMeet*R;
+
+  let h='';
+  h+='<div class="pace"><span class="n">'+Math.round(nowS.sum)+'</span> of '+nowS.total+
+     ' — if you were tested on the whole '+dirName+' list right now, that is roughly what you would get. '+
+     '<b>'+pc(nowS.sum/nowS.total)+'</b> of the syllabus.</div>';
+  h+=row('Words met so far', nowS.met+' of '+nowS.total);
+  if(toTerm>0){
+    h+=row('On term day if you stop today', Math.round(flr.sum)+' ('+pc(flr.sum/flr.total)+')');
+    h+=row('On term day if you keep this pace', Math.round(keep)+' ('+pc(keep/nowS.total)+')');
+  }
+  const other=dir==='L'?'E':'L';
+  const oS=expectedAt(other,now);
+  h+=row((other==='L'?DECK.fwd:DECK.rev)+' — expected now', Math.round(oS.sum)+' of '+oS.total);
+  h+='<div class="note">The first figure is a model estimate, not a measurement: it is FSRS\'s own '+
+     'recall probability for every card, summed. Words never met count as zero. The second projection '+
+     'assumes you clear reviews daily and keep introducing about '+Math.round(pace)+' a day — it is an '+
+     'assumption, not a forecast.</div>';
+  $('syllabus').innerHTML=h;
+
+  // by part
+  const acc=partTable(dir,now); let ph='';
+  SECTIONS.forEach(sec=>{ const a=acc[sec]; if(!a) return;
+    ph+=row(sec, Math.round(a.sum)+' / '+a.n+'  ('+a.met+' met)'); });
+  $('partBody').innerHTML=ph||'<div class="note">No parts to show.</div>';
+
+  // true retention
+  const t=trueRetention(); let th='';
+  const fmtT=(p)=>p[1]<20?('too few reviews yet ('+p[1]+')'):(Math.round(100*p[0]/p[1])+'% of '+p[1]);
+  th+=row('Settling (under 3 weeks)', fmtT(t.young));
+  th+=row('Holding (3 weeks or more)', fmtT(t.mature));
+  th+=row('Your target', pc(R));
+  th+='<div class="note">This is the check on everything above. If the holding figure settles well below '+
+      'your target once there are a few hundred reviews behind it, the default parameters are wrong for you '+
+      'and every interval in the app is too long.</div>';
+  $('trueBody').innerHTML=th;
+
+  // forecast
+  const f=forecast(dir,14); let fh='';
+  const names=['Today','Tomorrow'];
+  f.forEach((v,i)=>{ const lab=names[i]||new Date(now+i*DAY).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+    fh+=row(lab, v+' due'); });
+  fh+='<div class="note">Reviews only. New words on top of this are whatever the daily allowance lets through.</div>';
+  $('fcBody').innerHTML=fh;
+}
+function renderSync(){
+  const el=$('syncAge'); if(!el) return;
+  const {gistId,gistTok}=S.settings;
+  if(!gistId||!gistTok){ el.className='note'; el.textContent='Gist backup is off — Settings can turn it on.'; return; }
+  if(!S.lastSync){ el.className='note bad'; el.textContent='Gist configured but nothing has been pushed yet.'; return; }
+  const age=Date.now()-S.lastSync;
+  const txt = age<MIN? 'just now'
+            : age<HOUR? Math.round(age/MIN)+'m ago'
+            : age<DAY? Math.round(age/HOUR)+'h ago'
+            : Math.round(age/DAY)+'d ago';
+  el.className='note'+(age>3*DAY?' bad':(age>DAY?' warnish':''));
+  el.textContent='Backed up to the gist '+txt+(age>DAY?' — check the token has not expired.':'.');
+}
 function renderWarn(){
   const w=$('homeWarn'); if(!w||!S) return; let h='';
   if(S.dir==='E'&&S.settings.gateDays>0){
@@ -1019,6 +1176,19 @@ function renderWarn(){
 }
 
 /* ======================= export / import ======================= */
+function gistHealthy(){
+  const {gistId,gistTok}=S.settings;
+  if(!gistId||!gistTok) return false;
+  if(!S.lastSync) return false;
+  return (Date.now()-S.lastSync) < DAY;          // a push landed within the last 24 hours
+}
+/* The gist is the primary backup. The file download is kept only as a fallback
+   for when the gist is not set up, or has stopped accepting pushes.          */
+function autoBackup(){
+  const {gistId,gistTok}=S.settings;
+  if(gistId&&gistTok){ pushGist(true); if(gistHealthy()) return; }
+  if(S.settings.autoEvery>0&&S.sinceExport>=S.settings.autoEvery) doExport(true);
+}
 function doExport(auto){
   try{
     const blob=new Blob([JSON.stringify(S)],{type:'application/json'});
@@ -1058,7 +1228,7 @@ async function pushGist(quiet){
       body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(S)}}})
     });
     if(!r.ok) throw new Error(r.status);
-    S.lastSync=Date.now(); S.syncedLogLen=S.log.length;
+    S.lastSync=Date.now(); S.syncedLogLen=S.log.length; S.sinceExport=0;
     try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
     if(!quiet) toast('Pushed to gist');
   }catch(e){ if(!quiet) toast('Gist push failed ('+e.message+')'); }
