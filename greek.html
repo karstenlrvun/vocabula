@@ -538,15 +538,6 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         <input type="file" id="impFile" accept="application/json,.json" class="hidden">
         <div class="fh" id="backupNote">—</div>
       </div>
-      <div class="field" style="display:none">
-        <label for="fAuto">unused</label>
-        <input type="number" id="fAuto">
-        <div class="fh">The gist below is the primary backup and runs on every save. This file
-          download is only a fallback, and only fires when the gist is switched off or has stopped
-          accepting pushes. 0 switches it off. On iPhone the file lands in Files → Downloads.
-          Safari sometimes blocks an automatic download outright — if it does, the panel at the
-          bottom of this screen will say so and offer a button instead.</div>
-      </div>
       <div class="field">
         <label for="fGistId">Back up to a GitHub gist</label>
         <input type="text" id="fGistId" placeholder="gist id" autocapitalize="off" autocorrect="off" spellcheck="false">
@@ -601,7 +592,8 @@ const P=[0.212,1.2931,2.3065,8.2956,6.4133,0.8334,3.0194,0.001,1.8722,0.1666,0.7
          1.4835,0.0614,0.2629,1.6483,0.6014,1.8729,0.5425,0.0912,0.0658,0.1542];
 const DECAY=-P[20], FACTOR=Math.pow(0.9,1/DECAY)-1;
 const MIN=60000, HOUR=3600000, DAY=86400000;
-const ROLL_H=()=>(S&&S.settings&&S.settings.rollover!=null)?S.settings.rollover:4;
+let ROLL_OVR=null;      // set while normalise() walks a state that carries its own rollover
+const ROLL_H=()=>(ROLL_OVR!=null)?ROLL_OVR:(S&&S.settings&&S.settings.rollover!=null)?S.settings.rollover:4;
 const dayKey=ts=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-ROLL_H()*HOUR)/DAY);
 /* The timestamp at which study-day k begins. Two passes settle the timezone
    offset, which matters only where the rollover straddles a DST change. */
@@ -718,7 +710,7 @@ function schedule(card,rating,now,st){
 }
 
 /* ======================= data model ======================= */
-const KEY='vocabula.greek.v1';                     // a study day starts at 04:00 local
+const KEY='vocabula.greek.v1';                     // a study day starts at the rollover hour in settings
 const today=()=>dayKey(Date.now());
 
 const norm=s=>s.trim().toLowerCase().replace(/\s+/g,' ');
@@ -785,6 +777,16 @@ function cardState(id){                       // materialise: use when writing
 function peek(id){                            // read-only: does not write to the store
   return S.cards[id] || freshCard(BY_ID[id]);
 }
+function previewCard(id){                     // the card exactly as rate() will schedule it:
+  const cs=peek(id);                          // cardState() stamps a seeded card's review date
+  if(cs.st==='R'&&cs.s!=null&&cs.last==null){ // at materialisation, so the preview must too,
+    const c=Object.assign({},cs);             // or the buttons promise years where the true
+    c.last=Date.now();                        // result is a day
+    c.due=dayStart(dayKey(c.last)+Math.max(Math.round(c.s),1));
+    return c;
+  }
+  return cs;
+}
 
 /* ======================= storage ======================= */
 let idb=null;
@@ -834,16 +836,21 @@ function normalise(o){
   s.cards=o.cards&&typeof o.cards==='object'?o.cards:{};
   s.log=Array.isArray(o.log)?o.log:[];
   s.days=o.days&&typeof o.days==='object'?o.days:{};
-  for(const k in s.cards){
-    const c=s.cards[k];
-    if(!c||!BY_ID[k]){ delete s.cards[k]; continue; }
-    c.reps|=0; c.lapses|=0; c.buried|=0;
-    if(typeof c.due!=='number') c.due=0;
-    if(c.st!=='L'&&c.st!=='R'&&c.st!=='X') c.st='L';
-    // one-time migration: review cards move onto the day boundary. This only
-    // ever moves a due date earlier within its own day, never to another day.
-    if(c.st==='R'&&c.due>0) c.due=dayStart(dayKey(c.due));
-  }
+  // snap with the state's own rollover: during load() the global S is not yet
+  // assigned, and the default hour would drag every due date onto the wrong day
+  ROLL_OVR=(s.settings.rollover!=null)?s.settings.rollover:4;
+  try{
+    for(const k in s.cards){
+      const c=s.cards[k];
+      if(!c||!BY_ID[k]){ delete s.cards[k]; continue; }
+      c.reps|=0; c.lapses|=0; c.buried|=0;
+      if(typeof c.due!=='number') c.due=0;
+      if(c.st!=='L'&&c.st!=='R'&&c.st!=='X') c.st='L';
+      // one-time migration: review cards move onto the day boundary. This only
+      // ever moves a due date earlier within its own day, never to another day.
+      if(c.st==='R'&&c.due>0) c.due=dayStart(dayKey(c.due));
+    }
+  } finally { ROLL_OVR=null; }
   return s;
 }
 async function load(){
@@ -867,7 +874,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.07.30.1';
+const BUILD='2026.07.30.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1019,7 +1026,7 @@ function reveal(){
   revealAt=Date.now();
   const t=revealAt-shownAt;
   thinkMs=(cardDirty||t<120||t>300000)?null:t;    // discard if you looked away
-  const cs=peek(current), now=Date.now(), st=S.settings;
+  const cs=previewCard(current), now=Date.now(), st=S.settings;
   [[AGAIN,'iAgain'],[GOOD,'iGood'],[EASY,'iEasy']].forEach(([r,el])=>{
     $(el).textContent=fmtIvl(schedule(cs,adjustGrade(r,thinkMs),now,st).ivl);
   });
@@ -1319,7 +1326,7 @@ function forecast(dir,days){
     if(c.dir!==dir) continue;
     const cs=S.cards[c.id];
     if(!cs||cs.reps===0||cs.susp||cs.due==null) continue;
-    const k=Math.floor((cs.due-Date.now())/DAY);
+    const k=dayKey(cs.due)-d;                // study days, to match how dues are set
     if(k<0) out[0]++; else if(k<days) out[k]++;
   }
   return out;
@@ -1381,7 +1388,7 @@ function renderSyllabus(){
   // forecast
   const f=forecast(dir,14); let fh='';
   const names=['Today','Tomorrow'];
-  f.forEach((v,i)=>{ const lab=names[i]||new Date(now+i*DAY).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+  f.forEach((v,i)=>{ const lab=names[i]||new Date(dayStart(d+i)).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
     fh+=row(lab, v+' due'); });
   fh+='<div class="note">Reviews only. New words on top of this are whatever the daily allowance lets through.</div>';
   $('fcBody').innerHTML=fh;
@@ -1548,7 +1555,7 @@ function renderBg(){
   h+=row('Reviewed today', (rec.n||0)+' ratings, '+(rec.intro||0)+' new');
   const q=(typeof Q!=='undefined'&&Q&&Q.due)?Q:{due:[],learn:[],intro:[]};
   h+=row('Waiting right now', q.due.length+' due, '+q.learn.length+' in steps, '+q.intro.length+' new');
-  h+=row('Day rolls over at', '4am');
+  h+=row('Day rolls over at', ROLL_H()===0?'midnight':ROLL_H()+'am');
   $('bgLive').innerHTML=h;
 
   // offer a tap when the automatic download cannot be trusted
@@ -1578,6 +1585,14 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.07.30.2',[
+    'With the study day set to begin at midnight or 3am, every launch pulled review dates onto the wrong day — up to a day early. Loading now respects the hour you chose.',
+    'The intervals shown on the buttons for a word carried over from the audit now match what pressing them does. The first look at such a word could promise weeks or years where the true result was a day.',
+    'The fortnight forecast counts by study day, so a card due at tomorrow\'s rollover no longer shows under Today.',
+    'Settings now reports the day-start hour you chose instead of always saying 4am.',
+    'The manual and a leftover hidden setting no longer describe the automatic fallback download that the previous build removed.',
+    'The manual now says how audit carryovers actually arrive: through the daily allowance, ahead of brand-new words, with their audit strength as a head start.'
+  ]],
   ['2026.07.30.1',[
     'A review card held on a short step by the drill setting is now served by the learn-ahead too. Previously the day could end with those cards pending and nothing on screen.',
     'Reviews are now due by day rather than by clock time: everything scheduled for a day unlocks together at the rollover, so an afternoon batch is no longer held back until the afternoon.',
