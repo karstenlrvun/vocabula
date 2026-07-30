@@ -1191,7 +1191,7 @@ function autoBackup(){
 }
 function doExport(auto){
   try{
-    const blob=new Blob([JSON.stringify(S)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify(sanitised())],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url;
@@ -1218,6 +1218,9 @@ function doImport(file){
   fr.readAsText(file);
 }
 const GIST_FILE='vocabula-greek.json';
+function sanitised(){                       // never let the token leave the device in plain content
+  return Object.assign({}, S, {settings: Object.assign({}, S.settings, {gistTok:''})});
+}
 async function pushGist(quiet){
   const {gistId,gistTok}=S.settings;
   if(!gistId||!gistTok){ if(!quiet) toast('Fill in the gist id and token first'); return; }
@@ -1225,7 +1228,7 @@ async function pushGist(quiet){
     const r=await fetch('https://api.github.com/gists/'+gistId,{
       method:'PATCH',
       headers:{'Authorization':'Bearer '+gistTok,'Accept':'application/vnd.github+json'},
-      body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(S)}}})
+      body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(sanitised())}}})
     });
     if(!r.ok) throw new Error(r.status);
     S.lastSync=Date.now(); S.syncedLogLen=S.log.length; S.sinceExport=0;
