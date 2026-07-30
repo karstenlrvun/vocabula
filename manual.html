@@ -101,7 +101,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <h2 id="surprises">3. Two things that will surprise you</h2>
 
 <h3>A new word won't leave until you press Easy</h3>
-<p>Press <span class="key k-good">Good</span> on a word you're meeting for the first time and it comes back in ten minutes — not tomorrow. It keeps circling back until you press <span class="key k-easy">Easy</span>. So a day's batch of new words stays in front of you until you've genuinely got each one, which is what you asked for. The same applies to a word you've just failed.</p>
+<p>Press <span class="key k-good">Good</span> on a word you're meeting for the first time and it comes back in ten minutes — not tomorrow. If nothing else is left to review, it may come back sooner rather than leave you with an empty screen. It keeps circling back until you press <span class="key k-easy">Easy</span>. So a day's batch of new words stays in front of you until you've genuinely got each one, which is what you asked for. The same applies to a word you've just failed.</p>
 <p>This only affects words being learned or relearned. A word that's settled into a normal rhythm behaves normally — Good moves it along.</p>
 
 <h3>Taking too long is recorded as a lower grade</h3>
@@ -156,6 +156,9 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <li><strong>Where you stand</strong> — how many words are in each stage, and how often you've been right over the last month. Open <strong>Timing</strong> underneath for how quickly you've been answering.</li>
 </ul>
 
+<h3>The whole syllabus</h3>
+<p>Below the pace panel is an estimate of how much of the list you would get right if you were tested now, and again on the first day of term — once assuming you stop today, once assuming you keep going at your recent rate. Words you have never met count as zero, so the number starts low and stays honest. These are the scheduler's own predictions rather than measurements; the <em>how well the model is predicting you</em> fold is the check on them, and it needs a few hundred real reviews before it means anything.</p>
+
 <h2 id="routine">6. A sensible daily routine</h2>
 <p>Open it once a day and clear what's due. That's it. The app is designed around the assumption that you show up daily; if you skip days the work doesn't vanish, it piles up.</p>
 <ul>
@@ -176,8 +179,8 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <p>Three things protect you, in increasing order of reliability:</p>
 <ul>
   <li><strong>It saves after every single rating</strong>, into two separate places in the browser, and checks the save actually landed. If it ever fails you'll see a red warning on the front screen — act on it.</li>
-  <li><strong>It downloads a backup file every hundred ratings.</strong> On iPhone this lands in Files → Downloads. If that folder syncs to iCloud Drive, this is a genuine off-device backup.</li>
-  <li><strong>Optional sync to a private GitHub gist.</strong> Fill in a gist id and a token in settings and every save is pushed there automatically. This is the only truly reliable option, and the only one that lets you use the same progress on several devices. One gist serves both apps — Latin keeps its progress in <code>vocabula.json</code>, Greek in <code>vocabula-greek.json</code>.</li>
+  <li><strong>The file download is only a fallback.</strong> It fires when the gist is switched off or has stopped accepting pushes, not on a schedule of its own. On iPhone it lands in Files → Downloads, and Safari sometimes blocks an automatic download outright — when that happens, Settings offers a button instead. Export by hand before anything risky.</li>
+  <li><strong>A private GitHub gist is the primary backup.</strong> Fill in a gist id and a token in settings and every save is pushed there a few seconds later. The front screen shows how long ago that last worked, and turns amber then red as it ages. The token is never written into the gist or into a backup file. One gist serves both apps — Latin keeps its progress in <code>vocabula.json</code>, Greek in <code>vocabula-greek.json</code>.</li>
 </ul>
 <div class="box">
 <p><strong>Using it on more than one device.</strong> Put the same gist id and token into each one. Each device pushes a few seconds after you stop rating, and pulls by itself when you open the app or return to it from the background, so the iPad picks up what you did on the phone without your having to think about it. Two rules make this safe. It only adopts the gist copy when this device has nothing newer of its own, so an automatic pull can never swallow reviews you have just done. And if both sides have moved on — you studied on the phone and the iPad while one of them was offline — it refuses to guess, and tells you to choose with <em>Pull from gist</em> in settings. The two histories cannot be merged, so whichever side you pull, the other side's reviews since the split are lost; the fix is to finish a session on one device before starting on another.</p>
@@ -200,8 +203,11 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <tr><td><strong>Head start for known words</strong></td><td>How long before a word you ticked in the audit is first tested.</td></tr>
   <tr><td><strong>Introduce unseen before shaky</strong></td><td>Hardest words first, rather than working through in book order.</td></tr>
   <tr><td><strong>Michaelmas begins</strong></td><td>Feeds the countdown on the front screen. Nothing else uses it.</td></tr>
-  <tr><td><strong>Export / restore</strong></td><td>Save a backup file, or load one back in. A file from the other language is refused rather than loaded over the top.</td></tr>
-  <tr><td><strong>Sync to a private gist</strong></td><td>The gist id and token. Pushes automatically, pulls when you open the app. Restoring or pulling never changes the id and token stored on this device.</td></tr>
+  <tr><td><strong>Theme</strong></td><td>Seven palettes, each with its own light and dark variant, chosen separately. Optionally a different one each day, in a shuffled cycle that shows every theme before repeating any.</td></tr>
+  <tr><td><strong>Export / restore</strong></td><td>Save a backup file by hand, or load one back in. A file from the other language is refused rather than loaded over the top.</td></tr>
+  <tr><td><strong>Fallback file backup</strong></td><td>How many ratings may pass before the fallback download fires. Only used when the gist is off or failing. 0 switches it off.</td></tr>
+  <tr><td><strong>Back up to a GitHub gist</strong></td><td>The gist id and token — the primary backup. Pushes after every save. Restoring or pulling never changes the id and token stored on this device, and the token is never included in what gets pushed.</td></tr>
+  <tr><td><strong>What happens on its own</strong></td><td>Live state — last save, last push, what the queue is holding — and a list of every process the app runs without being asked.</td></tr>
   <tr><td><strong>Set aside</strong></td><td>Words you've failed eight times get flagged. Setting one aside stops it appearing until you bring it back.</td></tr>
   <tr><td><strong>Erase all progress</strong></td><td>Downloads a backup first, then wipes the device.</td></tr>
 </table>
@@ -225,6 +231,9 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 
 <h3>The counts changed when I toggled something</h3>
 <p>Part and group chips filter which words can <em>start</em>. They never hide a word already in the rotation, and they never affect anything you've already rated.</p>
+
+<h3>How do I know which version I'm running?</h3>
+<p>The version sits at the bottom of the front screen. Tap it for the list of what changed. If the front screen has no <em>whole syllabus</em> section, you are on an older file.</p>
 
 <p class="foot">Both apps work the same way. Greek has no parts and no audit groups, so those chips don't appear, and it starts entirely from scratch. Your Latin and Greek progress are stored separately and can't affect each other.</p>
 

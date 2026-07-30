@@ -11,26 +11,123 @@
 <title>Greek</title>
 <style>
 :root{
-  --bg:#ffffff; --panel:#faf8f5; --ink:#1b1a18; --muted:#77746e; --faint:#a5a29b;
-  --line:#e7e3dc; --coral:#d85a30; --accent-soft:#fdf3ee; --raise:#ffffff;
-  --again:#b03b2e; --again-bg:#fbecea; --again-br:#f0d6d1;
-  --good:#2f7d4f;  --good-bg:#eaf4ee;  --good-br:#d2e4d8;
-  --easy:#7a6bcf;  --easy-bg:#efedfa;  --easy-br:#ddd8f2;
-  --amber:#b07715;
-  --warn-bg:#fdf1ea; --warn-br:#f2d9c9; --warn-ink:#7a4520;
-  --bad-bg:#fbecea;  --bad-br:#f0d0cb;  --bad-ink:#8a2f24; --toast:#1b1a18;
   --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
 }
-html[data-theme="dark"]{
+/* Seven palettes, each with a light and a dark variant. The mode is chosen
+   separately from the palette, so any palette can be read either way.
+   Vellum is the default; Legacy reproduces the original colours exactly. */
+html[data-palette="vellum"][data-theme="light"]{
+  --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
+  --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6; --again:#a3342a;
+  --again-bg:#f0ded3; --again-br:#dfb9ae; --good:#5a6b32; --good-bg:#e6e5d4; --good-br:#c7cab0;
+  --easy:#7d5f9c; --easy-bg:#ebe3e2; --easy-br:#d3c6d2; --amber:#9a7318; --warn-bg:#eee6d0;
+  --warn-br:#dccda8; --warn-ink:#7b5d18; --bad-bg:#f0ded3; --bad-br:#dfb9ae; --bad-ink:#812f25;
+  --toast:#2a2318;
+}
+html[data-palette="vellum"][data-theme="dark"]{
+  --bg:#1a160f; --panel:#241f16; --ink:#ece3cf; --muted:#a89a80; --faint:#7a6f5c;
+  --line:#3a3222; --coral:#d4795e; --accent-soft:#3f2a1f; --raise:#2c2519; --again:#e0796b;
+  --again-bg:#462c23; --again-br:#6d4036; --good:#a9bd72; --good-bg:#393b25; --good-br:#565c39;
+  --easy:#c3a3e0; --easy-bg:#3f353d; --easy-br:#615167; --amber:#d4a24a; --warn-bg:#43351c;
+  --warn-br:#685128; --warn-ink:#d7ab5d; --bad-bg:#462c23; --bad-br:#6d4036; --bad-ink:#e28879;
+  --toast:#241f16;
+}
+html[data-palette="catppuccin"][data-theme="light"]{
+  --bg:#eff1f5; --panel:#e6e9ef; --ink:#4c4f69; --muted:#66687d; --faint:#8a8d9b;
+  --line:#ccd0da; --coral:#e15809; --accent-soft:#eee2dd; --raise:#ffffff; --again:#d20f39;
+  --again-bg:#ebd4dd; --again-br:#e6a9b9; --good:#3c9628; --good-bg:#d8e5da; --good-br:#b6d4b3;
+  --easy:#8839ef; --easy-bg:#e2d9f4; --easy-br:#ceb6f3; --amber:#b97618; --warn-bg:#e8e1d8;
+  --warn-br:#decaae; --warn-ink:#9a6b2f; --bad-bg:#ebd4dd; --bad-br:#e6a9b9; --bad-ink:#ac2146;
+  --toast:#4c4f69;
+}
+html[data-palette="catppuccin"][data-theme="dark"]{
+  --bg:#1e1e2e; --panel:#181825; --ink:#cdd6f4; --muted:#a6adc8; --faint:#6c7086;
+  --line:#45475a; --coral:#fab387; --accent-soft:#4a3c40; --raise:#313244; --again:#f38ba8;
+  --again-bg:#4d3649; --again-br:#774c61; --good:#a6e3a1; --good-bg:#3c4947; --good-br:#57715e;
+  --easy:#cba6f7; --easy-bg:#443c5a; --easy-br:#675782; --amber:#f9e2af; --warn-bg:#4e494a;
+  --warn-br:#7a7064; --warn-ink:#f3e0b9; --bad-bg:#4d3649; --bad-br:#774c61; --bad-ink:#ee96b3;
+  --toast:#181825;
+}
+html[data-palette="rosepine"][data-theme="light"]{
+  --bg:#faf4ed; --panel:#fffaf3; --ink:#575279; --muted:#6b6782; --faint:#8f8a9b;
+  --line:#dfdad9; --coral:#be736f; --accent-soft:#f4e7e0; --raise:#ffffff; --again:#b4637a;
+  --again-bg:#f1e1de; --again-br:#e4c6c8; --good:#286983; --good-bg:#dfe2df; --good-br:#b7c8cb;
+  --easy:#907aa9; --easy-bg:#ece4e4; --easy-br:#d8cdd7; --amber:#b77b28; --warn-bg:#f1e4d3;
+  --warn-br:#e5cdae; --warn-ink:#9c703f; --bad-bg:#f1e1de; --bad-br:#e4c6c8; --bad-ink:#9a5e7a;
+  --toast:#575279;
+}
+html[data-palette="rosepine"][data-theme="dark"]{
+  --bg:#191724; --panel:#1f1d2e; --ink:#e0def4; --muted:#908caa; --faint:#6e6a86;
+  --line:#403d52; --coral:#ebbcba; --accent-soft:#433842; --raise:#26233a; --again:#eb6f92;
+  --again-bg:#472a3c; --again-br:#713c52; --good:#9ccfd8; --good-bg:#363f4c; --good-br:#506470;
+  --easy:#c4a7e7; --easy-bg:#3f374f; --easy-br:#615376; --amber:#f6c177; --warn-bg:#4a3c36;
+  --warn-br:#765e47; --warn-ink:#f3c588; --bad-bg:#472a3c; --bad-br:#713c52; --bad-ink:#e97fa0;
+  --toast:#1f1d2e;
+}
+html[data-palette="kanagawa"][data-theme="light"]{
+  --bg:#f2ecbc; --panel:#e7dba0; --ink:#545464; --muted:#6a675b; --faint:#8a8980;
+  --line:#dcd5aa; --coral:#c06600; --accent-soft:#eddfa9; --raise:#f9f4d2; --again:#c84053;
+  --again-bg:#edd6ae; --again-br:#e5b59a; --good:#6f894e; --good-bg:#e1dfae; --good-br:#c8cc99;
+  --easy:#624c83; --easy-bg:#dfd7b5; --easy-br:#c4b9aa; --amber:#77713f; --warn-bg:#e2dcac;
+  --warn-br:#cbc594; --warn-ink:#6d6949; --bad-bg:#edd6ae; --bad-br:#e5b59a; --bad-ink:#a84658;
+  --toast:#545464;
+}
+html[data-palette="kanagawa"][data-theme="dark"]{
+  --bg:#1f1f28; --panel:#2a2a37; --ink:#dcd7ba; --muted:#c8c093; --faint:#727169;
+  --line:#363646; --coral:#ffa066; --accent-soft:#4c3934; --raise:#2a2a37; --again:#e46876;
+  --again-bg:#4a2f39; --again-br:#723e49; --good:#98bb6c; --good-bg:#3a4137; --good-br:#526145;
+  --easy:#957fb8; --easy-bg:#393448; --easy-br:#514764; --amber:#e6c384; --warn-bg:#4b433c;
+  --warn-br:#73644f; --warn-ink:#e5c68c; --bad-bg:#4a2f39; --bad-br:#723e49; --bad-ink:#e37880;
+  --toast:#2a2a37;
+}
+html[data-palette="gruvbox"][data-theme="light"]{
+  --bg:#fbf1c7; --panel:#f2e5bc; --ink:#3c3836; --muted:#665c54; --faint:#928374;
+  --line:#e3d5ab; --coral:#af3a03; --accent-soft:#f3dfb3; --raise:#fdf6da; --again:#9d0006;
+  --again-bg:#efd2ae; --again-br:#dda489; --good:#79740e; --good-bg:#eae1af; --good-br:#d1c98c;
+  --easy:#8f3f71; --easy-bg:#eddabc; --easy-br:#d8b8ab; --amber:#b57614; --warn-bg:#f2e1b0;
+  --warn-br:#e5ca8e; --warn-ink:#93651e; --bad-bg:#efd2ae; --bad-br:#dda489; --bad-ink:#821013;
+  --toast:#3c3836;
+}
+html[data-palette="gruvbox"][data-theme="dark"]{
+  --bg:#282828; --panel:#32302f; --ink:#ebdbb2; --muted:#bdae93; --faint:#928374;
+  --line:#504945; --coral:#fe8019; --accent-soft:#533a25; --raise:#3c3836; --again:#fb4934;
+  --again-bg:#562f2b; --again-br:#81362d; --good:#b8bb26; --good-bg:#484828; --good-br:#646627;
+  --easy:#d3869b; --easy-bg:#4e3d41; --easy-br:#704f58; --amber:#fabd2f; --warn-bg:#56492a;
+  --warn-br:#80672b; --warn-ink:#f8c141; --bad-bg:#562f2b; --bad-br:#81362d; --bad-ink:#f95d46;
+  --toast:#32302f;
+}
+html[data-palette="everforest"][data-theme="light"]{
+  --bg:#fdf6e3; --panel:#f4f0d9; --ink:#5c6a72; --muted:#667165; --faint:#8a9285;
+  --line:#e0dcc7; --coral:#cb6820; --accent-soft:#f8e8d0; --raise:#fffbef; --again:#e9504d;
+  --again-bg:#fae0d0; --again-br:#f7c1b3; --good:#7d8e01; --good-bg:#ece8c6; --good-br:#d4d59b;
+  --easy:#c55da4; --easy-bg:#f6e2db; --easy-br:#ebc5cf; --amber:#ae7d00; --warn-bg:#f3e6c5;
+  --warn-br:#e4cf9a; --warn-ink:#977820; --bad-bg:#fae0d0; --bad-br:#f7c1b3; --bad-ink:#c25757;
+  --toast:#5c6a72;
+}
+html[data-palette="everforest"][data-theme="dark"]{
+  --bg:#2d353b; --panel:#343f44; --ink:#d3c6aa; --muted:#a7b0a4; --faint:#859289;
+  --line:#3d484d; --coral:#e69875; --accent-soft:#524947; --raise:#3a464c; --again:#e67e80;
+  --again-bg:#56454a; --again-br:#7b5458; --good:#a7c080; --good-bg:#48544a; --good-br:#606f58;
+  --easy:#d699b6; --easy-bg:#524b56; --easy-br:#745f6f; --amber:#dbbc7f; --warn-bg:#53534a;
+  --warn-br:#766e58; --warn-ink:#dabd85; --bad-bg:#56454a; --bad-br:#7b5458; --bad-ink:#e38886;
+  --toast:#343f44;
+}
+html[data-palette="legacy"][data-theme="light"]{
+  --bg:#ffffff; --panel:#faf8f5; --ink:#1b1a18; --muted:#77746e; --faint:#928f89;
+  --line:#e7e3dc; --coral:#d85a30; --accent-soft:#fbeeea; --raise:#ffffff; --again:#b03b2e;
+  --again-bg:#f5e6e4; --again-br:#e6c0bc; --good:#2f7d4f; --good-bg:#e4eee8; --good-br:#bcd5c7;
+  --easy:#7a6bcf; --easy-bg:#eeecf9; --easy-br:#d4d0f0; --amber:#b07715; --warn-bg:#f5ede1;
+  --warn-br:#e6d3b4; --warn-ink:#865d16; --bad-bg:#f5e6e4; --bad-br:#e6c0bc; --bad-ink:#863228;
+  --toast:#1b1a18;
+}
+html[data-palette="legacy"][data-theme="dark"]{
   --bg:#0e1230; --panel:#181d47; --ink:#e9ecf8; --muted:#a3abd0; --faint:#7780ab;
-  --line:#2a3169; --coral:#ff8a5c; --accent-soft:#241a3f; --raise:#1f2555;
-  --again:#ff8175; --again-bg:#3a1c26; --again-br:#5a2a35;
-  --good:#5ecb92;  --good-bg:#12332c;  --good-br:#1e4d40;
-  --easy:#b0a4ff;  --easy-bg:#26205a;  --easy-br:#3a3080;
-  --amber:#e0aa4a;
-  --warn-bg:#2c2340; --warn-br:#453562; --warn-ink:#e8c79f;
-  --bad-bg:#38202c;  --bad-br:#5a2f3c;  --bad-ink:#ffb3a8; --toast:#2c3477;
+  --line:#2a3169; --coral:#ff8a5c; --accent-soft:#3e2a39; --raise:#1f2555; --again:#ff8175;
+  --again-bg:#432a3f; --again-br:#73414d; --good:#5ecb92; --good-bg:#203b46; --good-br:#306059;
+  --easy:#b0a4ff; --easy-bg:#32325e; --easy-br:#524f87; --amber:#e0aa4a; --warn-bg:#3c3336;
+  --warn-br:#66523b; --warn-ink:#e1b362; --bad-bg:#432a3f; --bad-br:#73414d; --bad-ink:#fc9087;
+  --toast:#181d47;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
@@ -147,6 +244,15 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
 .statRow b{font-weight:500;font-variant-numeric:tabular-nums}
+.build{margin:30px 0 8px;text-align:center;font-size:11px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint);padding:8px;cursor:pointer}
+.logv{font-size:13px;font-weight:600;color:var(--coral);margin:16px 0 6px;font-family:var(--sans)}
+.logv:first-child{margin-top:0}
+.logi{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 4px;padding-left:14px;
+  text-indent:-14px}
+.logi::before{content:"— ";color:var(--faint)}
+.swatch{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;
+  margin-right:7px;border:1px solid var(--line)}
 .fold{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .fold summary{font-size:13px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;
   list-style:none;cursor:pointer;padding:6px 0}
@@ -256,6 +362,20 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
           <div id="timingBody"></div>
         </details>
       </div>
+
+      <div class="build" id="buildTag"></div>
+    </div>
+  </section>
+
+  <!-- ============ CHANGELOG ============ -->
+  <section id="scLog" class="screen">
+    <div class="bar">
+      <button class="icon" id="logBack" aria-label="Back">&#8249;</button>
+      <div class="title">What changed</div>
+      <div class="icon" style="visibility:hidden">·</div>
+    </div>
+    <div class="set">
+      <div id="logBody"></div>
     </div>
   </section>
 
@@ -310,7 +430,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       <div class="field">
         <label for="fNew">New words a day</label>
         <input type="number" id="fNew" min="0" max="200" step="5" inputmode="numeric">
-        <div class="fh">Caps how many unseen words enter the rotation each day. Words carried over from the audit come first.</div>
+        <div class="fh">Caps how many unseen words enter the rotation each day, counted separately for each direction — so working through forward words no longer leaves the reverse direction with nothing. Words carried over from the audit come first.</div>
       </div>
       <div class="field">
         <label for="fRet">Target retention — <b id="fRetVal">90%</b></label>
@@ -322,12 +442,40 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         <input type="number" id="fMax" min="30" max="36500" step="30" inputmode="numeric">
       </div>
       <div class="field">
-        <label for="fTheme">Appearance</label>
-        <select id="fTheme" class="sel">
+        <label for="fPal">Theme</label>
+        <select id="fPal" class="sel">
+          <option value="vellum">Vellum</option>
+          <option value="catppuccin">Catppuccin</option>
+          <option value="rosepine">Rose Pine</option>
+          <option value="kanagawa">Kanagawa</option>
+          <option value="gruvbox">Gruvbox</option>
+          <option value="everforest">Everforest</option>
+          <option value="legacy">Legacy</option>
+        </select>
+        <select id="fTheme" class="sel" style="margin-top:9px">
           <option value="light">Light</option>
           <option value="dark">Dark</option>
           <option value="auto">Match the system</option>
         </select>
+        <select id="fRot" class="sel" style="margin-top:9px">
+          <option value="off">Keep this theme</option>
+          <option value="daily">A different theme each day</option>
+        </select>
+        <button class="act" id="surpriseBtn">Surprise me</button>
+        <div class="fh" id="palNote">—</div>
+      </div>
+      <div class="field">
+        <label for="fRoll">A study day begins at</label>
+        <select id="fRoll" class="sel">
+          <option value="0">Midnight</option>
+          <option value="3">3am</option>
+          <option value="4">4am</option>
+          <option value="6">6am</option>
+        </select>
+        <div class="fh">Everything scheduled for a day becomes available at this hour, together,
+          however late in the previous day you earned it. A late-night session before this hour
+          still counts as the previous day, which is why 4am is the usual choice. Changing it
+          re-labels the day records, so today's counters may look odd for one day.</div>
       </div>
       <div class="field">
         <label for="fGate">Unlock the reverse direction after</label>
@@ -390,23 +538,40 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         <input type="file" id="impFile" accept="application/json,.json" class="hidden">
         <div class="fh" id="backupNote">—</div>
       </div>
-      <div class="field">
-        <label for="fAuto">Export automatically every N ratings</label>
-        <input type="number" id="fAuto" min="0" max="2000" step="25" inputmode="numeric">
-        <div class="fh">Set to 0 to switch off. On iPhone the file lands in Files → Downloads; point that at iCloud Drive and this becomes an offsite backup. Safari may ask to confirm each download.</div>
+      <div class="field" style="display:none">
+        <label for="fAuto">unused</label>
+        <input type="number" id="fAuto">
+        <div class="fh">The gist below is the primary backup and runs on every save. This file
+          download is only a fallback, and only fires when the gist is switched off or has stopped
+          accepting pushes. 0 switches it off. On iPhone the file lands in Files → Downloads.
+          Safari sometimes blocks an automatic download outright — if it does, the panel at the
+          bottom of this screen will say so and offer a button instead.</div>
       </div>
       <div class="field">
-        <label for="fGistId">Sync to a private GitHub gist (optional)</label>
+        <label for="fGistId">Back up to a GitHub gist</label>
         <input type="text" id="fGistId" placeholder="gist id" autocapitalize="off" autocorrect="off" spellcheck="false">
         <input type="password" id="fGistTok" placeholder="fine-grained token, gists scope" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-top:9px">
         <button class="act" id="pushBtn">Push to gist now</button>
         <button class="act" id="pullBtn">Pull from gist</button>
-        <div class="fh">Off unless you fill both fields. The token is stored on this device only, but anything on the device can read it — scope it to gists alone and revoke it if the phone goes astray.</div>
+        <div class="fh">This is the primary backup: every save is pushed here a few seconds
+          later, and the front screen shows how long ago that last worked. Off unless you fill both
+          fields. <b>The token is never written into the gist or into a backup file</b> — it stays
+          in this browser's storage on this device. Anything on the device can still read it, so
+          scope it to gists alone and revoke it if the phone goes astray.</div>
       </div>
       <div class="field">
         <label>Set aside</label>
         <div class="fh" id="leechNote">—</div>
         <button class="act" id="unsuspBtn">Bring all set-aside words back</button>
+      </div>
+      <div class="field">
+        <label>What happens on its own</label>
+        <div id="bgLive"></div>
+        <button class="act" id="bgBackupBtn" style="display:none">Back up now</button>
+        <details class="fold" id="bgFold">
+          <summary>Every background process</summary>
+          <div id="bgList"></div>
+        </details>
       </div>
       <div class="field">
         <label>Start over</label>
@@ -436,8 +601,16 @@ const P=[0.212,1.2931,2.3065,8.2956,6.4133,0.8334,3.0194,0.001,1.8722,0.1666,0.7
          1.4835,0.0614,0.2629,1.6483,0.6014,1.8729,0.5425,0.0912,0.0658,0.1542];
 const DECAY=-P[20], FACTOR=Math.pow(0.9,1/DECAY)-1;
 const MIN=60000, HOUR=3600000, DAY=86400000;
-const ROLLOVER=4*HOUR;
-const dayKey=ts=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-ROLLOVER)/DAY);
+const ROLL_H=()=>(S&&S.settings&&S.settings.rollover!=null)?S.settings.rollover:4;
+const dayKey=ts=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-ROLL_H()*HOUR)/DAY);
+/* The timestamp at which study-day k begins. Two passes settle the timezone
+   offset, which matters only where the rollover straddles a DST change. */
+function dayStart(k){
+  const off=ROLL_H()*HOUR;
+  let t=k*DAY+off;
+  for(let i=0;i<3;i++) t=k*DAY+off+new Date(t).getTimezoneOffset()*60000;
+  return t;
+}
 const LEARN_STEPS=[1*MIN,10*MIN], RELEARN_STEPS=[10*MIN];
 const S_MIN=0.001;
 const AGAIN=1, HARD=2, GOOD=3, EASY=4;
@@ -484,7 +657,9 @@ function nextS(d,s,R,r){
 // c.st: 'L' learning, 'R' review, 'X' relearning
 function schedule(card,rating,now,st){
   const c=Object.assign({},card);
-  const daysSince=(c.last!=null)?Math.floor((now-c.last)/DAY):null;
+  // study days elapsed, not raw milliseconds: a review at 22:30 and another at
+  // 05:30 the next morning is one day apart, not zero
+  const daysSince=(c.last!=null)?(dayKey(now)-dayKey(c.last)):null;
   let ivl=0;
   const toReview=()=>{c.st='R';c.step=null;ivl=nextInterval(c.s,st)*DAY;};
   const steps=(c.st==='L')?LEARN_STEPS:RELEARN_STEPS;
@@ -531,6 +706,14 @@ function schedule(card,rating,now,st){
     if(delta>3) delta-=7; if(delta<-3) delta+=7;
     if(c.due+delta*DAY>now+2*DAY) c.due+=delta*DAY;
   }
+  // ---- review cards are due by day, not by clock ----
+  // Everything scheduled for a given study day unlocks together at the rollover,
+  // so a batch studied at 14:00 is not held back until 14:00 the next day.
+  // Learning steps are left on minutes.
+  if(c.st==='R' && c.due-now>=DAY){
+    const ivlDays=Math.max(Math.round((c.due-now)/DAY),1);
+    c.due=dayStart(dayKey(now)+ivlDays);
+  }
   return {card:c, ivl:c.due-now};
 }
 
@@ -568,8 +751,8 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, autoEvery:100, gistId:'', gistTok:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14},
-  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
+  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, gistId:'', gistTok:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14},
+  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null
 };
 let S=null;
@@ -581,15 +764,23 @@ function freshCard(c){
     st.st='R'; st.step=null;
     st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
     st.d = initD(c.seed===1?AGAIN:GOOD,true);
-    // give the seed a review date so retrievability is sane on first sight:
-    // without a last_review the model reads it as fully forgotten and over-rewards the first pass
-    st.last = Date.now();
-    st.due  = st.last + st.s*DAY;
+    // last/due are stamped at materialisation, not here: freshCard must stay
+    // deterministic so that peek() returns the same answer every call
   }
   return st;
 }
 function cardState(id){                       // materialise: use when writing
-  return S.cards[id] || (S.cards[id]=freshCard(BY_ID[id]));
+  let cs=S.cards[id];
+  if(!cs){
+    cs=S.cards[id]=freshCard(BY_ID[id]);
+    // a seeded card needs a review date, or the model reads it as fully
+    // forgotten and over-rewards the first pass
+    if(cs.st==='R'&&cs.s!=null&&cs.last==null){
+      cs.last=Date.now();
+      cs.due=dayStart(dayKey(cs.last)+Math.max(Math.round(cs.s),1));
+    }
+  }
+  return cs;
 }
 function peek(id){                            // read-only: does not write to the store
   return S.cards[id] || freshCard(BY_ID[id]);
@@ -622,6 +813,7 @@ function idbGet(){
 }
 let storageOK=true, saveTimer=null;
 function save(){
+  S.lastSave=Date.now();
   const json=JSON.stringify(S);
   try{
     localStorage.setItem(KEY,json);
@@ -648,6 +840,9 @@ function normalise(o){
     c.reps|=0; c.lapses|=0; c.buried|=0;
     if(typeof c.due!=='number') c.due=0;
     if(c.st!=='L'&&c.st!=='R'&&c.st!=='X') c.st='L';
+    // one-time migration: review cards move onto the day boundary. This only
+    // ever moves a due date earlier within its own day, never to another day.
+    if(c.st==='R'&&c.due>0) c.due=dayStart(dayKey(c.due));
   }
   return s;
 }
@@ -672,6 +867,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
+const BUILD='2026.07.30.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -686,15 +882,23 @@ function available(cs,c,now,d){
 function buildQueue(dir){
   const now=Date.now(), d=today();
   const learn=[], due=[], fresh=[], seeded=[];
-  const introducedToday=(S.days[d]&&S.days[d].intro)||0;
+  // the allowance is spent per direction: introducing forward words must not
+  // starve the reverse direction. Older records only counted a total, which
+  // was always forward-only in practice.
+  const rd=S.days[d]||{};
+  const introducedToday=(rd['intro'+dir]!=null)?rd['intro'+dir]
+                       :(dir==='L'?(rd.intro||0):0);
   const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
   for(const c of CARDS){
     if(c.dir!==dir) continue;
     const cs=peek(c.id);
     if(!available(cs,c,now,d)) continue;
     if(cs.reps===0){ (cs.s!=null?seeded:fresh).push(c.id); continue; }
-    if(cs.st==='L'||cs.st==='X'){ if(cs.due<=now+AHEAD) learn.push(c.id); }
-    else if(cs.due<=now) due.push(c.id);
+    // A review card held on a short step by the drill layer is not in 'L' or 'X',
+    // but it is still a within-session card. Both kinds get the learn-ahead, or a
+    // day can end with cards pending that the queue refuses to serve.
+    if(cs.due<=now){ ((cs.st==='L'||cs.st==='X')?learn:due).push(c.id); }
+    else if(cs.due<=now+AHEAD) learn.push(c.id);
   }
   due.sort((a,b)=>peek(a).due-peek(b).due);
   learn.sort((a,b)=>peek(a).due-peek(b).due);
@@ -720,16 +924,51 @@ function pick(){
 
 /* ======================= UI ======================= */
 const $=id=>document.getElementById(id);
+const PALETTES={
+  vellum:     'Vellum',
+  catppuccin: 'Catppuccin',
+  rosepine:   'Rose Pine',
+  kanagawa:   'Kanagawa',
+  gruvbox:    'Gruvbox',
+  everforest: 'Everforest',
+  legacy:     'Legacy'
+};
+const PAL_KEYS=Object.keys(PALETTES);
+/* Daily rotation walks a shuffled cycle: every theme appears once before any
+   repeats, and the cycle reshuffles when it runs out. */
+function rollTheme(){
+  if(!S||S.rotate!=='daily') return;
+  const d=today();
+  if(S.rotDay===d) return;
+  let pool=PAL_KEYS.filter(k=>!(S.rotSeen||[]).includes(k) && k!==S.palette);
+  if(!pool.length){ S.rotSeen=[]; pool=PAL_KEYS.filter(k=>k!==S.palette); }
+  S.palette=pool[Math.floor(Math.random()*pool.length)];
+  S.rotSeen=(S.rotSeen||[]).concat([S.palette]);
+  S.rotDay=d;
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}   // survive a reload
+}
+function surprise(){
+  const pool=PAL_KEYS.filter(k=>k!==S.palette);
+  S.palette=pool[Math.floor(Math.random()*pool.length)];
+  if(S.rotate==='daily'){ S.rotDay=today(); S.rotSeen=(S.rotSeen||[]).concat([S.palette]); }
+  save(); applyTheme(); renderSet(); renderHome();
+  toast(PALETTES[S.palette]);
+}
 function applyTheme(){
   let t=S.theme||'light';
   if(t==='auto') t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+  rollTheme();                                   // daily rotation, if switched on
+  const p=PALETTES[S.palette]?S.palette:'vellum';
   document.documentElement.dataset.theme=t;
+  document.documentElement.dataset.palette=p;
+  // read the palette's own background back out rather than hard-coding fourteen values
+  const bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#ffffff';
   const m=document.querySelector('meta[name=theme-color]');
-  if(m) m.setAttribute('content', t==='dark'?'#0e1230':'#ffffff');
-  document.documentElement.style.background = t==='dark'?'#0e1230':'#ffffff';
+  if(m) m.setAttribute('content', bg);
+  document.documentElement.style.background = bg;
 }
 const show=name=>{
-  ['scHome','scStudy','scDone','scSet'].forEach(s=>$(s).classList.toggle('on',s===name));
+  ['scHome','scStudy','scDone','scSet','scLog'].forEach(s=>$(s).classList.toggle('on',s===name));
 };
 function toast(msg,ms){
   const t=$('toast'); t.textContent=msg; t.classList.add('on');
@@ -801,6 +1040,7 @@ function rate(pressed){
   const r=adjustGrade(pressed,thinkMs);
   const now=Date.now(), c=BY_ID[current], cs=cardState(current);
   const frame={id:current, before:JSON.parse(JSON.stringify(cs)),
+               dk:today(),                    // the day this rating belonged to
                day:JSON.parse(JSON.stringify(S.days[today()]||{})), logLen:S.log.length, buried:[]};
   undoStack.push(frame);
   if(undoStack.length>40) undoStack.shift();
@@ -811,8 +1051,10 @@ function rate(pressed){
   if(r!==pressed) toast(pressed===EASY?'Recorded as Good — that one took a while':'Recorded as Hard — that one took a while',1600);
   const d=today();
   const rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
-  rec.n++; if(first) rec.intro++;
-  if(cs.st==='R'){ rec.tot++; if(r!==AGAIN) rec.ok++; }
+  rec.n++;
+  if(first){ rec.intro=(rec.intro|0)+1; rec['intro'+c.dir]=(rec['intro'+c.dir]|0)+1; }
+  // relearning cards are real reviews too, and were being left out of the rate
+  if(cs.st==='R'||cs.st==='X'){ rec.tot++; if(r!==AGAIN) rec.ok++; }
   // bury the same word in the other direction until tomorrow
   c.idx.forEach(i=>(SIBLINGS[i]||[]).forEach(sid=>{
     if(sid!==current&&BY_ID[sid].dir!==c.dir){
@@ -821,8 +1063,7 @@ function rate(pressed){
     }
   }));
   S.sinceExport=(S.sinceExport||0)+1;
-  save();
-  autoBackup();
+  save();          // save() schedules the gist push; nothing else fires per rating
   next();
 }
 const st_=()=>S.settings;
@@ -836,7 +1077,8 @@ function undo(){
   if(!u){ toast('Nothing to undo'); return; }
   S.cards[u.id]=u.before;
   (u.buried||[]).forEach(([sid,v])=>{ if(S.cards[sid]) S.cards[sid].buried=v; });
-  { const d0=today(), keep=(S.days[d0]&&S.days[d0].cap!=null)?S.days[d0].cap:null;
+  // restore into the day the rating belonged to, not whichever day it is now
+  { const d0=(u.dk!=null)?u.dk:today(), keep=(S.days[d0]&&S.days[d0].cap!=null)?S.days[d0].cap:null;
     S.days[d0]=(u.day&&u.day.n!=null)?u.day:{n:0,intro:0,ok:0,tot:0};
     if(keep!=null) S.days[d0].cap=keep; }              // the day's allowance is a setting, not a rating
   S.log.length=u.logLen;
@@ -956,6 +1198,7 @@ function renderHome(){
   renderPace();
   renderSyllabus();
   renderWarn();
+  $('buildTag').textContent='Version '+BUILD+' · '+PALETTES[S.palette||'vellum'];
   $('streakNote').textContent = streak? (streak+' day'+(streak===1?'':'s')+' running') : 'No streak yet — the first day starts it.';
 
   const seen=s2.total-s2.unseen;
@@ -1036,8 +1279,8 @@ function expectedAt(dir,when){
     total++;
     const cs=S.cards[c.id];
     if(!cs||cs.reps===0||cs.s==null||cs.last==null) continue;   // never met scores zero
+    if(cs.susp) continue;                                       // set aside: not counted either way
     met++;
-    if(cs.susp) continue;
     sum+=retrievability(cs,when);
   }
   return {sum:sum,total:total,met:met};
@@ -1176,20 +1419,11 @@ function renderWarn(){
 }
 
 /* ======================= export / import ======================= */
-function gistHealthy(){
-  const {gistId,gistTok}=S.settings;
-  if(!gistId||!gistTok) return false;
-  if(!S.lastSync) return false;
-  return (Date.now()-S.lastSync) < DAY;          // a push landed within the last 24 hours
-}
-/* The gist is the primary backup. The file download is kept only as a fallback
-   for when the gist is not set up, or has stopped accepting pushes.          */
-function autoBackup(){
-  const {gistId,gistTok}=S.settings;
-  if(gistId&&gistTok){ pushGist(true); if(gistHealthy()) return; }
-  if(S.settings.autoEvery>0&&S.sinceExport>=S.settings.autoEvery) doExport(true);
-}
-function doExport(auto){
+/* The gist is the only automatic backup. There is no automatic file download:
+   Safari blocks a programmatic download that no tap asked for, silently, so it
+   could never be relied on. Files are saved by hand, or from the button that
+   appears when the gist has gone quiet. */
+function doExport(){
   try{
     const blob=new Blob([JSON.stringify(sanitised())],{type:'application/json'});
     const url=URL.createObjectURL(blob);
@@ -1199,9 +1433,13 @@ function doExport(auto){
     document.body.appendChild(a);              // Safari needs it in the DOM
     a.click();
     setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
-    S.sinceExport=0; S.lastExport=Date.now(); save();
-    if(!auto) toast('Backup saved'); else toast('Automatic backup saved');
-  }catch(e){ toast('Export failed — try again from Settings'); }
+    S.sinceExport=0; S.lastExport=Date.now();
+    save();
+    toast('Backup saved');
+  }catch(e){
+    save();
+    toast('Export failed — try again from Settings');
+  }
 }
 function doImport(file){
   const fr=new FileReader();
@@ -1240,7 +1478,11 @@ async function pushGist(quiet){
 function adopt(inc){
   inc.settings.gistId=S.settings.gistId;
   inc.settings.gistTok=S.settings.gistTok;
-  S=inc; S.lastSync=Date.now(); S.syncedLogLen=S.log.length; save();
+  S=inc; S.lastSync=Date.now(); S.syncedLogLen=S.log.length;
+  // the undo stack refers to the state we just replaced; one undo would write a
+  // pre-restore card back and truncate the restored log
+  undoStack=[]; current=null;
+  save();
 }
 async function fetchGist(quiet){
   const {gistId,gistTok}=S.settings;
@@ -1286,12 +1528,95 @@ async function pullGist(){
   adopt(inc); renderHome(); toast('Pulled '+S.log.length+' reviews');
 }
 
+/* ================= what happens on its own =================
+   Live state first, then the standing list. The point of this panel is that
+   nothing the app does to your data should be invisible to you.            */
+function renderBg(){
+  const now=Date.now(), d=today(), rec=S.days[d]||{};
+  const ago=t=>{ if(!t) return 'never';
+    const a=now-t;
+    return a<MIN?'just now':a<HOUR?Math.round(a/MIN)+'m ago':
+           a<DAY?Math.round(a/HOUR)+'h ago':Math.round(a/DAY)+'d ago'; };
+  const gist=!!(S.settings.gistId&&S.settings.gistTok);
+  let h='';
+  h+=row('Saved on this device', ago(S.lastSave));
+  h+=row('Pushed to the gist', gist?ago(S.lastSync):'switched off');
+  if(gist&&S.lastSync&&(now-S.lastSync)>DAY)
+    h+='<div class="note bad">The gist has not accepted a push in over a day. The usual cause is an expired or revoked token.</div>';
+  h+=row('Ratings since a saved file', (S.sinceExport||0));
+  h+=row('Last file saved by hand', ago(S.lastExport));
+  h+=row('Reviewed today', (rec.n||0)+' ratings, '+(rec.intro||0)+' new');
+  const q=(typeof Q!=='undefined'&&Q&&Q.due)?Q:{due:[],learn:[],intro:[]};
+  h+=row('Waiting right now', q.due.length+' due, '+q.learn.length+' in steps, '+q.intro.length+' new');
+  h+=row('Day rolls over at', '4am');
+  $('bgLive').innerHTML=h;
+
+  // offer a tap when the automatic download cannot be trusted
+  // a tap is a gesture Safari will honour; an automatic download is not
+  const stale=gist?(!S.lastSync||(now-S.lastSync)>DAY):true;
+  const btn=$('bgBackupBtn');
+  if(btn) btn.style.display=(stale&&(S.sinceExport||0)>=50)?'block':'none';
+
+  const items=[
+    ['Every rating','writes the whole state to this browser\'s storage, and mirrors it to a second store in case the first is evicted.'],
+    ['Six seconds after a save','pushes a copy to the gist. The token is stripped out first.'],
+    ['When nothing else is due','serves a learning card up to 20 minutes early, so a day cannot end with cards still circling.'],
+    ['Rating a word','buries its opposite direction for the rest of the day, so you never meet the same word both ways in one sitting.'],
+    ['At the rollover hour','the day turns over: the new-word allowance resets, buried words come back, and everything scheduled for the new day unlocks at once.'],
+    ['Eight failures','sets a word aside and stops showing it until you bring it back.'],
+    ['Answering slowly','records a lower grade than the button you pressed. Never a higher one, and never on a failure.'],
+    ['A forward card holding long enough','unlocks its reverse card, subject to the gate in these settings.'],
+    ['Intervals between 3 and 21 days','get nudged onto your chosen review weekday, by up to three days.'],
+    ['A word still being drilled','is held at a one-day interval until you have got it right on consecutive days.'],
+    ['Nothing at all','downloads a file on its own. Safari blocks that silently, so files are saved by hand or from the button above.'],
+    ['Each launch, with rotation on','picks a theme you have not had yet this cycle.']
+  ];
+  $('bgList').innerHTML=items.map(([a,b])=>
+    '<div class="statRow" style="align-items:flex-start"><span style="flex:1 1 auto">'+
+    '<b style="color:var(--ink);font-weight:500">'+a+'</b> '+b+'</span></div>').join('');
+}
+
+/* ======================= changelog ======================= */
+const CHANGES=[
+  ['2026.07.30.1',[
+    'A review card held on a short step by the drill setting is now served by the learn-ahead too. Previously the day could end with those cards pending and nothing on screen.',
+    'Reviews are now due by day rather than by clock time: everything scheduled for a day unlocks together at the rollover, so an afternoon batch is no longer held back until the afternoon.',
+    'A study day can begin at midnight, 3am, 4am or 6am.',
+    'Elapsed time is counted in study days. A review at 22:30 and another at 05:30 used to read as zero days apart, and was scheduled as a same-day repetition.',
+    'The daily new-word allowance is counted separately per direction. Forward words used to consume the reverse direction\'s allowance too.',
+    'No more automatic file downloads \u2014 Safari blocked them silently, so they never worked. The gist is the automatic backup; files are saved by hand.',
+    'Undo no longer survives a restore, where it could truncate the restored log.',
+    'Undo across a rollover no longer writes yesterday\'s counts into today.',
+    'Relearning cards count toward the recall rate.',
+    'One gist push per save instead of two.',
+    'Set-aside words no longer distort the syllabus estimate.'
+  ]],
+  ['2026.07.31',[
+    'Seven themes, each with its own light and dark variant. Vellum is now the default; Legacy is the original palette.',
+    'A theme can rotate daily, in a shuffled cycle that shows every one before repeating any.',
+    'The gist is the primary backup. The file download is now only a fallback for when the gist is off or failing.',
+    'The gist token is no longer written into the gist or into backup files. It was, and GitHub kept revoking it.',
+    'Learning cards are served up to 20 minutes early when nothing else is left, so the day no longer ends with cards stranded mid-step.',
+    'Changing the day\'s new-word allowance survives an undo. It used to be silently reverted.',
+    'A syllabus panel on the front screen: expected recall now, and on term day.',
+    'This screen, and a panel in settings listing every background process.'
+  ]],
+  ['Earlier',[
+    'FSRS scheduling seeded from the audit, part chips, timing-based grade adjustment, the reverse-direction gate, and the pace panel.'
+  ]]
+];
+function renderLog(){
+  $('logBody').innerHTML=CHANGES.map(([v,items])=>
+    '<div class="logv">'+v+'</div>'+items.map(i=>'<div class="logi">'+i+'</div>').join('')
+  ).join('');
+}
+
 /* ======================= settings screen ======================= */
 function renderSet(){
   const s=S.settings;
   $('fNew').value=s.newPerDay; $('fRet').value=Math.round(s.retention*100);
   $('fRetVal').textContent=Math.round(s.retention*100)+'%';
-  $('fMax').value=s.maxIvl; $('fAuto').value=s.autoEvery;
+  $('fMax').value=s.maxIvl;
   $('fGistId').value=s.gistId||''; $('fGistTok').value=s.gistTok||'';
   $('fTerm').value=s.term||'2026-10-11';
   $('fKnown').value=s.knownDays||21;
@@ -1299,6 +1624,14 @@ function renderSet(){
   $('fTiming').value=s.useTiming?'1':'0';
   $('fGate').value=s.gateDays|0;
   $('fTheme').value=S.theme||'light';
+  $('fPal').value=PALETTES[S.palette]?S.palette:'vellum';
+  $('fRoll').value=String(S.settings.rollover!=null?S.settings.rollover:4);
+  $('fRot').value=S.rotate||'off';
+  $('palNote').innerHTML='<span class="swatch" style="background:var(--coral)"></span>'+
+    PALETTES[S.palette]+', '+((S.theme==='auto')?'following the system':S.theme)+
+    '. Light and dark are chosen separately, so every theme works either way.'+
+    (S.rotate==='daily'?' Rotating daily — each theme comes up once before any repeats.':'');
+  renderBg();
   $('fDrill').value=s.drillDays|0;
   $('fRevDay').value=String(s.reviewDay===undefined?-1:s.reviewDay);
   $('fWeak').value=s.weakFirst?'1':'0';
@@ -1355,15 +1688,22 @@ tapZone($('unsuspBtn'),()=>{
 });
 tapZone($('resetBtn'),()=>{
   if(!confirm('Erase every rating and interval on this device? A backup downloads first.')) return;
-  doExport(true);
+  undoStack=[]; current=null;
+  doExport();
   setTimeout(()=>{ S=JSON.parse(JSON.stringify(defaults)); save(); renderHome(); show('scHome'); toast('Erased'); },700);
 });
 $('fNew').addEventListener('change',e=>{S.settings.newPerDay=Math.max(0,e.target.value|0);save();});
 $('fRet').addEventListener('input',e=>{S.settings.retention=e.target.value/100;$('fRetVal').textContent=e.target.value+'%';});
 $('fRet').addEventListener('change',()=>save());
 $('fMax').addEventListener('change',e=>{S.settings.maxIvl=Math.max(30,e.target.value|0);save();});
-$('fAuto').addEventListener('change',e=>{S.settings.autoEvery=Math.max(0,e.target.value|0);save();});
-$('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyTheme();});
+$('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyTheme();renderSet();});
+$('fPal').addEventListener('change',e=>{S.palette=e.target.value;if(S.rotate==='daily')S.rotDay=today();save();applyTheme();renderSet();renderHome();});
+$('fRot').addEventListener('change',e=>{S.rotate=e.target.value;S.rotDay=today();S.rotSeen=[S.palette];save();renderSet();});
+$('fRoll').addEventListener('change',e=>{S.settings.rollover=e.target.value|0;save();renderHome();renderSet();});
+$('surpriseBtn').addEventListener('click',surprise);
+$('bgBackupBtn').addEventListener('click',()=>{doExport(false);renderBg();});
+$('buildTag').addEventListener('click',()=>{renderLog();show('scLog');});
+$('logBack').addEventListener('click',()=>{show('scHome');renderHome();});
 $('fGate').addEventListener('change',e=>{S.settings.gateDays=Math.max(0,e.target.value|0);save();});
 $('fTiming').addEventListener('change',e=>{S.settings.useTiming=(e.target.value==='1');save();});
 $('fEasy').addEventListener('change',e=>{S.settings.requireEasy=(e.target.value==='1');save();});
