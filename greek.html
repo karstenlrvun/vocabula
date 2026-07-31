@@ -236,6 +236,22 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
 .statRow b{font-weight:500;font-variant-numeric:tabular-nums}
+.stackbar{display:flex;height:20px;border-radius:7px;overflow:hidden;background:var(--panel);margin-top:4px}
+.stackbar>div{height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:7px 16px;margin-top:12px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.s-unseen{background:var(--line)}
+.s-learning{background:var(--amber)}
+.s-young{background:var(--good);opacity:.5}
+.s-mature{background:var(--good)}
+.s-susp{background:var(--faint)}
+.wpart{margin-top:22px}
+.wpart h3{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:500;
+  color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin:0 0 9px}
+.wpart h3 b{font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
+.wgrid{display:flex;flex-wrap:wrap;gap:3px}
+.wbox{width:9px;height:9px;border-radius:2px}
 .build{margin:30px 0 8px;text-align:center;font-size:11px;letter-spacing:.09em;
   text-transform:uppercase;color:var(--faint);padding:8px;cursor:pointer}
 .logv{font-size:13px;font-weight:600;color:var(--coral);margin:16px 0 6px;font-family:var(--sans)}
@@ -303,7 +319,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
   <!-- ============ HOME ============ -->
   <section id="scHome" class="screen on">
     <div class="bar">
-      <div class="icon" style="visibility:hidden">·</div>
+      <button class="icon" id="toStats" aria-label="Stats">&#9638;</button>
       <div class="title"></div>
       <button class="icon" id="toSettings" aria-label="Settings">&#9881;</button>
     </div>
@@ -368,6 +384,31 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       </div>
 
       <div class="build" id="buildTag"></div>
+    </div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section id="scStats" class="screen">
+    <div class="bar">
+      <button class="icon" id="statsBack" aria-label="Back">&#8249;</button>
+      <div class="title">Stats</div>
+      <div class="icon" style="visibility:hidden">·</div>
+    </div>
+    <div class="home">
+      <div class="dirs">
+        <button class="dir sel" id="statsDirL"><div class="dt" id="sdtL"></div><div class="dd" id="sddL">—</div></button>
+        <button class="dir" id="statsDirE"><div class="dt" id="sdtE"></div><div class="dd" id="sddE">—</div></button>
+      </div>
+      <div class="sect" style="margin-top:8px">
+        <h2>Where you stand</h2>
+        <div class="stackbar" id="statsBar"></div>
+        <div class="legend" id="statsLegend"></div>
+        <div class="note">Every word in the list, whether you've met it yet or not — not just the part currently switched on.</div>
+      </div>
+      <div class="sect">
+        <h2>By part</h2>
+        <div id="statsGrid"></div>
+      </div>
     </div>
   </section>
 
@@ -878,7 +919,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.07.31.1';
+const BUILD='2026.07.31.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -991,7 +1032,7 @@ function applyTheme(){
   document.documentElement.style.background = bg;
 }
 const show=name=>{
-  ['scHome','scStudy','scDone','scSet','scLog'].forEach(s=>$(s).classList.toggle('on',s===name));
+  ['scHome','scStudy','scDone','scSet','scLog','scStats'].forEach(s=>$(s).classList.toggle('on',s===name));
 };
 function toast(msg,ms){
   const t=$('toast'); t.textContent=msg; t.classList.add('on');
@@ -1148,6 +1189,65 @@ function dirStats(dir){
     else mature++;
   });
   return {total:all.length,unseen,learning,young,mature,susp};
+}
+// same four-way split as dirStats, but per word (not aggregate only) and
+// ignoring part chips on purpose -- see the comment above partTable/expectedAt:
+// the stats page asks what you know of the whole list, not the active slice.
+function statusOf(cs){
+  if(!cs||cs.reps===0) return 'unseen';
+  if(cs.susp) return 'susp';
+  if(cs.st!=='R') return 'learning';
+  return cs.s<21 ? 'young' : 'mature';
+}
+const STATUS_ORDER=['unseen','learning','young','mature','susp'];
+const STATUS_LABEL={unseen:'Still to meet',learning:'In short-term steps',
+  young:'Settling (under 3 weeks)',mature:'Holding (3 weeks or more)',susp:'Set aside'};
+function wholeSyllabusStats(dir){
+  const totals={unseen:0,learning:0,young:0,mature:0,susp:0};
+  const bySec={};
+  CARDS.forEach(c=>{
+    if(c.dir!==dir) return;
+    const st=statusOf(S.cards[c.id]);
+    totals[st]++;
+    const sec=bySec[c.sec]||(bySec[c.sec]={cards:[]});
+    sec.cards.push({id:c.id,st:st});
+  });
+  return {totals,bySec};
+}
+function renderStats(){
+  const dir=S.dir;
+  $('statsDirL').classList.toggle('sel',dir==='L');
+  $('statsDirE').classList.toggle('sel',dir==='E');
+  $('sdtL').textContent=DECK.fwd; $('sdtE').textContent=DECK.rev;
+  $('sddL').textContent=CARDS.filter(c=>c.dir==='L').length+' words';
+  $('sddE').textContent=CARDS.filter(c=>c.dir==='E').length+' words';
+
+  const {totals,bySec}=wholeSyllabusStats(dir);
+  const total=CARDS.filter(c=>c.dir===dir).length;
+
+  let barHtml='';
+  STATUS_ORDER.forEach(k=>{
+    const n=totals[k]; if(!n) return;
+    barHtml+='<div class="s-'+k+'" style="width:'+(100*n/total)+'%" title="'+STATUS_LABEL[k]+': '+n+'"></div>';
+  });
+  $('statsBar').innerHTML=barHtml;
+
+  let legendHtml='';
+  STATUS_ORDER.forEach(k=>{
+    const n=totals[k]; if(!n) return;
+    legendHtml+='<span><i class="sw s-'+k+'"></i>'+STATUS_LABEL[k]+' — '+n+' ('+Math.round(100*n/total)+'%)</span>';
+  });
+  $('statsLegend').innerHTML=legendHtml;
+
+  let gridHtml='';
+  SECTIONS.forEach(sec=>{
+    const s=bySec[sec]; if(!s) return;
+    const met=s.cards.filter(c=>c.st!=='unseen').length;
+    gridHtml+='<div class="wpart"><h3><span>'+sec+'</span><b>'+met+' / '+s.cards.length+'</b></h3><div class="wgrid">';
+    s.cards.forEach(c=>{ gridHtml+='<div class="wbox s-'+c.st+'"></div>'; });
+    gridHtml+='</div></div>';
+  });
+  $('statsGrid').innerHTML=gridHtml||'<div class="note">No words to show.</div>';
 }
 function renderChips(){
   const box=$('chips');
@@ -1602,6 +1702,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.07.31.2',[
+    'A stats page, next to the settings icon on the front screen: a bar showing where every word in the whole list currently stands (still to meet, in short-term steps, settling, holding), and a grid of little boxes per part that fills in as words move through those stages.'
+  ]],
   ['2026.07.31.1',[
     'Fixed: the wider layout meant to kick in on iPad, Mac and phones turned sideways (a centred column, bigger type) had stopped taking effect — a later, unconditional style rule was silently cancelling it. Rotating to landscape now actually scales the card again.'
   ]],
@@ -1702,6 +1805,10 @@ tapZone($('toHome2'),()=>{renderHome();show('scHome');});
 tapZone($('toHome3'),()=>{renderHome();show('scHome');});
 tapZone($('doneBack'),()=>{renderHome();show('scHome');});
 tapZone($('toSettings'),()=>{renderSet();show('scSet');});
+tapZone($('toStats'),()=>{renderStats();show('scStats');});
+tapZone($('statsBack'),()=>{renderHome();show('scHome');});
+tapZone($('statsDirL'),()=>{S.dir='L';save();renderStats();});
+tapZone($('statsDirE'),()=>{S.dir='E';save();renderStats();});
 tapZone($('dirLtoE'),()=>{S.dir='L';save();renderHome();});
 tapZone($('dirEtoL'),()=>{S.dir='E';save();renderHome();});
 tapZone($('startBtn'),()=>{undoStack=[];next();if(current)show('scStudy');});
