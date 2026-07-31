@@ -142,14 +142,6 @@ body{
   padding-bottom:env(safe-area-inset-bottom);
   padding-left:env(safe-area-inset-left);
   padding-right:env(safe-area-inset-right);}
-/* wide screens (iPad, Mac): keep a phone-width column centred, roomier type */
-@media (min-width:700px){
-  #app{max-width:600px;margin:0 auto}
-  .prompt{font-size:38px}
-  .prompt.eng{font-size:30px}
-  .answer{font-size:23px}
-  .answer.lat{font-size:28px}
-}
 .screen{flex:1;display:none;flex-direction:column;min-height:0}
 .screen.on{display:flex}
 button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
@@ -291,6 +283,18 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
   transition:opacity .2s;pointer-events:none;z-index:50;max-width:84%;text-align:center}
 .toast.on{opacity:.95}
 @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+/* wide screens (iPad, Mac, phones in landscape): keep a phone-width column
+   centred, roomier type. Placed last in the stylesheet deliberately — at
+   equal specificity the later rule wins regardless of the media query, so
+   this block must come after the unconditional .prompt/.answer rules above
+   or its font-size boost is silently overridden and landscape never scales. */
+@media (min-width:700px){
+  #app{max-width:600px;margin:0 auto}
+  .prompt{font-size:38px}
+  .prompt.eng{font-size:30px}
+  .answer{font-size:23px}
+  .answer.lat{font-size:28px}
+}
 </style>
 </head>
 <body>
@@ -874,7 +878,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.07.31.0';
+const BUILD='2026.07.31.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1598,6 +1602,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.07.31.1',[
+    'Fixed: the wider layout meant to kick in on iPad, Mac and phones turned sideways (a centred column, bigger type) had stopped taking effect — a later, unconditional style rule was silently cancelling it. Rotating to landscape now actually scales the card again.'
+  ]],
   ['2026.07.31.0',[
     'Catppuccin, Rose Pine, Kanagawa, Gruvbox and Everforest are more saturated -- richer, less washed-out, especially the rating buttons. Everforest\'s Good button in dark mode was particularly pastel and is now an actual forest green. Vellum and Legacy are unchanged. Checked against the original contrast on every button; none got harder to read, several improved.'
   ]],
