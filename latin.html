@@ -172,7 +172,9 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .answer .alt{display:block;margin-top:7px}
 .answer.lat{font-family:var(--serif);font-size:25px}
 .hintline{margin-top:22px;font-size:13px;color:var(--faint);height:16px}
-.leechtag{margin-top:10px;font-size:12px;color:var(--amber)}
+.leechtag{margin-top:10px;font-size:12px;color:var(--amber);display:flex;align-items:center;justify-content:center;gap:8px}
+.flagBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:16px;line-height:1;color:var(--faint)}
+.flagBtn.on{color:var(--bad-ink)}
 
 /* ---------- rating row ---------- */
 .rateRow{flex:0 0 auto;display:flex;gap:9px;padding:10px 12px 14px}
@@ -236,6 +238,10 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
 .statRow b{font-weight:500;font-variant-numeric:tabular-nums}
+.flagRow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.flagRow:last-child{border-bottom:none}
+.flagRow .term{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flagRow .cnt{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
 .stackbar{display:flex;height:20px;border-radius:7px;overflow:hidden;background:var(--panel);margin-top:4px}
 .stackbar>div{height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:7px 16px;margin-top:12px;font-size:13px;color:var(--muted)}
@@ -383,6 +389,18 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         </details>
       </div>
 
+      <div class="sect">
+        <h2>Struggling words</h2>
+        <details class="fold" id="againFold">
+          <summary>Hit "Again" 5+ times (<span id="againCount">0</span>)</summary>
+          <div id="againList"></div>
+        </details>
+        <details class="fold" id="asideFold">
+          <summary>Set aside (<span id="asideCount">0</span>)</summary>
+          <div id="asideList"></div>
+        </details>
+      </div>
+
       <div class="build" id="buildTag"></div>
     </div>
   </section>
@@ -436,7 +454,10 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       <div class="prompt" id="prompt"></div>
       <div class="rule"></div>
       <div class="answer" id="answer"></div>
-      <div class="leechtag hidden" id="leechTag">set this one aside — it keeps slipping</div>
+      <div class="leechtag hidden" id="leechTag">
+        <button class="flagBtn" id="flagBtn" aria-label="Flag this word">&#9873;</button>
+        <span id="leechText"></span>
+      </div>
       <div class="hintline" id="hintline"></div>
     </div>
     <div class="revealRow" id="revealRow">
@@ -584,6 +605,12 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         <div class="fh" id="backupNote">—</div>
       </div>
       <div class="field">
+        <label for="fDevice">This device's name</label>
+        <input type="text" id="fDevice" placeholder="e.g. iPhone, iPad, Mac" autocapitalize="words" autocorrect="off" spellcheck="false">
+        <div class="fh">Stamped onto anything pushed to the gist or saved as a backup file from
+          here, so if this device and another ever disagree, you can tell whose copy is whose.</div>
+      </div>
+      <div class="field">
         <label for="fGistId">Back up to a GitHub gist</label>
         <input type="text" id="fGistId" placeholder="gist id" autocapitalize="off" autocorrect="off" spellcheck="false">
         <input type="password" id="fGistTok" placeholder="fine-grained token, gists scope" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-top:9px">
@@ -591,7 +618,10 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         <button class="act" id="pullBtn">Pull from gist</button>
         <div class="fh">This is the primary backup: every save is pushed here a few seconds
           later, and the front screen shows how long ago that last worked. Off unless you fill both
-          fields. <b>The token is never written into the gist or into a backup file</b> — it stays
+          fields. Use the same gist id and token on every device you want kept in step. If this
+          device and another have both moved on since the last sync, you'll be asked which copy to
+          keep, labelled by device name — nothing is overwritten silently.
+          <b>The token is never written into the gist or into a backup file</b> — it stays
           in this browser's storage on this device. Anything on the device can still read it, so
           scope it to gists alone and revoke it if the phone goes astray.</div>
       </div>
@@ -651,6 +681,11 @@ function dayStart(k){
 const LEARN_STEPS=[1*MIN,10*MIN], RELEARN_STEPS=[10*MIN];
 const S_MIN=0.001;
 const AGAIN=1, HARD=2, GOOD=3, EASY=4;
+// A word can be flagged (set aside, same as susp) by hand once it has drawn
+// an Again on this many separate study days; past FLAG_AUTO it happens on
+// its own. See againDayCounts() below for why "separate days" and not raw
+// lapses.
+const FLAG_MANUAL=5, FLAG_AUTO=8;
 
 const clampD=d=>Math.min(Math.max(d,1),10);
 const clampS=s=>Math.max(s,S_MIN);
@@ -788,9 +823,9 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, gistId:'', gistTok:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14},
+  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
-  deck:KEY, lastSync:null, syncedLogLen:null
+  deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
 let S=null;
 
@@ -869,7 +904,12 @@ function save(){
   idbPut(S);
   clearTimeout(saveTimer);
   if(S.settings.gistId&&S.settings.gistTok) saveTimer=setTimeout(()=>pushGist(true),6000);
-  renderWarn();
+  // #homeWarn lives inside scHome, so this is wasted work unless it is on screen --
+  // and save() runs on EVERY rating. With dir 'E' and the gate on, renderWarn()
+  // builds the whole reverse queue and may then walk every card's gate, per rating,
+  // to update a banner you cannot see while studying. renderHome() calls
+  // renderWarn(qE) itself, so the banner is always rebuilt on arriving home.
+  if($('scHome').classList.contains('on')) renderWarn();
 }
 function normalise(o){
   if(!o||typeof o!=='object') return null;
@@ -895,6 +935,14 @@ function normalise(o){
       // ever moves a due date earlier within its own day, never to another day.
       if(c.st==='R'&&c.due>0) c.due=dayStart(dayKey(c.due));
     }
+    // retroactive: catch any word that had already reached FLAG_AUTO separate
+    // Again-days before this existed, so it doesn't sit unflagged until its
+    // next lapse. ROLL_OVR is still in effect here, so dayKey() below uses
+    // this state's own rollover, not whatever S happens to be right now.
+    const bad=againDayCounts(s.log);
+    for(const id in bad){
+      if(bad[id]>=FLAG_AUTO && s.cards[id] && !s.cards[id].susp) s.cards[id].susp=true;
+    }
   } finally { ROLL_OVR=null; }
   return s;
 }
@@ -919,7 +967,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.07.31.2';
+const BUILD='2026.08.01.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1067,13 +1115,23 @@ function renderCard(){
     const el=document.createElement('span'); el.className=i?'alt':''; el.textContent=x; ans.appendChild(el);
   });
   else ans.textContent=c.a;
-  $('leechTag').classList.toggle('hidden',(cs.lapses||0)<8);
+  renderLeech();
   $('hintline').textContent = cs.reps===0 ? (cs.s!=null?'carried over from the audit':'first time') : '';
   $('revealRow').classList.remove('hidden');
   $('rateRow').classList.add('hidden');
   ans.classList.remove('on');
   shownAt=Date.now(); thinkMs=null; cardDirty=false;
   renderCounts();
+}
+function renderLeech(){
+  const n=againDaysFor(current,S.log), tag=$('leechTag');
+  if(n<FLAG_MANUAL){ tag.classList.add('hidden'); return; }
+  tag.classList.remove('hidden');
+  const susp=!!(S.cards[current]&&S.cards[current].susp);
+  $('flagBtn').classList.toggle('on',susp);
+  $('leechText').textContent = susp
+    ? 'Set aside — tap the flag to bring it back'
+    : 'Again on '+n+' separate day'+(n===1?'':'s')+' — tap the flag to set it aside';
 }
 function reveal(){
   if(!$('rateRow').classList.contains('hidden')) return;
@@ -1112,6 +1170,14 @@ function rate(pressed){
   const res=schedule(cs,r,now,st_());
   S.cards[current]=res.card;
   S.log.push([current,r,now,Math.round(res.ivl/1000),thinkMs]);
+  // FLAG_AUTO separate Again-days sets a word aside on its own, right when
+  // the qualifying press happens -- normalise()'s migration only catches
+  // this retroactively, on the next load, for words that got there before
+  // this session started.
+  if(r===AGAIN&&!S.cards[current].susp&&againDaysFor(current,S.log)>=FLAG_AUTO){
+    S.cards[current].susp=true;
+    toast('Set aside automatically — "Again" on '+FLAG_AUTO+' separate days now',3200);
+  }
   if(r!==pressed) toast(pressed===EASY?'Recorded as Good — that one took a while':'Recorded as Hard — that one took a while',1600);
   const d=today();
   const rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
@@ -1170,6 +1236,10 @@ function renderDone(){
   clearInterval(donePoll);
   if(soon) donePoll=setInterval(()=>{
     if(!$('scDone').classList.contains('on')){clearInterval(donePoll);return;}
+    // a backgrounded tab still fires this, throttled: pointless work, and on a
+    // phone the whole point of the poll (bring the card up in front of you) is
+    // impossible while the screen is off. visibilitychange re-renders on return.
+    if(document.hidden) return;
     const id=pickSoon();
     if(id){ clearInterval(donePoll); current=id; renderCard(); show('scStudy'); }
     else if(!Q.learn.length){ clearInterval(donePoll); renderDone(); } // the wait was for these cards, not a new day
@@ -1177,6 +1247,50 @@ function renderDone(){
 }
 
 /* ======================= home ======================= */
+// Distinct study days each card has drawn an AGAIN, from the full log --
+// deliberately not cs.lapses, which only counts a review-state card lapsing
+// back and misses a brand-new word that keeps failing while still in its
+// first learning steps. Unique-day, not per-press: several Agains inside one
+// cram session count once, so a single rough sitting can't trip a flag on
+// its own -- the whole point is catching a word that is *still* failing
+// across genuinely separate sittings, not one that is merely being drilled
+// hard right now.
+function againDayCounts(log){
+  const seen={};
+  for(let i=0;i<log.length;i++){
+    const e=log[i];
+    if(e[1]!==AGAIN) continue;
+    (seen[e[0]]||(seen[e[0]]=new Set())).add(dayKey(e[2]));
+  }
+  const out={};
+  for(const id in seen) out[id]=seen[id].size;
+  return out;
+}
+// Same count, for one card. Used on every card shown and every rating --
+// building a Set per *other* card in the whole log there, just to read one
+// number back out, is wasted allocation on a log that only ever grows.
+function againDaysFor(id,log){
+  const seen=new Set();
+  for(let i=0;i<log.length;i++){
+    const e=log[i];
+    if(e[0]===id&&e[1]===AGAIN) seen.add(dayKey(e[2]));
+  }
+  return seen.size;
+}
+// Every card in this direction past FLAG_MANUAL, ranked worst first. Includes
+// already-flagged (susp) words too -- callers filter for those separately.
+function strugglingWords(dir){
+  const counts=againDayCounts(S.log), rows=[];
+  for(const id in counts){
+    const n=counts[id];
+    if(n<FLAG_MANUAL) continue;
+    const c=BY_ID[id];
+    if(!c||c.dir!==dir) continue;
+    rows.push({id,n,susp:!!(S.cards[id]&&S.cards[id].susp)});
+  }
+  rows.sort((a,b)=>b.n-a.n||a.id.localeCompare(b.id));
+  return rows;
+}
 function dirStats(dir){
   const ap=activeParts(); const all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
   let unseen=0,learning=0,young=0,mature=0,susp=0;
@@ -1292,16 +1406,18 @@ function renderBucketChips(){
   });
 }
 function renderHome(){
-  refresh();
+  refresh();                                    // Q = buildQueue(S.dir) -- reused below,
+                                                 // rather than building that same direction again
   $('wordmark').textContent=DECK.name;
   $('dtL').textContent=DECK.fwd; $('dtE').textContent=DECK.rev;
   renderChips(); renderBucketChips();
-  const qL=buildQueue('L'), qE=buildQueue('E');
+  const other=buildQueue(S.dir==='L'?'E':'L');
+  const qL=S.dir==='L'?Q:other, qE=S.dir==='E'?Q:other;
   $('ddL').textContent=qL.due.length+qL.learn.length+qL.intro.length+' ready';
   $('ddE').textContent=qE.due.length+qE.learn.length+qE.intro.length+' ready';
   $('dirLtoE').classList.toggle('sel',S.dir==='L');
   $('dirEtoL').classList.toggle('sel',S.dir==='E');
-  const q=S.dir==='L'?qL:qE;
+  const q=Q;
   const n=q.due.length+q.learn.length+q.intro.length;
   $('startBtn').textContent=n?('Study '+n+' word'+(n===1?'':'s')):'Nothing due';
   $('startBtn').disabled=!n;
@@ -1321,7 +1437,8 @@ function renderHome(){
   renderSync();
   renderPace();
   renderSyllabus();
-  renderWarn();
+  renderStruggling();
+  renderWarn(qE);                               // already computed above -- don't build it again
   $('buildTag').textContent='Version '+BUILD+' · '+PALETTES[S.palette||'vellum'];
   $('streakNote').textContent = streak? (streak+' day'+(streak===1?'':'s')+' running') : 'No streak yet — the first day starts it.';
 
@@ -1345,6 +1462,26 @@ function renderHome(){
         lat.counts[i]+' ('+Math.round(100*lat.counts[i]/lat.n)+'%)')).join('')+
       '<div class="note">Time from seeing the word to revealing the answer, across your last '+lat.n+
       ' successful answers in this direction. Failures are excluded.</div>';
+}
+// unlike renderCard()'s $('prompt').textContent=c.q (always safe), this row is
+// built as an HTML string -- today's word list has no &/</> in it to prove it,
+// but escape anyway rather than lean on that staying true forever
+function escHtml(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function flagRow(r){
+  const c=BY_ID[r.id];
+  return '<div class="flagRow"><span class="term">'+escHtml(c.q)+'</span><span class="cnt">'+r.n+'</span>'+
+    '<button class="flagBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="Flag">&#9873;</button></div>';
+}
+function renderStruggling(){
+  const rows=strugglingWords(S.dir), aside=rows.filter(r=>r.susp);
+  $('againCount').textContent=rows.length;
+  $('asideCount').textContent=aside.length;
+  $('againList').innerHTML = rows.length
+    ? rows.map(flagRow).join('')
+    : '<div class="note">None yet — a word shows up here once "Again" has landed on it on '+FLAG_MANUAL+' separate days.</div>';
+  $('asideList').innerHTML = aside.length
+    ? aside.map(flagRow).join('')
+    : '<div class="note">Nothing set aside.</div>';
 }
 const MOTTOS=DECK.mottos; function renderPace(){
   const ap=activeParts(); const dir=S.dir, all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
@@ -1521,12 +1658,12 @@ function renderSync(){
             : age<DAY? Math.round(age/HOUR)+'h ago'
             : Math.round(age/DAY)+'d ago';
   el.className='note'+(age>3*DAY?' bad':(age>DAY?' warnish':''));
-  el.textContent='Backed up to the gist '+txt+(age>DAY?' — check the token has not expired.':'.');
+  el.textContent='Backed up to the gist '+txt+' as '+deviceLabel()+(age>DAY?' — check the token has not expired.':'.');
 }
-function renderWarn(){
+function renderWarn(qE){
   const w=$('homeWarn'); if(!w||!S) return; let h='';
   if(S.dir==='E'&&S.settings.gateDays>0){
-    const q=buildQueue('E');
+    const q=qE||buildQueue('E');
     if(!(q.due.length+q.learn.length+q.intro.length)){
       const locked=CARDS.filter(c=>c.dir==='E'&&!gateOpen(c)).length;
       if(locked) h+='<div class="warn">'+locked+' reverse cards are waiting for their forward side to hold for '+
@@ -1547,8 +1684,15 @@ function renderWarn(){
    Safari blocks a programmatic download that no tap asked for, silently, so it
    could never be relied on. Files are saved by hand, or from the button that
    appears when the gist has gone quiet. */
+// This device's label for backups it produces. Manual, not sniffed from the
+// browser: a guessed label would be one more thing to silently trust.
+function deviceLabel(){
+  const n=(S.settings.deviceName||'').trim();
+  return n||'this device';
+}
 function doExport(){
   try{
+    S.lastDevice=deviceLabel();
     const blob=new Blob([JSON.stringify(sanitised())],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -1572,7 +1716,9 @@ function doImport(file){
       const inc=normalise(JSON.parse(fr.result));
       if(!inc) throw 0;
       if(inc.log.length<S.log.length &&
-         !confirm('That file has fewer reviews ('+inc.log.length+') than this device ('+S.log.length+'). Replace anyway?')) return;
+         !confirm('That file ('+(inc.lastDevice?'from '+inc.lastDevice+', ':'')+inc.log.length+
+                   ' reviews) has fewer than this device ('+deviceLabel()+', '+S.log.length+
+                   ' reviews). Replace anyway?')) return;
       adopt(inc); renderHome(); toast('Restored '+S.log.length+' reviews');
       if(S.settings.gistId&&S.settings.gistTok) pushGist(true);   // at once, or the next launch pull reverts the restore
     }catch(e){ toast('That file could not be read — it may belong to the other deck'); }
@@ -1586,6 +1732,7 @@ function sanitised(){                       // never let the token leave the dev
 async function pushGist(quiet){
   const {gistId,gistTok}=S.settings;
   if(!gistId||!gistTok){ if(!quiet) toast('Fill in the gist id and token first'); return; }
+  S.lastDevice=deviceLabel();
   try{
     const r=await fetch('https://api.github.com/gists/'+gistId,{
       method:'PATCH',
@@ -1595,13 +1742,14 @@ async function pushGist(quiet){
     if(!r.ok) throw new Error(r.status);
     S.lastSync=Date.now(); S.syncedLogLen=S.log.length; S.sinceExport=0;
     try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
-    if(!quiet) toast('Pushed to gist');
+    if(!quiet) toast('Pushed to gist as '+S.lastDevice);
   }catch(e){ if(!quiet) toast('Gist push failed ('+e.message+')'); }
 }
-// a restored copy must never carry another device's sync credentials
+// a restored copy must never carry another device's sync credentials or label
 function adopt(inc){
   inc.settings.gistId=S.settings.gistId;
   inc.settings.gistTok=S.settings.gistTok;
+  inc.settings.deviceName=S.settings.deviceName;
   S=inc; S.lastSync=Date.now(); S.syncedLogLen=S.log.length;
   // the undo stack refers to the state we just replaced; one undo would write a
   // pre-restore card back and truncate the restored log
@@ -1624,7 +1772,41 @@ async function fetchGist(quiet){
 }
 // syncedLogLen is the review count both sides last agreed on. Whichever side has grown
 // past it is the one holding new work; if both have, the histories have forked and
-// merging them is not possible, so ask rather than pick a winner.
+// merging them is not possible, so ask rather than pick a winner. Pure so it can be
+// tested without a network call or a dialog.
+function syncDecision(localLen,remoteLen,base){
+  const localMoved=localLen>base, remoteMoved=remoteLen>base;
+  if(localMoved&&remoteMoved) return 'conflict';
+  if(remoteMoved) return 'take-remote';
+  if(localMoved) return 'push-local';
+  return 'in-sync';
+}
+// Both copies are named and counted, not just "this device" vs "the gist" --
+// the whole point is never being unsure which is which across three devices.
+// Cancel is a genuine no-op, on purpose: a plain confirm() cannot tell a
+// deliberate Cancel click from an Escape-key dismissal, and both return the
+// same false. Making the "other" branch destructive (as an earlier draft did)
+// meant a stray Escape on a Mac could silently overwrite the gist's copy
+// without anyone having chosen to. Keeping local instead is one explicit tap
+// away, in Settings -> Push to gist now, which is already named the same way.
+function conflictMessage(inc,base){
+  const here=deviceLabel(), there=inc.lastDevice||'the other device';
+  const hereN=S.log.length-base, thereN=inc.log.length-base;
+  return 'This device ('+here+') has '+hereN+' review'+(hereN===1?'':'s')+' the gist does not have yet.\n'+
+         'The gist\'s copy was last pushed by '+there+' and has '+thereN+' review'+(thereN===1?'':'s')+
+         ' this device does not have.\n\n'+
+         'OK = take the copy from '+there+' ('+here+'\'s '+hereN+' new review'+(hereN===1?'':'s')+
+         ' will be lost unless you export a backup file first).\n'+
+         'Cancel = decide later -- nothing changes now. To keep '+here+'\'s copy instead, use '+
+         '"Push to gist now" in Settings once you\'re sure.';
+}
+function offerConflict(inc,base){
+  if(confirm(conflictMessage(inc,base))){
+    adopt(inc); renderHome(); toast('Took the copy from '+(inc.lastDevice||'the other device'));
+  } else {
+    toast('Left as is -- push from Settings when you\'re ready to keep this copy instead',3200);
+  }
+}
 async function syncOnLaunch(){
   if(!S.settings.gistId||!S.settings.gistTok) return;
   const lenAtStart=S.log.length;
@@ -1632,13 +1814,13 @@ async function syncOnLaunch(){
   if(!inc) return;
   if(S.log.length!==lenAtStart) return;              // rated while the fetch was in flight
   const base=(S.syncedLogLen==null)?S.log.length:S.syncedLogLen;
-  const localMoved=S.log.length>base, remoteMoved=inc.log.length>base;
-  if(localMoved&&remoteMoved){
-    toast('This device and the gist have both moved on. Settings → Pull from gist to take the gist copy.',4000);
-  } else if(remoteMoved){
+  const decision=syncDecision(S.log.length,inc.log.length,base);
+  if(decision==='conflict'){
+    offerConflict(inc,base);
+  } else if(decision==='take-remote'){
     adopt(inc); renderHome();
-    toast('Synced — '+S.log.length+' reviews from your other device',2600);
-  } else if(localMoved){
+    toast('Synced — '+S.log.length+' reviews from '+(inc.lastDevice||'your other device'),2600);
+  } else if(decision==='push-local'){
     pushGist(true);                                  // only this device moved; put it back
   }
 }
@@ -1648,8 +1830,9 @@ async function pullGist(){
   const inc=await fetchGist(false);
   if(!inc) return;
   if(inc.log.length<S.log.length&&
-     !confirm('The gist has fewer reviews ('+inc.log.length+') than this device ('+S.log.length+'). Replace anyway?')) return;
-  adopt(inc); renderHome(); toast('Pulled '+S.log.length+' reviews');
+     !confirm('The gist (last pushed by '+(inc.lastDevice||'another device')+') has fewer reviews ('+
+               inc.log.length+') than this device ('+deviceLabel()+', '+S.log.length+'). Replace anyway?')) return;
+  adopt(inc); renderHome(); toast('Pulled '+S.log.length+' reviews from '+(inc.lastDevice||'the gist'));
 }
 
 /* ================= what happens on its own =================
@@ -1665,6 +1848,7 @@ function renderBg(){
   let h='';
   h+=row('Saved on this device', ago(S.lastSave));
   h+=row('Pushed to the gist', gist?ago(S.lastSync):'switched off');
+  h+=row('Last push came from', S.lastDevice||'not recorded yet');
   if(gist&&S.lastSync&&(now-S.lastSync)>DAY)
     h+='<div class="note bad">The gist has not accepted a push in over a day. The usual cause is an expired or revoked token.</div>';
   h+=row('Ratings since a saved file', (S.sinceExport||0));
@@ -1702,6 +1886,21 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.01.2',[
+    'A maintenance pass, requested and reviewed rather than routine: a startup call was re-rendering the front screen\'s warning banner a second time for no reason, the front screen was rebuilding the study queue three times over when two would do, and six separate "back to the front screen" buttons were wired with six copies of the same two lines (one of them in a different order, for no reason). None of these changed anything you could see; all were just doing the same work more than once.',
+    'The background timer that resumes a card after "Almost there" now skips its tick while the tab is out of view, instead of quietly doing the same pointless check every five seconds whether or not the phone is even awake to show it.',
+    'Every single rating was rebuilding the front screen\'s warning banner. Studying Latin to English that cost nothing worth measuring, but in the English-to-Latin direction with the unlock gate on it meant rebuilding the whole reverse queue and re-checking every word\'s gate -- to update a banner sitting on a screen you are not looking at while studying. It now only does that work when the front screen is actually up.',
+    'The flag added last time now looks at just the one word in front of you instead of rebuilding a tally of every word that has ever earned an Again, every time a card is shown or rated -- same numbers, less work each time, which only matters more as the review log keeps growing.'
+  ]],
+  ['2026.08.01.1',[
+    'Fixed: the "eight failures sets a word aside" mechanic never actually worked — a lapse counter was tracked and a tag appeared on the card, but nothing ever set a word aside, and there was no way to do it by hand either. Words already past eight are set aside retroactively on this update.',
+    'A flag on the study card once "Again" has landed on a word on 5 separate days (not 5 presses — several in one sitting only count once): tap it to set the word aside by hand. From 8 separate days it happens on its own.',
+    'The front screen gained a "Struggling words" section: every word past 5 separate Again-days, ranked worst first, and the words you have actually set aside, both with a flag to toggle right from the list.'
+  ]],
+  ['2026.08.01.0',[
+    'Space now doubles as Good once the answer is showing, not just as reveal — matching the same Space key convention Anki uses, so the single most common rating no longer needs a second key.',
+    'A name for this device (Settings, above the gist fields): stamped onto anything pushed to the gist or saved as a backup file. When this device and the gist have both moved on since the last sync, you are now asked which copy to keep, and both are named ("This device (iPhone) has 2 reviews the gist does not have... last pushed by Mac...") instead of a generic prompt pointing at Settings. The front screen, Settings and the "what happens on its own" panel all show which device a backup came from.'
+  ]],
   ['2026.07.31.2',[
     'A stats page, next to the settings icon on the front screen: a bar showing where every word in the whole list currently stands (still to meet, in short-term steps, settling, holding), and a grid of little boxes per part that fills in as words move through those stages.'
   ]],
@@ -1761,6 +1960,7 @@ function renderSet(){
   $('fNew').value=s.newPerDay; $('fRet').value=Math.round(s.retention*100);
   $('fRetVal').textContent=Math.round(s.retention*100)+'%';
   $('fMax').value=s.maxIvl;
+  $('fDevice').value=s.deviceName||'';
   $('fGistId').value=s.gistId||''; $('fGistTok').value=s.gistTok||'';
   $('fTerm').value=s.term||'2026-10-11';
   $('fKnown').value=s.knownDays||21;
@@ -1783,11 +1983,17 @@ function renderSet(){
       'Last backup '+new Date(S.lastExport).toLocaleString()+' · ':'No backup yet · ')+
       (S.sinceExport||0)+' ratings since.'+
       (S.settings.gistId&&S.settings.gistTok
-        ? '  Gist: '+(S.lastSync?'synced '+new Date(S.lastSync).toLocaleString():'not yet synced')+'.'
+        ? '  Gist: '+(S.lastSync?'synced '+new Date(S.lastSync).toLocaleString():'not yet synced')+
+          (S.lastDevice?' (last pushed by '+S.lastDevice+')':'')+'.'
         : '');
-  const leeches=CARDS.filter(c=>{const cs=S.cards[c.id];return cs&&((cs.lapses||0)>=8||cs.susp);}).length;
-  $('leechNote').textContent=leeches?(leeches+' word'+(leeches===1?'':'s')+' keep lapsing. Words you set aside stop appearing until you bring them back.')
-                                    :'Nothing is being set aside. Words that lapse eight times get flagged.';
+  const badCounts=againDayCounts(S.log);
+  const flagged=CARDS.filter(c=>S.cards[c.id]&&S.cards[c.id].susp).length;
+  const watch=CARDS.filter(c=>(badCounts[c.id]||0)>=FLAG_MANUAL&&!(S.cards[c.id]&&S.cards[c.id].susp)).length;
+  $('leechNote').textContent = (flagged||watch)
+    ? (flagged?flagged+' word'+(flagged===1?'':'s')+' set aside. ':'')+
+      (watch?watch+' more past '+FLAG_MANUAL+' separate days of "Again", not yet flagged.':'')+
+      ' Words you set aside stop appearing until you bring them back.'
+    : 'Nothing flagged yet. "Again" on '+FLAG_MANUAL+' separate days lets you flag a word by hand; '+FLAG_AUTO+' does it on its own.';
 }
 
 /* ======================= wiring ======================= */
@@ -1799,19 +2005,41 @@ tapZone($('revealBtn'),reveal);
 tapZone($('bAgain'),()=>rate(AGAIN));
 tapZone($('bGood'), ()=>rate(GOOD));
 tapZone($('bEasy'), ()=>rate(EASY));
+// not tapZone: the flag sits inside cardArea, whose own click handler would
+// otherwise also fire (and reveal the card) when a bubbled click reaches it
+$('flagBtn').addEventListener('click',e=>{
+  e.preventDefault(); e.stopPropagation();
+  const cs=cardState(current);
+  cs.susp=!cs.susp;
+  save();
+  renderLeech();
+  toast(cs.susp?'Set aside':'Brought back',1400);
+});
 tapZone($('undoBtn'),undo);
-tapZone($('toHome'),()=>{renderHome();show('scHome');});
-tapZone($('toHome2'),()=>{renderHome();show('scHome');});
-tapZone($('toHome3'),()=>{renderHome();show('scHome');});
-tapZone($('doneBack'),()=>{renderHome();show('scHome');});
+// six buttons across five screens, all "go back to the front screen"
+['toHome','toHome2','toHome3','doneBack','statsBack','logBack']
+  .forEach(id=>tapZone($(id),()=>{renderHome();show('scHome');}));
 tapZone($('toSettings'),()=>{renderSet();show('scSet');});
 tapZone($('toStats'),()=>{renderStats();show('scStats');});
-tapZone($('statsBack'),()=>{renderHome();show('scHome');});
 tapZone($('statsDirL'),()=>{S.dir='L';save();renderStats();});
 tapZone($('statsDirE'),()=>{S.dir='E';save();renderStats();});
 tapZone($('dirLtoE'),()=>{S.dir='L';save();renderHome();});
 tapZone($('dirEtoL'),()=>{S.dir='E';save();renderHome();});
 tapZone($('startBtn'),()=>{undoStack=[];next();if(current)show('scStudy');});
+function toggleFlagFromList(id){
+  const cs=cardState(id);
+  cs.susp=!cs.susp;
+  save();
+  renderStruggling();
+  toast(cs.susp?'Set aside':'Brought back',1400);
+}
+['againList','asideList'].forEach(id=>{
+  $(id).addEventListener('click',e=>{
+    const btn=e.target.closest('.flagBtn'); if(!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    toggleFlagFromList(btn.dataset.id);
+  });
+});
 function bumpCap(delta){
   const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
   const cur=(rec.cap!=null)?rec.cap:S.settings.newPerDay;
@@ -1851,7 +2079,6 @@ $('fRoll').addEventListener('change',e=>{S.settings.rollover=e.target.value|0;sa
 $('surpriseBtn').addEventListener('click',surprise);
 $('bgBackupBtn').addEventListener('click',()=>{doExport(false);renderBg();});
 $('buildTag').addEventListener('click',()=>{renderLog();show('scLog');});
-$('logBack').addEventListener('click',()=>{show('scHome');renderHome();});
 $('fGate').addEventListener('change',e=>{S.settings.gateDays=Math.max(0,e.target.value|0);save();});
 $('fTiming').addEventListener('change',e=>{S.settings.useTiming=(e.target.value==='1');save();});
 $('fEasy').addEventListener('change',e=>{S.settings.requireEasy=(e.target.value==='1');save();});
@@ -1860,13 +2087,19 @@ $('fRevDay').addEventListener('change',e=>{S.settings.reviewDay=parseInt(e.targe
 $('fKnown').addEventListener('change',e=>{S.settings.knownDays=Math.max(1,e.target.value|0);save();});
 $('fWeak').addEventListener('change',e=>{S.settings.weakFirst=(e.target.value==='1');save();});
 $('fTerm').addEventListener('change',e=>{S.settings.term=e.target.value;save();});
+$('fDevice').addEventListener('change',e=>{S.settings.deviceName=e.target.value.trim();save();});
 $('fGistId').addEventListener('change',e=>{S.settings.gistId=e.target.value.trim();save();});
 $('fGistTok').addEventListener('change',e=>{S.settings.gistTok=e.target.value.trim();save();});
 
 document.addEventListener('keydown',e=>{
   if($('scStudy').classList.contains('on')){
     if(e.key===' '||e.key==='Enter'){e.preventDefault();
-      if($('rateRow').classList.contains('hidden')) reveal();}
+      // Space/Enter reveals when the answer is hidden, then doubles as Good
+      // once it's showing -- the same double duty Anki's own Space key does,
+      // so the single most common rating never needs a second key.
+      if($('rateRow').classList.contains('hidden')) reveal();
+      else rate(GOOD);
+    }
     else if(!$('rateRow').classList.contains('hidden')){
       if(e.key==='1') rate(AGAIN);
       if(e.key==='2') rate(GOOD);
@@ -1881,7 +2114,7 @@ document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&$('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
 });
 
-load().then(()=>{ applyTheme(); renderHome(); renderWarn(); show('scHome'); syncOnLaunch(); });
+load().then(()=>{ applyTheme(); renderHome(); show('scHome'); syncOnLaunch(); });   // renderHome() already calls renderWarn()
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S&&S.theme==='auto') applyTheme(); });
 </script>
 </body>

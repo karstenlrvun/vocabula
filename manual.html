@@ -150,6 +150,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <li><strong>Study days</strong> — a dot for each of the last five weeks' days, and your current run.</li>
   <li><strong>Pace</strong> — how many words you've met, how many are left, the date you'd finish at your recent rate, how that lands against the start of term, and what one day off costs.</li>
   <li><strong>Where you stand</strong> — how many words are in each stage, and how often you've been right over the last month. Open <strong>Timing</strong> underneath for how quickly you've been answering.</li>
+  <li><strong>Struggling words</strong> — every word that's had "Again" on 5 separate study days or more, worst first, and everything you've set aside. Tap a word's flag right there to set it aside or bring it back, without waiting to meet it in a session. See §9, <em>A word keeps beating me</em>.</li>
 </ul>
 
 <h3>The whole syllabus</h3>
@@ -175,6 +176,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <h3>Tap targets</h3>
 <p>The buttons are bigger than they look — the invisible tappable area extends well above each one and into the gaps, so you don't need to aim. Tapping anywhere on the card reveals the answer, and for a fraction of a second afterwards the buttons ignore taps, so a reveal can't accidentally grade the card.</p>
 <p>Made a mistake? The arrow at the top right undoes the last rating, up to forty back.</p>
+<p>On a keyboard — a Mac or an iPad with one attached — Space or Enter reveals the answer, and once it's showing, Space or Enter again rates it Good, the same double duty Space has in Anki. <code>1</code>, <code>2</code> and <code>3</code> rate Again, Good and Easy directly, and <code>Z</code> undoes.</p>
 </div>
 
 <h2 id="backup">7. Backing up — read this one</h2>
@@ -186,7 +188,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <li><strong>A private GitHub gist is the primary backup.</strong> Fill in a gist id and a token in settings and every save is pushed there a few seconds later. The front screen shows how long ago that last worked, and turns amber then red as it ages. The token is never written into the gist or into a backup file. One gist serves both apps — Latin keeps its progress in <code>vocabula.json</code>, Greek in <code>vocabula-greek.json</code>.</li>
 </ul>
 <div class="box">
-<p><strong>Using it on more than one device.</strong> Put the same gist id and token into each one. Each device pushes a few seconds after you stop rating, and pulls by itself when you open the app or return to it from the background, so the iPad picks up what you did on the phone without your having to think about it. Two rules make this safe. It only adopts the gist copy when this device has nothing newer of its own, so an automatic pull can never swallow reviews you have just done. And if both sides have moved on — you studied on the phone and the iPad while one of them was offline — it refuses to guess, and tells you to choose with <em>Pull from gist</em> in settings. The two histories cannot be merged, so whichever side you pull, the other side's reviews since the split are lost; the fix is to finish a session on one device before starting on another.</p>
+<p><strong>Using it on more than one device.</strong> Give each device its own name first, in <em>This device's name</em> — "iPhone", "iPad", "Mac" — then put the same gist id and token into every device you want kept in step. Each device pushes a few seconds after you stop rating, and pulls by itself when you open the app or return to it from the background, so the iPad picks up what you did on the phone without your having to think about it. Two rules make this safe. It only adopts the gist copy when this device has nothing newer of its own, so an automatic pull can never swallow reviews you have just done. And if both sides have moved on — you studied on the phone and the iPad while one of them was offline — it refuses to guess: it names both copies and asks — "This device (iPad) has 2 reviews the gist does not have yet. The gist's copy was last pushed by iPhone and has 4 reviews this device does not have." OK takes the gist's copy; Cancel changes nothing and asks again next time, so a stray tap or an Escape key on a Mac can never quietly overwrite anything. If you want to keep this device's copy instead, use <em>Push to gist now</em> in settings when you're sure — it and <em>Pull from gist</em> both name whichever copy they're acting on, too. The two histories cannot be merged, so whichever copy you end up keeping, the other side's reviews since the split are lost; the fix is to finish a session on one device before starting on another.</p>
 </div>
 <div class="box">
 <p><strong>Install it to your Home Screen.</strong> Open it in Safari, tap Share, then Add to Home Screen, and use it from that icon rather than from a browser tab. Safari deletes stored data for websites you haven't visited in a week; installed apps are exempt. This matters more than anything else on this page.</p>
@@ -209,9 +211,10 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <tr><td><strong>Michaelmas begins</strong></td><td>Feeds the countdown on the front screen. Nothing else uses it.</td></tr>
   <tr><td><strong>Theme</strong></td><td>Seven palettes, each with its own light and dark variant, chosen separately. Optionally a different one each day, in a shuffled cycle that shows every theme before repeating any.</td></tr>
   <tr><td><strong>Export / restore</strong></td><td>Save a backup file by hand, or load one back in. A file from the other language is refused rather than loaded over the top.</td></tr>
-  <tr><td><strong>Back up to a GitHub gist</strong></td><td>The gist id and token — the primary backup. Pushes after every save. Restoring or pulling never changes the id and token stored on this device, and the token is never included in what gets pushed.</td></tr>
+  <tr><td><strong>This device's name</strong></td><td>A label such as "iPhone" or "Mac", local to this device. Stamped onto anything this device pushes or exports, so a sync conflict on any device names both copies instead of just "this device" and "the gist".</td></tr>
+  <tr><td><strong>Back up to a GitHub gist</strong></td><td>The gist id and token — the primary backup. Pushes after every save. Restoring or pulling never changes the id, token or device name stored on this device, and the token is never included in what gets pushed.</td></tr>
   <tr><td><strong>What happens on its own</strong></td><td>Live state — last save, last push, what the queue is holding — and a list of every process the app runs without being asked.</td></tr>
-  <tr><td><strong>Set aside</strong></td><td>Words you've failed eight times get flagged. Setting one aside stops it appearing until you bring it back.</td></tr>
+  <tr><td><strong>Set aside</strong></td><td>Once "Again" has landed on a word on 5 separate study days, a flag appears on the card that you can tap to set it aside by hand; past 8 separate days it happens on its own. A separate day, not a raw count — several Agains inside one sitting only count once. Setting a word aside stops it appearing until you bring it back, either from the flag itself or in bulk here.</td></tr>
   <tr><td><strong>Erase all progress</strong></td><td>Downloads a backup first, then wipes the device.</td></tr>
 </table>
 
@@ -230,7 +233,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <p>Just start again. Overdue words are handled properly — the app knows how long it's been, and getting one right after a long gap counts for more than getting it right on time.</p>
 
 <h3>A word keeps beating me</h3>
-<p>After eight failures it gets flagged. At that point the answer isn't more repetitions — set it aside and learn it another way, then bring it back.</p>
+<p>If you notice you've stopped trying to actually learn a word and are just pressing Again until it sticks for the next few minutes, that's worth listening to — a flag appears on the card once Again has landed on it on 5 separate study days (not 5 presses; a whole cram session's worth of Agains in one sitting only counts once), which you can tap to set it aside by hand. Past 8 separate days it happens on its own — at that point the answer isn't more repetitions, it's learning the word some other way, then bringing it back when you're ready. The front screen's <em>Struggling words</em> section lists every word past 5 days, ranked worst first, and everything you've actually set aside, so you can see the whole list of what's stuck without waiting to meet each one in a session.</p>
 
 <h3>The counts changed when I toggled something</h3>
 <p>Part and group chips filter which words can <em>start</em>. They never hide a word already in the rotation, and they never affect anything you've already rated.</p>
