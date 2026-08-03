@@ -1121,7 +1121,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.03.2';
+const BUILD='2026.08.03.3';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1270,17 +1270,26 @@ function renderCard(){
   if(c.dir==='E'&&c.idx.length>1){ m.textContent=c.idx.length; m.classList.add('on'); }
   else m.classList.remove('on');
   const ans=$('answer');
+  // dropping .on and swapping in the new answer text happen in the same
+  // tick, but the CSS transition doesn't know that -- it animates from the
+  // last-painted opacity (1, if the previous card was revealed) down to 0
+  // over the *already-swapped-in* new text, flashing the next answer for
+  // ~130ms. Suppress the transition across the reset, force a style flush
+  // so the suppression actually lands, then restore it so reveal()'s own
+  // fade-in still animates normally.
+  ans.style.transition='none';
   ans.className='answer'+(c.dir==='E'?' lat':'');
   ans.innerHTML='';
   if(c.dir==='E') c.a.forEach((x,i)=>{
     const el=document.createElement('span'); el.className=i?'alt':''; el.textContent=x; ans.appendChild(el);
   });
   else ans.textContent=c.a;
+  ans.offsetHeight;
+  ans.style.transition='';
   renderLeech();
   $('hintline').textContent = cs.reps===0 ? (cs.s!=null?'carried over from the audit':'first time') : '';
   $('revealRow').classList.remove('hidden');
   $('rateRow').classList.add('hidden');
-  ans.classList.remove('on');
   shownAt=Date.now(); thinkMs=null; cardDirty=false;
   renderCounts();
 }
@@ -2196,6 +2205,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.03.3',[
+    'Fixed, for real this time: the next word\'s answer could flash on screen for an instant right after you rated a card, before you had tapped to reveal it. The 2026.08.02.0 fix guessed this was a fast-double-tap timing race and added a safeguard against that -- a real fix for a real (rarer) issue, kept as-is -- but it turns out the actual cause was simpler and happened on every single card, not just fast taps: showing the next word\'s answer text and hiding it happen in the same instant, but the fade animation did not know that, so it played its hide-animation over the word that had just been swapped in rather than over nothing. Confirmed directly this time (not just reported) before fixing it.'
+  ]],
   ['2026.08.03.2',[
     'New Settings > Layout option, "Legacy" or "New" -- Legacy is what you already have, and stays the default; nothing changes unless you switch it. "New" only changes anything on a screen at least 700px wide, turned sideways: a laptop or an iPad. There, the study card becomes a two-pane spread instead of one stretched column, the front screen\'s sections group into two columns instead of one long scroll, Settings reads in two columns, and the word-list browser gets a fixed search-and-filter panel beside the results instead of one that scrolls away above a long list. On a phone in your hand the two look identical either way -- there is no "always sideways" option, since that would read wrong held upright.',
     'The study card and its answer no longer jump to a bigger size at exactly 700px wide -- they now scale continuously with the CSS clamp() function, reaching the exact same maximum size they always did by 700px, just without the single jump.'

@@ -147,7 +147,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <li><strong>Direction</strong> — Latin to English, or English to Latin. English to Latin stays locked until a word's forward card has held steady for a fortnight, because producing a word is much harder than recognising it. That's why the reverse direction is empty at first.</li>
   <li><strong>New words today</strong> — a stepper that changes today's allowance only, without touching your normal setting.</li>
   <li><strong>Start</strong> — tells you how many words are waiting.</li>
-  <li><strong>Study days</strong> — a dot for each of the last five weeks' days, and your current run.</li>
+  <li><strong>Study days</strong> — a dot for each of the last five weeks' days, and your current run. Tap <em>Full calendar</em> underneath to open a real month view: a dot on every day you studied, tap any day for how many new words and how many reviews it held, month navigation, and your longest streak alongside the current one.</li>
   <li><strong>Pace</strong> — how many words you've met, how many are left, the date you'd finish at your recent rate, how that lands against the start of term, and what one day off costs.</li>
   <li><strong>Where you stand</strong> — how many words are in each stage, and how often you've been right over the last month. Open <strong>Timing</strong> underneath for how quickly you've been answering.</li>
   <li><strong>Struggling words</strong> — every word that's had "Again" on 5 separate study days or more, worst first, and everything you've set aside. Tap a word's flag right there to set it aside or bring it back, without waiting to meet it in a session. See §9, <em>A word keeps beating me</em>.</li>
@@ -163,6 +163,9 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <li><strong>By part</strong> — a small box for every single word, grouped by part, coloured the same way as the bar above. It fills in as words move through those stages, so you can see at a glance which parts you've made a start on and which are still untouched. Greek has no parts, so this is one block for the whole list.</li>
 </ul>
 
+<h3>Browsing the full list</h3>
+<p>"Browse the full list" under <em>The whole syllabus</em> on the front screen opens every word in the deck at once, in either direction, grouped by part and alphabetised within each part. A search box narrows it to whatever you type — matched against the word you'd be shown, not the answer, so searching in Latin to English searches Latin terms; switch direction to search by English instead. The row filters underneath narrow by how well you know each word, the same stages as everywhere else in the app. Each part starts collapsed; tap its heading to open it, and tap any word to reveal its answer in place — this never counts as a review and never touches your scheduling, it's just a look-up. The little dot on each row is the same colour language as the stats page's boxes.</p>
+
 <h2 id="routine">6. A sensible daily routine</h2>
 <p>Open it once a day and clear what's due. That's it. The app is designed around the assumption that you show up daily; if you skip days the work doesn't vanish, it piles up.</p>
 <ul>
@@ -174,7 +177,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 
 <div class="box">
 <h3>Tap targets</h3>
-<p>The buttons are bigger than they look — the invisible tappable area extends well above each one and into the gaps, so you don't need to aim. Tapping anywhere on the card reveals the answer, and for a fraction of a second afterwards the buttons ignore taps, so a reveal can't accidentally grade the card.</p>
+<p>The buttons are bigger than they look — the invisible tappable area extends well above each one and into the gaps, so you don't need to aim. Tapping anywhere on the card reveals the answer, and for a fraction of a second afterwards the rating buttons ignore taps, so a reveal can't accidentally grade the card. The same fraction of a second runs the other way too: right after a new card appears, its own "show answer" button ignores taps for a moment, so the tail end of a fast double-tap on the previous card's rating can't flash the next word's answer before you meant to see it.</p>
 <p>Made a mistake? The arrow at the top right undoes the last rating, up to forty back.</p>
 <p>On a keyboard — a Mac or an iPad with one attached — Space or Enter reveals the answer, and once it's showing, Space or Enter again rates it Good, the same double duty Space has in Anki. <code>1</code>, <code>2</code> and <code>3</code> rate Again, Good and Easy directly, and <code>Z</code> undoes.</p>
 </div>
@@ -210,12 +213,13 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <tr><td><strong>Introduce unseen before shaky</strong></td><td>Hardest words first, rather than working through in book order.</td></tr>
   <tr><td><strong>Michaelmas begins</strong></td><td>Feeds the countdown on the front screen. Nothing else uses it.</td></tr>
   <tr><td><strong>Theme</strong></td><td>Seven palettes, each with its own light and dark variant, chosen separately. Optionally a different one each day, in a shuffled cycle that shows every theme before repeating any.</td></tr>
+  <tr><td><strong>Layout</strong></td><td>"Legacy" (the default) is the layout you already know, on any screen, at any size. "New" adds a second layout the app switches to on a screen at least 700px wide, turned sideways — a laptop or an iPad, not a phone in your hand: the study card becomes a two-pane spread, the front screen's sections group into two columns, Settings reads in two columns, and Browse gets a fixed filter panel beside the results. On a phone the two look identical; there's no "always sideways" option, since that would look wrong held upright.</td></tr>
   <tr><td><strong>Export / restore</strong></td><td>Save a backup file by hand, or load one back in. A file from the other language is refused rather than loaded over the top.</td></tr>
   <tr><td><strong>This device's name</strong></td><td>A label such as "iPhone" or "Mac", local to this device. Stamped onto anything this device pushes or exports, so a sync conflict on any device names both copies instead of just "this device" and "the gist".</td></tr>
   <tr><td><strong>Back up to a GitHub gist</strong></td><td>The gist id and token — the primary backup. Pushes after every save. Restoring or pulling never changes the id, token or device name stored on this device, and the token is never included in what gets pushed.</td></tr>
   <tr><td><strong>What happens on its own</strong></td><td>Live state — last save, last push, what the queue is holding — and a list of every process the app runs without being asked.</td></tr>
-  <tr><td><strong>Set aside</strong></td><td>Once "Again" has landed on a word on 5 separate study days, a flag appears on the card that you can tap to set it aside by hand; past 8 separate days it happens on its own. A separate day, not a raw count — several Agains inside one sitting only count once. Setting a word aside stops it appearing until you bring it back, either from the flag itself or in bulk here.</td></tr>
-  <tr><td><strong>Erase all progress</strong></td><td>Downloads a backup first, then wipes the device.</td></tr>
+  <tr><td><strong>Set aside</strong></td><td>Once "Again" has landed on a word 5 times in a single study day, a flag appears on the card that you can tap to set it aside by hand; 8 times in a day it happens on its own. Setting a word aside stops it appearing until you bring it back, either from the flag itself or in bulk here — and it stays aside regardless of the day, even once today's count resets.</td></tr>
+  <tr><td><strong>Erase all progress</strong></td><td>Pushes a backup to the gist first and only wipes the device once that push is confirmed. Needs gist backup set up — without it, this refuses, since there's no reliable way to confirm a local download actually happened.</td></tr>
 </table>
 
 <h2 id="wrong">9. If something looks wrong</h2>
@@ -233,7 +237,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <p>Just start again. Overdue words are handled properly — the app knows how long it's been, and getting one right after a long gap counts for more than getting it right on time.</p>
 
 <h3>A word keeps beating me</h3>
-<p>If you notice you've stopped trying to actually learn a word and are just pressing Again until it sticks for the next few minutes, that's worth listening to — a flag appears on the card once Again has landed on it on 5 separate study days (not 5 presses; a whole cram session's worth of Agains in one sitting only counts once), which you can tap to set it aside by hand. Past 8 separate days it happens on its own — at that point the answer isn't more repetitions, it's learning the word some other way, then bringing it back when you're ready. The front screen's <em>Struggling words</em> section lists every word past 5 days, ranked worst first, and everything you've actually set aside, so you can see the whole list of what's stuck without waiting to meet each one in a session.</p>
+<p>If a word is beating you badly in one sitting, that's worth listening to — a flag appears on the card once Again has landed on it 5 times in a single study day, which you can tap to set it aside by hand. 8 times in a day it happens on its own — at that point the answer isn't more repetitions, it's learning the word some other way, then bringing it back when you're ready. The front screen's <em>Struggling words</em> section lists every word at 5+ Agains today, ranked worst first, plus everything you've actually set aside (which keeps showing there regardless of the day), so you can see the whole list of what's stuck without waiting to meet each one in a session.</p>
 
 <h3>The counts changed when I toggled something</h3>
 <p>Part and group chips filter which words can <em>start</em>. They never hide a word already in the rotation, and they never affect anything you've already rated.</p>
