@@ -159,18 +159,18 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 /* ---------- card ---------- */
 .cardarea{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
   padding:16px 22px;min-height:0;position:relative;overflow:hidden}
-.prompt{font-family:var(--serif);font-size:33px;line-height:1.28;text-align:center;word-break:break-word}
-.prompt.eng{font-family:var(--sans);font-size:27px;line-height:1.32;font-weight:400}
+.prompt{font-family:var(--serif);font-size:clamp(33px,calc(26.7px + 1.6vw),38px);line-height:1.28;text-align:center;word-break:break-word}
+.prompt.eng{font-family:var(--sans);font-size:clamp(27px,calc(23.2px + 0.97vw),30px);line-height:1.32;font-weight:400}
 .multi{position:absolute;top:14px;right:16px;width:26px;height:26px;border-radius:50%;
   border:1px solid var(--line);color:var(--faint);font-size:13px;
   display:none;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .multi.on{display:flex}
 .rule{width:56px;height:1px;background:var(--line);margin:26px 0}
-.answer{font-size:21px;line-height:1.42;text-align:center;color:var(--ink);opacity:0;
+.answer{font-size:clamp(21px,calc(18.5px + 0.65vw),23px);line-height:1.42;text-align:center;color:var(--ink);opacity:0;
   transition:opacity .13s ease-out;max-width:34em}
 .answer.on{opacity:1}
 .answer .alt{display:block;margin-top:7px}
-.answer.lat{font-family:var(--serif);font-size:25px}
+.answer.lat{font-family:var(--serif);font-size:clamp(25px,calc(21.2px + 0.97vw),28px)}
 .hintline{margin-top:22px;font-size:13px;color:var(--faint);height:16px}
 .leechtag{margin-top:10px;font-size:12px;color:var(--amber);display:flex;align-items:center;justify-content:center;gap:8px}
 .flagBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:16px;line-height:1;color:var(--faint)}
@@ -234,6 +234,20 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .dot{width:15px;height:15px;border-radius:4px;background:var(--panel);border:1px solid var(--line)}
 .dot.did{background:var(--coral);border-color:var(--coral)}
 .dot.today{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--coral)}
+.calHead{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.calTitle{font-size:14.5px;font-weight:500}
+.calNav{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:none;
+  display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--ink)}
+.calNav:active{background:var(--panel)}
+.calDow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px;
+  font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;text-align:center}
+.calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
+.calCell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;
+  font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--panel);border:1px solid var(--line)}
+.calCell.out{color:var(--faint);opacity:.35;border-color:transparent;background:none}
+.calCell.did{background:var(--accent-soft);border-color:var(--coral);color:var(--coral);font-weight:600}
+.calCell.today{box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--coral)}
+.calCell.sel{border-color:var(--ink);border-width:2px}
 .statRow{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
@@ -242,6 +256,15 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .flagRow:last-child{border-bottom:none}
 .flagRow .term{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .flagRow .cnt{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.searchInput{width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 12px;
+  font-size:16px;background:var(--panel);color:var(--ink);font-family:inherit;margin:12px 0}
+.wordRow{padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.wordRow:last-child{border-bottom:none}
+.wordRow .wrTop{display:flex;align-items:center;gap:9px}
+.wordRow .stDot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.wordRow .term{flex:1}
+.wordRow .gloss{display:none;margin:6px 0 0 18px;color:var(--muted);font-size:13.5px;line-height:1.4}
+.wordRow.revealed .gloss{display:block}
 .stackbar{display:flex;height:20px;border-radius:7px;overflow:hidden;background:var(--panel);margin-top:4px}
 .stackbar>div{height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:7px 16px;margin-top:12px;font-size:13px;color:var(--muted)}
@@ -305,18 +328,78 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
   transition:opacity .2s;pointer-events:none;z-index:50;max-width:84%;text-align:center}
 .toast.on{opacity:.95}
 @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
-/* wide screens (iPad, Mac, phones in landscape): keep a phone-width column
-   centred, roomier type. Placed last in the stylesheet deliberately — at
-   equal specificity the later rule wins regardless of the media query, so
-   this block must come after the unconditional .prompt/.answer rules above
-   or its font-size boost is silently overridden and landscape never scales. */
+/* wide screens (iPad, Mac, laptops, phones in landscape): keep a phone-width
+   column centred. Type no longer needs this breakpoint at all -- the
+   clamp() sizes on .prompt/.answer above already reach their max by 700px
+   on their own, continuously rather than in one jump. Placed last in the
+   stylesheet deliberately -- at equal specificity the later rule wins
+   regardless of the media query, so this must come after the unconditional
+   .prompt/.answer rules above. */
 @media (min-width:700px){
   #app{max-width:600px;margin:0 auto}
-  .prompt{font-size:38px}
-  .prompt.eng{font-size:30px}
-  .answer{font-size:23px}
-  .answer.lat{font-size:28px}
 }
+
+/* ============================================================
+   "New" layout (settings.layout==='new'). JS (applyLayout()) only ever
+   sets data-layout="landscape" on <html> when settings.layout==='new'
+   AND the viewport matches (min-width:700px) and (orientation:landscape)
+   -- a laptop or an iPad turned sideways, never a phone in hand. "Legacy",
+   the default, never sets this attribute, so nothing below ever applies
+   to it, at any width. Kept as one block after everything above, for the
+   same specificity reason as the block above it.
+   ============================================================ */
+html[data-layout="landscape"] #app{max-width:none;margin:0}
+
+/* study: a two-pane spread instead of one stretched column. .cardarea's
+   own box is removed (display:contents) but it keeps every child exactly
+   where it already lives in the DOM -- #prompt, #answer, #leechTag,
+   #hintline are still literally inside #cardArea, just no longer
+   generating a box of their own to lay out in. That matters because
+   tapZone($('cardArea'),...) and #flagBtn's stopPropagation both rely on
+   the click still bubbling through the #cardArea element node, which
+   display:contents does not change. Nothing here touches markup, ids or
+   any JS. */
+html[data-layout="landscape"] #scStudy{
+  display:grid;grid-template-columns:1.3fr 1fr;
+  grid-template-rows:auto 1fr auto auto auto;
+  grid-template-areas:"bar bar" "prompt answer" "prompt leech" "prompt hint" "prompt controls";
+  height:100%;
+}
+html[data-layout="landscape"] #scStudy>.bar{grid-area:bar}
+html[data-layout="landscape"] .cardarea{display:contents}
+html[data-layout="landscape"] #multi{grid-area:prompt;position:static;align-self:start;justify-self:end;margin:10px 10px 0 0}
+html[data-layout="landscape"] #prompt{grid-area:prompt;align-self:center;justify-self:center;padding:16px}
+html[data-layout="landscape"] .cardarea>.rule{display:none}
+html[data-layout="landscape"] #answer{grid-area:answer;text-align:left;max-width:none;align-self:end;
+  padding:0 28px 14px;border-left:1px solid var(--line)}
+html[data-layout="landscape"] #leechTag{grid-area:leech;justify-content:flex-start;padding-left:28px}
+html[data-layout="landscape"] #hintline{grid-area:hint;text-align:left;padding-left:28px;margin-top:6px}
+html[data-layout="landscape"] #revealRow{grid-area:controls;align-self:end;padding:18px 28px}
+html[data-layout="landscape"] #rateRow{grid-area:controls;align-self:end;padding:18px 28px}
+
+/* home: the existing sections read as a bento grid instead of one long
+   scroll. .homeLead is a single new wrapper (added in the markup) around
+   the wordmark-through-Start-button block so it survives as one unit;
+   every .sect below it is untouched markup, just restyled. */
+html[data-layout="landscape"] #scHome .home{column-count:2;column-gap:32px;padding:4px 28px 28px}
+html[data-layout="landscape"] #scHome .homeLead{break-inside:avoid;margin-bottom:4px}
+html[data-layout="landscape"] #scHome .sect{break-inside:avoid;margin-top:14px;background:var(--panel);
+  border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+html[data-layout="landscape"] #scHome .build{break-inside:avoid}
+
+/* settings: same list, flowing in two newspaper columns instead of one --
+   no markup change, no per-field classification, each .field just keeps
+   itself from being split across the column break. */
+html[data-layout="landscape"] #scSet .set{column-count:2;column-gap:32px;padding:4px 28px 30px}
+html[data-layout="landscape"] #scSet .field{break-inside:avoid}
+
+/* browse: filters pinned in a rail instead of scrolling away above a long
+   result list. .browseRail/.browseSplit are two new wrapper divs around
+   the existing filter controls; #browseResults keeps its id and markup. */
+html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
+html[data-layout="landscape"] #scBrowse .browseSplit{display:flex;gap:26px;align-items:flex-start}
+html[data-layout="landscape"] #scBrowse .browseRail{flex:0 0 240px;position:sticky;top:0}
+html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -330,6 +413,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       <button class="icon" id="toSettings" aria-label="Settings">&#9881;</button>
     </div>
     <div class="home">
+      <div class="homeLead">
       <div class="wordmark" id="wordmark"></div>
       <div class="sub" id="homeSub">—</div>
       <div id="homeWarn"></div>
@@ -349,12 +433,25 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         </div>
       </div>
       <button class="startBtn" id="startBtn">Start</button>
+      </div>
 
       <div class="sect">
         <h2>Study days</h2>
         <div class="strip" id="strip"></div>
         <div class="note" id="syncAge"></div>
         <div class="note" id="streakNote">—</div>
+        <details class="fold" id="calFold">
+          <summary>Full calendar</summary>
+          <div class="calHead">
+            <button class="calNav" id="calPrev" aria-label="Previous month">&#8249;</button>
+            <div class="calTitle" id="calTitle">—</div>
+            <button class="calNav" id="calNext" aria-label="Next month">&#8250;</button>
+          </div>
+          <div class="calDow" id="calDow"></div>
+          <div class="calGrid" id="calGrid"></div>
+          <div class="note" id="calDetail">Tap a day to see its count.</div>
+          <div class="note" id="longStreakNote">—</div>
+        </details>
       </div>
 
       <div class="sect">
@@ -366,6 +463,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       <div class="sect">
         <h2>The whole syllabus</h2>
         <div id="syllabus"></div>
+        <button class="chip" id="toBrowse" style="margin-top:12px">Browse the full list &#8594;</button>
         <details class="fold" id="partFold">
           <summary>By part</summary>
           <div id="partBody"></div>
@@ -392,7 +490,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       <div class="sect">
         <h2>Struggling words</h2>
         <details class="fold" id="againFold">
-          <summary>Hit "Again" 5+ times (<span id="againCount">0</span>)</summary>
+          <summary>Hit "Again" 5+ times today (<span id="againCount">0</span>)</summary>
           <div id="againList"></div>
         </details>
         <details class="fold" id="asideFold">
@@ -426,6 +524,29 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       <div class="sect">
         <h2>By part</h2>
         <div id="statsGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BROWSE ============ -->
+  <section id="scBrowse" class="screen">
+    <div class="bar">
+      <button class="icon" id="browseBack" aria-label="Back">&#8249;</button>
+      <div class="title">Word list</div>
+      <div class="icon" style="visibility:hidden">·</div>
+    </div>
+    <div class="home">
+      <div class="browseSplit">
+      <div class="browseRail">
+      <div class="dirs">
+        <button class="dir sel" id="browseDirL"><div class="dt" id="bdtL"></div><div class="dd" id="bddL">—</div></button>
+        <button class="dir" id="browseDirE"><div class="dt" id="bdtE"></div><div class="dd" id="bddE">—</div></button>
+      </div>
+      <input type="text" class="searchInput" id="browseSearch" placeholder="Search…" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div class="chips" id="browseParts"></div>
+      <div class="chips" id="browseStatusChips"></div>
+      </div>
+      <div id="browseResults"></div>
       </div>
     </div>
   </section>
@@ -529,6 +650,18 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
         </select>
         <button class="act" id="surpriseBtn">Surprise me</button>
         <div class="fh" id="palNote">—</div>
+      </div>
+      <div class="field">
+        <label for="fLayout">Layout</label>
+        <select id="fLayout" class="sel">
+          <option value="legacy">Legacy — the layout you know</option>
+          <option value="new">New — adds a wider layout on tablets and laptops in landscape</option>
+        </select>
+        <div class="fh">On your phone the two look identical. "New" only changes anything on a
+          screen at least 700px wide, turned sideways — a laptop or an iPad — where it switches the
+          study card, front screen and settings to a layout built for the extra width instead of
+          stretching the phone layout across it. There's no "always sideways" option — it wouldn't
+          read well on a phone held upright.</div>
       </div>
       <div class="field">
         <label for="fRoll">A study day begins at</label>
@@ -642,7 +775,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
       <div class="field">
         <label>Start over</label>
         <button class="act danger" id="resetBtn">Erase all progress</button>
-        <div class="fh">Downloads a backup first, then clears everything on this device.</div>
+        <div class="fh">Pushes a backup to the gist first and only erases once that push is confirmed. Needs gist backup set up above -- without it, there is no reliable way to confirm a backup landed anywhere first.</div>
       </div>
       <div class="field">
         <label>Instructions</label>
@@ -678,13 +811,34 @@ function dayStart(k){
   for(let i=0;i<3;i++) t=k*DAY+off+new Date(t).getTimezoneOffset()*60000;
   return t;
 }
+// the study-day key for a plain Gregorian calendar date -- local noon is
+// safely inside the day regardless of rollover hour, so this reuses dayKey's
+// own rollover-aware bucketing rather than reimplementing it for the calendar
+function dayKeyForDate(y,m,day){ return dayKey(new Date(y,m,day,12,0,0).getTime()); }
+// a Gregorian month as weeks of 7 cells (Sun-Sat), padded with inMonth:false
+// cells so every week is a full row; pure date math, no S or DOM access
+function monthMatrix(y,m){
+  const first=new Date(y,m,1), start=first.getDay(),
+        days=new Date(y,m+1,0).getDate(), prevDays=new Date(y,m,0).getDate();
+  const cells=[];
+  for(let i=0;i<start;i++) cells.push({y,m:m-1,d:prevDays-start+1+i,inMonth:false});
+  for(let d=1;d<=days;d++) cells.push({y,m,d,inMonth:true});
+  while(cells.length%7!==0) cells.push({y,m:m+1,d:cells.length-start-days+1,inMonth:false});
+  const weeks=[];
+  for(let i=0;i<cells.length;i+=7) weeks.push(cells.slice(i,i+7));
+  return weeks;
+}
 const LEARN_STEPS=[1*MIN,10*MIN], RELEARN_STEPS=[10*MIN];
 const S_MIN=0.001;
 const AGAIN=1, HARD=2, GOOD=3, EASY=4;
 // A word can be flagged (set aside, same as susp) by hand once it has drawn
-// an Again on this many separate study days; past FLAG_AUTO it happens on
-// its own. See againDayCounts() below for why "separate days" and not raw
-// lapses.
+// this many Agains in a single study day; past FLAG_AUTO it happens on its
+// own. Same-day raw count, not distinct days -- an earlier version counted
+// distinct study days instead (deliberately, to stop one bad cram sitting
+// tripping the flag on its own), changed back to same-day counting
+// 2026.08.03 at the owner's explicit request: the flag is meant to catch a
+// sitting that is going badly right now, not chronic failure across
+// separate sessions. See againTodayCounts() below.
 const FLAG_MANUAL=5, FLAG_AUTO=8;
 
 const clampD=d=>Math.min(Math.max(d,1),10);
@@ -824,7 +978,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 const defaults={
   version:2, created:Date.now(),
   settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14},
-  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
+  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
 let S=null;
@@ -935,11 +1089,11 @@ function normalise(o){
       // ever moves a due date earlier within its own day, never to another day.
       if(c.st==='R'&&c.due>0) c.due=dayStart(dayKey(c.due));
     }
-    // retroactive: catch any word that had already reached FLAG_AUTO separate
-    // Again-days before this existed, so it doesn't sit unflagged until its
-    // next lapse. ROLL_OVR is still in effect here, so dayKey() below uses
-    // this state's own rollover, not whatever S happens to be right now.
-    const bad=againDayCounts(s.log);
+    // defensive: catch a state whose log already shows FLAG_AUTO same-day
+    // Agains for "today" (this device's today, via ROLL_OVR/dayKey below)
+    // without susp set -- e.g. an imported backup, or a crash between the
+    // qualifying press and rate()'s own live check.
+    const bad=againTodayCounts(s.log, today());
     for(const id in bad){
       if(bad[id]>=FLAG_AUTO && s.cards[id] && !s.cards[id].susp) s.cards[id].susp=true;
     }
@@ -967,7 +1121,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.01.2';
+const BUILD='2026.08.03.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1008,6 +1162,8 @@ function buildQueue(dir){
   return {learn,due,intro,seededTotal:seeded.length,freshTotal:fresh.length};
 }
 let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], donePoll=null, cardDirty=false;
+let calY=null, calM=null, calSelDk=null;   // calendar fold's own state -- not persisted, not S.dir-linked
+let browseDir='L', browseQuery='', browsePart=null, browseStatus='all';   // browse screen's own state
 
 function refresh(){ Q=buildQueue(S.dir); }
 
@@ -1079,8 +1235,13 @@ function applyTheme(){
   if(m) m.setAttribute('content', bg);
   document.documentElement.style.background = bg;
 }
+const layoutMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(min-width:700px) and (orientation:landscape)'):null;
+function applyLayout(){
+  document.documentElement.dataset.layout = (S.layout==='new' && layoutMQ && layoutMQ.matches) ? 'landscape' : 'portrait';
+}
+if(layoutMQ && layoutMQ.addEventListener) layoutMQ.addEventListener('change', applyLayout);
 const show=name=>{
-  ['scHome','scStudy','scDone','scSet','scLog','scStats'].forEach(s=>$(s).classList.toggle('on',s===name));
+  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse'].forEach(s=>$(s).classList.toggle('on',s===name));
 };
 function toast(msg,ms){
   const t=$('toast'); t.textContent=msg; t.classList.add('on');
@@ -1124,17 +1285,25 @@ function renderCard(){
   renderCounts();
 }
 function renderLeech(){
-  const n=againDaysFor(current,S.log), tag=$('leechTag');
+  const n=againTodayFor(current,S.log,today()), tag=$('leechTag');
   if(n<FLAG_MANUAL){ tag.classList.add('hidden'); return; }
   tag.classList.remove('hidden');
   const susp=!!(S.cards[current]&&S.cards[current].susp);
   $('flagBtn').classList.toggle('on',susp);
   $('leechText').textContent = susp
     ? 'Set aside — tap the flag to bring it back'
-    : 'Again on '+n+' separate day'+(n===1?'':'s')+' — tap the flag to set it aside';
+    : 'Again '+n+' time'+(n===1?'':'s')+' today — tap the flag to set it aside';
 }
+// shared by reveal() and rate(): a tap landing within `ms` of `ref` is
+// treated as the tail of a fast double-tap rather than a deliberate one --
+// see rate()'s own use below for why this matters in both directions
+function tooSoonAfter(now,ref,ms){ return (now-ref)<ms; }
 function reveal(){
   if(!$('rateRow').classList.contains('hidden')) return;
+  // a fast double-tap can land its second click on this card's own reveal
+  // control right after next() has just swapped it in -- see rate()'s
+  // symmetric guard and HANDOFF.md for the full mechanism
+  if(tooSoonAfter(Date.now(),shownAt,260)) return;
   $('answer').classList.add('on');
   $('revealRow').classList.add('hidden');
   $('rateRow').classList.remove('hidden');
@@ -1158,7 +1327,7 @@ function adjustGrade(r,ms){
   return r;
 }
 function rate(pressed){
-  if(Date.now()-revealAt<260) return;              // guard: the reveal tap must not grade
+  if(tooSoonAfter(Date.now(),revealAt,260)) return; // guard: the reveal tap must not grade
   const r=adjustGrade(pressed,thinkMs);
   const now=Date.now(), c=BY_ID[current], cs=cardState(current);
   const frame={id:current, before:JSON.parse(JSON.stringify(cs)),
@@ -1170,13 +1339,13 @@ function rate(pressed){
   const res=schedule(cs,r,now,st_());
   S.cards[current]=res.card;
   S.log.push([current,r,now,Math.round(res.ivl/1000),thinkMs]);
-  // FLAG_AUTO separate Again-days sets a word aside on its own, right when
-  // the qualifying press happens -- normalise()'s migration only catches
-  // this retroactively, on the next load, for words that got there before
-  // this session started.
-  if(r===AGAIN&&!S.cards[current].susp&&againDaysFor(current,S.log)>=FLAG_AUTO){
+  // FLAG_AUTO same-day Agains sets a word aside on its own, right when the
+  // qualifying press happens -- normalise()'s migration only catches this
+  // defensively, on the next load, for a state that reached it without the
+  // live check having fired (see normalise()).
+  if(r===AGAIN&&!S.cards[current].susp&&againTodayFor(current,S.log,today())>=FLAG_AUTO){
     S.cards[current].susp=true;
-    toast('Set aside automatically — "Again" on '+FLAG_AUTO+' separate days now',3200);
+    toast('Set aside automatically — "Again" '+FLAG_AUTO+' times today',3200);
   }
   if(r!==pressed) toast(pressed===EASY?'Recorded as Good — that one took a while':'Recorded as Hard — that one took a while',1600);
   const d=today();
@@ -1247,47 +1416,50 @@ function renderDone(){
 }
 
 /* ======================= home ======================= */
-// Distinct study days each card has drawn an AGAIN, from the full log --
-// deliberately not cs.lapses, which only counts a review-state card lapsing
-// back and misses a brand-new word that keeps failing while still in its
-// first learning steps. Unique-day, not per-press: several Agains inside one
-// cram session count once, so a single rough sitting can't trip a flag on
-// its own -- the whole point is catching a word that is *still* failing
-// across genuinely separate sittings, not one that is merely being drilled
-// hard right now.
-function againDayCounts(log){
-  const seen={};
+// Raw AGAIN presses for every card on one study day (default: today), from
+// the full log. Changed 2026.08.03 from a distinct-study-days count back to
+// same-day raw counting, at the owner's explicit request: the flag is meant
+// to catch a sitting that is going badly right now, not to track chronic
+// failure across separate sessions. Not cs.lapses, which only counts a
+// review-state card lapsing back and misses a brand-new word that keeps
+// failing while still in its first learning steps.
+function againTodayCounts(log,dk){
+  if(dk==null) dk=today();
+  const out={};
   for(let i=0;i<log.length;i++){
     const e=log[i];
-    if(e[1]!==AGAIN) continue;
-    (seen[e[0]]||(seen[e[0]]=new Set())).add(dayKey(e[2]));
+    if(e[1]!==AGAIN||dayKey(e[2])!==dk) continue;
+    out[e[0]]=(out[e[0]]||0)+1;
   }
-  const out={};
-  for(const id in seen) out[id]=seen[id].size;
   return out;
 }
 // Same count, for one card. Used on every card shown and every rating --
-// building a Set per *other* card in the whole log there, just to read one
-// number back out, is wasted allocation on a log that only ever grows.
-function againDaysFor(id,log){
-  const seen=new Set();
+// scanning the whole log to build every other card's count too, just to
+// read one number back out, is wasted work on a log that only ever grows.
+function againTodayFor(id,log,dk){
+  if(dk==null) dk=today();
+  let n=0;
   for(let i=0;i<log.length;i++){
     const e=log[i];
-    if(e[0]===id&&e[1]===AGAIN) seen.add(dayKey(e[2]));
+    if(e[0]===id&&e[1]===AGAIN&&dayKey(e[2])===dk) n++;
   }
-  return seen.size;
+  return n;
 }
-// Every card in this direction past FLAG_MANUAL, ranked worst first. Includes
-// already-flagged (susp) words too -- callers filter for those separately.
+// Every card in this direction at FLAG_MANUAL+ today's Agains, ranked worst
+// first, unioned with every already-set-aside card regardless of today's
+// count -- susp is persistent (sticks until brought back by hand), so a
+// word set aside on an earlier day must keep showing under "Set aside" even
+// on a day it hasn't been touched at all. Callers filter susp out separately
+// for the "Set aside" list.
 function strugglingWords(dir){
-  const counts=againDayCounts(S.log), rows=[];
-  for(const id in counts){
-    const n=counts[id];
-    if(n<FLAG_MANUAL) continue;
-    const c=BY_ID[id];
-    if(!c||c.dir!==dir) continue;
+  const dk=today(), counts=againTodayCounts(S.log,dk), rows=[], seen={};
+  const add=(id,n)=>{
+    if(seen[id]) return; seen[id]=true;
+    const c=BY_ID[id]; if(!c||c.dir!==dir) return;
     rows.push({id,n,susp:!!(S.cards[id]&&S.cards[id].susp)});
-  }
+  };
+  for(const id in counts) if(counts[id]>=FLAG_MANUAL) add(id,counts[id]);
+  for(const id in S.cards) if(S.cards[id].susp) add(id,counts[id]||0);
   rows.sort((a,b)=>b.n-a.n||a.id.localeCompare(b.id));
   return rows;
 }
@@ -1328,6 +1500,23 @@ function wholeSyllabusStats(dir){
   });
   return {totals,bySec};
 }
+// browse screen: group a card array by part, in SECTIONS order, alphabetised
+// within each part -- every DATA term already starts with its headword, so a
+// plain locale sort needs no custom sort key
+function groupByPart(cards){
+  const bySec={};
+  cards.forEach(c=>(bySec[c.sec] ||= []).push(c));
+  const out=[];
+  SECTIONS.forEach(sec=>{ if(bySec[sec]) out.push({sec,cards:bySec[sec].slice().sort((a,b)=>a.q.localeCompare(b.q))}); });
+  return out;
+}
+// case-insensitive substring match against the term being browsed to, not
+// the gloss -- the direction toggle already covers "search by the other side"
+function filterWords(cards,query){
+  const q=query.trim().toLowerCase();
+  if(!q) return cards;
+  return cards.filter(c=>c.q.toLowerCase().includes(q));
+}
 function renderStats(){
   const dir=S.dir;
   $('statsDirL').classList.toggle('sel',dir==='L');
@@ -1362,6 +1551,58 @@ function renderStats(){
     gridHtml+='</div></div>';
   });
   $('statsGrid').innerHTML=gridHtml||'<div class="note">No words to show.</div>';
+}
+function wordRowHtml(c){
+  const st=statusOf(S.cards[c.id]), gloss=(c.dir==='E')?c.a.join(', '):c.a;
+  return '<div class="wordRow" data-id="'+c.id+'"><div class="wrTop"><i class="stDot s-'+st+'"></i>'+
+    '<span class="term">'+escHtml(c.q)+'</span></div><div class="gloss">'+escHtml(gloss)+'</div></div>';
+}
+function renderBrowsePartChips(){
+  const box=$('browseParts');
+  if(SECTIONS.length<2){ box.classList.add('hide'); return; }
+  box.classList.remove('hide'); box.innerHTML='';
+  const mk=(sec,label)=>{
+    const b=document.createElement('button');
+    b.className='chip'+(browsePart===sec?' on':''); b.textContent=label;
+    b.addEventListener('click',e=>{ e.preventDefault(); browsePart=(browsePart===sec?null:sec); renderBrowse(); });
+    box.appendChild(b);
+  };
+  mk(null,'All parts');
+  SECTIONS.forEach(sec=>mk(sec,sec));
+}
+function renderBrowseStatusChips(){
+  const box=$('browseStatusChips'); box.innerHTML='';
+  const mk=(key,label)=>{
+    const b=document.createElement('button');
+    b.className='chip'+(browseStatus===key?' on':''); b.textContent=label;
+    b.addEventListener('click',e=>{ e.preventDefault(); browseStatus=key; renderBrowse(); });
+    box.appendChild(b);
+  };
+  mk('all','All');
+  STATUS_ORDER.forEach(k=>mk(k,STATUS_LABEL[k]));
+}
+// purely a read over CARDS/S.cards -- no new fields on S, no duplicate word
+// index; groupByPart/filterWords/statusOf already exist for the Stats screen
+function renderBrowse(){
+  $('browseDirL').classList.toggle('sel',browseDir==='L');
+  $('browseDirE').classList.toggle('sel',browseDir==='E');
+  $('bdtL').textContent=DECK.fwd; $('bdtE').textContent=DECK.rev;
+  $('bddL').textContent=CARDS.filter(c=>c.dir==='L').length+' words';
+  $('bddE').textContent=CARDS.filter(c=>c.dir==='E').length+' words';
+  renderBrowsePartChips();
+  renderBrowseStatusChips();
+  let cards=CARDS.filter(c=>c.dir===browseDir);
+  if(browsePart) cards=cards.filter(c=>c.sec===browsePart);
+  if(browseStatus!=='all') cards=cards.filter(c=>statusOf(S.cards[c.id])===browseStatus);
+  cards=filterWords(cards,browseQuery);
+  const groups=groupByPart(cards);
+  const openAll=!!browseQuery||browseStatus!=='all'||!!browsePart;
+  let html='';
+  groups.forEach(g=>{
+    html+='<details class="fold"'+(openAll?' open':'')+'><summary>'+g.sec+' ('+g.cards.length+')</summary><div>'+
+      g.cards.map(wordRowHtml).join('')+'</div></details>';
+  });
+  $('browseResults').innerHTML = html || '<div class="note">No words match.</div>';
 }
 function renderChips(){
   const box=$('chips');
@@ -1405,6 +1646,30 @@ function renderBucketChips(){
     box.appendChild(b);
   });
 }
+// {studied, intro, reviewed} for one study day -- reviewed is every rating
+// that wasn't a word's first-ever rep, so it covers both true spaced reviews
+// and same-day repeats of a word introduced earlier that same day
+function dayStatsFor(days,dk){
+  const rec=days[dk];
+  if(!rec||!rec.n) return {studied:false,intro:0,reviewed:0};
+  return {studied:true,intro:rec.intro||0,reviewed:rec.n-(rec.intro||0)};
+}
+function currentStreak(days,todayKey){
+  let streak=0;
+  for(let k=todayKey;;k--){
+    if(days[k]&&days[k].n) streak++;
+    else { if(k!==todayKey) break; }
+    if(todayKey-k>3650) break;
+  }
+  return streak;
+}
+function longestStreak(days,todayKey){
+  let best=0,run=0;
+  for(let k=todayKey-3650;k<=todayKey;k++){
+    if(days[k]&&days[k].n){ run++; best=Math.max(best,run); } else run=0;
+  }
+  return best;
+}
 function renderHome(){
   refresh();                                    // Q = buildQueue(S.dir) -- reused below,
                                                  // rather than building that same direction again
@@ -1431,13 +1696,14 @@ function renderHome(){
     el.className='dot'+((S.days[k]&&S.days[k].n)?' did':'')+(i===0?' today':'');
     strip.appendChild(el);
   }
-  let streak=0; for(let k=d;;k--){ if(S.days[k]&&S.days[k].n) streak++; else { if(k!==d) break; } if(d-k>3650) break; }
+  const streak=currentStreak(S.days,d);
   const s2=dirStats(S.dir);
   $('capVal').textContent=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
   renderSync();
   renderPace();
   renderSyllabus();
   renderStruggling();
+  if($('calFold').open) renderCalendar();       // stay fresh if left open across a study session
   renderWarn(qE);                               // already computed above -- don't build it again
   $('buildTag').textContent='Version '+BUILD+' · '+PALETTES[S.palette||'vellum'];
   $('streakNote').textContent = streak? (streak+' day'+(streak===1?'':'s')+' running') : 'No streak yet — the first day starts it.';
@@ -1467,6 +1733,40 @@ function renderHome(){
 // built as an HTML string -- today's word list has no &/</> in it to prove it,
 // but escape anyway rather than lean on that staying true forever
 function escHtml(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+// only called when the fold is opened and by the nav buttons -- not on every
+// renderHome(), since it's collapsed most of the time (see HANDOFF.md)
+function renderCalendar(){
+  const now=new Date();
+  if(calY==null){ calY=now.getFullYear(); calM=now.getMonth(); }
+  $('calTitle').textContent=new Date(calY,calM,1).toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const sun=new Date(); sun.setDate(sun.getDate()-sun.getDay());   // most recent Sunday, any week works
+  $('calDow').innerHTML=[0,1,2,3,4,5,6].map(i=>
+    '<div>'+new Date(sun.getFullYear(),sun.getMonth(),sun.getDate()+i).toLocaleDateString(undefined,{weekday:'narrow'})+'</div>'
+  ).join('');
+  const d0=today();
+  let gh='';
+  monthMatrix(calY,calM).forEach(week=>week.forEach(cell=>{
+    if(!cell.inMonth){ gh+='<div class="calCell out">'+cell.d+'</div>'; return; }
+    const dk=dayKeyForDate(cell.y,cell.m,cell.d);
+    const st=dayStatsFor(S.days,dk);
+    const cls=['calCell'];
+    if(st.studied) cls.push('did');
+    if(dk===d0) cls.push('today');
+    if(dk===calSelDk) cls.push('sel');
+    gh+='<div class="'+cls.join(' ')+'" data-dk="'+dk+'">'+cell.d+'</div>';
+  }));
+  $('calGrid').innerHTML=gh;
+  showCalDetail(calSelDk);
+  const ls=longestStreak(S.days,d0);
+  $('longStreakNote').textContent = ls>1 ? ('Longest streak so far: '+ls+' days') : '';
+}
+function showCalDetail(dk){
+  const el=$('calDetail');
+  if(dk==null){ el.textContent='Tap a day to see its count.'; return; }
+  const st=dayStatsFor(S.days,dk);
+  const label=new Date(dayStart(dk)).toLocaleDateString(undefined,{day:'numeric',month:'long'});
+  el.textContent = st.studied ? (label+' — '+st.intro+' new, '+st.reviewed+' reviewed') : (label+' — no study');
+}
 function flagRow(r){
   const c=BY_ID[r.id];
   return '<div class="flagRow"><span class="term">'+escHtml(c.q)+'</span><span class="cnt">'+r.n+'</span>'+
@@ -1478,20 +1778,26 @@ function renderStruggling(){
   $('asideCount').textContent=aside.length;
   $('againList').innerHTML = rows.length
     ? rows.map(flagRow).join('')
-    : '<div class="note">None yet — a word shows up here once "Again" has landed on it on '+FLAG_MANUAL+' separate days.</div>';
+    : '<div class="note">None yet — a word shows up here once "Again" has landed on it '+FLAG_MANUAL+' times in one day.</div>';
   $('asideList').innerHTML = aside.length
     ? aside.map(flagRow).join('')
     : '<div class="note">Nothing set aside.</div>';
+}
+// mean daily introductions across the last 14 days that had any study,
+// falling back to today's allowance when there's no recent history yet.
+// Shared by renderPace() and renderSyllabus(), which used to each run this
+// exact loop themselves.
+function recentPace(d,capToday){
+  let sum=0,n=0;
+  for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=(r.intro||0); n++; } }
+  return {rate:n?Math.max(sum/n,1):capToday, hasData:n>0};
 }
 const MOTTOS=DECK.mottos; function renderPace(){
   const ap=activeParts(); const dir=S.dir, all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
   const met=all.filter(c=>S.cards[c.id]&&S.cards[c.id].reps>0).length;
   const left=all.length-met, d=today();
-  // observed pace: mean introductions across the last 14 days that had any study
-  let sum=0,n=0;
-  for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=(r.intro||0); n++; } }
   const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
-  const rate=n?Math.max(sum/n,1):capToday;
+  const {rate,hasData}=recentPace(d,capToday);
   const daysNeeded=left?Math.ceil(left/rate):0;
   const finish=new Date(Date.now()+daysNeeded*DAY);
   const term=new Date(S.settings.term+'T00:00:00');
@@ -1505,7 +1811,7 @@ const MOTTOS=DECK.mottos; function renderPace(){
   } else {
     h='<span class="n">'+met+'</span> of '+all.length+' met in '+dirName+
       ', <span class="n">'+left+'</span> to go.'+
-      ' At '+(n?'your recent pace of '+Math.round(rate):capToday)+' a day the last one arrives <b>'+fmt(finish)+'</b>'+
+      ' At '+(hasData?'your recent pace of '+Math.round(rate):capToday)+' a day the last one arrives <b>'+fmt(finish)+'</b>'+
       (toTerm>0?(daysNeeded<=toTerm?' — '+(toTerm-daysNeeded)+' days before term.':' — '+(daysNeeded-toTerm)+' days after term begins.'):'.');
     const skip=new Date(Date.now()+(daysNeeded+1)*DAY);
     if(fmt(skip)!==fmt(finish)) h+='<span class="cost">A day off moves that to '+fmt(skip)+'.</span>';
@@ -1597,10 +1903,9 @@ function renderSyllabus(){
   const R=S.settings.retention;
 
   // if you keep going: everything met by term day sits at about the target
-  const d=today(); let sum=0,n=0;
-  for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=(r.intro||0); n++; } }
+  const d=today();
   const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
-  const pace=n?Math.max(sum/n,1):capToday;
+  const {rate:pace}=recentPace(d,capToday);
   const willMeet=Math.min(nowS.total, nowS.met+Math.round(pace*toTerm));
   const keep=willMeet*R;
 
@@ -1729,9 +2034,13 @@ const GIST_FILE='vocabula.json';
 function sanitised(){                       // never let the token leave the device in plain content
   return Object.assign({}, S, {settings: Object.assign({}, S.settings, {gistTok:''})});
 }
+// Returns whether the push actually landed -- callers that need to know before
+// doing something destructive (resetBtn) can await this instead of hoping.
+// Existing callers (the debounced auto-push, pushBtn) already ignored the
+// return value, so adding one is not a behaviour change for them.
 async function pushGist(quiet){
   const {gistId,gistTok}=S.settings;
-  if(!gistId||!gistTok){ if(!quiet) toast('Fill in the gist id and token first'); return; }
+  if(!gistId||!gistTok){ if(!quiet) toast('Fill in the gist id and token first'); return false; }
   S.lastDevice=deviceLabel();
   try{
     const r=await fetch('https://api.github.com/gists/'+gistId,{
@@ -1743,7 +2052,8 @@ async function pushGist(quiet){
     S.lastSync=Date.now(); S.syncedLogLen=S.log.length; S.sinceExport=0;
     try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
     if(!quiet) toast('Pushed to gist as '+S.lastDevice);
-  }catch(e){ if(!quiet) toast('Gist push failed ('+e.message+')'); }
+    return true;
+  }catch(e){ if(!quiet) toast('Gist push failed ('+e.message+')'); return false; }
 }
 // a restored copy must never carry another device's sync credentials or label
 function adopt(inc){
@@ -1886,6 +2196,22 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.03.2',[
+    'New Settings > Layout option, "Legacy" or "New" -- Legacy is what you already have, and stays the default; nothing changes unless you switch it. "New" only changes anything on a screen at least 700px wide, turned sideways: a laptop or an iPad. There, the study card becomes a two-pane spread instead of one stretched column, the front screen\'s sections group into two columns instead of one long scroll, Settings reads in two columns, and the word-list browser gets a fixed search-and-filter panel beside the results instead of one that scrolls away above a long list. On a phone in your hand the two look identical either way -- there is no "always sideways" option, since that would read wrong held upright.',
+    'The study card and its answer no longer jump to a bigger size at exactly 700px wide -- they now scale continuously with the CSS clamp() function, reaching the exact same maximum size they always did by 700px, just without the single jump.'
+  ]],
+  ['2026.08.03.1',[
+    '"Erase all progress" now pushes a backup to the gist and waits for that push to actually succeed before wiping anything, instead of trying a file download and erasing 700ms later regardless of whether it worked. Needs gist backup set up in Settings -- without it, erasing now refuses rather than fall back to a download that Safari can silently swallow.',
+    'Two spots that separately computed your recent daily pace now share one calculation. No visible change.'
+  ]],
+  ['2026.08.03.0',[
+    'Changed how the struggling-word flag counts, at the owner\'s request: it now counts raw "Again" presses within a single study day, not distinct study days as it briefly did. Getting a word wrong 5 times today shows the flag on the card and in the front screen\'s Struggling words list; 8 times today sets it aside on its own. A word set aside stays aside regardless of the day, exactly as before -- only the trigger changed.'
+  ]],
+  ['2026.08.02.0',[
+    'Fixed (reported, not yet reproduced live -- read Settings > What changed for the mechanism if it recurs): a fast double-tap could very rarely flash the next word\'s answer for an instant. Rating a word swaps in the next one and resets its "show answer" button to the exact same spot the rating button had just been -- if the second half of a fast double-tap landed there, it revealed the new word immediately. The tap that reveals a card now waits a fraction of a second after that card first appears, the same way rating already waited a fraction of a second after a reveal.',
+    'The "Study days" strip now expands into a real calendar: tap "Full calendar" for a month at a time, with a dot for each day you studied, tap-a-day for how many new words and how many reviews, and your longest streak alongside the current one.',
+    'A new "Browse the full list" screen from the front screen: every word in the deck, either direction, grouped by part and alphabetised, with a search box, a filter by how well you know each one, and a tap to reveal the answer without it counting as a review.'
+  ]],
   ['2026.08.01.2',[
     'A maintenance pass, requested and reviewed rather than routine: a startup call was re-rendering the front screen\'s warning banner a second time for no reason, the front screen was rebuilding the study queue three times over when two would do, and six separate "back to the front screen" buttons were wired with six copies of the same two lines (one of them in a different order, for no reason). None of these changed anything you could see; all were just doing the same work more than once.',
     'The background timer that resumes a card after "Almost there" now skips its tick while the tab is out of view, instead of quietly doing the same pointless check every five seconds whether or not the phone is even awake to show it.',
@@ -1969,6 +2295,7 @@ function renderSet(){
   $('fGate').value=s.gateDays|0;
   $('fTheme').value=S.theme||'light';
   $('fPal').value=PALETTES[S.palette]?S.palette:'vellum';
+  $('fLayout').value=S.layout==='new'?'new':'legacy';
   $('fRoll').value=String(S.settings.rollover!=null?S.settings.rollover:4);
   $('fRot').value=S.rotate||'off';
   $('palNote').innerHTML='<span class="swatch" style="background:var(--coral)"></span>'+
@@ -1986,14 +2313,14 @@ function renderSet(){
         ? '  Gist: '+(S.lastSync?'synced '+new Date(S.lastSync).toLocaleString():'not yet synced')+
           (S.lastDevice?' (last pushed by '+S.lastDevice+')':'')+'.'
         : '');
-  const badCounts=againDayCounts(S.log);
+  const badCounts=againTodayCounts(S.log,today());
   const flagged=CARDS.filter(c=>S.cards[c.id]&&S.cards[c.id].susp).length;
   const watch=CARDS.filter(c=>(badCounts[c.id]||0)>=FLAG_MANUAL&&!(S.cards[c.id]&&S.cards[c.id].susp)).length;
   $('leechNote').textContent = (flagged||watch)
     ? (flagged?flagged+' word'+(flagged===1?'':'s')+' set aside. ':'')+
-      (watch?watch+' more past '+FLAG_MANUAL+' separate days of "Again", not yet flagged.':'')+
+      (watch?watch+' more at '+FLAG_MANUAL+'+ "Again" presses today, not yet flagged.':'')+
       ' Words you set aside stop appearing until you bring them back.'
-    : 'Nothing flagged yet. "Again" on '+FLAG_MANUAL+' separate days lets you flag a word by hand; '+FLAG_AUTO+' does it on its own.';
+    : 'Nothing flagged yet. "Again" '+FLAG_MANUAL+' times in one day lets you flag a word by hand; '+FLAG_AUTO+' does it on its own.';
 }
 
 /* ======================= wiring ======================= */
@@ -2016,8 +2343,8 @@ $('flagBtn').addEventListener('click',e=>{
   toast(cs.susp?'Set aside':'Brought back',1400);
 });
 tapZone($('undoBtn'),undo);
-// six buttons across five screens, all "go back to the front screen"
-['toHome','toHome2','toHome3','doneBack','statsBack','logBack']
+// seven buttons across six screens, all "go back to the front screen"
+['toHome','toHome2','toHome3','doneBack','statsBack','logBack','browseBack']
   .forEach(id=>tapZone($(id),()=>{renderHome();show('scHome');}));
 tapZone($('toSettings'),()=>{renderSet();show('scSet');});
 tapZone($('toStats'),()=>{renderStats();show('scStats');});
@@ -2026,6 +2353,30 @@ tapZone($('statsDirE'),()=>{S.dir='E';save();renderStats();});
 tapZone($('dirLtoE'),()=>{S.dir='L';save();renderHome();});
 tapZone($('dirEtoL'),()=>{S.dir='E';save();renderHome();});
 tapZone($('startBtn'),()=>{undoStack=[];next();if(current)show('scStudy');});
+$('calFold').addEventListener('toggle',()=>{ if($('calFold').open) renderCalendar(); });
+function shiftCalMonth(delta){
+  if(calY==null){ const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); }
+  calM+=delta;
+  if(calM<0){ calM=11; calY--; } else if(calM>11){ calM=0; calY++; }
+  calSelDk=null;
+  renderCalendar();
+}
+tapZone($('calPrev'),()=>shiftCalMonth(-1));
+tapZone($('calNext'),()=>shiftCalMonth(1));
+$('calGrid').addEventListener('click',e=>{
+  const cell=e.target.closest('.calCell'); if(!cell||!cell.dataset.dk) return;
+  e.preventDefault();
+  calSelDk=(calSelDk===+cell.dataset.dk)?null:+cell.dataset.dk;
+  renderCalendar();
+});
+tapZone($('toBrowse'),()=>{ browseDir=S.dir; renderBrowse(); show('scBrowse'); });
+tapZone($('browseDirL'),()=>{ browseDir='L'; renderBrowse(); });
+tapZone($('browseDirE'),()=>{ browseDir='E'; renderBrowse(); });
+$('browseSearch').addEventListener('input',e=>{ browseQuery=e.target.value; renderBrowse(); });
+$('browseResults').addEventListener('click',e=>{
+  const row=e.target.closest('.wordRow'); if(!row) return;
+  row.classList.toggle('revealed');
+});
 function toggleFlagFromList(id){
   const cs=cardState(id);
   cs.susp=!cs.susp;
@@ -2062,17 +2413,36 @@ tapZone($('unsuspBtn'),()=>{
   let n=0; for(const k in S.cards){ if(S.cards[k].susp){S.cards[k].susp=false;n++;} }
   save(); renderSet(); toast(n?(n+' brought back'):'Nothing was set aside');
 });
-tapZone($('resetBtn'),()=>{
-  if(!confirm('Erase every rating and interval on this device? A backup downloads first.')) return;
+// The old version called doExport() and erased 700ms later regardless of
+// whether the download actually happened -- Safari can silently block a
+// programmatic download with no exception thrown, so that 700ms was hope,
+// not a guarantee. pushGist() gives a real yes/no (an actual HTTP response),
+// so erase now waits on that instead. Without gist configured there is no
+// way to confirm a backup landed anywhere, so it refuses rather than fall
+// back to the same unverifiable download.
+let resetBusy=false;
+tapZone($('resetBtn'),async ()=>{
+  if(resetBusy) return;
+  const {gistId,gistTok}=S.settings;
+  if(!gistId||!gistTok){
+    toast('Set up gist backup in Settings first -- erasing needs a confirmed backup, and there is no reliable local one.',3600);
+    return;
+  }
+  if(!confirm('Erase every rating and interval on this device? This pushes a backup to the gist first and only erases once that push is confirmed.')) return;
+  resetBusy=true;
+  toast('Backing up before erasing…',4000);
+  const ok=await pushGist(false);          // pushGist(false) already toasts its own reason on failure
+  resetBusy=false;
+  if(!ok) return;                          // nothing erased; the toast above already said why
   undoStack=[]; current=null;
-  doExport();
-  setTimeout(()=>{ S=JSON.parse(JSON.stringify(defaults)); save(); renderHome(); show('scHome'); toast('Erased'); },700);
+  S=JSON.parse(JSON.stringify(defaults)); save(); renderHome(); show('scHome'); toast('Erased');
 });
 $('fNew').addEventListener('change',e=>{S.settings.newPerDay=Math.max(0,e.target.value|0);save();});
 $('fRet').addEventListener('input',e=>{S.settings.retention=e.target.value/100;$('fRetVal').textContent=e.target.value+'%';});
 $('fRet').addEventListener('change',()=>save());
 $('fMax').addEventListener('change',e=>{S.settings.maxIvl=Math.max(30,e.target.value|0);save();});
 $('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyTheme();renderSet();});
+$('fLayout').addEventListener('change',e=>{S.layout=e.target.value;save();applyLayout();renderSet();});
 $('fPal').addEventListener('change',e=>{S.palette=e.target.value;if(S.rotate==='daily')S.rotDay=today();save();applyTheme();renderSet();renderHome();});
 $('fRot').addEventListener('change',e=>{S.rotate=e.target.value;S.rotDay=today();S.rotSeen=[S.palette];save();renderSet();});
 $('fRoll').addEventListener('change',e=>{S.settings.rollover=e.target.value|0;save();renderHome();renderSet();});
@@ -2114,7 +2484,7 @@ document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&$('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
 });
 
-load().then(()=>{ applyTheme(); renderHome(); show('scHome'); syncOnLaunch(); });   // renderHome() already calls renderWarn()
+load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome'); syncOnLaunch(); });   // renderHome() already calls renderWarn()
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S&&S.theme==='auto') applyTheme(); });
 </script>
 </body>
