@@ -1121,7 +1121,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.03.3';
+const BUILD='2026.08.03.4';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -2205,6 +2205,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.03.4',[
+    'On a keyboard, rating a card with 1/2/3 always reached across the number row with your left hand. I/O/P -- the row directly below 1/2/3 on the right hand -- now do exactly the same thing, so either hand works. Both sets of keys are live at once; nothing about 1/2/3 changed.'
+  ]],
   ['2026.08.03.3',[
     'Fixed, for real this time: the next word\'s answer could flash on screen for an instant right after you rated a card, before you had tapped to reveal it. The 2026.08.02.0 fix guessed this was a fast-double-tap timing race and added a safeguard against that -- a real fix for a real (rarer) issue, kept as-is -- but it turns out the actual cause was simpler and happened on every single card, not just fast taps: showing the next word\'s answer text and hiding it happen in the same instant, but the fade animation did not know that, so it played its hide-animation over the word that had just been swapped in rather than over nothing. Confirmed directly this time (not just reported) before fixing it.'
   ]],
@@ -2483,9 +2486,12 @@ document.addEventListener('keydown',e=>{
       else rate(GOOD);
     }
     else if(!$('rateRow').classList.contains('hidden')){
-      if(e.key==='1') rate(AGAIN);
-      if(e.key==='2') rate(GOOD);
-      if(e.key==='3') rate(EASY);
+      // 1/2/3 sit on the left of the number row -- I/O/P are the right-hand
+      // alternative directly below them on QWERTY, added alongside the
+      // existing keys, not instead of them
+      if(e.key==='1'||e.key==='i'||e.key==='I') rate(AGAIN);
+      if(e.key==='2'||e.key==='o'||e.key==='O') rate(GOOD);
+      if(e.key==='3'||e.key==='p'||e.key==='P') rate(EASY);
     }
     if(e.key==='z'||e.key==='Z') undo();
   }
