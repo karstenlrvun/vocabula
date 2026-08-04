@@ -534,40 +534,39 @@ html[data-layout="landscape"] #drillDone{grid-column:1/-1;grid-row:2/-1}
    scroll. .homeLead is a single new wrapper (added in the markup) around
    the wordmark-through-Start-button block so it survives as one unit;
    every .sect below it is untouched markup, just restyled.
-   The column-count lives on a *new* wrapper, .homeCols (markup: one div
-   around .homeLead through .build, inside .home) -- not on .home itself,
-   and that's load-bearing, not stylistic. .home is a flex:1 child (base
-   rule above, non-landscape) inside #scHome's fixed-height flex column, so
-   its own height is *constrained*. A multicol container with a constrained
-   height that can't fit its content in column-count columns at that height
-   doesn't make those columns taller -- it opens *more* columns beyond
-   column-count, overflowing the container in the inline direction, with no
-   change of column-fill value preventing it (tried column-fill:auto first;
-   it still opened extra columns, since the constrained height is what
-   triggers this, not the fill mode). With no horizontal scrollbar in view,
-   that meant most of the home screen's cards (whole-syllabus stats,
-   struggling words, ...) were landing in a 3rd/4th column off the right
-   edge of the screen, invisible, any time total content was taller than
-   two columns could hold at that height -- which is most of the time.
-   .homeCols has no height of its own (auto, sized by its content across
-   exactly 2 columns, default column-fill:balance) -- .home stays the
-   fixed-height scrollable box (unchanged base rule), now just scrolling a
-   plain block instead of being a multicol container itself. */
-html[data-layout="landscape"] #scHome .homeCols{column-count:2;column-gap:32px;padding:4px 28px 28px}
-html[data-layout="landscape"] #scHome .homeLead{break-inside:avoid;margin-bottom:4px}
-html[data-layout="landscape"] #scHome .sect{break-inside:avoid;margin-top:14px;background:var(--panel);
+   The two columns are NOT CSS column-count. column-count was tried first
+   and dropped for two separate reasons, in order: (1) .home is a flex:1
+   child inside #scHome's fixed-height flex column, so its height is
+   constrained -- a constrained-height multicol container that can't fit
+   its content in column-count columns at that height doesn't make those
+   columns taller, it opens *more* columns beyond column-count, overflowing
+   the container in the inline direction (column-fill:auto doesn't prevent
+   this either -- tried it, same overflow). Moving column-count to its own
+   unconstrained wrapper (.homeCols, markup: one div around .homeLead
+   through .build) fixed that. (2) Even contained, the browser's own
+   column-count balance heuristic fills column 1 first and overflows into
+   column 2 in strict document order -- with only a handful of large,
+   break-inside:avoid cards, that reliably left one oversized card (the
+   whole-syllabus stats block) alone in a column by itself, columns visibly
+   uneven. balanceColumns() (below, defined next to applyLayout) replaces
+   column-count entirely: it measures each direct child of .homeCols at its
+   real column width, then assigns each one whole -- never split -- to
+   whichever of two explicit .mcCol wrapper divs currently sits shorter.
+   That can let columns interleave document order (unlike newspaper text)
+   but keeps both close to the same height regardless of how lopsided the
+   individual cards are. */
+html[data-layout="landscape"] #scHome .homeCols{display:flex;gap:32px;padding:4px 28px 28px;align-items:flex-start}
+html[data-layout="landscape"] #scHome .homeCols .mcCol{flex:1;min-width:0}
+html[data-layout="landscape"] #scHome .homeLead{margin-bottom:4px}
+html[data-layout="landscape"] #scHome .sect{margin-top:14px;background:var(--panel);
   border:1px solid var(--line);border-radius:16px;padding:14px 16px}
-html[data-layout="landscape"] #scHome .build{break-inside:avoid}
 
-/* settings: same list, flowing in two newspaper columns instead of one --
-   each .field just keeps itself from being split across the column break.
-   Same .homeCols reasoning above applies here: the column-count lives on a
-   *new* wrapper, .setCols (markup: one div around every .field), not on
-   .set itself -- .set is flex:1 in a fixed-height column too, so it has
-   the identical extra-columns-overflow-offscreen failure mode if it were
-   the multicol container directly. */
-html[data-layout="landscape"] #scSet .setCols{column-count:2;column-gap:32px;padding:4px 28px 30px}
-html[data-layout="landscape"] #scSet .field{break-inside:avoid}
+/* settings: same list, flowing in two balanced columns instead of one --
+   same balanceColumns() reasoning as .homeCols above; see that comment.
+   .setCols is the equivalent unconstrained wrapper (markup: one div around
+   every .field), for the same reason .set itself can't be the container. */
+html[data-layout="landscape"] #scSet .setCols{display:flex;gap:32px;padding:4px 28px 30px;align-items:flex-start}
+html[data-layout="landscape"] #scSet .setCols .mcCol{flex:1;min-width:0}
 
 /* browse: filters pinned in a rail instead of scrolling away above a long
    result list. .browseRail/.browseSplit are two new wrapper divs around
@@ -1423,7 +1422,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.04.10';
+const BUILD='2026.08.04.11';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1562,7 +1561,6 @@ const layoutMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedi
 // being removed -- Ground rule 3 (never remove a settings field) applies to
 // top-level S fields too, and there's no cost to leaving it inert.
 function applyLayout(){
-  const was=document.documentElement.dataset.layout;
   const now=(layoutMQ && layoutMQ.matches) ? 'landscape' : 'portrait';
   document.documentElement.dataset.layout=now;
   // Study-screen extras below are independent of layout *and* of each other
@@ -1571,18 +1569,50 @@ function applyLayout(){
   document.documentElement.toggleAttribute('data-study-stats', !!S.settings.studyStats);
   document.documentElement.toggleAttribute('data-study-hints', !!S.settings.studyHints);
   document.documentElement.toggleAttribute('data-study-motion', !!S.settings.studyMotion);
-  // was is undefined on the very first call (boot hasn't rendered anything to
-  // kick yet, see the setTimeout below); this only fires for a genuine later
-  // transition into landscape, e.g. rotating a device or resizing a window.
-  if(now==='landscape' && was && was!==now) kickMulticol();
+  // Re-balance on every call, not just a detected transition -- cheap (a
+  // handful of offsetHeight reads), and correct on the very first call too
+  // (portrait/landscape's own branch inside balanceColumns handles that),
+  // unlike the old kick-on-transition-only approach this replaced.
+  balanceColumns(document.querySelector('#scHome .homeCols'));
+  balanceColumns(document.querySelector('#scSet .setCols'));
 }
-// Home and Settings each wrap their content in a column-count:2 box
-// (.homeCols/.setCols) that can, on some first layout passes, balance itself
-// into a single column and never redo the calculation on its own -- flipping
-// column-count off and back forces the browser to recompute it from scratch.
-function kickMulticol(){
-  document.querySelectorAll('#scHome .homeCols,#scSet .setCols').forEach(el=>{
-    el.style.columnCount='1'; void el.offsetHeight; el.style.columnCount='';
+// Home and Settings each wrap their content in a .homeCols/.setCols box
+// that, in landscape, splits its direct children into two .mcCol wrapper
+// divs of near-equal height -- see the CSS comment above .homeCols for why
+// this is computed here instead of via CSS column-count. Each child
+// (.homeLead/.sect/.build for Home, .field for Settings) is treated as one
+// atomic block and always stays whole; this only ever decides which column
+// it lands in. container._mcKids caches the original flat child list (in
+// document order) on first use, so a later call can always rebuild from the
+// true original order rather than whatever order a previous balance left
+// them in. Called after every renderHome()/renderSet() (content length
+// changes what's tallest), from applyLayout() (column width itself can
+// change on resize/rotation), and from the toggle listener below (a native
+// <details> open/close changes a card's height without going through
+// either render function).
+function balanceColumns(container){
+  if(!container) return;
+  const kids=container._mcKids || (container._mcKids=[...container.children]);
+  if(document.documentElement.dataset.layout!=='landscape'){
+    kids.forEach(el=>container.appendChild(el));    // portrait: flat, original order, no split
+    // detach (not discard -- the same two divs get reused next time this
+    // goes back to landscape) the now-empty .mcCol wrappers, or they're left
+    // behind as two stray leading children ahead of the just-flattened kids
+    if(container._mcColA) container._mcColA.remove();
+    if(container._mcColB) container._mcColB.remove();
+    return;
+  }
+  let a=container._mcColA, b=container._mcColB;
+  if(!a) a=container._mcColA=document.createElement('div');
+  if(!b) b=container._mcColB=document.createElement('div');
+  a.className=b.className='mcCol';
+  container.appendChild(a); container.appendChild(b);
+  kids.forEach(el=>a.appendChild(el));              // flatten into col A first, at the real column width, to measure
+  const heights=kids.map(el=>el.offsetHeight);
+  let hA=0,hB=0;
+  kids.forEach((el,i)=>{
+    if(hA<=hB){ a.appendChild(el); hA+=heights[i]; }
+    else{ b.appendChild(el); hB+=heights[i]; }
   });
 }
 if(layoutMQ && layoutMQ.addEventListener) layoutMQ.addEventListener('change', applyLayout);
@@ -1599,6 +1629,16 @@ if(typeof window!=='undefined') window.addEventListener('resize', applyLayout);
 const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-reduced-motion: reduce)'):null;
 const show=name=>{
   ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill'].forEach(s=>$(s).classList.toggle('on',s===name));
+  // Home/Settings both call balanceColumns() at the end of their own
+  // render*(), but every "back to home"/"into settings" handler in this
+  // file calls render*() *before* show() reveals the screen -- a hidden
+  // (display:none) screen reports 0 for every child's offsetHeight, so
+  // balancing against that piles every card into one column. _mcKids (the
+  // authoritative original order, cached on first use) makes balanceColumns
+  // safe to simply call again here, now that the screen is actually
+  // visible, regardless of what a stale measurement did to it a moment ago.
+  if(name==='scHome') balanceColumns(document.querySelector('#scHome .homeCols'));
+  else if(name==='scSet') balanceColumns(document.querySelector('#scSet .setCols'));
 };
 function toast(msg,ms){
   const t=$('toast'); t.textContent=msg; t.classList.add('on');
@@ -2358,6 +2398,7 @@ function renderHome(){
         lat.counts[i]+' ('+Math.round(100*lat.counts[i]/lat.n)+'%)')).join('')+
       '<div class="note">Time from seeing the word to revealing the answer, across your last '+lat.n+
       ' successful answers in this direction. Failures are excluded.</div>';
+  balanceColumns(document.querySelector('#scHome .homeCols'));
 }
 // unlike renderCard()'s $('prompt').textContent=c.q (always safe), this row is
 // built as an HTML string -- today's word list has no &/</> in it to prove it,
@@ -2866,6 +2907,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.04.11',[
+    'The two columns in the wide Home/Settings layout could land badly uneven -- one holding three cards, the other four, sometimes 300px+ taller -- because CSS column-count only ever fills column 1 first and overflows into column 2 in strict document order; with only a handful of large, break-inside:avoid cards, that heuristic has no way to correct for one oversized card (the whole-syllabus stats block) landing alone in a column. .9\'s "explicit nudge" fixed a different failure mode entirely (both columns collapsing into one on some early layout passes) and left this one untouched. column-count is gone now, replaced on both .homeCols and .setCols by a small balanceColumns() function: it measures each card at its real column width, then places each one whole -- never split -- into whichever of two explicit column divs is currently shorter, which a browser\'s own sequential-fill heuristic can\'t do from three or four large chunks. Testing this live turned up a second, unrelated bug in the process: every "back to home"/"into settings" handler in this file calls its render function before the screen is actually shown, so a hidden (display:none) screen was measuring 0 for every card and piling all of them into one column regardless of balanceColumns() itself being correct -- fixed by also re-balancing once the screen is actually visible, so it no longer depends on getting call order right at every individual site. Verified directly in a real (Chromium) browser: repeated portrait/landscape cycling, opening and closing a details fold mid-session, and every Study→Home/Settings→Home navigation path all leave both columns within a few percent of each other, with no card ever split.'
+  ]],
   ['2026.08.04.10',[
     'Vocabula now ships its own icon for Add to Home Screen / Add to Dock -- a capital V in the same Palatino the wordmark already uses, on the vellum theme\'s own paper colour, with a small corner badge carrying the current build\'s last digit. iOS and macOS snapshot an icon the moment it\'s added and there is no way for an installed web app to update its own icon afterward -- a fresh badge only shows up after removing and re-adding it, the same "has to actually relaunch" limitation the app itself already has. The badge wraps 0-9 rather than growing a second digit on a day with more than ten builds, since a single glyph reads far better at icon size than the full version string would.'
   ]],
@@ -3043,6 +3087,7 @@ function renderSet(){
       (watch?watch+' more at '+FLAG_MANUAL+'+ "Again" presses today, not yet flagged.':'')+
       ' Words you set aside stop appearing until you bring them back.'
     : 'Nothing flagged yet. "Again" '+FLAG_MANUAL+' times in one day lets you flag a word by hand; '+FLAG_AUTO+' does it on its own.';
+  balanceColumns(document.querySelector('#scSet .setCols'));
 }
 
 /* ======================= wiring ======================= */
@@ -3177,6 +3222,13 @@ $('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyThe
 $('fStudyStats').addEventListener('change',e=>{S.settings.studyStats=e.target.value==='1';save();applyLayout();});
 $('fStudyHints').addEventListener('change',e=>{S.settings.studyHints=e.target.value==='1';save();applyLayout();});
 $('fStudyMotion').addEventListener('change',e=>{S.settings.studyMotion=e.target.value==='1';save();applyLayout();});
+// a native <details> open/close changes its .sect/.field's height without
+// going through renderHome()/renderSet() or applyLayout() at all -- nothing
+// else would ever notice the two columns need re-balancing after one of
+// these toggles, so each fold gets its own listener straight to balanceColumns.
+document.querySelectorAll('#scHome .homeCols details.fold,#scSet .setCols details.fold').forEach(d=>{
+  d.addEventListener('toggle',()=>balanceColumns(d.closest('.homeCols,.setCols')));
+});
 $('fPal').addEventListener('change',e=>{S.palette=e.target.value;if(S.rotate==='daily')S.rotDay=today();save();applyTheme();renderSet();renderHome();});
 $('fRot').addEventListener('change',e=>{S.rotate=e.target.value;S.rotDay=today();S.rotSeen=[S.palette];save();renderSet();});
 $('fRoll').addEventListener('change',e=>{S.settings.rollover=e.target.value|0;save();renderHome();renderSet();});
@@ -3225,11 +3277,11 @@ document.addEventListener('visibilitychange',()=>{
 
 load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome'); offerGistConflict(); syncOnLaunch();
   // a second pass shortly after boot: re-reads the media query in case the
-  // very first read (above) landed before the viewport had settled, and
-  // unconditionally nudges the multicol screens once real content exists to
-  // be balanced (see kickMulticol) -- covers both bugs regardless of which
-  // one actually happened this launch
-  setTimeout(()=>{ applyLayout(); kickMulticol(); },300);
+  // very first read (above) landed before the viewport had settled right
+  // after a standalone/"Add to Dock" launch -- applyLayout() re-balances
+  // the columns itself now, using renderHome()'s already-current content,
+  // so this alone covers that lag with no separate multicol kick needed.
+  setTimeout(applyLayout,300);
 });   // renderHome() already calls renderWarn()
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S&&S.theme==='auto') applyTheme(); });
 </script>
