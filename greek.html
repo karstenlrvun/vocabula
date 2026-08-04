@@ -430,6 +430,45 @@ html[data-layout="landscape"] #scStudy .rate{height:82px;border-radius:18px}
 html[data-layout="landscape"] #scStudy .rate .lbl{font-size:19px}
 html[data-layout="landscape"] #scStudy .rate .ivl{font-size:13px}
 
+/* study screen extras (2026.08.04): three independent settings, each a
+   no-op unless both this screen is in landscape and its own switch is on.
+   None of the three touch #answer's own opacity mechanism -- see the
+   comments at reveal()/renderCard()'s own call sites for why that stays
+   off-limits regardless of how tempting a CSS transition looks here. */
+.cardMeta{display:none}
+html[data-layout="landscape"][data-study-stats] .cardMeta{
+  grid-area:prompt; align-self:end; justify-self:center; z-index:1;
+  display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+  margin-bottom:22px; padding:0 24px; max-width:100%;
+}
+html[data-layout="landscape"][data-study-stats] .cardMeta:empty{display:none}
+.cardMeta .statChip{
+  font-size:11.5px; color:var(--muted); background:var(--raise); border:1px solid var(--line);
+  border-radius:100px; padding:4px 11px; font-variant-numeric:tabular-nums;
+}
+.keycap{display:none}
+html[data-layout="landscape"][data-study-hints] .keycap{
+  display:inline-flex; align-items:center; justify-content:center; margin-top:4px;
+  font-family:var(--sans); font-size:10.5px; font-weight:500; color:var(--faint);
+  background:var(--raise); border:1px solid var(--line); border-radius:6px;
+  padding:1px 7px; min-width:16px; letter-spacing:.01em;
+}
+html[data-layout="landscape"][data-study-hints] #revealBtn .keycap{
+  position:absolute; right:18px; top:50%; transform:translateY(-50%); margin:0;
+}
+html[data-layout="landscape"][data-study-hints] #undoBtn{position:relative}
+html[data-layout="landscape"][data-study-hints] .iconKeycap{
+  position:absolute; bottom:-3px; right:-6px; margin:0; font-size:9px; padding:0 5px;
+}
+html[data-layout="landscape"][data-study-hints] .rate,
+html[data-layout="landscape"][data-study-hints] .revealBtn{
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+html[data-layout="landscape"][data-study-hints] .rate:hover,
+html[data-layout="landscape"][data-study-hints] .revealBtn:hover{
+  transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.10);
+}
+
 /* drill: added after the "New" layout shipped (§10 predates the drill mode,
    §4a added it later), so it never got this treatment -- flagged in the
    2026.08.04 interface scan rather than left unfixed. Same structure as
@@ -704,7 +743,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
     <div class="bar">
       <button class="icon" id="toHome" aria-label="Back">&#8249;</button>
       <div class="title"><div class="counts" id="counts"></div></div>
-      <button class="icon" id="undoBtn" aria-label="Undo">&#8630;</button>
+      <button class="icon" id="undoBtn" aria-label="Undo">&#8630;<span class="keycap iconKeycap">0 / Z</span></button>
     </div>
     <div class="cardarea" id="cardArea">
       <div class="multi" id="multi">2</div>
@@ -719,14 +758,15 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <span id="leechText"></span>
       </div>
       <div class="hintline" id="hintline"></div>
+      <div class="cardMeta" id="cardMeta"></div>
     </div>
     <div class="revealRow" id="revealRow">
-      <button class="revealBtn" id="revealBtn">Show answer</button>
+      <button class="revealBtn" id="revealBtn">Show answer<span class="keycap">Space</span></button>
     </div>
     <div class="rateRow hidden" id="rateRow">
-      <button class="rate" id="bAgain"><span class="lbl">Again</span><span class="ivl" id="iAgain"></span></button>
-      <button class="rate" id="bGood"><span class="lbl">Good</span><span class="ivl" id="iGood"></span></button>
-      <button class="rate" id="bEasy"><span class="lbl">Easy</span><span class="ivl" id="iEasy"></span></button>
+      <button class="rate" id="bAgain"><span class="lbl">Again</span><span class="ivl" id="iAgain"></span><span class="keycap">1 / I</span></button>
+      <button class="rate" id="bGood"><span class="lbl">Good</span><span class="ivl" id="iGood"></span><span class="keycap">2 / O</span></button>
+      <button class="rate" id="bEasy"><span class="lbl">Easy</span><span class="ivl" id="iEasy"></span><span class="keycap">3 / P</span></button>
     </div>
   </section>
 
@@ -792,16 +832,29 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh" id="palNote">—</div>
       </div>
       <div class="field">
-        <label for="fLayout">Layout</label>
-        <select id="fLayout" class="sel">
-          <option value="legacy">Legacy — the layout you know</option>
-          <option value="new">New — adds a wider layout on tablets and laptops in landscape</option>
+        <label>Study screen, wide layout</label>
+        <select id="fStudyStats" class="sel">
+          <option value="0">Hide review history on the card</option>
+          <option value="1">Show review history on the card</option>
         </select>
-        <div class="fh">On your phone the two look identical. "New" only changes anything on a
-          screen at least 700px wide, turned sideways — a laptop or an iPad — where it switches the
-          study card, front screen and settings to a layout built for the extra width instead of
-          stretching the phone layout across it. There's no "always sideways" option — it wouldn't
-          read well on a phone held upright.</div>
+        <select id="fStudyHints" class="sel" style="margin-top:9px">
+          <option value="0">Hide keyboard hints</option>
+          <option value="1">Show keyboard hints</option>
+        </select>
+        <select id="fStudyMotion" class="sel" style="margin-top:9px">
+          <option value="0">No extra animation</option>
+          <option value="1">Animate reveal and card changes</option>
+        </select>
+        <div class="fh">A laptop, iPad, or phone turned sideways already gets a wider study card
+          automatically — a screen at least 700px wide, in landscape, on any device; nothing to turn
+          on for that part, and a phone held upright is never affected. These three only decide what
+          fills the extra room there, each independent of the others. Review history shows how many
+          times you've seen a word, your current streak, and your last result. Keyboard hints show
+          the actual keys next to each button — Space to reveal, 1/2/3 (or I/O/P) to rate, 0 or Z to
+          undo — the keys themselves already work everywhere; this only decides whether they're
+          written on the buttons. Animation adds a brief settle when you reveal an answer and a
+          brief arrival when the next card appears; off automatically if your system asks for
+          reduced motion, regardless of this setting. All three default off.</div>
       </div>
       <div class="field">
         <label for="fRoll">A study day begins at</label>
@@ -928,7 +981,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh">Opens the manual, if it is sitting alongside this file.</div>
       </div>
       <div class="field" style="border-bottom:none">
-        <div class="fh">Grading rule: for a word with several glosses, count it as recalled if you produced the first sense plus one other. Otherwise press Again.</div>
+        <div class="fh">Grading rule: for a word with several glosses, count it as recalled only once you've produced every sense listed. Otherwise press Again.</div>
       </div>
       </div>
     </div>
@@ -1123,7 +1176,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14},
+  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
@@ -1335,7 +1388,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.04.5';
+const BUILD='2026.08.04.7';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1347,9 +1400,19 @@ function available(cs,c,now,d){
   if(cs.reps===0&&!gateOpen(c)) return false;
   return true;
 }
+// randomizes review order while still favouring whatever is most overdue:
+// each due timestamp gets a few days of random jitter added before sorting,
+// so cards close in overdue-ness shuffle freely but a three-week-late card
+// still tends to come well before one just due today
+function jitteredDueOrder(ids){
+  const JITTER=3*DAY;
+  return ids.map(id=>({id,key:peek(id).due+Math.random()*JITTER}))
+            .sort((a,b)=>a.key-b.key)
+            .map(x=>x.id);
+}
 function buildQueue(dir){
   const now=Date.now(), d=today();
-  const learn=[], due=[], fresh=[], seeded=[];
+  let learn=[], due=[], fresh=[], seeded=[];
   // the allowance is spent per direction: introducing forward words must not
   // starve the reverse direction. Older records only counted a total, which
   // was always forward-only in practice.
@@ -1368,7 +1431,7 @@ function buildQueue(dir){
     if(cs.due<=now){ ((cs.st==='L'||cs.st==='X')?learn:due).push(c.id); }
     else if(cs.due<=now+AHEAD) learn.push(c.id);
   }
-  due.sort((a,b)=>peek(a).due-peek(b).due);
+  due=jitteredDueOrder(due);
   learn.sort((a,b)=>peek(a).due-peek(b).due);
   const room=Math.max(capToday-introducedToday,0);
   const order=S.settings.weakFirst ? fresh.concat(seeded) : seeded.concat(fresh);
@@ -1452,8 +1515,24 @@ function applyTheme(){
   document.documentElement.style.background = bg;
 }
 const layoutMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(min-width:700px) and (orientation:landscape)'):null;
+// Landscape vs portrait is now decided purely by screen size/orientation --
+// S.layout ('legacy'/'new') is no longer read here. It was an opt-in toggle
+// while the "New" layout was unproven (§10); by 2026.08.04 it had been the
+// only layout getting real design attention for several sessions running
+// (Study's density pass, the Drill screen catching up, this session's own
+// stats/hints/motion additions), so the toggle was retired and this is just
+// what the study screen (and Home/Settings/Browse) does now, for everyone,
+// automatically. S.layout itself stays in the schema, unread, rather than
+// being removed -- Ground rule 3 (never remove a settings field) applies to
+// top-level S fields too, and there's no cost to leaving it inert.
 function applyLayout(){
-  document.documentElement.dataset.layout = (S.layout==='new' && layoutMQ && layoutMQ.matches) ? 'landscape' : 'portrait';
+  document.documentElement.dataset.layout = (layoutMQ && layoutMQ.matches) ? 'landscape' : 'portrait';
+  // Study-screen extras below are independent of layout *and* of each other
+  // -- each just no-ops outside landscape, since that's the only place any
+  // of their CSS/JS hooks do anything (see the settings field's own note).
+  document.documentElement.toggleAttribute('data-study-stats', !!S.settings.studyStats);
+  document.documentElement.toggleAttribute('data-study-hints', !!S.settings.studyHints);
+  document.documentElement.toggleAttribute('data-study-motion', !!S.settings.studyMotion);
 }
 if(layoutMQ && layoutMQ.addEventListener) layoutMQ.addEventListener('change', applyLayout);
 // reveal()'s fade-in is played explicitly via the Web Animations API (see reveal()
@@ -1482,6 +1561,29 @@ function renderCounts(){
                         '<span class="c-lrn"><b>'+l+'</b> learning</span>'+
                         '<span class="c-due"><b>'+r+'</b> due</span>';
 }
+// Pure: the most recent log entry for one card, or null if it's never been
+// rated -- feeds the optional study-screen stats panel (studyStats setting)
+// and nothing else. Scans backward so a recently-studied card, the common
+// case, returns quickly without ever walking the whole log.
+function lastRatingFor(id,log){
+  for(let i=log.length-1;i>=0;i--){
+    if(log[i][0]===id) return {rating:log[i][1], at:log[i][2]};
+  }
+  return null;
+}
+// Pure: a short "4d ago"/"2h ago"/"just now" label for the same panel.
+// renderBg() has its own near-identical closure for a different screen;
+// kept separate rather than shared since the two evolved independently and
+// aren't worth coupling for four lines of arithmetic.
+function agoLabel(ms,now){
+  if(ms==null) return 'never';
+  const a=Math.max(0,now-ms);
+  if(a<MIN) return 'just now';
+  if(a<HOUR) return Math.round(a/MIN)+'m ago';
+  if(a<DAY) return Math.round(a/HOUR)+'h ago';
+  return Math.round(a/DAY)+'d ago';
+}
+const RATING_LABEL={1:'Again',2:'Hard',3:'Good',4:'Easy'};
 function renderCard(){
   const c=BY_ID[current], cs=peek(current);
   $('prompt').className='prompt'+(c.dir==='E'?' eng':'');
@@ -1513,6 +1615,38 @@ function renderCard(){
   else ans.textContent=c.a;
   renderLeech();
   $('hintline').textContent = cs.reps===0 ? (cs.s!=null?'carried over from the audit':'first time') : '';
+  // Optional study-screen extras, each independent and each a no-op unless
+  // its own setting is on -- see the "Study screen, wide layout" field.
+  // Skipped entirely when off rather than computed-and-hidden, since
+  // lastRatingFor() walks the log and there's no reason to pay for that on
+  // every single card when nothing will show it (§4b's standing concern
+  // about wasted per-rating work applies here just as much as anywhere else
+  // in this file).
+  if(S.settings.studyStats){
+    const meta=$('cardMeta');
+    if(cs.reps>0){
+      const last=lastRatingFor(current,S.log);
+      const bits=['reviewed '+cs.reps+'×','streak '+(cs.streak|0)];
+      if(last) bits.push((RATING_LABEL[last.rating]||'?')+' · '+agoLabel(last.at,Date.now()));
+      // Every bit is an internally-generated number or fixed label, never
+      // anything from DATA or user input, so building this via innerHTML
+      // carries no injection risk -- unlike, say, escHtml()'s call sites.
+      meta.innerHTML=bits.map(b=>'<span class="statChip">'+b+'</span>').join('');
+    } else {
+      meta.innerHTML='';                         // hintline above already covers a brand-new card
+    }
+  }
+  if(S.settings.studyMotion && document.documentElement.dataset.layout==='landscape'
+     && typeof $('prompt').animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
+    // A brief arrival for the new card's own prompt, played the same way
+    // reveal()'s fade-in is (Web Animations API, not a CSS transition) --
+    // deliberately not a CSS transition on anything renderCard() touches
+    // directly above, for the same reason .answer's own transition was
+    // removed outright rather than re-timed a fourth time: nothing here
+    // should be able to race a synchronous content swap ever again.
+    $('prompt').animate([{transform:'translateX(-14px)',opacity:.5},{transform:'translateX(0)',opacity:1}],
+      {duration:220,easing:'ease-out'});
+  }
   $('revealRow').classList.remove('hidden');
   $('rateRow').classList.add('hidden');
   shownAt=Date.now(); thinkMs=null; cardDirty=false;
@@ -1546,6 +1680,14 @@ function reveal(){
   // requested) still shows the answer correctly, just without the fade.
   if(typeof ans.animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
     ans.animate([{opacity:0},{opacity:1}],{duration:130,easing:'ease-out'});
+  }
+  if(S.settings.studyMotion && document.documentElement.dataset.layout==='landscape'
+     && typeof $('prompt').animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
+    // Same WAAPI-not-CSS-transition reasoning as renderCard()'s arrival
+    // animation just above it in the file -- a small settle on the prompt
+    // card itself, nothing touching .answer's own mechanism.
+    $('prompt').animate([{transform:'scale(1.015)'},{transform:'scale(1)'}],
+      {duration:260,easing:'cubic-bezier(.2,.7,.3,1)'});
   }
   $('revealRow').classList.add('hidden');
   $('rateRow').classList.remove('hidden');
@@ -2635,6 +2777,14 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.04.7',[
+    'The "New"/"Legacy" layout choice is gone from Settings -- the wider two-pane study screen (and the matching layouts for the front screen, Settings and Browse) now switches on automatically on any screen at least 700px wide in landscape, for everyone, the same way it would have under "New". A phone held upright is unaffected either way. In its place: three independent switches under "Study screen, wide layout" -- review history on the card (times seen, streak, last result), keyboard hints written on the buttons, and a small amount of animation on reveal and between cards -- each off by default, each only doing anything in that same wide layout. Animation always defers to your system\'s reduced-motion setting regardless of this switch.',
+    'Undo now also answers to the <b>0</b> key, alongside the existing <b>Z</b> -- both sit under the same right hand as the 1/2/3 rating alternative (I/O/P), so a hand already resting there for rating never has to move for either one.'
+  ]],
+  ['2026.08.04.6',[
+    'The grading-rule reminder (Settings and the manual) used to count a multi-meaning word as known once you\'d produced the first sense plus one other. Changed to require every sense listed -- a word you can only partly recall isn\'t one you know yet, and the schedule shouldn\'t treat it as one. This is guidance only: the app can\'t check what you actually recalled, so nothing in the code changes -- it takes effect the next time you press a button on a multi-meaning word.',
+    'Review cards (words due for a normal review, not new or relearning) are now served in roughly-shuffled order instead of strictly oldest-due-first: cards close in overdue-ness are shuffled against each other freely, but a card that has been due for weeks still tends to come well before one just due today. Priority between buckets is unchanged -- a lapsed word still comes back ahead of everything else once its short relearn timer is up, and unseen words still introduce in the same fixed order as always. Only the ordering within the review queue itself changed.'
+  ]],
   ['2026.08.04.5',[
     'The "New" landscape layout now covers the Drill screen too -- it never got this treatment when the layout first shipped, since Drill was built afterward. Same two-pane shape as Study: the word fills its own full-height card on the left, the multiple-choice answers, "bring this word back" link and score sit grouped and centred on the right. Nothing changes on a phone, or with Layout left on "Legacy".'
   ]],
@@ -2767,7 +2917,9 @@ function renderSet(){
   $('fGate').value=s.gateDays|0;
   $('fTheme').value=S.theme||'light';
   $('fPal').value=PALETTES[S.palette]?S.palette:'vellum';
-  $('fLayout').value=S.layout==='new'?'new':'legacy';
+  $('fStudyStats').value=s.studyStats?'1':'0';
+  $('fStudyHints').value=s.studyHints?'1':'0';
+  $('fStudyMotion').value=s.studyMotion?'1':'0';
   $('fRoll').value=String(S.settings.rollover!=null?S.settings.rollover:4);
   $('fRot').value=S.rotate||'off';
   $('palNote').innerHTML='<span class="swatch" style="background:var(--coral)"></span>'+
@@ -2924,7 +3076,9 @@ $('fRet').addEventListener('input',e=>{S.settings.retention=e.target.value/100;$
 $('fRet').addEventListener('change',()=>save());
 $('fMax').addEventListener('change',e=>{S.settings.maxIvl=Math.max(30,e.target.value|0);save();});
 $('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyTheme();renderSet();});
-$('fLayout').addEventListener('change',e=>{S.layout=e.target.value;save();applyLayout();renderSet();});
+$('fStudyStats').addEventListener('change',e=>{S.settings.studyStats=e.target.value==='1';save();applyLayout();});
+$('fStudyHints').addEventListener('change',e=>{S.settings.studyHints=e.target.value==='1';save();applyLayout();});
+$('fStudyMotion').addEventListener('change',e=>{S.settings.studyMotion=e.target.value==='1';save();applyLayout();});
 $('fPal').addEventListener('change',e=>{S.palette=e.target.value;if(S.rotate==='daily')S.rotDay=today();save();applyTheme();renderSet();renderHome();});
 $('fRot').addEventListener('change',e=>{S.rotate=e.target.value;S.rotDay=today();S.rotSeen=[S.palette];save();renderSet();});
 $('fRoll').addEventListener('change',e=>{S.settings.rollover=e.target.value|0;save();renderHome();renderSet();});
@@ -2960,7 +3114,9 @@ document.addEventListener('keydown',e=>{
       if(e.key==='2'||e.key==='o'||e.key==='O') rate(GOOD);
       if(e.key==='3'||e.key==='p'||e.key==='P') rate(EASY);
     }
-    if(e.key==='z'||e.key==='Z') undo();
+    // 0 sits right above P on the number row, the same right-hand-friendly
+    // reasoning as I/O/P below -- added alongside Z, not instead of it
+    if(e.key==='z'||e.key==='Z'||e.key==='0') undo();
   }
 });
 document.addEventListener('gesturestart',e=>e.preventDefault());
