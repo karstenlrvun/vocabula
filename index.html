@@ -2,34 +2,74 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Vocabula">
+<meta name="theme-color" content="#fbf7ec">
 <title>Vocabula</title>
 <style>
 :root{
-  --bg:#fffdfb; --ink:#1b1a18; --muted:#6f6c66; --line:#e7e3dc; --panel:#faf8f5; --coral:#c04d26;
   --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  /* vellum, the decks' own default palette -- fixed here, not switchable.
+     This is a launcher, not a deck: it borrows the same look, not the
+     seven-palette machinery that exists to let a long study session pick
+     its own mood. */
+  --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
+  --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6;
+  --good:#5a6b32; --good-bg:#e6e5d4; --good-br:#c7cab0;
 }
 @media (prefers-color-scheme: dark){
-  :root{--bg:#0e1230; --ink:#e9ecf8; --muted:#a3abd0; --line:#2a3169; --panel:#181d47; --coral:#ff8a5c;}
+  :root{
+    --bg:#1a160f; --panel:#241f16; --ink:#ece3cf; --muted:#a89a80; --faint:#7a6f5c;
+    --line:#3a3222; --coral:#d4795e; --accent-soft:#3f2a1f; --raise:#2c2519;
+    --good:#a9bd72; --good-bg:#393b25; --good-br:#565c39;
+  }
 }
-*{box-sizing:border-box}
-html{background:var(--bg)}
-body{margin:0 auto;padding:56px 22px 80px;max-width:28rem;background:var(--bg);color:var(--ink);
-  font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-text-size-adjust:100%}
-h1{font-family:var(--serif);font-weight:400;font-size:2.1rem;margin:0 0 4px}
-.sub{color:var(--muted);font-size:15px;margin:0 0 32px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg)}
+body{
+  color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
+  padding:calc(52px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom));
+  max-width:30rem; margin:0 auto;
+}
+h1{font-family:var(--serif);font-weight:400;font-size:2.05rem;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14.5px;margin:0 0 30px}
+
+/* ---------- nav cards, same visual language as the decks' own .dir cards ---------- */
 a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);
-  border:1px solid var(--line);border-radius:15px;padding:17px 19px;margin-bottom:11px}
-a.card:active{border-color:var(--coral)}
-a.card .t{font-family:var(--serif);font-size:1.32rem;margin-bottom:2px}
-a.card .d{color:var(--muted);font-size:14px}
-.note{margin-top:28px;color:var(--muted);font-size:13.5px;line-height:1.6}
+  border:1px solid var(--line);border-radius:14px;padding:15px 18px;margin-bottom:10px}
+a.card:active{border-color:var(--coral);background:var(--accent-soft)}
+a.card .t{font-family:var(--serif);font-size:1.28rem;margin-bottom:2px}
+a.card .d{color:var(--muted);font-size:13.5px}
+
+/* ---------- section labels, same idiom as the decks' .sect h2 ---------- */
+.sect{margin-top:30px}
+.sect h2{font-size:12.5px;font-weight:500;color:var(--faint);text-transform:uppercase;
+  letter-spacing:.07em;margin:0 0 12px}
+
+/* ---------- fields, identical component language to each deck's own Settings ---------- */
+.field{padding:14px 0;border-bottom:1px solid var(--line)}
+.field:last-child{border-bottom:none}
+.field label{display:block;font-size:15px;margin-bottom:5px}
+.field .fh{font-size:13px;color:var(--muted);line-height:1.55;margin-top:7px}
+.field input[type=text],.field input[type=password]{
+  width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 12px;
+  font-size:16px;background:var(--raise);color:var(--ink);font-family:inherit}
+.savedTag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--good);
+  margin-left:8px;opacity:0;transition:opacity .25s ease}
+.savedTag.on{opacity:1}
+
+.note{font-size:12.5px;color:var(--faint);line-height:1.6;margin-top:26px}
+.note b{color:var(--muted)}
 </style>
 </head>
 <body>
 <h1>Vocabula</h1>
-<p class="sub">Freshers’ vocabulary, spaced out</p>
+<p class="sub">Freshers' vocabulary, spaced out</p>
 
 <a class="card" href="latin.html">
   <div class="t">Latin</div>
@@ -44,6 +84,62 @@ a.card .d{color:var(--muted);font-size:14px}
   <div class="d">The manual — start here</div>
 </a>
 
-<p class="note">Add Latin and Greek to your Home Screen separately and open them from there, not from a browser tab. Safari clears stored data for sites left unvisited for a week; installed apps are exempt. The same goes for iPad, and on a Mac use Safari’s Add to Dock. To carry one set of progress across all of them, set up gist sync — see the manual.</p>
+<div class="sect">
+  <h2>Backup &amp; sync</h2>
+  <div class="field">
+    <label for="fDevice">This device's name</label>
+    <input type="text" id="fDevice" placeholder="e.g. iPhone, iPad, Mac" autocapitalize="words" autocorrect="off" spellcheck="false">
+    <div class="fh">Stamped onto anything pushed to the gist or saved as a backup file, so if this device and another ever disagree, you can tell whose copy is whose.</div>
+  </div>
+  <div class="field">
+    <label for="fGistId">Gist id <span class="savedTag" id="savedId">✓ saved</span></label>
+    <input type="text" id="fGistId" placeholder="gist id" autocapitalize="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div class="field">
+    <label for="fGistTok">Gist token <span class="savedTag" id="savedTok">✓ saved</span></label>
+    <input type="password" id="fGistTok" placeholder="fine-grained token, gists scope" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="fh">Set once, here. Both Latin and Λέξεις pick this up automatically — no need to
+      enter it again in either one's own Settings, unless you've pinned them as two separate
+      Home Screen icons rather than opening them from this page (see below), in which case each
+      keeps its own copy as it always has. <b>The token is never written into the gist or into a
+      backup file</b> — it stays in this browser's storage on this device. Anything on the device
+      can still read it, so scope it to gists alone and revoke it if the phone goes astray.</div>
+  </div>
+</div>
+
+<p class="note">Add this page to your Home Screen and open Latin and Λέξεις from the links above,
+  rather than pinning each deck separately — that's what lets the backup fields above reach both
+  of them. (Pinning them separately still works exactly as before; each just needs its own gist id
+  and token typed in, the same as always.) Safari clears stored data for sites left unvisited for a
+  week; installed apps are exempt. The same goes for iPad, and on a Mac use Safari's Add to Dock.</p>
+
+<script>
+const GIST_SHARED_KEY='vocabula.gist.v1';
+const $=id=>document.getElementById(id);
+function loadShared(){
+  try{ return JSON.parse(localStorage.getItem(GIST_SHARED_KEY))||{}; }catch(e){ return {}; }
+}
+function saveShared(patch){
+  const cur=loadShared();
+  const next=Object.assign({gistId:'',gistTok:'',deviceName:''},cur,patch);
+  try{ localStorage.setItem(GIST_SHARED_KEY, JSON.stringify(next)); }catch(e){}
+  return next;
+}
+function flash(id){
+  const el=$(id);
+  el.classList.add('on');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('on'),1600);
+}
+(function init(){
+  const s=loadShared();
+  $('fDevice').value=s.deviceName||'';
+  $('fGistId').value=s.gistId||'';
+  $('fGistTok').value=s.gistTok||'';
+})();
+$('fDevice').addEventListener('change',e=>{ saveShared({deviceName:e.target.value.trim()}); });
+$('fGistId').addEventListener('change',e=>{ saveShared({gistId:e.target.value.trim()}); flash('savedId'); });
+$('fGistTok').addEventListener('change',e=>{ saveShared({gistTok:e.target.value.trim()}); flash('savedTok'); });
+</script>
 </body>
 </html>

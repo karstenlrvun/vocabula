@@ -430,6 +430,40 @@ html[data-layout="landscape"] #scStudy .rate{height:82px;border-radius:18px}
 html[data-layout="landscape"] #scStudy .rate .lbl{font-size:19px}
 html[data-layout="landscape"] #scStudy .rate .ivl{font-size:13px}
 
+/* drill: added after the "New" layout shipped (§10 predates the drill mode,
+   §4a added it later), so it never got this treatment -- flagged in the
+   2026.08.04 interface scan rather than left unfixed. Same structure as
+   Study on purpose: #scDrill's direct children are .bar, .drillArea,
+   #drillNextRow, #drillDone -- the identical shape (bar, a content area that
+   goes display:contents, then sibling rows toggled by .hidden) that Study's
+   own grid already relies on, so the same technique applies directly.
+   #drillPrompt shares Study's #prompt *class* styling but is a different id,
+   so it needs its own landscape rule rather than inheriting #prompt's --
+   copied from it deliberately, not reinvented. #drillDone (the finished
+   state) is the one new wrinkle: with no named grid-area of its own it would
+   auto-place into whichever "." spacer cell the grid's implicit placement
+   found first (a one-column-wide sliver next to the prompt), so it gets an
+   explicit span across every row below the bar, over both columns. */
+html[data-layout="landscape"] #scDrill.on{
+  display:grid;grid-template-columns:1.3fr 1fr;
+  grid-template-rows:auto 1fr auto auto auto auto 1fr;
+  grid-template-areas:"bar bar" "prompt ." "prompt choices" "prompt flag" "prompt score" "prompt controls" "prompt .";
+  height:100%;
+}
+html[data-layout="landscape"] #scDrill>.bar{grid-area:bar}
+html[data-layout="landscape"] #scDrill .drillArea{display:contents}
+html[data-layout="landscape"] #drillPrompt{grid-area:prompt;align-self:stretch;justify-self:stretch;
+  display:flex;align-items:center;justify-content:center;padding:32px;margin:16px 8px 16px 16px;
+  border:1px solid var(--line);border-radius:20px;background:var(--panel);
+  font-size:clamp(40px,calc(20px + 2.4vw),68px)}
+html[data-layout="landscape"] #scDrill .drillArea>.rule{display:none}
+html[data-layout="landscape"] #drillChoices{grid-area:choices;padding:0 32px;max-width:none;margin-top:0}
+html[data-layout="landscape"] #drillFlagBtn{grid-area:flag;justify-self:start;margin:14px 32px 0}
+html[data-layout="landscape"] #drillScore{grid-area:score;text-align:left;padding:6px 32px 0;margin-top:0}
+html[data-layout="landscape"] #drillNextRow{grid-area:controls;padding:24px 32px 0}
+html[data-layout="landscape"] #scDrill .revealBtn{height:76px;font-size:19px;border-radius:18px}
+html[data-layout="landscape"] #drillDone{grid-column:1/-1;grid-row:2/-1}
+
 /* home: the existing sections read as a bento grid instead of one long
    scroll. .homeLead is a single new wrapper (added in the markup) around
    the wordmark-through-Start-button block so it survives as one unit;
@@ -862,7 +896,12 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           keep, labelled by device name — nothing is overwritten silently.
           <b>The token is never written into the gist or into a backup file</b> — it stays
           in this browser's storage on this device. Anything on the device can still read it, so
-          scope it to gists alone and revoke it if the phone goes astray.</div>
+          scope it to gists alone and revoke it if the phone goes astray.
+          If you open this deck through the launcher page rather than a separate Home Screen icon
+          for it, these three fields are shared with the other deck automatically — set them once,
+          from here or from the launcher, and both pick it up. If the two ever disagree — say, this
+          gist id was set here before the launcher had one of its own — you'll be asked which to
+          keep before anything switches; nothing is chosen for you silently.</div>
       </div>
       <div class="field">
         <label>Set aside</label>
@@ -1154,7 +1193,59 @@ function idbGet(){
     }catch(e){res(null);}
   });
 }
-let storageOK=true, saveTimer=null;
+/* ---- shared gist credentials, one entry point (index.html) for both decks ----
+   A device name / gist id / token typed into either deck's own Settings, or into
+   the launcher page, all land in this one extra localStorage key -- same origin,
+   same device, never anything that leaves it (see sanitised() below, untouched).
+   This is purely additive: sanitised()/adopt()/pushGist()/pullGist() still read
+   gistId/gistTok/deviceName from S.settings exactly as before, unchanged. The
+   only thing that changes is what load() puts into S.settings before any of
+   those run. A deck opened as its own separate "Add to Home Screen" icon (the
+   originally documented setup) sees an empty shared key forever -- iOS gives
+   each pinned icon its own storage, so this key simply never appears there --
+   and behaves exactly as it always has: nothing shared, nothing to reconcile. */
+const GIST_SHARED_KEY='vocabula.gist.v1';
+function loadSharedGist(){
+  try{ return JSON.parse(localStorage.getItem(GIST_SHARED_KEY))||{}; }catch(e){ return {}; }
+}
+function saveSharedGist(g){
+  try{
+    localStorage.setItem(GIST_SHARED_KEY, JSON.stringify({
+      gistId:g.gistId||'', gistTok:g.gistTok||'', deviceName:g.deviceName||''
+    }));
+  }catch(e){}
+}
+// Pure: decides what this deck's gistId/gistTok/deviceName should be, given its
+// own locally-saved settings and whatever the shared key currently holds.
+//   - shared empty -> local's own values seed it (nothing discarded).
+//   - local empty -> shared's values are adopted outright (nothing to disagree with).
+//   - both set and they actually agree (same gistId and gistTok) -> shared's copy is
+//     used (picks up e.g. a deviceName-only edit made from the other page), no prompt.
+//   - both set and gistId or gistTok actually differ -> a real conflict: this device
+//     might be mid-flight to a *different* real gist than the shared key now points
+//     at, and switching silently risks pushing/pulling the wrong backup. The decided
+//     values stay LOCAL's own (unchanged, still working) and `conflict:true` is
+//     returned so the caller can ask before ever switching -- see offerGistConflict().
+//     deviceName differing alone is never a conflict; it's expected to vary less than
+//     gistId/gistTok might, but nothing dangerous happens if it doesn't match either.
+// No DOM, no localStorage -- testable directly.
+function reconcileGistSettings(local,shared){
+  local=local||{}; shared=shared||{};
+  const sharedEmpty=!shared.gistId&&!shared.gistTok&&!shared.deviceName;
+  if(sharedEmpty){
+    return {gistId:local.gistId||'', gistTok:local.gistTok||'', deviceName:local.deviceName||'', seed:true, conflict:false};
+  }
+  const localEmpty=!local.gistId&&!local.gistTok&&!local.deviceName;
+  if(localEmpty){
+    return {gistId:shared.gistId||'', gistTok:shared.gistTok||'', deviceName:shared.deviceName||'', seed:false, conflict:false};
+  }
+  const idOrTokDiffer=(local.gistId||'')!==(shared.gistId||'')||(local.gistTok||'')!==(shared.gistTok||'');
+  if(idOrTokDiffer){
+    return {gistId:local.gistId||'', gistTok:local.gistTok||'', deviceName:local.deviceName||'', seed:false, conflict:true};
+  }
+  return {gistId:shared.gistId||'', gistTok:shared.gistTok||'', deviceName:shared.deviceName||local.deviceName||'', seed:false, conflict:false};
+}
+let storageOK=true, saveTimer=null, pendingGistConflict=null;
 function save(){
   S.lastSave=Date.now();
   const json=JSON.stringify(S);
@@ -1214,7 +1305,23 @@ async function load(){
   b=normalise(await idbGet());
   if(a&&b) S=(b.log.length>a.log.length)?b:a;
   else S=a||b||JSON.parse(JSON.stringify(defaults));
+  const shared=loadSharedGist();
+  const rec=reconcileGistSettings(S.settings,shared);
+  if(rec.conflict){
+    // Keep this device's own values (rec already holds them unchanged, see
+    // reconcileGistSettings) and flag it for offerGistConflict() to ask about
+    // once boot has actually rendered something -- not here, mid-load(), where
+    // a blocking confirm() has no screen behind it yet.
+    pendingGistConflict={
+      local:{gistId:S.settings.gistId,gistTok:S.settings.gistTok,deviceName:S.settings.deviceName},
+      shared:shared
+    };
+  }
+  const gistChanged=rec.gistId!==S.settings.gistId||rec.gistTok!==S.settings.gistTok||rec.deviceName!==S.settings.deviceName;
+  S.settings.gistId=rec.gistId; S.settings.gistTok=rec.gistTok; S.settings.deviceName=rec.deviceName;
+  if(rec.seed) saveSharedGist(S.settings);
   if(!a&&!b) save();
+  else if(gistChanged) save();
 }
 
 /* ======================= queue ======================= */
@@ -1228,7 +1335,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.04.2';
+const BUILD='2026.08.04.5';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -2315,6 +2422,14 @@ function doImport(file){
   };
   fr.readAsText(file);
 }
+// Hardcoded per deck, deliberately never derived from anything shared between
+// the two decks (KEY, the shared gist credentials, or otherwise). This is what
+// keeps a push from this deck landing on the other deck's file inside the same
+// gist -- pushGist()'s PATCH body only ever names this one file, and GitHub's
+// gist API only touches files actually named in a PATCH, leaving every other
+// file (including the other deck's) untouched. Test-guarded: see the
+// KEY/GIST_FILE pairing check in tests.js so a future edit that shares or
+// derives this fails loudly rather than silently on the next push.
 const GIST_FILE='vocabula.json';
 function sanitised(){                       // never let the token leave the device in plain content
   return Object.assign({}, S, {settings: Object.assign({}, S.settings, {gistTok:''})});
@@ -2420,6 +2535,44 @@ async function syncOnLaunch(){
     pushGist(true);                                  // only this device moved; put it back
   }
 }
+// Pure: the confirm() text for a genuine disagreement between this device's own
+// working gist id/token and whatever the shared cross-deck key (index.html, or
+// the other deck) currently holds -- set by load() into pendingGistConflict when
+// reconcileGistSettings() returns conflict:true. Never prints the token itself,
+// only whether it differs, matching sanitised()'s existing rule that the token
+// is not something to surface even locally, let alone log or screenshot.
+function gistConflictMessage(local,shared){
+  const here=local.deviceName||'this device', there=shared.deviceName||'the shared setting';
+  const bits=[];
+  if((local.gistId||'')!==(shared.gistId||'')){
+    bits.push('gist id "'+(local.gistId||'(none)')+'" here vs "'+(shared.gistId||'(none)')+'" shared');
+  }
+  if((local.gistTok||'')!==(shared.gistTok||'')){
+    bits.push('the token differs too');
+  }
+  return here+' is currently backing up somewhere different from the shared setting ('+there+'): '+
+    bits.join('; ')+'.\n\n'+
+    'OK = switch this device to the shared one (do this if you meant to change or set it from the launcher).\n'+
+    'Cancel = keep '+here+' on its own copy, unchanged. Nothing is pushed or pulled either way -- '+
+    'this only decides which credentials get used, and it will ask again next launch until the two agree.';
+}
+// Impure: shows the prompt above if load() found a real conflict, called once
+// after boot has actually rendered a screen (same timing as syncOnLaunch(),
+// deliberately not from inside load() itself -- see the comment at its call site).
+function offerGistConflict(){
+  if(!pendingGistConflict) return;
+  const {local,shared}=pendingGistConflict;
+  if(confirm(gistConflictMessage(local,shared))){
+    S.settings.gistId=shared.gistId||''; S.settings.gistTok=shared.gistTok||'';
+    S.settings.deviceName=shared.deviceName||local.deviceName||'';
+    save(); saveSharedGist(S.settings); renderSet(); toast('Switched to the shared gist setting');
+  }
+  // Cancel: S.settings is already local's own values (reconcileGistSettings kept
+  // them), so this is a genuine no-op -- same idiom as offerConflict()'s Cancel.
+  // Not suppressed: staying unresolved means this asks again next launch, on
+  // purpose, exactly like the sync conflict above already does.
+  pendingGistConflict=null;
+}
 async function pullGist(){
   const {gistId,gistTok}=S.settings;
   if(!gistId||!gistTok){ toast('Fill in the gist id and token first'); return; }
@@ -2482,6 +2635,15 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.04.5',[
+    'The "New" landscape layout now covers the Drill screen too -- it never got this treatment when the layout first shipped, since Drill was built afterward. Same two-pane shape as Study: the word fills its own full-height card on the left, the multiple-choice answers, "bring this word back" link and score sit grouped and centred on the right. Nothing changes on a phone, or with Layout left on "Legacy".'
+  ]],
+  ['2026.08.04.4',[
+    'The shared gist credentials added in .3 could, in one specific case, have quietly switched which gist a device backs up to: if the two decks had ever been set up with genuinely different gist ids or tokens, whichever one loaded first after that update would have won, silently, from then on. Fixed before it could actually happen to anyone -- a real disagreement between this device\'s own working setting and the shared one now stops and asks (naming both, never printing the token) instead of picking one automatically. Nothing changes for the normal case, one gist already serving both decks.'
+  ]],
+  ['2026.08.04.3',[
+    'Device name, gist id and gist token can now be set once from the launcher page (the "Vocabula" link screen in front of both decks) instead of typed into each deck\'s own Settings separately -- useful if you open both from the same pinned launcher rather than pinning Latin and Greek as two separate Home Screen icons. Set from either place; both decks pick it up the next time they load. Purely additive: a deck pinned on its own, the original setup this app has always documented, behaves exactly as before -- nothing to share, nothing changes. The token still never leaves the device or gets written into the gist or a backup file.'
+  ]],
   ['2026.08.04.2',[
     'The full calendar (front screen -> Full calendar) now shows every studied day\'s new-word and review counts directly on its box -- new in green, reviewed in amber -- so a whole month is readable at a glance instead of needing a tap per day. Tapping a day for its own detail line, and the longest-streak note underneath the grid, are both gone now that the same numbers already sit right there on every box; nothing else about the calendar changed.'
   ]],
@@ -2777,9 +2939,9 @@ $('fRevDay').addEventListener('change',e=>{S.settings.reviewDay=parseInt(e.targe
 $('fKnown').addEventListener('change',e=>{S.settings.knownDays=Math.max(1,e.target.value|0);save();});
 $('fWeak').addEventListener('change',e=>{S.settings.weakFirst=(e.target.value==='1');save();});
 $('fTerm').addEventListener('change',e=>{S.settings.term=e.target.value;save();});
-$('fDevice').addEventListener('change',e=>{S.settings.deviceName=e.target.value.trim();save();});
-$('fGistId').addEventListener('change',e=>{S.settings.gistId=e.target.value.trim();save();});
-$('fGistTok').addEventListener('change',e=>{S.settings.gistTok=e.target.value.trim();save();});
+$('fDevice').addEventListener('change',e=>{S.settings.deviceName=e.target.value.trim();save();saveSharedGist(S.settings);});
+$('fGistId').addEventListener('change',e=>{S.settings.gistId=e.target.value.trim();save();saveSharedGist(S.settings);});
+$('fGistTok').addEventListener('change',e=>{S.settings.gistTok=e.target.value.trim();save();saveSharedGist(S.settings);});
 
 document.addEventListener('keydown',e=>{
   if($('scStudy').classList.contains('on')){
@@ -2807,7 +2969,7 @@ document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&$('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
 });
 
-load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome'); syncOnLaunch(); });   // renderHome() already calls renderWarn()
+load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome'); offerGistConflict(); syncOnLaunch(); });   // renderHome() already calls renderWarn()
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S&&S.theme==='auto') applyTheme(); });
 </script>
 </body>
