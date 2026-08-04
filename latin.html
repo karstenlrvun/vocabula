@@ -173,8 +173,15 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .answer.lat{font-family:var(--serif);font-size:clamp(25px,calc(21.2px + 0.97vw),28px)}
 .hintline{margin-top:22px;font-size:13px;color:var(--faint);height:16px}
 .leechtag{margin-top:10px;font-size:12px;color:var(--amber);display:flex;align-items:center;justify-content:center;gap:8px}
+.leechBtns{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px}
 .flagBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:16px;line-height:1;color:var(--faint)}
 .flagBtn.on{color:var(--bad-ink)}
+/* dismiss just hides this occurrence of the banner -- it is not the same action
+   as the flag above, and must never touch susp: only the flag (or FLAG_AUTO
+   firing on its own) is allowed to mean "set aside", or that signal stops being
+   trustworthy as the one place that really means "this word is stuck" */
+.leechX{flex:0 0 auto;background:none;border:none;padding:0 4px;font-size:13px;line-height:1;color:var(--faint);opacity:.65}
+.leechX:active{opacity:1}
 
 /* ---------- rating row ---------- */
 .rateRow{flex:0 0 auto;display:flex;gap:9px;padding:10px 12px 14px}
@@ -193,6 +200,17 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
   background:var(--panel);font-size:16px;color:var(--muted)}
 .revealBtn::before{content:"";position:absolute;top:-26px;bottom:-14px;left:-5px;right:-5px}
 .hidden{display:none !important}
+
+/* ---------- drill (set-aside words, outside FSRS) ---------- */
+.drillArea{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;padding:16px 22px 22px;min-height:0}
+.drillChoices{display:flex;flex-direction:column;gap:10px;width:100%;max-width:420px;margin-top:24px}
+.drillChoice{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);font-size:16px;text-align:center;line-height:1.35}
+.drillChoice:active{filter:brightness(.94)}
+.drillChoice.right{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
+.drillChoice.wrong{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
+.drillChoice.faded{opacity:.5}
+.drillFlagBtn{margin-top:18px}
 
 /* ---------- home ---------- */
 .home{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 28px}
@@ -242,12 +260,15 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .calDow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px;
   font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;text-align:center}
 .calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
-.calCell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;
+.calCell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  min-height:46px;border-radius:8px;padding:4px 2px;
   font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--panel);border:1px solid var(--line)}
 .calCell.out{color:var(--faint);opacity:.35;border-color:transparent;background:none}
 .calCell.did{background:var(--accent-soft);border-color:var(--coral);color:var(--coral);font-weight:600}
 .calCell.today{box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--coral)}
-.calCell.sel{border-color:var(--ink);border-width:2px}
+.calNum{line-height:1.1}
+.calNew{font-size:9.5px;line-height:1;font-weight:600;color:var(--good)}
+.calRev{font-size:9.5px;line-height:1;font-weight:600;color:var(--amber)}
 .statRow{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
@@ -505,8 +526,6 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           </div>
           <div class="calDow" id="calDow"></div>
           <div class="calGrid" id="calGrid"></div>
-          <div class="note" id="calDetail">Tap a day to see its count.</div>
-          <div class="note" id="longStreakNote">—</div>
         </details>
       </div>
 
@@ -553,6 +572,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <summary>Set aside (<span id="asideCount">0</span>)</summary>
           <div id="asideList"></div>
         </details>
+        <button class="chip" id="toDrill" style="margin-top:10px">Drill these words &#8594;</button>
       </div>
 
       <div class="build" id="buildTag"></div>
@@ -608,6 +628,31 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
     </div>
   </section>
 
+  <!-- ============ DRILL ============ -->
+  <section id="scDrill" class="screen">
+    <div class="bar">
+      <button class="icon" id="drillBack" aria-label="Back">&#8249;</button>
+      <div class="title" id="drillProgress"></div>
+      <div class="icon" style="visibility:hidden">·</div>
+    </div>
+    <div class="drillArea" id="drillArea">
+      <div class="prompt" id="drillPrompt"></div>
+      <div class="rule"></div>
+      <div class="drillChoices" id="drillChoices"></div>
+      <button class="chip drillFlagBtn" id="drillFlagBtn">Bring this word back to normal review</button>
+      <div class="note" id="drillScore"></div>
+    </div>
+    <div class="revealRow hidden" id="drillNextRow">
+      <button class="revealBtn" id="drillNextBtn">Next word</button>
+    </div>
+    <div class="done hidden" id="drillDone">
+      <div class="big">Drill finished</div>
+      <div class="small" id="drillDoneText"></div>
+      <button class="act primary" id="drillAgainBtn" style="max-width:230px;margin-top:20px">Drill again</button>
+      <button class="act" id="drillBackBtn" style="max-width:230px">Back</button>
+    </div>
+  </section>
+
   <!-- ============ CHANGELOG ============ -->
   <section id="scLog" class="screen">
     <div class="bar">
@@ -633,7 +678,10 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="rule"></div>
       <div class="answer" id="answer"></div>
       <div class="leechtag hidden" id="leechTag">
-        <button class="flagBtn" id="flagBtn" aria-label="Flag this word">&#9873;</button>
+        <div class="leechBtns">
+          <button class="flagBtn" id="flagBtn" aria-label="Flag this word">&#9873;</button>
+          <button class="leechX" id="leechDismiss" aria-label="Dismiss this warning">&times;</button>
+        </div>
         <span id="leechText"></span>
       </div>
       <div class="hintline" id="hintline"></div>
@@ -1180,7 +1228,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.04.0';
+const BUILD='2026.08.04.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1221,8 +1269,9 @@ function buildQueue(dir){
   return {learn,due,intro,seededTotal:seeded.length,freshTotal:fresh.length};
 }
 let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], donePoll=null, cardDirty=false;
-let calY=null, calM=null, calSelDk=null;   // calendar fold's own state -- not persisted, not S.dir-linked
+let calY=null, calM=null;   // calendar fold's own state -- not persisted, not S.dir-linked
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all';   // browse screen's own state
+let drillDeck=[], drillPos=0, drillOpts=null, drillPicked=null, drillRight=0, drillSeen=0;   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags
 
 function refresh(){ Q=buildQueue(S.dir); }
 
@@ -1273,6 +1322,7 @@ function rollTheme(){
   S.rotSeen=(S.rotSeen||[]).concat([S.palette]);
   S.rotDay=d;
   try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}   // survive a reload
+  idbPut(S);                                                    // ...and keep the IndexedDB mirror from drifting behind it
 }
 function surprise(){
   const pool=PAL_KEYS.filter(k=>k!==S.palette);
@@ -1305,7 +1355,7 @@ if(layoutMQ && layoutMQ.addEventListener) layoutMQ.addEventListener('change', ap
 // rule has no effect on a JS-driven .animate() call.
 const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-reduced-motion: reduce)'):null;
 const show=name=>{
-  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse'].forEach(s=>$(s).classList.toggle('on',s===name));
+  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill'].forEach(s=>$(s).classList.toggle('on',s===name));
 };
 function toast(msg,ms){
   const t=$('toast'); t.textContent=msg; t.classList.add('on');
@@ -1548,6 +1598,111 @@ function strugglingWords(dir){
   rows.sort((a,b)=>b.n-a.n||a.id.localeCompare(b.id));
   return rows;
 }
+/* ======================= drill (set-aside, outside FSRS) =======================
+   A word here is already excluded from the real queue by susp -- this is a
+   separate, repeatable practice pass over exactly that list, deliberately
+   outside the scheduler: nothing here ever touches S.cards, due, or log, so it
+   can be run as many times a day as wanted with zero interval cost.
+   Two things specifically target "I've learned the order/pattern, not the
+   word": the deck is grouped and reshuffled fresh every time the drill starts
+   (buildDrillDeck), and each round's multiple-choice options -- which word,
+   which distractors, which position -- are rebuilt fresh every time that card
+   is shown, never the same twice running.
+   A third thing targets a different failure entirely: two words that just
+   look alike (close spelling, not merely both being hard -- "arkeo"/"askeo")
+   are deliberately put next to each other in the deck, and offered as each
+   other's multiple-choice distractor first, so the two get drilled against
+   each other directly instead of drifting apart in the list where only a
+   vague "something with a k in it" feeling can tell them apart. */
+// classic edit-distance DP, one row kept at a time -- these are word-length
+// strings, so the O(len^2) cost here is never worth precomputing or caching
+function editDistance(a,b){
+  const m=a.length,n=b.length, dp=new Array(n+1);
+  for(let j=0;j<=n;j++) dp[j]=j;
+  for(let i=1;i<=m;i++){
+    let prev=dp[0]; dp[0]=i;
+    for(let j=1;j<=n;j++){
+      const tmp=dp[j];
+      dp[j]=a[i-1]===b[j-1] ? prev : 1+Math.min(prev,dp[j],dp[j-1]);
+      prev=tmp;
+    }
+  }
+  return dp[n];
+}
+// "confusable" is relative to length -- a fixed edit-distance cutoff would
+// flag unrelated short words and miss genuinely close long ones
+function looksSimilar(a,b){
+  const x=(a||'').trim().toLowerCase(), y=(b||'').trim().toLowerCase();
+  if(!x||!y||x===y) return false;
+  return editDistance(x,y)/Math.max(x.length,y.length)<=0.3;
+}
+// Fisher-Yates on a copy -- never mutates its argument
+function shuffled(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+// plain-text form of a card's correct answer -- same join convention already
+// used for a merged reverse card's alternatives (wordRowHtml, renderCard)
+function answerText(c){ return c.dir==='E' ? c.a.join(', ') : c.a; }
+// up to n wrong options for one multiple-choice round, same direction only (an
+// English-gloss round never offers a Latin/Greek term as a wrong answer or vice
+// versa). Ranked in tiers: a term that actually looks like this one first --
+// the real point of the drill, telling those two apart -- then the rest of the
+// same part, then the rest of the direction, only reaching a later tier if the
+// earlier ones can't fill the round. Never repeats a distractor's text, and
+// never offers the card's own correct answer back to itself.
+function pickDistractors(c,n){
+  const correct=answerText(c).trim().toLowerCase();
+  const seen={}; seen[correct]=true;
+  const out=[];
+  const tiers=[
+    CARDS.filter(o=>o.dir===c.dir&&o.id!==c.id&&looksSimilar(o.q,c.q)),
+    CARDS.filter(o=>o.dir===c.dir&&o.id!==c.id&&o.sec===c.sec),
+    CARDS.filter(o=>o.dir===c.dir&&o.id!==c.id)
+  ];
+  for(const tier of tiers){
+    if(out.length>=n) break;
+    for(const t of shuffled(tier)){
+      if(out.length>=n) break;
+      const txt=answerText(t), k=txt.trim().toLowerCase();
+      if(seen[k]) continue;
+      seen[k]=true; out.push(txt);
+    }
+  }
+  return out;
+}
+// one full multiple-choice round for a card -- the correct answer plus up to
+// `wrong` distractors, already shuffled into one order
+function drillRound(c,wrong){
+  const opts=pickDistractors(c,wrong).map(t=>({t,ok:false}));
+  opts.push({t:answerText(c),ok:true});
+  return shuffled(opts);
+}
+// union-find so a chain of pairwise-similar terms groups as one block even
+// without every member looking like every other member directly
+function similarityBlocks(ids){
+  const parent={}; ids.forEach(id=>parent[id]=id);
+  const find=id=>{ while(parent[id]!==id) id=parent[id]=parent[parent[id]]; return id; };
+  const union=(a,b)=>{ const ra=find(a),rb=find(b); if(ra!==rb) parent[ra]=rb; };
+  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
+    if(looksSimilar(BY_ID[ids[i]].q,BY_ID[ids[j]].q)) union(ids[i],ids[j]);
+  }
+  const groups={};
+  ids.forEach(id=>{ const r=find(id); (groups[r] ||= []).push(id); });
+  return Object.values(groups);
+}
+// the current direction's set-aside words as a drill order: look-alike terms
+// are grouped into adjacent blocks (similarityBlocks/looksSimilar above), but
+// which block comes first and which member of a block comes first are both
+// reshuffled fresh every time the drill starts
+function buildDrillDeck(dir){
+  const ids=CARDS.filter(c=>c.dir===dir&&S.cards[c.id]&&S.cards[c.id].susp).map(c=>c.id);
+  return shuffled(similarityBlocks(ids)).map(shuffled).flat();
+}
 function dirStats(dir){
   const ap=activeParts(); const all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
   let unseen=0,learning=0,young=0,mature=0,susp=0;
@@ -1689,6 +1844,58 @@ function renderBrowse(){
   });
   $('browseResults').innerHTML = html || '<div class="note">No words match.</div>';
 }
+/* ======================= drill screen ======================= */
+function startDrill(){
+  drillDeck=buildDrillDeck(S.dir);
+  drillPos=0; drillRight=0; drillSeen=0;
+  renderDrill();
+}
+function renderDrill(){
+  if(drillPos>=drillDeck.length){ renderDrillDone(); return; }
+  $('drillArea').classList.remove('hidden'); $('drillDone').classList.add('hidden');
+  $('drillProgress').textContent='Word '+(drillPos+1)+' of '+drillDeck.length;
+  $('drillScore').textContent = drillSeen ? (drillRight+' of '+drillSeen+' right this round') : '';
+  const c=BY_ID[drillDeck[drillPos]];
+  $('drillPrompt').className='prompt'+(c.dir==='E'?' eng':'');
+  $('drillPrompt').style.fontFamily=(c.dir==='E')?'':'var(--serif)';
+  $('drillPrompt').textContent=c.q;
+  drillOpts=drillRound(c,3);
+  drillPicked=null;
+  const box=$('drillChoices'); box.innerHTML='';
+  drillOpts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='drillChoice'; b.textContent=o.t; b.dataset.i=i;
+    box.appendChild(b);
+  });
+  $('drillNextRow').classList.add('hidden');
+}
+function pickDrillChoice(i){
+  if(drillPicked!=null) return;                // one pick per round
+  drillPicked=i; drillSeen++;
+  if(drillOpts[i].ok) drillRight++;
+  [...$('drillChoices').children].forEach((b,j)=>{
+    b.classList.add(drillOpts[j].ok?'right':(j===i?'wrong':'faded'));
+  });
+  $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
+  $('drillNextRow').classList.remove('hidden');
+}
+// unsuspends the word on screen right now -- same field, same meaning as the
+// flag everywhere else; the drill only ever clears susp, never sets it
+function bringBackFromDrill(){
+  const id=drillDeck[drillPos]; if(id==null) return;
+  cardState(id).susp=false; save();
+  toast('Brought back to normal review',1400);
+}
+function nextDrillCard(){ drillPos++; renderDrill(); }
+function renderDrillDone(){
+  $('drillArea').classList.add('hidden');
+  $('drillNextRow').classList.add('hidden');
+  $('drillDone').classList.remove('hidden');
+  $('drillProgress').textContent='';
+  $('drillDoneText').textContent = drillSeen
+    ? ('Drilled '+drillDeck.length+' word'+(drillDeck.length===1?'':'s')+' — '+drillRight+' of '+drillSeen+' right.')
+    : 'Nothing set aside right now — words show up here once you flag one, or "Again" lands on one 8 times in a day.';
+}
 function renderChips(){
   const box=$('chips');
   if(SECTIONS.length<2){ box.classList.add('hide'); return; }
@@ -1820,6 +2027,9 @@ function renderHome(){
 function escHtml(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 // only called when the fold is opened and by the nav buttons -- not on every
 // renderHome(), since it's collapsed most of the time (see HANDOFF.md)
+// each in-month cell shows its own new (green) / reviewed (amber) counts
+// directly, always -- no tap needed, and no separate selected-day state to
+// keep in step with what's already visible in the grid
 function renderCalendar(){
   const now=new Date();
   if(calY==null){ calY=now.getFullYear(); calM=now.getMonth(); }
@@ -1837,20 +2047,10 @@ function renderCalendar(){
     const cls=['calCell'];
     if(st.studied) cls.push('did');
     if(dk===d0) cls.push('today');
-    if(dk===calSelDk) cls.push('sel');
-    gh+='<div class="'+cls.join(' ')+'" data-dk="'+dk+'">'+cell.d+'</div>';
+    const nums = st.studied ? ('<span class="calNew">'+st.intro+'</span><span class="calRev">'+st.reviewed+'</span>') : '';
+    gh+='<div class="'+cls.join(' ')+'"><span class="calNum">'+cell.d+'</span>'+nums+'</div>';
   }));
   $('calGrid').innerHTML=gh;
-  showCalDetail(calSelDk);
-  const ls=longestStreak(S.days,d0);
-  $('longStreakNote').textContent = ls>1 ? ('Longest streak so far: '+ls+' days') : '';
-}
-function showCalDetail(dk){
-  const el=$('calDetail');
-  if(dk==null){ el.textContent='Tap a day to see its count.'; return; }
-  const st=dayStatsFor(S.days,dk);
-  const label=new Date(dayStart(dk)).toLocaleDateString(undefined,{day:'numeric',month:'long'});
-  el.textContent = st.studied ? (label+' — '+st.intro+' new, '+st.reviewed+' reviewed') : (label+' — no study');
 }
 function flagRow(r){
   const c=BY_ID[r.id];
@@ -2136,6 +2336,7 @@ async function pushGist(quiet){
     if(!r.ok) throw new Error(r.status);
     S.lastSync=Date.now(); S.syncedLogLen=S.log.length; S.sinceExport=0;
     try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+    idbPut(S);
     if(!quiet) toast('Pushed to gist as '+S.lastDevice);
     return true;
   }catch(e){ if(!quiet) toast('Gist push failed ('+e.message+')'); return false; }
@@ -2281,6 +2482,14 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.04.2',[
+    'The full calendar (front screen -> Full calendar) now shows every studied day\'s new-word and review counts directly on its box -- new in green, reviewed in amber -- so a whole month is readable at a glance instead of needing a tap per day. Tapping a day for its own detail line, and the longest-streak note underneath the grid, are both gone now that the same numbers already sit right there on every box; nothing else about the calendar changed.'
+  ]],
+  ['2026.08.04.1',[
+    'Finale -- a stability pass, not a new feature push: a full read-through of the whole codebase looking specifically for the kind of thing that causes another fix to be needed the next day rather than a wrong number today. Found and fixed one small, real inconsistency: the daily theme rotation and a successful gist push each updated this browser\'s storage but not its second mirror, so the two could briefly disagree before the next rating re-synced them. Both are now written together every time, like every save already does.',
+    'The struggling-word warning on the study card now has a small X below the flag: it dismisses that one warning without setting the word aside, so acknowledging a rough day for a word and actually flagging it are no longer the same tap. The automatic set-aside at 8 "Again"s today is unchanged -- it still happens on its own regardless of whether the warning was dismissed.',
+    'A "Drill these words" mode for everything you\'ve set aside, reachable from the front screen\'s Set aside list: a multiple-choice pass, reshuffled fresh every time you start it and with fresh answer choices on every single card, specifically so the order stops being something you can learn instead of the word. Two words that just look alike (close spelling, not merely both being hard) are put next to each other in the drill and offered as each other\'s wrong answer first, so the pair actually gets told apart instead of drifting further apart in memory. None of this touches real scheduling, so it can be run as many times a day as wanted.'
+  ]],
   ['2026.08.04.0',[
     'The next word\'s answer flashing on screen, again -- this time actually caught frame by frame in a screen recording (not inferred): every single rating, in the Safari "Add to Dock" app, the *new* card\'s answer was momentarily visible before fading down to hidden, the opposite of the fade *in* it\'s meant to do when you tap "Show answer" yourself. The last two attempts (2026.08.03.3 and .5) both tried to time a CSS fade-out animation out of the way for the split second the next card appears; both held up in testing here and both still failed in real Safari. Rather than time it more carefully a third time, the fade-out is gone -- there is nothing left for a badly-timed repaint to animate. The reveal fade-in you do want is unaffected and still plays. Not yet re-confirmed against a fresh recording in real Safari, since nothing here can run it directly -- flag it again if it recurs.',
     'The "New" landscape layout\'s study card no longer reads as empty: the word now fills its own full-height card instead of floating alone in a mostly blank pane, the answer and rating buttons are grouped and centred as a block instead of pinned to the bottom of a mostly empty column, and both get noticeably bigger text that actually grows with a wider window rather than stopping at a phone-sized maximum. Nothing changes for Home, Settings or Browse, and nothing changes at all unless Layout is switched to "New".'
@@ -2443,6 +2652,13 @@ $('flagBtn').addEventListener('click',e=>{
   renderLeech();
   toast(cs.susp?'Set aside':'Brought back',1400);
 });
+// dismiss just hides this occurrence of the banner -- never touches susp.
+// Acknowledging "this is a rough day for this word" is not the same decision as
+// "set it aside", and FLAG_AUTO must keep counting toward 8 either way.
+$('leechDismiss').addEventListener('click',e=>{
+  e.preventDefault(); e.stopPropagation();
+  $('leechTag').classList.add('hidden');
+});
 tapZone($('undoBtn'),undo);
 // seven buttons across six screens, all "go back to the front screen"
 ['toHome','toHome2','toHome3','doneBack','statsBack','logBack','browseBack']
@@ -2459,18 +2675,21 @@ function shiftCalMonth(delta){
   if(calY==null){ const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); }
   calM+=delta;
   if(calM<0){ calM=11; calY--; } else if(calM>11){ calM=0; calY++; }
-  calSelDk=null;
   renderCalendar();
 }
 tapZone($('calPrev'),()=>shiftCalMonth(-1));
 tapZone($('calNext'),()=>shiftCalMonth(1));
-$('calGrid').addEventListener('click',e=>{
-  const cell=e.target.closest('.calCell'); if(!cell||!cell.dataset.dk) return;
-  e.preventDefault();
-  calSelDk=(calSelDk===+cell.dataset.dk)?null:+cell.dataset.dk;
-  renderCalendar();
-});
 tapZone($('toBrowse'),()=>{ browseDir=S.dir; renderBrowse(); show('scBrowse'); });
+tapZone($('toDrill'),()=>{ startDrill(); show('scDrill'); });
+tapZone($('drillBack'),()=>{ renderHome(); show('scHome'); });
+tapZone($('drillBackBtn'),()=>{ renderHome(); show('scHome'); });
+tapZone($('drillAgainBtn'),startDrill);
+tapZone($('drillNextBtn'),nextDrillCard);
+tapZone($('drillFlagBtn'),bringBackFromDrill);
+$('drillChoices').addEventListener('click',e=>{
+  const b=e.target.closest('.drillChoice'); if(!b) return;
+  pickDrillChoice(+b.dataset.i);
+});
 tapZone($('browseDirL'),()=>{ browseDir='L'; renderBrowse(); });
 tapZone($('browseDirE'),()=>{ browseDir='E'; renderBrowse(); });
 $('browseSearch').addEventListener('input',e=>{ browseQuery=e.target.value; renderBrowse(); });
