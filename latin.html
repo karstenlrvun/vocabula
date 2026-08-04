@@ -167,7 +167,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .multi.on{display:flex}
 .rule{width:56px;height:1px;background:var(--line);margin:26px 0}
 .answer{font-size:clamp(21px,calc(18.5px + 0.65vw),23px);line-height:1.42;text-align:center;color:var(--ink);opacity:0;
-  transition:opacity .13s ease-out;max-width:34em}
+  max-width:34em}
 .answer.on{opacity:1}
 .answer .alt{display:block;margin-top:7px}
 .answer.lat{font-family:var(--serif);font-size:clamp(25px,calc(21.2px + 0.97vw),28px)}
@@ -358,24 +358,56 @@ html[data-layout="landscape"] #app{max-width:none;margin:0}
    tapZone($('cardArea'),...) and #flagBtn's stopPropagation both rely on
    the click still bubbling through the #cardArea element node, which
    display:contents does not change. Nothing here touches markup, ids or
-   any JS. */
+   any JS.
+   Redesigned 2026.08.04 -- the first cut (§10, tightened in §12) was
+   fairly called out as sparse: a small headword adrift in a large empty
+   pane, the answer pinned to the bottom of a mostly-empty column. Two
+   changes fix that with no markup change at all (revealRow/rateRow stay
+   siblings of #cardArea, not descendants -- moving them inside so they
+   could share a centering flex box with answer/leech/hint would put them
+   inside #cardArea's own subtree, and a rating's click bubbling up through
+   #cardArea would then immediately hit its tap-to-reveal handler and
+   reveal the *next* card the instant you rate this one):
+   1. #prompt now stretches to fill its whole grid cell and is styled as
+      its own card (border, background, centered content), instead of a
+      bare centered line of text -- also means tapping anywhere in that
+      pane reveals, not just the exact glyph.
+   2. The answer/leech/hint/controls stack sits between two equal 1fr
+      spacer rows (grid-template-areas cells marked "." -- an empty cell
+      reserves its track's space with no element needed) so the group
+      reads as vertically centered, the same effect flexbox's
+      justify-content:center gives, without needing a shared parent.
+   #prompt/#answer also get their own landscape-only font-size clamp()s --
+   the non-landscape clamp()s above were tuned to finish growing by
+   exactly 700px width, which is where landscape starts, so without this
+   they'd sit capped at their phone-width maximum no matter how wide the
+   window is. */
 html[data-layout="landscape"] #scStudy.on{
   display:grid;grid-template-columns:1.3fr 1fr;
-  grid-template-rows:auto 1fr auto auto auto;
-  grid-template-areas:"bar bar" "prompt answer" "prompt leech" "prompt hint" "prompt controls";
+  grid-template-rows:auto 1fr auto auto auto auto 1fr;
+  grid-template-areas:"bar bar" "prompt ." "prompt answer" "prompt leech" "prompt hint" "prompt controls" "prompt .";
   height:100%;
 }
 html[data-layout="landscape"] #scStudy>.bar{grid-area:bar}
 html[data-layout="landscape"] .cardarea{display:contents}
-html[data-layout="landscape"] #multi{grid-area:prompt;position:static;align-self:start;justify-self:end;margin:10px 10px 0 0}
-html[data-layout="landscape"] #prompt{grid-area:prompt;align-self:center;justify-self:center;padding:16px}
+html[data-layout="landscape"] #multi{grid-area:prompt;position:static;align-self:start;justify-self:end;margin:14px 14px 0 0;z-index:1}
+html[data-layout="landscape"] #prompt{grid-area:prompt;align-self:stretch;justify-self:stretch;
+  display:flex;align-items:center;justify-content:center;padding:32px;margin:16px 8px 16px 16px;
+  border:1px solid var(--line);border-radius:20px;background:var(--panel);
+  font-size:clamp(40px,calc(20px + 2.4vw),68px)}
+html[data-layout="landscape"] #prompt.eng{font-size:clamp(34px,calc(18px + 2vw),56px)}
 html[data-layout="landscape"] .cardarea>.rule{display:none}
-html[data-layout="landscape"] #answer{grid-area:answer;text-align:left;max-width:none;align-self:end;
-  padding:0 28px 14px;border-left:1px solid var(--line)}
-html[data-layout="landscape"] #leechTag{grid-area:leech;justify-content:flex-start;padding-left:28px}
-html[data-layout="landscape"] #hintline{grid-area:hint;text-align:left;padding-left:28px;margin-top:6px}
-html[data-layout="landscape"] #revealRow{grid-area:controls;align-self:end;padding:18px 28px}
-html[data-layout="landscape"] #rateRow{grid-area:controls;align-self:end;padding:18px 28px}
+html[data-layout="landscape"] #answer{grid-area:answer;text-align:left;max-width:30em;
+  padding:0 32px;border-left:1px solid var(--line);
+  font-size:clamp(22px,calc(16px + 0.9vw),32px)}
+html[data-layout="landscape"] #leechTag{grid-area:leech;justify-content:flex-start;padding:12px 32px 0}
+html[data-layout="landscape"] #hintline{grid-area:hint;text-align:left;padding:10px 32px 0;margin-top:0}
+html[data-layout="landscape"] #revealRow{grid-area:controls;padding:24px 32px 0}
+html[data-layout="landscape"] #rateRow{grid-area:controls;padding:24px 32px 0}
+html[data-layout="landscape"] #scStudy .revealBtn{height:76px;font-size:19px;border-radius:18px}
+html[data-layout="landscape"] #scStudy .rate{height:82px;border-radius:18px}
+html[data-layout="landscape"] #scStudy .rate .lbl{font-size:19px}
+html[data-layout="landscape"] #scStudy .rate .ivl{font-size:13px}
 
 /* home: the existing sections read as a bento grid instead of one long
    scroll. .homeLead is a single new wrapper (added in the markup) around
@@ -1148,7 +1180,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.03.6';
+const BUILD='2026.08.04.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1267,6 +1299,11 @@ function applyLayout(){
   document.documentElement.dataset.layout = (S.layout==='new' && layoutMQ && layoutMQ.matches) ? 'landscape' : 'portrait';
 }
 if(layoutMQ && layoutMQ.addEventListener) layoutMQ.addEventListener('change', applyLayout);
+// reveal()'s fade-in is played explicitly via the Web Animations API (see reveal()
+// and renderCard() below) rather than a CSS transition, so it needs its own
+// prefers-reduced-motion check -- the global `*{transition:none}` reduced-motion
+// rule has no effect on a JS-driven .animate() call.
+const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-reduced-motion: reduce)'):null;
 const show=name=>{
   ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse'].forEach(s=>$(s).classList.toggle('on',s===name));
 };
@@ -1297,35 +1334,26 @@ function renderCard(){
   if(c.dir==='E'&&c.idx.length>1){ m.textContent=c.idx.length; m.classList.add('on'); }
   else m.classList.remove('on');
   const ans=$('answer');
-  // dropping .on and swapping in the new answer text happen in the same
-  // tick, but the CSS transition doesn't know that -- it animates from the
-  // last-painted opacity (1, if the previous card was revealed) down to 0
-  // over the *already-swapped-in* new text, flashing the next answer for
-  // ~130ms. A forced reflow (offsetHeight) alone was meant to make the
-  // transition:none suppression land before it's restored, but a screen
-  // recording (2026-08-03) caught the flash surviving in Safari specifically
-  // (reproduced live there; not reproducible in Chromium) -- opacity is a
-  // compositor-only property, and forcing layout doesn't guarantee the
-  // transition:none state has actually been painted first. Waiting two
-  // animation frames (the browser guarantees a real paint has happened
-  // between them, which a layout read does not) before restoring the
-  // transition closes that gap. Safe even on a fast tap: reveal()'s own
-  // 260ms tooSoonAfter guard blocks it well before two frames pass. Falls
-  // back to restoring the transition immediately where rAF isn't available
-  // (the test harness's faked DOM).
-  ans.style.transition='none';
+  // The old approach let a CSS transition drive both the reveal fade-in and
+  // the instant hide-on-next-card, and tried to suppress the transition for
+  // just the hide (transition:none, swap, forced reflow, restore) -- across
+  // three builds (.2/.3/.5) that suppression kept losing a timing race in
+  // Safari specifically (confirmed live via screen recording each time,
+  // never reproducible in Chromium): the next card's answer was visibly
+  // painted at full opacity and only then faded to 0 over the CSS
+  // transition's own duration, exactly as if `transition:none` had never
+  // applied. Rather than chase a fourth timing fix, the CSS transition is
+  // gone from .answer entirely (see its rule above) -- there is now nothing
+  // for any change here to race against. Dropping .on and swapping the text
+  // below always lands the new answer at opacity:0 immediately, in one
+  // step, on every engine. reveal() plays the fade-in explicitly instead
+  // (Web Animations API), which is unaffected by this.
   ans.className='answer'+(c.dir==='E'?' lat':'');
   ans.innerHTML='';
   if(c.dir==='E') c.a.forEach((x,i)=>{
     const el=document.createElement('span'); el.className=i?'alt':''; el.textContent=x; ans.appendChild(el);
   });
   else ans.textContent=c.a;
-  ans.offsetHeight;
-  if(typeof requestAnimationFrame==='function'){
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ ans.style.transition=''; }));
-  } else {
-    ans.style.transition='';
-  }
   renderLeech();
   $('hintline').textContent = cs.reps===0 ? (cs.s!=null?'carried over from the audit':'first time') : '';
   $('revealRow').classList.remove('hidden');
@@ -1353,7 +1381,15 @@ function reveal(){
   // control right after next() has just swapped it in -- see rate()'s
   // symmetric guard and HANDOFF.md for the full mechanism
   if(tooSoonAfter(Date.now(),shownAt,260)) return;
-  $('answer').classList.add('on');
+  const ans=$('answer');
+  ans.classList.add('on');
+  // Played explicitly rather than via a CSS transition on .answer -- see
+  // renderCard()'s comment for why. .on above already sets the resting
+  // opacity:1, so a browser without Element.animate (or with reduced-motion
+  // requested) still shows the answer correctly, just without the fade.
+  if(typeof ans.animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
+    ans.animate([{opacity:0},{opacity:1}],{duration:130,easing:'ease-out'});
+  }
   $('revealRow').classList.add('hidden');
   $('rateRow').classList.remove('hidden');
   revealAt=Date.now();
@@ -2245,6 +2281,10 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.04.0',[
+    'The next word\'s answer flashing on screen, again -- this time actually caught frame by frame in a screen recording (not inferred): every single rating, in the Safari "Add to Dock" app, the *new* card\'s answer was momentarily visible before fading down to hidden, the opposite of the fade *in* it\'s meant to do when you tap "Show answer" yourself. The last two attempts (2026.08.03.3 and .5) both tried to time a CSS fade-out animation out of the way for the split second the next card appears; both held up in testing here and both still failed in real Safari. Rather than time it more carefully a third time, the fade-out is gone -- there is nothing left for a badly-timed repaint to animate. The reveal fade-in you do want is unaffected and still plays. Not yet re-confirmed against a fresh recording in real Safari, since nothing here can run it directly -- flag it again if it recurs.',
+    'The "New" landscape layout\'s study card no longer reads as empty: the word now fills its own full-height card instead of floating alone in a mostly blank pane, the answer and rating buttons are grouped and centred as a block instead of pinned to the bottom of a mostly empty column, and both get noticeably bigger text that actually grows with a wider window rather than stopping at a phone-sized maximum. Nothing changes for Home, Settings or Browse, and nothing changes at all unless Layout is switched to "New".'
+  ]],
   ['2026.08.03.6',[
     'The "New" landscape layout (Settings > Layout) was, fairly, called out as looking quite broken -- and it was. Three real bugs, all only visible with that setting switched on: (1) the study screen\'s two-pane grid never actually turned itself off when you left the study screen, so its "Show answer" button could sit stranded over the front screen or Settings; (2) the front screen\'s two-column layout could silently spill into a 3rd or 4th column off the right edge of the screen, taking most of its cards with it -- invisible, with no way to scroll to them; (3) Settings had the exact same silent-overflow problem. All three fixed. Nothing changes for anyone who has not switched Layout to "New".'
   ]],
