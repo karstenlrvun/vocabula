@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Greek">
 <meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
 <title>Greek</title>
 <style>
 :root{
@@ -406,7 +408,7 @@ html[data-layout="landscape"] #app{max-width:none;margin:0}
 html[data-layout="landscape"] #scStudy.on{
   display:grid;grid-template-columns:1.3fr 1fr;
   grid-template-rows:auto 1fr auto auto auto auto 1fr;
-  grid-template-areas:"bar bar" "prompt ." "prompt answer" "prompt leech" "prompt hint" "prompt controls" "prompt .";
+  grid-template-areas:"bar bar" "prompt recap" "prompt answer" "prompt leech" "prompt hint" "prompt controls" "prompt .";
   height:100%;
 }
 html[data-layout="landscape"] #scStudy>.bar{grid-area:bar}
@@ -442,10 +444,35 @@ html[data-layout="landscape"][data-study-stats] .cardMeta{
   margin-bottom:22px; padding:0 24px; max-width:100%;
 }
 html[data-layout="landscape"][data-study-stats] .cardMeta:empty{display:none}
-.cardMeta .statChip{
+.cardMeta .statChip, .recapCard .statChip{
   font-size:11.5px; color:var(--muted); background:var(--raise); border:1px solid var(--line);
   border-radius:100px; padding:4px 11px; font-variant-numeric:tabular-nums;
 }
+/* Recap card: the top-right cell of the study grid (named "recap" above,
+   previously an unnamed "." spacer -- naming it doesn't change how much
+   space grid-template-rows' matching 1fr track reserves, only what's
+   allowed to sit in it) shows the card rate() *just graded*, not the one
+   on screen now -- lastRated is set at the end of rate(), read here, and
+   cleared by undo() so it can never describe a rating that's since been
+   reverted. Same studyStats switch as .cardMeta on purpose (see its own
+   comment in renderCard()). display:none by default, same pattern as
+   .cardMeta and .keycap below, so portrait layouts never see it regardless
+   of the setting. */
+.recapCard{display:none}
+html[data-layout="landscape"][data-study-stats] .recapCard.on{
+  grid-area:recap; display:flex; flex-direction:column; gap:6px;
+  align-self:start; justify-self:end; margin:16px 16px 0 8px;
+  padding:12px 14px; max-width:200px; box-sizing:border-box;
+  border:1px solid var(--line); border-radius:14px; background:var(--panel);
+}
+.recapLbl{font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.04em}
+.recapWord{font-size:14px; font-weight:600; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.recapRow{display:flex; gap:6px; flex-wrap:wrap}
+.recapCard .rc-rating.rc-again{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
+.recapCard .rc-rating.rc-hard{background:var(--warn-bg);border-color:var(--warn-br);color:var(--warn-ink)}
+.recapCard .rc-rating.rc-good{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
+.recapCard .rc-rating.rc-easy{background:var(--easy-bg);border-color:var(--easy-br);color:var(--easy)}
 .keycap{display:none}
 html[data-layout="landscape"][data-study-hints] .keycap{
   display:inline-flex; align-items:center; justify-content:center; margin-top:4px;
@@ -759,6 +786,14 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       </div>
       <div class="hintline" id="hintline"></div>
       <div class="cardMeta" id="cardMeta"></div>
+      <div class="recapCard" id="recapCard">
+        <div class="recapLbl">Last card</div>
+        <div class="recapWord" id="recapWord"></div>
+        <div class="recapRow">
+          <span class="statChip" id="recapRating"></span>
+          <span class="statChip" id="recapIvl"></span>
+        </div>
+      </div>
     </div>
     <div class="revealRow" id="revealRow">
       <button class="revealBtn" id="revealBtn">Show answer<span class="keycap">Space</span></button>
@@ -1388,7 +1423,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.04.7';
+const BUILD='2026.08.04.10';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1439,6 +1474,7 @@ function buildQueue(dir){
   return {learn,due,intro,seededTotal:seeded.length,freshTotal:fresh.length};
 }
 let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], donePoll=null, cardDirty=false;
+let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by renderCard()'s recap card, cleared by undo() and by anything that wipes undoStack alongside it
 let calY=null, calM=null;   // calendar fold's own state -- not persisted, not S.dir-linked
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all';   // browse screen's own state
 let drillDeck=[], drillPos=0, drillOpts=null, drillPicked=null, drillRight=0, drillSeen=0;   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags
@@ -1526,15 +1562,36 @@ const layoutMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedi
 // being removed -- Ground rule 3 (never remove a settings field) applies to
 // top-level S fields too, and there's no cost to leaving it inert.
 function applyLayout(){
-  document.documentElement.dataset.layout = (layoutMQ && layoutMQ.matches) ? 'landscape' : 'portrait';
+  const was=document.documentElement.dataset.layout;
+  const now=(layoutMQ && layoutMQ.matches) ? 'landscape' : 'portrait';
+  document.documentElement.dataset.layout=now;
   // Study-screen extras below are independent of layout *and* of each other
   // -- each just no-ops outside landscape, since that's the only place any
   // of their CSS/JS hooks do anything (see the settings field's own note).
   document.documentElement.toggleAttribute('data-study-stats', !!S.settings.studyStats);
   document.documentElement.toggleAttribute('data-study-hints', !!S.settings.studyHints);
   document.documentElement.toggleAttribute('data-study-motion', !!S.settings.studyMotion);
+  // was is undefined on the very first call (boot hasn't rendered anything to
+  // kick yet, see the setTimeout below); this only fires for a genuine later
+  // transition into landscape, e.g. rotating a device or resizing a window.
+  if(now==='landscape' && was && was!==now) kickMulticol();
+}
+// Home and Settings each wrap their content in a column-count:2 box
+// (.homeCols/.setCols) that can, on some first layout passes, balance itself
+// into a single column and never redo the calculation on its own -- flipping
+// column-count off and back forces the browser to recompute it from scratch.
+function kickMulticol(){
+  document.querySelectorAll('#scHome .homeCols,#scSet .setCols').forEach(el=>{
+    el.style.columnCount='1'; void el.offsetHeight; el.style.columnCount='';
+  });
 }
 if(layoutMQ && layoutMQ.addEventListener) layoutMQ.addEventListener('change', applyLayout);
+// matchMedia's initial read, taken while load() is still resolving, can lag
+// the real viewport right after a standalone/"Add to Dock" launch -- there is
+// no guaranteed later event if that first read simply settles without ever
+// crossing the query's boundary, so a plain resize is also watched as a
+// backstop independent of whatever matchMedia itself decides to report.
+if(typeof window!=='undefined') window.addEventListener('resize', applyLayout);
 // reveal()'s fade-in is played explicitly via the Web Animations API (see reveal()
 // and renderCard() below) rather than a CSS transition, so it needs its own
 // prefers-reduced-motion check -- the global `*{transition:none}` reduced-motion
@@ -1584,6 +1641,11 @@ function agoLabel(ms,now){
   return Math.round(a/DAY)+'d ago';
 }
 const RATING_LABEL={1:'Again',2:'Hard',3:'Good',4:'Easy'};
+// Hard has no button of its own (see #bAgain/#bGood/#bEasy) but adjustGrade()
+// can still land a press there via the hesitation upgrade in rate() -- the
+// recap card needs a colour for that case too, so this covers all four
+// rather than mirroring just the three buttons.
+const RATING_CLASS={1:'again',2:'hard',3:'good',4:'easy'};
 function renderCard(){
   const c=BY_ID[current], cs=peek(current);
   $('prompt').className='prompt'+(c.dir==='E'?' eng':'');
@@ -1634,6 +1696,26 @@ function renderCard(){
       meta.innerHTML=bits.map(b=>'<span class="statChip">'+b+'</span>').join('');
     } else {
       meta.innerHTML='';                         // hintline above already covers a brand-new card
+    }
+  }
+  // Recap of the card rate() just graded, not this one -- top-right corner
+  // of the landscape grid (the "recap" area, previously an unnamed spacer;
+  // see the CSS comment at .recapCard). Shares the studyStats switch rather
+  // than getting a fourth toggle: it's the same "extra card info" idea as
+  // cardMeta just above, aimed at the card behind you instead of the one in
+  // front of you. Cleared (lastRated=null) by undo() and by anything that
+  // wipes undoStack alongside it, so it never shows a rating that's since
+  // been reverted or import/erase.
+  if(S.settings.studyStats){
+    const rc=$('recapCard');
+    if(lastRated){
+      $('recapWord').textContent=lastRated.q;
+      $('recapRating').textContent=RATING_LABEL[lastRated.rating]||'?';
+      $('recapRating').className='statChip rc-rating rc-'+(RATING_CLASS[lastRated.rating]||'good');
+      $('recapIvl').textContent=fmtIvl(lastRated.ivl);
+      rc.classList.add('on');
+    } else {
+      rc.classList.remove('on');
     }
   }
   if(S.settings.studyMotion && document.documentElement.dataset.layout==='landscape'
@@ -1746,6 +1828,12 @@ function rate(pressed){
     }
   }));
   S.sinceExport=(S.sinceExport||0)+1;
+  // Captured for the recap card (top-right, landscape, studyStats setting)
+  // so a glance answers "what did I just do" without reaching for undo() --
+  // r is the grade actually recorded (post-adjustGrade), matching the
+  // interval that follows it; pressed alone would mismatch res.ivl whenever
+  // the hesitation toast above just fired.
+  lastRated={q:c.q, rating:r, ivl:res.ivl};
   save();          // save() schedules the gist push; nothing else fires per rating
   next();
 }
@@ -1766,6 +1854,7 @@ function undo(){
     if(keep!=null) S.days[d0].cap=keep; }              // the day's allowance is a setting, not a rating
   S.log.length=u.logLen;
   S.sinceExport=Math.max((S.sinceExport||1)-1,0);
+  lastRated=null; // the rating this described just got undone -- nothing to recap
   save();
   current=u.id;
   show('scStudy'); renderCard();
@@ -2606,7 +2695,7 @@ function adopt(inc){
   S=inc; S.lastSync=Date.now(); S.syncedLogLen=S.log.length;
   // the undo stack refers to the state we just replaced; one undo would write a
   // pre-restore card back and truncate the restored log
-  undoStack=[]; current=null;
+  undoStack=[]; current=null; lastRated=null;
   save();
 }
 async function fetchGist(quiet){
@@ -2777,6 +2866,15 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.04.10',[
+    'Vocabula now ships its own icon for Add to Home Screen / Add to Dock -- a capital V in the same Palatino the wordmark already uses, on the vellum theme\'s own paper colour, with a small corner badge carrying the current build\'s last digit. iOS and macOS snapshot an icon the moment it\'s added and there is no way for an installed web app to update its own icon afterward -- a fresh badge only shows up after removing and re-adding it, the same "has to actually relaunch" limitation the app itself already has. The badge wraps 0-9 rather than growing a second digit on a day with more than ten builds, since a single glyph reads far better at icon size than the full version string would.'
+  ]],
+  ['2026.08.04.9',[
+    'Two reported glitches on first launch, both traced to the same neighbourhood: the wide layout could show as the narrow one until something else forced a redraw, and Home or Settings could render as a single column until a details section was opened. Root cause for the first: the check that decides wide-vs-narrow only ever ran once at boot, reading the screen size before a freshly-launched "Add to Dock" window had necessarily finished settling into its real dimensions -- with no later correction if that one read landed wrong. A second check now runs shortly after boot, and the screen size is also rechecked on every window resize, not only on the specific transition a browser chooses to report. Root cause for the second, most likely: Home and Settings both hold their content in a two-column box that can balance itself into one column on an early layout pass and never redo the sum on its own -- opening a details section happens to force that redo as a side effect, which is what was actually being seen, not something the details section itself does. Both screens now get an explicit nudge shortly after boot, and again whenever the layout genuinely switches into the wide version, so the redo no longer depends on happening to open something.'
+  ]],
+  ['2026.08.04.8',[
+    'A small recap card can now sit in the top-right corner of the wide study layout, showing the word you just rated, what you pressed, and how far it jumped forward -- there for anyone who was reaching for undo just to double-check. Shares the review-history switch in Settings rather than adding a fourth one.'
+  ]],
   ['2026.08.04.7',[
     'The "New"/"Legacy" layout choice is gone from Settings -- the wider two-pane study screen (and the matching layouts for the front screen, Settings and Browse) now switches on automatically on any screen at least 700px wide in landscape, for everyone, the same way it would have under "New". A phone held upright is unaffected either way. In its place: three independent switches under "Study screen, wide layout" -- review history on the card (times seen, streak, last result), keyboard hints written on the buttons, and a small amount of animation on reveal and between cards -- each off by default, each only doing anything in that same wide layout. Animation always defers to your system\'s reduced-motion setting regardless of this switch.',
     'Undo now also answers to the <b>0</b> key, alongside the existing <b>Z</b> -- both sit under the same right hand as the 1/2/3 rating alternative (I/O/P), so a hand already resting there for rating never has to move for either one.'
@@ -3068,7 +3166,7 @@ tapZone($('resetBtn'),async ()=>{
   const ok=await pushGist(false);          // pushGist(false) already toasts its own reason on failure
   resetBusy=false;
   if(!ok) return;                          // nothing erased; the toast above already said why
-  undoStack=[]; current=null;
+  undoStack=[]; current=null; lastRated=null;
   S=JSON.parse(JSON.stringify(defaults)); save(); renderHome(); show('scHome'); toast('Erased');
 });
 $('fNew').addEventListener('change',e=>{S.settings.newPerDay=Math.max(0,e.target.value|0);save();});
@@ -3125,7 +3223,14 @@ document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&$('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
 });
 
-load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome'); offerGistConflict(); syncOnLaunch(); });   // renderHome() already calls renderWarn()
+load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome'); offerGistConflict(); syncOnLaunch();
+  // a second pass shortly after boot: re-reads the media query in case the
+  // very first read (above) landed before the viewport had settled, and
+  // unconditionally nudges the multicol screens once real content exists to
+  // be balanced (see kickMulticol) -- covers both bugs regardless of which
+  // one actually happened this launch
+  setTimeout(()=>{ applyLayout(); kickMulticol(); },300);
+});   // renderHome() already calls renderWarn()
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S&&S.theme==='auto') applyTheme(); });
 </script>
 </body>
