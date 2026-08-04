@@ -359,7 +359,7 @@ html[data-layout="landscape"] #app{max-width:none;margin:0}
    the click still bubbling through the #cardArea element node, which
    display:contents does not change. Nothing here touches markup, ids or
    any JS. */
-html[data-layout="landscape"] #scStudy{
+html[data-layout="landscape"] #scStudy.on{
   display:grid;grid-template-columns:1.3fr 1fr;
   grid-template-rows:auto 1fr auto auto auto;
   grid-template-areas:"bar bar" "prompt answer" "prompt leech" "prompt hint" "prompt controls";
@@ -380,17 +380,40 @@ html[data-layout="landscape"] #rateRow{grid-area:controls;align-self:end;padding
 /* home: the existing sections read as a bento grid instead of one long
    scroll. .homeLead is a single new wrapper (added in the markup) around
    the wordmark-through-Start-button block so it survives as one unit;
-   every .sect below it is untouched markup, just restyled. */
-html[data-layout="landscape"] #scHome .home{column-count:2;column-gap:32px;padding:4px 28px 28px}
+   every .sect below it is untouched markup, just restyled.
+   The column-count lives on a *new* wrapper, .homeCols (markup: one div
+   around .homeLead through .build, inside .home) -- not on .home itself,
+   and that's load-bearing, not stylistic. .home is a flex:1 child (base
+   rule above, non-landscape) inside #scHome's fixed-height flex column, so
+   its own height is *constrained*. A multicol container with a constrained
+   height that can't fit its content in column-count columns at that height
+   doesn't make those columns taller -- it opens *more* columns beyond
+   column-count, overflowing the container in the inline direction, with no
+   change of column-fill value preventing it (tried column-fill:auto first;
+   it still opened extra columns, since the constrained height is what
+   triggers this, not the fill mode). With no horizontal scrollbar in view,
+   that meant most of the home screen's cards (whole-syllabus stats,
+   struggling words, ...) were landing in a 3rd/4th column off the right
+   edge of the screen, invisible, any time total content was taller than
+   two columns could hold at that height -- which is most of the time.
+   .homeCols has no height of its own (auto, sized by its content across
+   exactly 2 columns, default column-fill:balance) -- .home stays the
+   fixed-height scrollable box (unchanged base rule), now just scrolling a
+   plain block instead of being a multicol container itself. */
+html[data-layout="landscape"] #scHome .homeCols{column-count:2;column-gap:32px;padding:4px 28px 28px}
 html[data-layout="landscape"] #scHome .homeLead{break-inside:avoid;margin-bottom:4px}
 html[data-layout="landscape"] #scHome .sect{break-inside:avoid;margin-top:14px;background:var(--panel);
   border:1px solid var(--line);border-radius:16px;padding:14px 16px}
 html[data-layout="landscape"] #scHome .build{break-inside:avoid}
 
 /* settings: same list, flowing in two newspaper columns instead of one --
-   no markup change, no per-field classification, each .field just keeps
-   itself from being split across the column break. */
-html[data-layout="landscape"] #scSet .set{column-count:2;column-gap:32px;padding:4px 28px 30px}
+   each .field just keeps itself from being split across the column break.
+   Same .homeCols reasoning above applies here: the column-count lives on a
+   *new* wrapper, .setCols (markup: one div around every .field), not on
+   .set itself -- .set is flex:1 in a fixed-height column too, so it has
+   the identical extra-columns-overflow-offscreen failure mode if it were
+   the multicol container directly. */
+html[data-layout="landscape"] #scSet .setCols{column-count:2;column-gap:32px;padding:4px 28px 30px}
 html[data-layout="landscape"] #scSet .field{break-inside:avoid}
 
 /* browse: filters pinned in a rail instead of scrolling away above a long
@@ -413,6 +436,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <button class="icon" id="toSettings" aria-label="Settings">&#9881;</button>
     </div>
     <div class="home">
+      <div class="homeCols">
       <div class="homeLead">
       <div class="wordmark" id="wordmark"></div>
       <div class="sub" id="homeSub">—</div>
@@ -500,6 +524,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       </div>
 
       <div class="build" id="buildTag"></div>
+      </div>
     </div>
   </section>
 
@@ -614,6 +639,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="icon" style="visibility:hidden">·</div>
     </div>
     <div class="set">
+      <div class="setCols">
       <div class="field">
         <label for="fNew">New words a day</label>
         <input type="number" id="fNew" min="0" max="200" step="5" inputmode="numeric">
@@ -784,6 +810,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       </div>
       <div class="field" style="border-bottom:none">
         <div class="fh">Grading rule: for a word with several glosses, count it as recalled if you produced the first sense plus one other. Otherwise press Again.</div>
+      </div>
       </div>
     </div>
   </section>
@@ -1121,7 +1148,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.03.4';
+const BUILD='2026.08.03.6';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1274,9 +1301,18 @@ function renderCard(){
   // tick, but the CSS transition doesn't know that -- it animates from the
   // last-painted opacity (1, if the previous card was revealed) down to 0
   // over the *already-swapped-in* new text, flashing the next answer for
-  // ~130ms. Suppress the transition across the reset, force a style flush
-  // so the suppression actually lands, then restore it so reveal()'s own
-  // fade-in still animates normally.
+  // ~130ms. A forced reflow (offsetHeight) alone was meant to make the
+  // transition:none suppression land before it's restored, but a screen
+  // recording (2026-08-03) caught the flash surviving in Safari specifically
+  // (reproduced live there; not reproducible in Chromium) -- opacity is a
+  // compositor-only property, and forcing layout doesn't guarantee the
+  // transition:none state has actually been painted first. Waiting two
+  // animation frames (the browser guarantees a real paint has happened
+  // between them, which a layout read does not) before restoring the
+  // transition closes that gap. Safe even on a fast tap: reveal()'s own
+  // 260ms tooSoonAfter guard blocks it well before two frames pass. Falls
+  // back to restoring the transition immediately where rAF isn't available
+  // (the test harness's faked DOM).
   ans.style.transition='none';
   ans.className='answer'+(c.dir==='E'?' lat':'');
   ans.innerHTML='';
@@ -1285,7 +1321,11 @@ function renderCard(){
   });
   else ans.textContent=c.a;
   ans.offsetHeight;
-  ans.style.transition='';
+  if(typeof requestAnimationFrame==='function'){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ ans.style.transition=''; }));
+  } else {
+    ans.style.transition='';
+  }
   renderLeech();
   $('hintline').textContent = cs.reps===0 ? (cs.s!=null?'carried over from the audit':'first time') : '';
   $('revealRow').classList.remove('hidden');
@@ -2205,6 +2245,12 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.03.6',[
+    'The "New" landscape layout (Settings > Layout) was, fairly, called out as looking quite broken -- and it was. Three real bugs, all only visible with that setting switched on: (1) the study screen\'s two-pane grid never actually turned itself off when you left the study screen, so its "Show answer" button could sit stranded over the front screen or Settings; (2) the front screen\'s two-column layout could silently spill into a 3rd or 4th column off the right edge of the screen, taking most of its cards with it -- invisible, with no way to scroll to them; (3) Settings had the exact same silent-overflow problem. All three fixed. Nothing changes for anyone who has not switched Layout to "New".'
+  ]],
+  ['2026.08.03.5',[
+    'The 2026.08.03.3 fix for the next word\'s answer flashing on screen did not actually hold up -- a screen recording caught it still happening, on every single rating, specifically in the Safari "Add to Dock" app (not reproducible in a Chromium-based browser, which is very likely why .3 looked confirmed when it wasn\'t). The previous attempt suppressed the fade animation, swapped in the new answer, forced the browser to redraw immediately, then turned the animation back on -- correct in principle, but forcing a redraw only guarantees the layout has updated, not that the fade-off state has actually been painted, which is evidently not the same thing in Safari. It now waits for two real screen redraws, not just a forced recalculation, before turning the fade animation back on. Not verified live in Safari itself this time either -- there was no way to test that directly -- so this is the best diagnosis available from a recording plus a browser that can\'t reproduce the Safari-specific half of it; worth a fresh recording before calling it fully closed.'
+  ]],
   ['2026.08.03.4',[
     'On a keyboard, rating a card with 1/2/3 always reached across the number row with your left hand. I/O/P -- the row directly below 1/2/3 on the right hand -- now do exactly the same thing, so either hand works. Both sets of keys are live at once; nothing about 1/2/3 changed.'
   ]],
