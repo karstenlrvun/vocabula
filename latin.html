@@ -263,14 +263,15 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
   font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;text-align:center}
 .calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
 .calCell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-  min-height:46px;border-radius:8px;padding:4px 2px;
+  min-height:54px;border-radius:8px;padding:4px 2px;
   font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--panel);border:1px solid var(--line)}
 .calCell.out{color:var(--faint);opacity:.35;border-color:transparent;background:none}
 .calCell.did{background:var(--accent-soft);border-color:var(--coral);color:var(--coral);font-weight:600}
 .calCell.today{box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--coral)}
 .calNum{line-height:1.1}
 .calNew{font-size:9.5px;line-height:1;font-weight:600;color:var(--good)}
-.calRev{font-size:9.5px;line-height:1;font-weight:600;color:var(--amber)}
+.calWords{font-size:9.5px;line-height:1;font-weight:600;color:var(--amber)}
+.calTot{font-size:9.5px;line-height:1;font-weight:600;color:var(--faint)}
 .statRow{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
@@ -288,6 +289,8 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .wordRow .term{flex:1}
 .wordRow .gloss{display:none;margin:6px 0 0 18px;color:var(--muted);font-size:13.5px;line-height:1.4}
 .wordRow.revealed .gloss{display:block}
+.wordRow .wrLearn{display:none;margin:4px 0 0 18px;color:var(--faint);font-size:12px;line-height:1.4}
+.wordRow.revealed .wrLearn{display:block}
 .stackbar{display:flex;height:20px;border-radius:7px;overflow:hidden;background:var(--panel);margin-top:4px}
 .stackbar>div{height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:7px 16px;margin-top:12px;font-size:13px;color:var(--muted)}
@@ -922,7 +925,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <option value="1">Only Easy clears it — Good repeats in 10 minutes</option>
           <option value="0">Good is enough</option>
         </select>
-        <div class="fh">Applies while a word is still being drilled, not to mature reviews.</div>
+        <div class="fh">Applies while a word is still being drilled, not to mature reviews. Good and Hard bounce it 10 minutes; after 3 same-day bounces without an Easy, it clears anyway rather than repeating forever.</div>
       </div>
       <div class="field">
         <label for="fDrill">Consecutive good days before release</label>
@@ -1062,6 +1065,9 @@ function monthMatrix(y,m){
   return weeks;
 }
 const LEARN_STEPS=[1*MIN,10*MIN], RELEARN_STEPS=[10*MIN];
+// a learning/relearning word gets this many same-day tries without Easy
+// before the drill layer (requireEasy) lets it clear anyway -- see schedule()
+const DRILL_CAP=3;
 const S_MIN=0.001;
 const AGAIN=1, HARD=2, GOOD=3, EASY=4;
 // A word can be flagged (set aside, same as susp) by hand once it has drawn
@@ -1073,6 +1079,15 @@ const AGAIN=1, HARD=2, GOOD=3, EASY=4;
 // sitting that is going badly right now, not chronic failure across
 // separate sessions. See againTodayCounts() below.
 const FLAG_MANUAL=5, FLAG_AUTO=8;
+// "Time to learn a word" (timeToLearnFor, browse screen) sums thinkMs across
+// a card's whole history as a rough active-engagement figure. reveal()
+// already discards a single reading over 300s as probably-AFK (see its own
+// comment) -- fine for a one-off grade nudge, but summed across dozens of
+// reviews even occasional 300s outliers would add minutes of noise to a
+// number meant to read as a handful of seconds. ACTIVE_CAP is a second,
+// tighter discard applied only at aggregation time, on top of whatever
+// reveal() already let through.
+const ACTIVE_CAP=45*1000;
 
 const clampD=d=>Math.min(Math.max(d,1),10);
 const clampS=s=>Math.max(s,S_MIN);
@@ -1152,11 +1167,28 @@ function schedule(card,rating,now,st){
   if(rating===AGAIN){ c.streak=0; }
   else if(c.lastDay!==dk){ c.streak=(c.streak|0)+1; }
   c.lastDay=dk;
-  if(st.requireEasy && inDrill && (rating===GOOD||rating===HARD)){
+  // A learning/relearning word gets DRILL_CAP same-day tries without Easy
+  // before it clears anyway, at whatever stability *this* rating actually
+  // earned -- never an Easy's (Good's own initial/short-term stability stays
+  // well below Easy's, however many same-day reps accumulate; see nextS()).
+  // Without this, a word only ever rated Good (never Easy) loops here
+  // indefinitely. Tracked on its own loops/loopDay pair rather than reusing
+  // streak/lastDay: those are deliberately reverted just below (a loop isn't
+  // allowed to advance the streak either), so a counter built on them would
+  // never see its own prior count and would reset to zero every single time.
+  const stuck=(card.st==='L'||card.st==='X');
+  const loopsToday=(stuck && card.loopDay===dk)?(card.loops|0):0;
+  const capOut=stuck && (rating===GOOD||rating===HARD) && loopsToday+1>=DRILL_CAP;
+  if(st.requireEasy && inDrill && (rating===GOOD||rating===HARD) && !capOut){
     ivl=10*MIN;                                   // Good is not enough to clear the day
     c.st=card.st; c.step=card.step; c.streak=card.streak|0; c.lastDay=card.lastDay;
-  } else if(drillN>0 && (c.streak|0)<drillN && rating!==AGAIN && ivl>DAY){
-    ivl=DAY;                                      // hold at one day until the run is complete
+    c.loops=loopsToday+1; c.loopDay=dk;
+  } else {
+    c.loops=0; c.loopDay=dk;
+    if(capOut) toReview();
+    else if(drillN>0 && (c.streak|0)<drillN && rating!==AGAIN && ivl>DAY){
+      ivl=DAY;                                    // hold at one day until the run is complete
+    }
   }
   c.last=now; c.due=now+ivl; c.reps=(c.reps||0)+1;
   // ---- weekly review day: nudge mid-range intervals onto the chosen weekday ----
@@ -1218,7 +1250,7 @@ let S=null;
 
 function freshCard(c){
   const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
-            reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null};
+            reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null};
   if(c.dir==='L'&&(c.seed===1||c.seed===2)){
     st.st='R'; st.step=null;
     st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
@@ -1367,7 +1399,7 @@ function normalise(o){
     for(const k in s.cards){
       const c=s.cards[k];
       if(!c||!BY_ID[k]){ delete s.cards[k]; continue; }
-      c.reps|=0; c.lapses|=0; c.buried|=0;
+      c.reps|=0; c.lapses|=0; c.buried|=0; c.loops|=0;
       if(typeof c.due!=='number') c.due=0;
       if(c.st!=='L'&&c.st!=='R'&&c.st!=='X') c.st='L';
       // one-time migration: review cards move onto the day boundary. This only
@@ -1422,7 +1454,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.04.11';
+const BUILD='2026.08.05.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1480,14 +1512,20 @@ let drillDeck=[], drillPos=0, drillOpts=null, drillPicked=null, drillRight=0, dr
 
 function refresh(){ Q=buildQueue(S.dir); }
 
+// the card `current` still names (the one just rated, about to be replaced)
+// never wins a tier over an alternative already sitting in that same tier --
+// pure reordering, never pulls a card up from a lower-priority tier just to
+// dodge a repeat, so pacing between tiers is unchanged
+function firstNotCurrent(ids){ return ids.find(id=>id!==current) ?? ids[0]; }
+
 function pick(){
   refresh();
   const now=Date.now();
   const ready=Q.learn.filter(id=>peek(id).due<=now);
-  if(ready.length) return ready[0];
-  if(Q.due.length) return Q.due[0];
-  if(Q.intro.length) return Q.intro[0];
-  if(Q.learn.length) return Q.learn[0];      // learn ahead: nothing else is left today
+  if(ready.length) return firstNotCurrent(ready);
+  if(Q.due.length) return firstNotCurrent(Q.due);
+  if(Q.intro.length) return firstNotCurrent(Q.intro);
+  if(Q.learn.length) return firstNotCurrent(Q.learn);      // learn ahead: nothing else is left today
   return null;
 }
 // like pick(), but never opens the day's fresh new-word budget: donePoll uses
@@ -1497,9 +1535,9 @@ function pickSoon(){
   refresh();
   const now=Date.now();
   const ready=Q.learn.filter(id=>peek(id).due<=now);
-  if(ready.length) return ready[0];
-  if(Q.due.length) return Q.due[0];
-  if(Q.learn.length) return Q.learn[0];
+  if(ready.length) return firstNotCurrent(ready);
+  if(Q.due.length) return firstNotCurrent(Q.due);
+  if(Q.learn.length) return firstNotCurrent(Q.learn);
   return null;
 }
 
@@ -1680,6 +1718,46 @@ function agoLabel(ms,now){
   if(a<DAY) return Math.round(a/HOUR)+'h ago';
   return Math.round(a/DAY)+'d ago';
 }
+// Pure: "time to learn" this word -- wall-clock since its first-ever review
+// (needs no AFK guard: a week you didn't open the app is legitimately part
+// of how long a word has taken), plus a rough active-engagement figure
+// summed from thinkMs (does need one, see ACTIVE_CAP above). null if the
+// word has never been rated. Scans the whole log once per call -- fine for
+// an on-demand single-word lookup (browse screen, tap to reveal), wrong for
+// every row of a few-thousand-word list; see the browse click handler for
+// why this is computed lazily rather than baked into wordRowHtml.
+function timeToLearnFor(id,log,now){
+  let firstAt=null, activeMs=0, timed=0, untimed=0, reps=0;
+  for(const e of log){
+    if(e[0]!==id) continue;
+    reps++;
+    if(firstAt==null) firstAt=e[2];
+    const ms=e[4];
+    if(ms!=null&&ms<=ACTIVE_CAP){ activeMs+=ms; timed++; } else untimed++;
+  }
+  if(reps===0) return null;
+  return {reps,firstAt,calendarMs:now-firstAt,activeMs,timed,untimed};
+}
+// Pure: seconds/minutes/hours for a duration that can genuinely be a
+// handful of seconds -- fmtIvl()'s minimum unit is minutes (right for a
+// scheduling interval, wrong for a sum of a few thinkMs readings).
+function fmtActiveTime(ms){
+  if(ms<MIN) return Math.round(ms/1000)+'s';
+  if(ms<HOUR) return Math.round(ms/MIN)+'m';
+  return Math.round(ms/HOUR)+'h';
+}
+// One line of copy for the browse screen's per-word detail, e.g.
+// "8 reviews since 6d ago · ~45s active thinking (6 of 8 timed)". Omits the
+// active-thinking clause entirely if every reading was untimed (useTiming
+// off throughout, or every reading discarded) rather than claiming ~0s.
+function learnStatsLine(t,now){
+  const bits=[t.reps+' review'+(t.reps===1?'':'s')+' since '+agoLabel(t.firstAt,now)];
+  if(t.timed>0){
+    bits.push('~'+fmtActiveTime(t.activeMs)+' active thinking'+
+      (t.untimed>0?' ('+t.timed+' of '+(t.timed+t.untimed)+' timed)':''));
+  }
+  return bits.join(' · ');
+}
 const RATING_LABEL={1:'Again',2:'Hard',3:'Good',4:'Easy'};
 // Hard has no button of its own (see #bAgain/#bGood/#bEasy) but adjustGrade()
 // can still land a press there via the hesitation upgrade in rate() -- the
@@ -1855,9 +1933,23 @@ function rate(pressed){
   }
   if(r!==pressed) toast(pressed===EASY?'Recorded as Good — that one took a while':'Recorded as Hard — that one took a while',1600);
   const d=today();
-  const rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
+  const rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
   rec.n++;
   if(first){ rec.intro=(rec.intro|0)+1; rec['intro'+c.dir]=(rec['intro'+c.dir]|0)+1; }
+  // distinct words touched today, not ratings -- a second same-day rating of
+  // the same word (a same-day relearn, or a new word stepping through
+  // several learning steps in one sitting) must not inflate this the way
+  // rec.n would. cs.lastDay looks like the obvious field but isn't safe:
+  // the requireEasy/DRILL_CAP drill-hold above deliberately reverts a held
+  // card's lastDay (along with st/step/streak) back to its pre-rating value
+  // every time the hold re-fires, so a card stuck in that same-day loop
+  // would look "not yet rated today" on every single loop. cs.last (read
+  // off the pre-schedule() card -- schedule() only mutates its own shallow
+  // copy) is never reverted that way, but has its own pitfall: a seeded
+  // review card gets cs.last stamped by cardState() at materialisation,
+  // before its first real rating. `first` (cs.reps===0, also never reverted)
+  // covers exactly that gap, since seeding never touches reps.
+  if(first||dayKey(cs.last)!==d) rec.words=(rec.words|0)+1;
   // relearning cards are real reviews too, and were being left out of the rate
   if(cs.st==='R'||cs.st==='X'){ rec.tot++; if(r!==AGAIN) rec.ok++; }
   // bury the same word in the other direction until tomorrow
@@ -1890,7 +1982,7 @@ function undo(){
   (u.buried||[]).forEach(([sid,v])=>{ if(S.cards[sid]) S.cards[sid].buried=v; });
   // restore into the day the rating belonged to, not whichever day it is now
   { const d0=(u.dk!=null)?u.dk:today(), keep=(S.days[d0]&&S.days[d0].cap!=null)?S.days[d0].cap:null;
-    S.days[d0]=(u.day&&u.day.n!=null)?u.day:{n:0,intro:0,ok:0,tot:0};
+    S.days[d0]=(u.day&&u.day.n!=null)?u.day:{n:0,intro:0,ok:0,tot:0,words:0};
     if(keep!=null) S.days[d0].cap=keep; }              // the day's allowance is a setting, not a rating
   S.log.length=u.logLen;
   S.sinceExport=Math.max((S.sinceExport||1)-1,0);
@@ -2171,9 +2263,13 @@ function renderStats(){
   $('statsGrid').innerHTML=gridHtml||'<div class="note">No words to show.</div>';
 }
 function wordRowHtml(c){
-  const st=statusOf(S.cards[c.id]), gloss=(c.dir==='E')?c.a.join(', '):c.a;
+  const cs=S.cards[c.id], st=statusOf(cs), gloss=(c.dir==='E')?c.a.join(', '):c.a;
+  // .wrLearn is left empty (not pre-filled) even for a rated word -- see the
+  // browseResults click handler, which fills it in on first reveal rather
+  // than every row paying for a log scan whether or not it's ever opened.
+  const learn=(cs&&cs.reps>0)?'<div class="wrLearn"></div>':'';
   return '<div class="wordRow" data-id="'+c.id+'"><div class="wrTop"><i class="stDot s-'+st+'"></i>'+
-    '<span class="term">'+escHtml(c.q)+'</span></div><div class="gloss">'+escHtml(gloss)+'</div></div>';
+    '<span class="term">'+escHtml(c.q)+'</span></div><div class="gloss">'+escHtml(gloss)+'</div>'+learn+'</div>';
 }
 function renderBrowsePartChips(){
   const box=$('browseParts');
@@ -2316,13 +2412,16 @@ function renderBucketChips(){
     box.appendChild(b);
   });
 }
-// {studied, intro, reviewed} for one study day -- reviewed is every rating
-// that wasn't a word's first-ever rep, so it covers both true spaced reviews
-// and same-day repeats of a word introduced earlier that same day
+// {studied, intro, words, ratings} for one study day -- intro is new words
+// learnt (first-ever rep), words is every *distinct* word touched (new or
+// repeat), ratings is the raw count of every button press, same-day repeats
+// included. words is null (not 0) for a studied day recorded before this
+// field existed (2026.08.05) -- distinguishes "genuinely zero" from
+// "never tracked", so old calendar days don't show a misleading zero.
 function dayStatsFor(days,dk){
   const rec=days[dk];
-  if(!rec||!rec.n) return {studied:false,intro:0,reviewed:0};
-  return {studied:true,intro:rec.intro||0,reviewed:rec.n-(rec.intro||0)};
+  if(!rec||!rec.n) return {studied:false,intro:0,words:0,ratings:0};
+  return {studied:true,intro:rec.intro||0,words:(rec.words!=null?rec.words:null),ratings:rec.n||0};
 }
 function currentStreak(days,todayKey){
   let streak=0;
@@ -2426,7 +2525,7 @@ function renderCalendar(){
     const cls=['calCell'];
     if(st.studied) cls.push('did');
     if(dk===d0) cls.push('today');
-    const nums = st.studied ? ('<span class="calNew">'+st.intro+'</span><span class="calRev">'+st.reviewed+'</span>') : '';
+    const nums = st.studied ? ('<span class="calNew">'+st.intro+'</span><span class="calWords">'+(st.words!=null?st.words:'–')+'</span><span class="calTot">'+st.ratings+'</span>') : '';
     gh+='<div class="'+cls.join(' ')+'"><span class="calNum">'+cell.d+'</span>'+nums+'</div>';
   }));
   $('calGrid').innerHTML=gh;
@@ -2907,6 +3006,13 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.05.1',[
+    'The word list (Browse) now answers "how long has this actually taken me" for any word you\'ve met at least once: tap to reveal it, same as always, and underneath the answer sits how many reviews it\'s had and how long ago the first one was, plus a rough estimate of the active thinking time behind them -- summed from how long you paused before revealing the answer on each of those reviews. A reading is left out of that sum (and the line says how many were) if it looked unreliable at the time -- you\'d looked away, or paused suspiciously long -- the same guard reveal() already applies before a reading is even allowed to nudge a grade, tightened further here since summing dozens of readings is far less forgiving of an occasional bad one than adjusting a single grade is. Nothing is computed for a word until you actually tap it open, so a list of several thousand words costs nothing extra just for existing. Requested days ago and deliberately parked until now -- see the design note in HANDOFF.md for why it took two attempts to get the "already touched today" logic right once .05.0\'s drill-loop cap entered the picture.'
+  ]],
+  ['2026.08.05.0',[
+    'A learning or relearning word held under Settings\' "Require Easy to graduate" could loop forever if it only ever earned Good or Hard, never Easy -- the same-day 10-minute hold had no exit besides an eventual Easy press. It now clears itself after DRILL_CAP (3) same-day tries without one, graduating at whatever stability that final rating actually earned (never Easy\'s, since Easy was never pressed) rather than circling the same 10-minute interval indefinitely. Tracked on the card\'s own loops/loopDay pair rather than streak/lastDay, since those are deliberately reverted for the duration of the hold and would reset to zero on every single loop instead of remembering the count. Hard counts toward the cap the same as Good; a card that relapses (an Again after graduating) needs a fresh run of DRILL_CAP loops afterward, same as a first attempt. The unrelated drillDays (mature-review, consecutive-day) hold is untouched.',
+    'The full calendar\'s per-day box (2026.08.04.2) showed two numbers -- new words, and "reviewed" (every rating that wasn\'t a word\'s first-ever rep). Replaced with three clearer ones: new words learnt, distinct words touched (new or repeat -- a leech failed twice today, or a new word stepping through two learning steps in one sitting, now counts once here instead of twice), and the raw number of ratings made. The distinct-word count needed its own new per-day counter rather than being derivable after the fact, and needed care to get right: the obvious signal (a card\'s lastDay) turned out to be unsafe combined with this same build\'s DRILL_CAP hold, which deliberately reverts lastDay on every same-day loop -- caught by an end-to-end test before it shipped, not by inspection. A day recorded before this field existed shows a dash for the middle number rather than a false zero.'
+  ]],
   ['2026.08.04.11',[
     'The two columns in the wide Home/Settings layout could land badly uneven -- one holding three cards, the other four, sometimes 300px+ taller -- because CSS column-count only ever fills column 1 first and overflows into column 2 in strict document order; with only a handful of large, break-inside:avoid cards, that heuristic has no way to correct for one oversized card (the whole-syllabus stats block) landing alone in a column. .9\'s "explicit nudge" fixed a different failure mode entirely (both columns collapsing into one on some early layout passes) and left this one untouched. column-count is gone now, replaced on both .homeCols and .setCols by a small balanceColumns() function: it measures each card at its real column width, then places each one whole -- never split -- into whichever of two explicit column divs is currently shorter, which a browser\'s own sequential-fill heuristic can\'t do from three or four large chunks. Testing this live turned up a second, unrelated bug in the process: every "back to home"/"into settings" handler in this file calls its render function before the screen is actually shown, so a hidden (display:none) screen was measuring 0 for every card and piling all of them into one column regardless of balanceColumns() itself being correct -- fixed by also re-balancing once the screen is actually visible, so it no longer depends on getting call order right at every individual site. Verified directly in a real (Chromium) browser: repeated portrait/landscape cycling, opening and closing a details fold mid-session, and every Study→Home/Settings→Home navigation path all leave both columns within a few percent of each other, with no card ever split.'
   ]],
@@ -3153,6 +3259,15 @@ $('browseSearch').addEventListener('input',e=>{ browseQuery=e.target.value; rend
 $('browseResults').addEventListener('click',e=>{
   const row=e.target.closest('.wordRow'); if(!row) return;
   row.classList.toggle('revealed');
+  // Computed on first reveal, not baked into wordRowHtml -- a log scan per
+  // row would cost every row in the list whether or not it's ever opened;
+  // this way only a word actually tapped ever pays for it, once.
+  const learnEl=row.querySelector('.wrLearn');
+  if(row.classList.contains('revealed') && learnEl && !learnEl.dataset.computed){
+    const t=timeToLearnFor(row.dataset.id,S.log,Date.now());
+    learnEl.textContent = t ? learnStatsLine(t,Date.now()) : '';
+    learnEl.dataset.computed='1';
+  }
 });
 function toggleFlagFromList(id){
   const cs=cardState(id);
@@ -3169,7 +3284,7 @@ function toggleFlagFromList(id){
   });
 });
 function bumpCap(delta){
-  const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
+  const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
   const cur=(rec.cap!=null)?rec.cap:S.settings.newPerDay;
   rec.cap=Math.min(Math.max(cur+delta,0),400);
   save(); renderHome();
@@ -3177,7 +3292,7 @@ function bumpCap(delta){
 tapZone($('capMinus'),()=>bumpCap(-5));
 tapZone($('capPlus'), ()=>bumpCap(5));
 tapZone($('doneMore'),()=>{
-  const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0});
+  const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
   rec.cap=((rec.cap!=null)?rec.cap:S.settings.newPerDay)+10;
   save(); next(); if(current) show('scStudy'); else toast('No unseen words left in this direction');
 });
