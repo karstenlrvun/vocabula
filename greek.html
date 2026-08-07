@@ -1504,7 +1504,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.07.1';
+const BUILD='2026.08.07.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -2916,7 +2916,15 @@ async function fetchGist(quiet){
     let parsed=null;
     if(!f.truncated){ try{ parsed=JSON.parse(f.content); }catch(e){} }
     if(parsed==null){
-      const rr=await fetch(f.raw_url,{headers:{'Authorization':'Bearer '+gistTok}});
+      // No Authorization header here, deliberately: raw_url doesn't need one (a
+      // secret gist's raw content is unlisted, not access-controlled -- same
+      // reasoning as HANDOFF.md's note that "secret" means unguessable URL, not
+      // authenticated), and adding one forces a CORS preflight that this host
+      // doesn't answer (confirmed live: an OPTIONS request here comes back 403
+      // with no Access-Control-Allow-Headers), which blocks the real request
+      // before it's even sent -- a first version of this fix included the header
+      // "to be safe" and that alone silently broke every pull through this path.
+      const rr=await fetch(f.raw_url);
       if(!rr.ok) throw new Error('raw '+rr.status);
       parsed=JSON.parse(await rr.text());
     }
@@ -3087,6 +3095,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.07.2',[
+    '.1 (below), shipped minutes earlier the same day, fixed the truncated-gist-content problem but introduced a second, narrower bug in the same function: the fallback fetch to raw_url carried an Authorization header "to be safe", which doesn\'t need one (a secret gist\'s raw content is unlisted, not access-controlled) and turned it into a non-simple cross-origin request -- which the raw-content host doesn\'t answer a CORS preflight for, so the browser blocked the request before it went out, surfacing as an opaque "Load failed"/"Failed to fetch" with no HTTP status attached. Caught because that specific failure mode -- a real cross-origin request actually being sent and rejected by the browser itself -- can only show up against the real endpoints; a same-session test using a stand-in fetch() had verified the fallback logic\'s branching correctly but, standing in for the network entirely, could never have exercised CORS either way. Fixed by dropping that header; confirmed this time with real, unmocked requests against the live gist.'
+  ]],
   ['2026.08.07.1',[
     'Gist pull -- both the silent one on launch and Settings\' "Pull from gist now" -- could fail with no visible sign anything was wrong, once a save grew large enough. GitHub\'s gist API truncates a file\'s content in the response past a size it doesn\'t document precisely for a multi-file gist (a combined budget across this gist\'s files, in practice, well under the ~1MB nominally quoted per file); a large save came back cut off mid-object, failed to parse, and that parse failure was swallowed by the same catch used for a genuine network error -- so a big enough backup just quietly stopped restoring on other devices, with no toast, while push (which sends its own request body rather than reading this field back) kept working, and the gist itself never fell behind. Fixed by checking the API\'s own truncated flag on the file -- and, since it was observed not lining up exactly with what actually got cut, falling back on any parse failure regardless of that flag -- and re-fetching the file\'s raw_url, which returns it whole up to 10MB. Verified against a real backup already past the failure size: the old code silently returned nothing, the fixed code retrieves and parses the full file.'
   ]],
