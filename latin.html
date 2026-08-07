@@ -1504,7 +1504,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.07.0';
+const BUILD='2026.08.07.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -2908,7 +2908,19 @@ async function fetchGist(quiet){
     const j=await r.json();
     const f=j.files&&j.files[GIST_FILE];
     if(!f) throw new Error('no '+GIST_FILE);
-    const inc=normalise(JSON.parse(f.content));
+    // The list endpoint truncates each file's `content` (~1MB combined across
+    // a gist's files, confirmed lower in practice for a multi-file gist like
+    // this one) -- `truncated` names it explicitly, but a large save has also
+    // been seen tripping the limit without the flag lining up neatly, so any
+    // parse failure falls back too, not just an explicit truncated:true.
+    let parsed=null;
+    if(!f.truncated){ try{ parsed=JSON.parse(f.content); }catch(e){} }
+    if(parsed==null){
+      const rr=await fetch(f.raw_url,{headers:{'Authorization':'Bearer '+gistTok}});
+      if(!rr.ok) throw new Error('raw '+rr.status);
+      parsed=JSON.parse(await rr.text());
+    }
+    const inc=normalise(parsed);
     if(!inc) throw new Error('that file holds the other deck');
     return inc;
   }catch(e){ if(!quiet) toast('Gist pull failed ('+e.message+')'); return null; }
@@ -3075,6 +3087,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.07.1',[
+    'Gist pull -- both the silent one on launch and Settings\' "Pull from gist now" -- could fail with no visible sign anything was wrong, once a save grew large enough. GitHub\'s gist API truncates a file\'s content in the response past a size it doesn\'t document precisely for a multi-file gist (a combined budget across this gist\'s files, in practice, well under the ~1MB nominally quoted per file); a large save came back cut off mid-object, failed to parse, and that parse failure was swallowed by the same catch used for a genuine network error -- so a big enough backup just quietly stopped restoring on other devices, with no toast, while push (which sends its own request body rather than reading this field back) kept working, and the gist itself never fell behind. Fixed by checking the API\'s own truncated flag on the file -- and, since it was observed not lining up exactly with what actually got cut, falling back on any parse failure regardless of that flag -- and re-fetching the file\'s raw_url, which returns it whole up to 10MB. Verified against a real backup already past the failure size: the old code silently returned nothing, the fixed code retrieves and parses the full file.'
+  ]],
   ['2026.08.07.0',[
     'Changing "A study day begins at" (Settings) used to take effect immediately -- including retroactively, for cards already scheduled under the old hour. Moving the hour later in the day (say 4am to 6am) could, on the very next load, throw a chunk of tomorrow\'s (or even later today\'s) reviews straight into "due right now", since the day-boundary math had no way left to tell "today" from "yesterday" once the rule under it changed mid-day. The setting now takes effect from the next time the old hour would have rolled the day over anyway, not before -- nothing already scheduled is ever reinterpreted, so picking a new hour can never make a card look due that it wasn\'t a moment before. Settings shows when a pending change actually kicks in, and the schedule keeps running on the old hour until then.',
     'The same-day Good/Hard drill loop (Settings\' "Only Easy clears it") used to clear a word after exactly 3 same-day tries without an Easy, hardcoded. A new slider next to it, 3 through 10, makes that count adjustable -- lower drills a stubborn word less before letting it through, higher drills it harder. Leaving it at the default of 3 behaves exactly as before.',
