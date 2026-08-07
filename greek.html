@@ -1547,7 +1547,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.07.4';
+const BUILD='2026.08.07.5';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -3232,6 +3232,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.07.5',[
+    'The launcher page (the one linking to Latin, Λέξεις, the manual, and Backup & sync) now shows the current version too, linked straight through to this list -- before this, seeing what changed meant opening a deck first and tapping the build line at the bottom of its own front screen. Reaching it from the launcher needed one small addition here: opening either deck at a #changelog link now shows this screen right away on load, instead of always landing on the front screen first and requiring a second tap.'
+  ]],
   ['2026.08.07.4',[
     'Two new figures, both requested: a running clock in the study screen, under the new/learning/due counts, showing how long today\'s sitting has actually taken; and a "rated today · studied" line on the front screen giving the same total for the whole day, every sitting summed. Deliberately real wall-clock time rather than a derived estimate -- the only per-review timing that existed before this was thinkMs (seeing the word to revealing the answer), which never covered the pause between reveal and actually choosing Again/Good/Easy, so any estimate built from it alone was undercounting real time spent by a real margin. The study-screen clock resets to zero each time you walk in fresh, keeps running through a brief backgrounding within the same sitting (a call, a notification), and pauses -- crediting whatever ran -- the instant the tab is hidden or you leave for anywhere else in the app, so time spent elsewhere is never counted as study time. Persisted per study day (S.days[k].studyMs) and split across the rollover boundary if a sitting straddles it, so a session starting before the day rolls over and finishing after credits each day correctly instead of dumping the whole segment on whichever one the flush happened to land on.'
   ]],
@@ -3660,7 +3663,12 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('pagehide',()=>pauseStudyTimer());   // safety net for a close/reload that skips visibilitychange
 
-load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome'); offerGistConflict(); syncOnLaunch();
+load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome');
+  // opened as e.g. greek.html#changelog (the launcher's version link does this) --
+  // jump straight to the changelog instead of making a fresh visitor land on the
+  // front screen and hunt for the build line themselves.
+  if(location.hash==='#changelog'){ renderLog(); show('scLog'); }
+  offerGistConflict(); syncOnLaunch();
   // a second pass shortly after boot: re-reads the media query in case the
   // very first read (above) landed before the viewport had settled right
   // after a standalone/"Add to Dock" launch -- applyLayout() re-balances

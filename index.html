@@ -68,6 +68,11 @@ a.card .d{color:var(--muted);font-size:13.5px}
 .note{font-size:12.5px;color:var(--faint);line-height:1.6;margin-top:26px}
 .note b{color:var(--muted)}
 
+/* ---------- version line, same idiom as the decks' own .build ---------- */
+.verlink{display:block;text-align:center;margin:34px 0 0;padding:8px;font-size:11px;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--faint);text-decoration:none}
+.verlink:active{color:var(--coral)}
+
 /* ---------- device pairing (show/scan a QR in place of retyping the token) ---------- */
 .pairRow{display:flex;gap:10px;margin-top:10px}
 .pairBtn{flex:1;height:44px;border:1px solid var(--line);border-radius:11px;background:var(--raise);
@@ -156,6 +161,8 @@ a.card .d{color:var(--muted);font-size:13.5px}
   of them. (Pinning them separately still works exactly as before; each just needs its own gist id
   and token typed in, the same as always.) Safari clears stored data for sites left unvisited for a
   week; installed apps are exempt. The same goes for iPad, and on a Mac use Safari's Add to Dock.</p>
+
+<a class="verlink" id="verLink" href="latin.html#changelog">Version 2026.08.07.5</a>
 
 <script>
 // QR Code Generator for JavaScript, by Kazuhiko Arase, MIT licensed.
@@ -314,6 +321,16 @@ $('btnUsePaste').addEventListener('click', ()=>{
   if(!res){ pairStatus("That code didn't look right — copy it again from the other device.", true); return; }
   applyPaired(res);
 });
+
+// ---------- version line: the text above is a hardcoded fallback (kept in step
+// by hand, same discipline as the rest of a BUILD bump) so it's never blank --
+// this then confirms/corrects it live against latin.html's own const BUILD, so
+// a forgotten hand-edit here can't go stale silently the way HANDOFF.md's own
+// "Current build" line repeatedly has. ----------
+fetch('latin.html',{cache:'no-store'}).then(r=>r.text()).then(text=>{
+  const m=text.match(/const BUILD='([^']+)'/);
+  if(m) $('verLink').textContent='Version '+m[1];
+}).catch(()=>{ /* offline or blocked -- the hardcoded fallback above stands */ });
 </script>
 </body>
 </html>
