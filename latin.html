@@ -157,6 +157,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .counts{display:flex;gap:12px;justify-content:center;font-size:14px;font-variant-numeric:tabular-nums}
 .counts b{font-weight:600}
 .c-new{color:var(--coral)} .c-lrn{color:var(--amber)} .c-due{color:var(--good)}
+.studyTimer{margin-top:3px;text-align:center;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 
 /* ---------- card ---------- */
 .cardarea{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
@@ -771,7 +772,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
   <section id="scStudy" class="screen">
     <div class="bar">
       <button class="icon" id="toHome" aria-label="Back">&#8249;</button>
-      <div class="title"><div class="counts" id="counts"></div></div>
+      <div class="title"><div class="counts" id="counts"></div><div class="studyTimer" id="studyTimer"></div></div>
       <button class="icon" id="undoBtn" aria-label="Undo">&#8630;<span class="keycap iconKeycap">0 / Z</span></button>
     </div>
     <div class="cardarea" id="cardArea">
@@ -1251,9 +1252,26 @@ function schedule(card,rating,now,st){
   // Everything scheduled for a given study day unlocks together at the rollover,
   // so a batch studied at 14:00 is not held back until 14:00 the next day.
   // Learning steps are left on minutes.
+  //
+  // The snap always rounds *down* onto a boundary, which quietly eats however
+  // much of the current study day has already gone. That is harmless for a long
+  // interval (a ten-day card loses at most a day out of ten) and ruinous for a
+  // one-day one: rated at 03:45 against a 4am rollover, "one day" became the
+  // boundary fifteen minutes away -- and buildQueue's AHEAD window then served
+  // the card straight back inside the same sitting. Measured before the fix: a
+  // 40-card queue started at 03:42 took 80 ratings to clear, every card served
+  // twice, with the on-screen "learning" count climbing by one for every word
+  // rated. So if rounding down would swallow more than half the interval that
+  // was actually earned, round up to the next boundary instead.
+  // Arithmetic note: this can only ever fire for a one-day interval -- an
+  // N-day one lands at least (N-1) days out, which beats N/2 for every N>=2 --
+  // and then only in the back half of a study day.
   if(c.st==='R' && c.due-now>=DAY){
-    const ivlDays=Math.max(Math.round((c.due-now)/DAY),1);
-    c.due=dayStart(dayKey(now)+ivlDays);
+    const want=c.due-now;
+    const ivlDays=Math.max(Math.round(want/DAY),1);
+    let snapped=dayStart(dayKey(now)+ivlDays);
+    if(snapped-now<want/2) snapped=dayStart(dayKey(now)+ivlDays+1);
+    c.due=snapped;
   }
   return {card:c, ivl:c.due-now};
 }
@@ -1300,7 +1318,8 @@ let S=null;
 
 function freshCard(c){
   const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
-            reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null};
+            reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null,
+            unflagDay:null};
   if(c.dir==='L'&&(c.seed===1||c.seed===2)){
     st.st='R'; st.step=null;
     st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
@@ -1452,17 +1471,41 @@ function normalise(o){
       c.reps|=0; c.lapses|=0; c.buried|=0; c.loops|=0;
       if(typeof c.due!=='number') c.due=0;
       if(c.st!=='L'&&c.st!=='R'&&c.st!=='X') c.st='L';
-      // one-time migration: review cards move onto the day boundary. This only
-      // ever moves a due date earlier within its own day, never to another day.
-      if(c.st==='R'&&c.due>0) c.due=dayStart(dayKey(c.due));
+      // A review-card due-date snap used to sit here, described as a one-time
+      // migration but in fact re-running on every load (and every gist pull and
+      // every file restore), always under whatever rollover happened to be
+      // current. dayKey/dayStart are only inverses for a FIXED hour, so once
+      // the hour genuinely changed this re-bucketed every review card under the
+      // new rule: measured at -22h per card for 4am -> 6am, enough to dump days
+      // of future reviews into "due right now". 2026.08.07.0 deferred *when*
+      // the setting changes, which could not stop this reinterpreting the
+      // result one load later, as soon as the pending change had committed and
+      // been saved. Removed outright rather than gated behind a done-flag:
+      // schedule() has written boundary-aligned dues for every review card
+      // since 2026.07.30, so no reachable state has anything left to migrate,
+      // and leaving raw timestamps alone is precisely the never-retroactive
+      // property the deferred-rollover work was after. It also used to wreck a
+      // review card held on a 10-minute drill step, whose due is deliberately
+      // not on a boundary and which this dragged back to the day's start.
     }
     // defensive: catch a state whose log already shows FLAG_AUTO same-day
     // Agains for "today" (this device's today, via ROLL_OVR/dayKey below)
     // without susp set -- e.g. an imported backup, or a crash between the
     // qualifying press and rate()'s own live check.
-    const bad=againTodayCounts(s.log, today());
+    // unflagDay is what stops this fighting the user. The log is append-only,
+    // so a word that drew FLAG_AUTO Agains today keeps reading as qualifying
+    // however deliberately it was brought back afterwards -- and this re-set
+    // susp on the very next load, which made bringing a word back (the study
+    // screen's flag, the struggling list, the drill, and Settings'
+    // bring-back-everything alike) impossible to make stick for the rest of
+    // that study day, on exactly the words a bad sitting had just flagged. A
+    // bring-back now stamps the study day it happened on, and both this and
+    // rate()'s live check stand down for that one day; tomorrow's FLAG_AUTO
+    // Agains flag the word again as they should.
+    const dk=today();
+    const bad=againTodayCounts(s.log, dk);
     for(const id in bad){
-      if(bad[id]>=FLAG_AUTO && s.cards[id] && !s.cards[id].susp) s.cards[id].susp=true;
+      if(bad[id]>=FLAG_AUTO && s.cards[id] && !s.cards[id].susp && s.cards[id].unflagDay!==dk) s.cards[id].susp=true;
     }
   } finally { ROLL_OVR=null; }
   return s;
@@ -1504,7 +1547,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.07.2';
+const BUILD='2026.08.07.4';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -1544,8 +1587,16 @@ function buildQueue(dir){
     // A review card held on a short step by the drill layer is not in 'L' or 'X',
     // but it is still a within-session card. Both kinds get the learn-ahead, or a
     // day can end with cards pending that the queue refuses to serve.
+    // What must NOT get the learn-ahead is an ordinary review card that merely
+    // happens to be scheduled for the next boundary: in the last AHEAD minutes
+    // of a study day that is the whole of the next day's review load, and the
+    // queue showed all of it as "learning" and began serving it early -- then
+    // rescheduled it from today's day key, walking every interval one day
+    // earlier for each late-night session. A card's own last scheduled gap
+    // tells the two apart: minutes means a genuine short step, a day or more
+    // means it was scheduled for another day and can wait for it.
     if(cs.due<=now){ ((cs.st==='L'||cs.st==='X')?learn:due).push(c.id); }
-    else if(cs.due<=now+AHEAD) learn.push(c.id);
+    else if(cs.due<=now+AHEAD && cs.last!=null && cs.due-cs.last<DAY) learn.push(c.id);
   }
   due=jitteredDueOrder(due);
   learn.sort((a,b)=>peek(a).due-peek(b).due);
@@ -1559,6 +1610,72 @@ let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by
 let calY=null, calM=null;   // calendar fold's own state -- not persisted, not S.dir-linked
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all';   // browse screen's own state
 let drillDeck=[], drillPos=0, drillOpts=null, drillPicked=null, drillRight=0, drillSeen=0;   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags
+
+// ---- study-session timer ----
+// Wall-clock time actually spent in the study screen, distinct from thinkMs
+// (shownAt to revealAt, see reveal()): thinkMs only covers looking at the
+// word and deciding you know it, not the follow-on pause reading the interval
+// preview and choosing Again/Good/Easy, which is real study time too. Two
+// numbers come out of the same clock: sessionMs (this sitting, shown live on
+// the study screen, reset to zero each time show() brings scStudy on from
+// somewhere else) and S.days[k].studyMs (every sitting today, summed,
+// persisted, read by renderHome()). studyTickStart is the wall-clock start of
+// whichever segment is currently running, or null while paused -- paused
+// whenever the tab is hidden (mirrors cardDirty's own visibilitychange hook
+// just below) or scStudy is not the screen on screen, so backgrounded time
+// and time spent elsewhere in the app is never counted as study time.
+let studyTickStart=null, studyTimerIv=null, sessionMs=0;
+function creditStudyMs(dk,ms){
+  if(ms<=0) return;
+  const rec=S.days[dk]||(S.days[dk]={n:0,intro:0,ok:0,tot:0,words:0});
+  rec.studyMs=(rec.studyMs||0)+ms;
+}
+// splits at the rollover boundary so a session straddling the study day's
+// own midnight credits each day correctly instead of dumping the whole
+// segment onto whichever day the flush happened to land on
+function flushStudyTime(now){
+  if(studyTickStart==null) return 0;
+  now=(now!=null)?now:Date.now();
+  const elapsed=Math.max(now-studyTickStart,0);
+  let start=studyTickStart;
+  while(dayKey(start)<dayKey(now)){
+    const boundary=dayStart(dayKey(start)+1);
+    creditStudyMs(dayKey(start),boundary-start);
+    start=boundary;
+  }
+  creditStudyMs(dayKey(start),now-start);
+  studyTickStart=now;
+  return elapsed;
+}
+function fmtStopwatch(ms){
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60;
+  return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(ss).padStart(2,'0');
+}
+function tickStudyTimer(){
+  const el=$('studyTimer');
+  if(el) el.textContent=fmtStopwatch(sessionMs+(studyTickStart!=null?Date.now()-studyTickStart:0));
+}
+// fresh=true is "the user just walked into the study screen" (resets the
+// on-screen session clock to zero); fresh=false is "the tab came back to the
+// foreground and scStudy was already the screen showing" (same sitting,
+// keep counting from where it left off).
+function startStudyTimer(fresh){
+  if(fresh) sessionMs=0;
+  if(studyTickStart==null){
+    studyTickStart=Date.now();
+    clearInterval(studyTimerIv);
+    studyTimerIv=setInterval(tickStudyTimer,1000);
+  }
+  tickStudyTimer();
+}
+function pauseStudyTimer(){
+  if(studyTickStart==null) return;
+  sessionMs+=flushStudyTime();
+  studyTickStart=null;
+  clearInterval(studyTimerIv); studyTimerIv=null;
+  tickStudyTimer();
+  save();
+}
 
 function refresh(){ Q=buildQueue(S.dir); }
 
@@ -1716,7 +1833,10 @@ if(typeof window!=='undefined') window.addEventListener('resize', applyLayout);
 // rule has no effect on a JS-driven .animate() call.
 const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-reduced-motion: reduce)'):null;
 const show=name=>{
+  const wasStudy=$('scStudy').classList.contains('on');
   ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill'].forEach(s=>$(s).classList.toggle('on',s===name));
+  if(name==='scStudy'){ if(!wasStudy) startStudyTimer(true); }
+  else if(wasStudy) pauseStudyTimer();
   // Home/Settings both call balanceColumns() at the end of their own
   // render*(), but every "back to home"/"into settings" handler in this
   // file calls render*() *before* show() reveals the screen -- a hidden
@@ -1977,7 +2097,8 @@ function rate(pressed){
   // qualifying press happens -- normalise()'s migration only catches this
   // defensively, on the next load, for a state that reached it without the
   // live check having fired (see normalise()).
-  if(r===AGAIN&&!S.cards[current].susp&&againTodayFor(current,S.log,today())>=FLAG_AUTO){
+  if(r===AGAIN&&!S.cards[current].susp&&S.cards[current].unflagDay!==today()&&
+     againTodayFor(current,S.log,today())>=FLAG_AUTO){
     S.cards[current].susp=true;
     toast('Set aside automatically — "Again" '+FLAG_AUTO+' times today',3200);
   }
@@ -2099,6 +2220,19 @@ function againTodayFor(id,log,dk){
     if(e[0]===id&&e[1]===AGAIN&&dayKey(e[2])===dk) n++;
   }
   return n;
+}
+// The single way susp is ever changed by hand: the study screen's flag, the
+// struggling list's toggle, the drill's "bring back", and Settings'
+// bring-back-everything all route through here. Bringing a word back stamps
+// the study day it happened on, so that neither normalise()'s defensive check
+// nor rate()'s live one can undo the decision straight afterwards off the same
+// day's log (see normalise()). Setting a word aside clears the stamp again, so
+// a later bring-back on the same day is still honoured.
+function setAside(id,on,now){
+  const cs=cardState(id);
+  cs.susp=!!on;
+  cs.unflagDay = on ? null : dayKey(now!=null?now:Date.now());
+  return cs;
 }
 // Every card in this direction at FLAG_MANUAL+ today's Agains, ranked worst
 // first, unioned with every already-set-aside card regardless of today's
@@ -2407,7 +2541,7 @@ function pickDrillChoice(i){
 // flag everywhere else; the drill only ever clears susp, never sets it
 function bringBackFromDrill(){
   const id=drillDeck[drillPos]; if(id==null) return;
-  cardState(id).susp=false; save();
+  setAside(id,false); save();
   toast('Brought back to normal review',1400);
 }
 function nextDrillCard(){ drillPos++; renderDrill(); }
@@ -2506,7 +2640,10 @@ function renderHome(){
   $('startBtn').textContent=n?('Study '+n+' word'+(n===1?'':'s')):'Nothing due';
   $('startBtn').disabled=!n;
   const d=today(), rec=S.days[d]||{n:0};
-  $('homeSub').textContent=rec.n?(rec.n+' rated today'):'Nothing rated today yet';
+  const studiedToday=(rec.studyMs||0)+(studyTickStart!=null?Date.now()-studyTickStart:0);
+  $('homeSub').textContent=rec.n
+    ? (rec.n+' rated today'+(studiedToday>0?' · '+fmtStopwatch(studiedToday)+' studied':''))
+    : 'Nothing rated today yet';
 
   // study-day strip, last 35 days
   const strip=$('strip'); strip.innerHTML='';
@@ -3095,6 +3232,15 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.07.4',[
+    'Two new figures, both requested: a running clock in the study screen, under the new/learning/due counts, showing how long today\'s sitting has actually taken; and a "rated today · studied" line on the front screen giving the same total for the whole day, every sitting summed. Deliberately real wall-clock time rather than a derived estimate -- the only per-review timing that existed before this was thinkMs (seeing the word to revealing the answer), which never covered the pause between reveal and actually choosing Again/Good/Easy, so any estimate built from it alone was undercounting real time spent by a real margin. The study-screen clock resets to zero each time you walk in fresh, keeps running through a brief backgrounding within the same sitting (a call, a notification), and pauses -- crediting whatever ran -- the instant the tab is hidden or you leave for anywhere else in the app, so time spent elsewhere is never counted as study time. Persisted per study day (S.days[k].studyMs) and split across the rollover boundary if a sitting straddles it, so a session starting before the day rolls over and finishing after credits each day correctly instead of dumping the whole segment on whichever one the flush happened to land on.'
+  ]],
+  ['2026.08.07.3',[
+    'Words could come back for a second go inside the same sitting, and the "learning" count could climb by one with every single word rated, when studying in the run-up to the daily reset. A review card\'s next date is deliberately rounded down onto a day boundary, so that everything scheduled for a day unlocks together at the rollover rather than at whatever o\'clock it happened to be rated -- but the rounding had no floor, so a word earning a one-day gap at 03:45 against a 4am reset was rounded down to 04:00 and came back fifteen minutes later, or one minute later if rated at 03:59. The 20-minute learn-ahead window then handed it straight back. Measured before the fix: a 40-card queue started at 03:42 needed 80 ratings to clear, every card twice. The rounding now steps up to the following boundary whenever rounding down would swallow more than half the gap that was actually earned -- which can only ever affect a one-day gap, and only in the back half of a study day.',
+    'In the last 20 minutes before the daily reset, the whole of the next day\'s review load was being counted as "learning" and served early -- and each word served that way was then rescheduled from the old day, walking its interval a day earlier every time a late-night session happened. The learn-ahead window now only reaches words genuinely sitting on a minutes-long step, not ones simply scheduled for the next day.',
+    'Changing "A study day begins at" still moved every review card\'s date, one load later than before. 2026.08.07.0 stopped the setting taking effect retroactively, but a separate snap in the load path -- described in the code as a one-time migration, in fact re-running on every load, every gist pull and every file restore, always under whatever hour was current -- re-bucketed every review card as soon as the deferred change committed and was saved: measured at 22 hours earlier per card for a 4am to 6am move. That snap has been removed; it had had nothing left to migrate for over a week, and it was also quietly wrecking any word being held on a 10-minute drill step.',
+    'Bringing a word back after it was set aside automatically did not survive a reload. The check that sets a word aside after eight "Again" presses in one day reads the review log, which never forgets, so it re-flagged the word on the next load however deliberately it had been brought back -- which meant the flag, the struggling list, the drill\'s "bring back" and Settings\' "bring back everything" were all impossible to make stick for the rest of that day, on exactly the words a bad sitting had just flagged. A bring-back now holds for the rest of that study day; the next day\'s eight Agains flag the word again as before.'
+  ]],
   ['2026.08.07.2',[
     '.1 (below), shipped minutes earlier the same day, fixed the truncated-gist-content problem but introduced a second, narrower bug in the same function: the fallback fetch to raw_url carried an Authorization header "to be safe", which doesn\'t need one (a secret gist\'s raw content is unlisted, not access-controlled) and turned it into a non-simple cross-origin request -- which the raw-content host doesn\'t answer a CORS preflight for, so the browser blocked the request before it went out, surfacing as an opaque "Load failed"/"Failed to fetch" with no HTTP status attached. Caught because that specific failure mode -- a real cross-origin request actually being sent and rejected by the browser itself -- can only show up against the real endpoints; a same-session test using a stand-in fetch() had verified the fallback logic\'s branching correctly but, standing in for the network entirely, could never have exercised CORS either way. Fixed by dropping that header; confirmed this time with real, unmocked requests against the live gist.'
   ]],
@@ -3320,8 +3466,7 @@ tapZone($('bEasy'), ()=>rate(EASY));
 // otherwise also fire (and reveal the card) when a bubbled click reaches it
 $('flagBtn').addEventListener('click',e=>{
   e.preventDefault(); e.stopPropagation();
-  const cs=cardState(current);
-  cs.susp=!cs.susp;
+  const cs=setAside(current,!cardState(current).susp);
   save();
   renderLeech();
   toast(cs.susp?'Set aside':'Brought back',1400);
@@ -3381,8 +3526,7 @@ $('browseResults').addEventListener('click',e=>{
   }
 });
 function toggleFlagFromList(id){
-  const cs=cardState(id);
-  cs.susp=!cs.susp;
+  const cs=setAside(id,!cardState(id).susp);
   save();
   renderStruggling();
   toast(cs.susp?'Set aside':'Brought back',1400);
@@ -3413,7 +3557,7 @@ $('impFile').addEventListener('change',e=>{ if(e.target.files[0]) doImport(e.tar
 tapZone($('pushBtn'),()=>pushGist(false));
 tapZone($('pullBtn'),pullGist);
 tapZone($('unsuspBtn'),()=>{
-  let n=0; for(const k in S.cards){ if(S.cards[k].susp){S.cards[k].susp=false;n++;} }
+  let n=0; for(const k in S.cards){ if(S.cards[k].susp){setAside(k,false);n++;} }
   save(); renderSet(); toast(n?(n+' brought back'):'Nothing was set aside');
 });
 // The old version called doExport() and erased 700ms later regardless of
@@ -3508,9 +3652,13 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden) cardDirty=true;
-  if(!document.hidden&&$('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
+  if(document.hidden){ cardDirty=true; pauseStudyTimer(); }
+  else{
+    if($('scStudy').classList.contains('on')) startStudyTimer(false);   // same sitting, not a new one
+    if($('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
+  }
 });
+window.addEventListener('pagehide',()=>pauseStudyTimer());   // safety net for a close/reload that skips visibilitychange
 
 load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome'); offerGistConflict(); syncOnLaunch();
   // a second pass shortly after boot: re-reads the media query in case the
