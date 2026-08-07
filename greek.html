@@ -904,7 +904,10 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh">Everything scheduled for a day becomes available at this hour, together,
           however late in the previous day you earned it. A late-night session before this hour
           still counts as the previous day, which is why 4am is the usual choice. Changing it
-          re-labels the day records, so today's counters may look odd for one day.</div>
+          never rewrites anything already scheduled — it takes effect from the <em>next</em> time
+          today's current hour comes around, not immediately, so nothing already due (or not)
+          changes because of the switch itself.</div>
+        <div class="fh" id="fRollPending" hidden></div>
       </div>
       <div class="field">
         <label for="fGate">Unlock the reverse direction after</label>
@@ -925,7 +928,12 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <option value="1">Only Easy clears it — Good repeats in 10 minutes</option>
           <option value="0">Good is enough</option>
         </select>
-        <div class="fh">Applies while a word is still being drilled, not to mature reviews. Good and Hard bounce it 10 minutes; after 3 same-day bounces without an Easy, it clears anyway rather than repeating forever.</div>
+        <div class="fh">Applies while a word is still being drilled, not to mature reviews. Good and Hard bounce it 10 minutes; after enough same-day bounces without an Easy (set below), it clears anyway rather than repeating forever.</div>
+      </div>
+      <div class="field">
+        <label for="fDrillCap">Same-day bounces before it clears anyway — <b id="fDrillCapVal">3</b></label>
+        <input type="range" id="fDrillCap" min="3" max="10" step="1">
+        <div class="fh">Only matters when "Only Easy clears it" is selected above. Lower means a word you keep answering Good (never Easy) gets out of the drill sooner; higher drills it harder before letting it through.</div>
       </div>
       <div class="field">
         <label for="fDrill">Consecutive good days before release</label>
@@ -1037,16 +1045,53 @@ const P=[0.212,1.2931,2.3065,8.2956,6.4133,0.8334,3.0194,0.001,1.8722,0.1666,0.7
 const DECAY=-P[20], FACTOR=Math.pow(0.9,1/DECAY)-1;
 const MIN=60000, HOUR=3600000, DAY=86400000;
 let ROLL_OVR=null;      // set while normalise() walks a state that carries its own rollover
-const ROLL_H=()=>(ROLL_OVR!=null)?ROLL_OVR:(S&&S.settings&&S.settings.rollover!=null)?S.settings.rollover:4;
-const dayKey=ts=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-ROLL_H()*HOUR)/DAY);
+// Pure: does a pending "study day begins at" change take effect by `now`?
+// Never earlier than the boundary that was already coming under the OLD
+// rule -- see commitPendingRollover()'s comment for why that matters.
+function resolvedRollover(settings,now){
+  const cur=(settings&&settings.rollover!=null)?settings.rollover:4;
+  if(!settings||settings.rolloverPending==null||settings.rolloverPendingFrom==null) return cur;
+  return now>=settings.rolloverPendingFrom ? settings.rolloverPending : cur;
+}
+// Impure: promotes S.settings.rollover to a pending value once resolvedRollover()
+// says it has taken effect, so every other reader of S.settings.rollover (the
+// Settings dropdown, normalise()'s legacy migration, exports) sees one already-
+// resolved value instead of each needing to know "pending" exists at all.
+//
+// Why deferred rather than instant: changing this setting used to write the
+// new hour straight into S.settings.rollover, and every rollover-dependent
+// read (dayKey/dayStart, hence every review card's due date and every day-keyed
+// stat) switched over immediately -- including for moments *already in the
+// past* relative to the new rule. Raising the hour (e.g. 4am -> 6am) could
+// retroactively decide "today" hadn't started yet and dump up to ~22 hours of
+// not-actually-due cards into "due right now" (see HANDOFF.md's rollover-change
+// writeup). Deferring the switch to the next boundary the OLD rule was already
+// going to hit means nothing already scheduled is ever reinterpreted: the active
+// rule for any moment that's already happened never changes after the fact.
+function commitPendingRollover(now){
+  now=(now!=null)?now:Date.now();
+  const st=S&&S.settings;
+  if(!st||st.rolloverPending==null||st.rolloverPendingFrom==null) return;
+  if(now>=st.rolloverPendingFrom){ st.rollover=st.rolloverPending; st.rolloverPending=null; st.rolloverPendingFrom=null; }
+}
+const ROLL_H=()=>{
+  if(ROLL_OVR!=null) return ROLL_OVR;
+  if(S&&S.settings) commitPendingRollover();
+  return (S&&S.settings&&S.settings.rollover!=null)?S.settings.rollover:4;
+};
+const dayKey=(ts,roll)=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-(roll!=null?roll:ROLL_H())*HOUR)/DAY);
 /* The timestamp at which study-day k begins. Two passes settle the timezone
-   offset, which matters only where the rollover straddles a DST change. */
-function dayStart(k){
-  const off=ROLL_H()*HOUR;
+   offset, which matters only where the rollover straddles a DST change.
+   `roll` overrides the active rollover hour for this call only -- used to
+   compute a pending change's own effective-from boundary without touching
+   ROLL_OVR (see the fRoll change handler). */
+function dayStart(k,roll){
+  const off=(roll!=null?roll:ROLL_H())*HOUR;
   let t=k*DAY+off;
   for(let i=0;i<3;i++) t=k*DAY+off+new Date(t).getTimezoneOffset()*60000;
   return t;
 }
+const rollLabel=h=>h===0?'midnight':h+'am';
 // the study-day key for a plain Gregorian calendar date -- local noon is
 // safely inside the day regardless of rollover hour, so this reuses dayKey's
 // own rollover-aware bucketing rather than reimplementing it for the calendar
@@ -1066,7 +1111,10 @@ function monthMatrix(y,m){
 }
 const LEARN_STEPS=[1*MIN,10*MIN], RELEARN_STEPS=[10*MIN];
 // a learning/relearning word gets this many same-day tries without Easy
-// before the drill layer (requireEasy) lets it clear anyway -- see schedule()
+// before the drill layer (requireEasy) lets it clear anyway -- see schedule().
+// Settings' own slider (fDrillCap, S.settings.drillCap) overrides this per
+// state; DRILL_CAP is only the fallback for a state built without going
+// through normalise()'s defaults merge (e.g. a bare object in a test).
 const DRILL_CAP=3;
 const S_MIN=0.001;
 const AGAIN=1, HARD=2, GOOD=3, EASY=4;
@@ -1167,9 +1215,10 @@ function schedule(card,rating,now,st){
   if(rating===AGAIN){ c.streak=0; }
   else if(c.lastDay!==dk){ c.streak=(c.streak|0)+1; }
   c.lastDay=dk;
-  // A learning/relearning word gets DRILL_CAP same-day tries without Easy
-  // before it clears anyway, at whatever stability *this* rating actually
-  // earned -- never an Easy's (Good's own initial/short-term stability stays
+  // A learning/relearning word gets drillCap (Settings' slider, default 3)
+  // same-day tries without Easy before it clears anyway, at whatever
+  // stability *this* rating actually earned -- never an Easy's (Good's own
+  // initial/short-term stability stays
   // well below Easy's, however many same-day reps accumulate; see nextS()).
   // Without this, a word only ever rated Good (never Easy) loops here
   // indefinitely. Tracked on its own loops/loopDay pair rather than reusing
@@ -1178,7 +1227,8 @@ function schedule(card,rating,now,st){
   // never see its own prior count and would reset to zero every single time.
   const stuck=(card.st==='L'||card.st==='X');
   const loopsToday=(stuck && card.loopDay===dk)?(card.loops|0):0;
-  const capOut=stuck && (rating===GOOD||rating===HARD) && loopsToday+1>=DRILL_CAP;
+  const drillCap=st.drillCap>0?st.drillCap:DRILL_CAP;
+  const capOut=stuck && (rating===GOOD||rating===HARD) && loopsToday+1>=drillCap;
   if(st.requireEasy && inDrill && (rating===GOOD||rating===HARD) && !capOut){
     ivl=10*MIN;                                   // Good is not enough to clear the day
     c.st=card.st; c.step=card.step; c.streak=card.streak|0; c.lastDay=card.lastDay;
@@ -1242,7 +1292,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false},
+  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
@@ -1454,7 +1504,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.05.1';
+const BUILD='2026.08.07.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
@@ -2837,6 +2887,17 @@ function adopt(inc){
   // pre-restore card back and truncate the restored log
   undoStack=[]; current=null; lastRated=null;
   save();
+  // S.theme/S.palette and S.settings.studyStats/studyHints/studyMotion only
+  // ever take visual effect via applyTheme()/applyLayout() -- normally run
+  // once at boot and again from each setting's own change listener. adopt()
+  // swaps the whole S object (gist pull/restore/conflict-resolution/import),
+  // so a value can change here with no change listener ever firing for it.
+  // Without this, the new value is correctly "remembered" (every screen that
+  // reads S.settings directly, e.g. Settings' own dropdowns, shows it right)
+  // but its on-screen effect stays stuck at whatever the old value last
+  // applied -- until something else happens to call applyLayout() again,
+  // like toggling the same setting off and back on.
+  applyTheme(); applyLayout();
 }
 async function fetchGist(quiet){
   const {gistId,gistTok}=S.settings;
@@ -2900,8 +2961,16 @@ async function syncOnLaunch(){
   if(decision==='conflict'){
     offerConflict(inc,base);
   } else if(decision==='take-remote'){
+    // take-remote swaps the whole local state with zero confirmation (unlike
+    // the genuine-conflict branch above, which always asks first) -- naming
+    // what actually changed here is the only visibility this path gets, so a
+    // due count that jumps for reasons that have nothing to do with anything
+    // just done on this device reads as "what happened" instead of "sync
+    // error?" (reported concern, see HANDOFF.md's rollover-change writeup).
+    const dueBefore=buildQueue(S.dir).due.length;
     adopt(inc); renderHome();
-    toast('Synced — '+S.log.length+' reviews from '+(inc.lastDevice||'your other device'),2600);
+    const dueNote=Q.due.length!==dueBefore?(' — due went '+dueBefore+' → '+Q.due.length):'';
+    toast('Synced — '+S.log.length+' reviews from '+(inc.lastDevice||'your other device')+dueNote,3200);
   } else if(decision==='push-local'){
     pushGist(true);                                  // only this device moved; put it back
   }
@@ -2976,7 +3045,7 @@ function renderBg(){
   h+=row('Reviewed today', (rec.n||0)+' ratings, '+(rec.intro||0)+' new');
   const q=(typeof Q!=='undefined'&&Q&&Q.due)?Q:{due:[],learn:[],intro:[]};
   h+=row('Waiting right now', q.due.length+' due, '+q.learn.length+' in steps, '+q.intro.length+' new');
-  h+=row('Day rolls over at', ROLL_H()===0?'midnight':ROLL_H()+'am');
+  h+=row('Day rolls over at', rollLabel(ROLL_H())+(S.settings.rolloverPending!=null?' (switching to '+rollLabel(S.settings.rolloverPending)+' '+new Date(S.settings.rolloverPendingFrom).toLocaleString()+')':''));
   $('bgLive').innerHTML=h;
 
   // offer a tap when the automatic download cannot be trusted
@@ -3006,6 +3075,14 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.07.0',[
+    'Changing "A study day begins at" (Settings) used to take effect immediately -- including retroactively, for cards already scheduled under the old hour. Moving the hour later in the day (say 4am to 6am) could, on the very next load, throw a chunk of tomorrow\'s (or even later today\'s) reviews straight into "due right now", since the day-boundary math had no way left to tell "today" from "yesterday" once the rule under it changed mid-day. The setting now takes effect from the next time the old hour would have rolled the day over anyway, not before -- nothing already scheduled is ever reinterpreted, so picking a new hour can never make a card look due that it wasn\'t a moment before. Settings shows when a pending change actually kicks in, and the schedule keeps running on the old hour until then.',
+    'The same-day Good/Hard drill loop (Settings\' "Only Easy clears it") used to clear a word after exactly 3 same-day tries without an Easy, hardcoded. A new slider next to it, 3 through 10, makes that count adjustable -- lower drills a stubborn word less before letting it through, higher drills it harder. Leaving it at the default of 3 behaves exactly as before.',
+    'An automatic sync (another device\'s copy taken on launch, no prompt shown) now says so if it changed how many reviews are waiting -- "due went 12 → 91" alongside the usual "Synced -- N reviews from [device]" -- instead of leaving a changed count to look unexplained.'
+  ]],
+  ['2026.08.06.0',[
+    'A setting synced in from another device, pulled from a gist backup, or restored from a saved file could look right without acting right: Settings would correctly show it switched on, but nothing on screen changed to match -- keyboard hints on the study buttons, review history on the card, even light/dark theme and the colour palette, all stayed stuck at whatever this device had shown before, until something else happened to force a redraw. Toggling that very same setting off and back on was the reliable way to "fix" it, since that\'s the one place that redraw already ran from -- which is what made it look like the setting itself was misremembered, when it never actually was. All four of those paths (a launch sync pulling a newer copy, resolving a sync conflict, restoring a backup file, and a manual gist pull) share one function that swaps in the incoming state; it just never told the screen to redraw once the swap was done. Fixed there once, for all four at once, rather than at each call site.'
+  ]],
   ['2026.08.05.1',[
     'The word list (Browse) now answers "how long has this actually taken me" for any word you\'ve met at least once: tap to reveal it, same as always, and underneath the answer sits how many reviews it\'s had and how long ago the first one was, plus a rough estimate of the active thinking time behind them -- summed from how long you paused before revealing the answer on each of those reviews. A reading is left out of that sum (and the line says how many were) if it looked unreliable at the time -- you\'d looked away, or paused suspiciously long -- the same guard reveal() already applies before a reading is even allowed to nudge a grade, tightened further here since summing dozens of readings is far less forgiving of an occasional bad one than adjusting a single grade is. Nothing is computed for a word until you actually tap it open, so a list of several thousand words costs nothing extra just for existing. Requested days ago and deliberately parked until now -- see the design note in HANDOFF.md for why it took two attempts to get the "already touched today" logic right once .05.0\'s drill-loop cap entered the picture.'
   ]],
@@ -3168,7 +3245,15 @@ function renderSet(){
   $('fStudyStats').value=s.studyStats?'1':'0';
   $('fStudyHints').value=s.studyHints?'1':'0';
   $('fStudyMotion').value=s.studyMotion?'1':'0';
-  $('fRoll').value=String(S.settings.rollover!=null?S.settings.rollover:4);
+  commitPendingRollover();
+  $('fRoll').value=String(s.rolloverPending!=null?s.rolloverPending:(s.rollover!=null?s.rollover:4));
+  if(s.rolloverPending!=null){
+    $('fRollPending').hidden=false;
+    $('fRollPending').textContent='Takes effect '+new Date(s.rolloverPendingFrom).toLocaleString()+
+      ' — until then, today still runs on the '+rollLabel(s.rollover)+' schedule.';
+  } else $('fRollPending').hidden=true;
+  $('fDrillCap').value=s.drillCap>0?s.drillCap:3;
+  $('fDrillCapVal').textContent=($('fDrillCap').value);
   $('fRot').value=S.rotate||'off';
   $('palNote').innerHTML='<span class="swatch" style="background:var(--coral)"></span>'+
     PALETTES[S.palette]+', '+((S.theme==='auto')?'following the system':S.theme)+
@@ -3346,13 +3431,24 @@ document.querySelectorAll('#scHome .homeCols details.fold,#scSet .setCols detail
 });
 $('fPal').addEventListener('change',e=>{S.palette=e.target.value;if(S.rotate==='daily')S.rotDay=today();save();applyTheme();renderSet();renderHome();});
 $('fRot').addEventListener('change',e=>{S.rotate=e.target.value;S.rotDay=today();S.rotSeen=[S.palette];save();renderSet();});
-$('fRoll').addEventListener('change',e=>{S.settings.rollover=e.target.value|0;save();renderHome();renderSet();});
+// Deferred, not instant -- see commitPendingRollover()'s comment. Re-picking
+// the value already active (including cancelling back out of a still-pending
+// change) clears any pending switch rather than scheduling a same-value no-op.
+$('fRoll').addEventListener('change',e=>{
+  commitPendingRollover();
+  const newRoll=e.target.value|0, oldRoll=S.settings.rollover!=null?S.settings.rollover:4;
+  if(newRoll===oldRoll){ S.settings.rolloverPending=null; S.settings.rolloverPendingFrom=null; }
+  else { S.settings.rolloverPending=newRoll; S.settings.rolloverPendingFrom=dayStart(dayKey(Date.now(),oldRoll)+1,oldRoll); }
+  save();renderHome();renderSet();
+});
 $('surpriseBtn').addEventListener('click',surprise);
 $('bgBackupBtn').addEventListener('click',()=>{doExport(false);renderBg();});
 $('buildTag').addEventListener('click',()=>{renderLog();show('scLog');});
 $('fGate').addEventListener('change',e=>{S.settings.gateDays=Math.max(0,e.target.value|0);save();});
 $('fTiming').addEventListener('change',e=>{S.settings.useTiming=(e.target.value==='1');save();});
 $('fEasy').addEventListener('change',e=>{S.settings.requireEasy=(e.target.value==='1');save();});
+$('fDrillCap').addEventListener('input',e=>{S.settings.drillCap=e.target.value|0;$('fDrillCapVal').textContent=e.target.value;});
+$('fDrillCap').addEventListener('change',()=>save());
 $('fDrill').addEventListener('change',e=>{S.settings.drillDays=Math.min(Math.max(e.target.value|0,0),14);save();});
 $('fRevDay').addEventListener('change',e=>{S.settings.reviewDay=parseInt(e.target.value,10);save();});
 $('fKnown').addEventListener('change',e=>{S.settings.knownDays=Math.max(1,e.target.value|0);save();});

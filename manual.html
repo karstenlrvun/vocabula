@@ -207,11 +207,12 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <tr><td><strong>New words a day</strong></td><td>How many unseen words can start each day.</td></tr>
   <tr><td><strong>Target retention</strong></td><td>How often you want to be right when a word comes up. Higher means shorter gaps and more work. 90% is a sensible default.</td></tr>
   <tr><td><strong>Longest interval</strong></td><td>Nothing will be scheduled further out than this. Lower it to force everything through one more pass before a deadline.</td></tr>
-  <tr><td><strong>A study day begins at</strong></td><td>The hour everything scheduled for a day unlocks, together. Before it, a late-night session still counts as the previous day.</td></tr>
+  <tr><td><strong>A study day begins at</strong></td><td>The hour everything scheduled for a day unlocks, together. Before it, a late-night session still counts as the previous day. Changing it takes effect from the next time the old hour comes around, not instantly — nothing already scheduled is reinterpreted, so switching it never makes anything look due that wasn't a moment before.</td></tr>
   <tr><td><strong>Appearance</strong></td><td>Light, dark, or follow your phone.</td></tr>
   <tr><td><strong>Unlock the reverse direction after</strong></td><td>How long a word must hold in the forward direction before you meet it backwards. 0 removes the gate.</td></tr>
   <tr><td><strong>Let hesitation adjust the grade</strong></td><td>The timing rule from section 3. Off records exactly what you press.</td></tr>
-  <tr><td><strong>Clearing a word for the day</strong></td><td>Whether Good is enough to release a new word, or only Easy is — either way, three same-day tries without an Easy releases it anyway, so a word never just repeats forever.</td></tr>
+  <tr><td><strong>Clearing a word for the day</strong></td><td>Whether Good is enough to release a new word, or only Easy is — either way, enough same-day tries without an Easy releases it anyway (the slider below it sets how many, 3 to 10), so a word never just repeats forever.</td></tr>
+  <tr><td><strong>Same-day bounces before it clears anyway</strong></td><td>Only matters when "Only Easy clears it" is selected above. 3 to 10 — lower gets a word you keep answering Good (never Easy) out of the drill sooner, higher drills it harder first.</td></tr>
   <tr><td><strong>Consecutive good days before release</strong></td><td>Forces a word to a daily rhythm until you've got it right this many days running. Leave at 0 — it is very expensive and works against the spacing that makes the whole thing effective.</td></tr>
   <tr><td><strong>Weekly review day</strong></td><td>Nudges medium-length intervals onto one weekday, by up to three days either way.</td></tr>
   <tr><td><strong>Head start for known words</strong></td><td>How long before a word you ticked in the audit is first tested.</td></tr>
