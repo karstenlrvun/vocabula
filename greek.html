@@ -208,13 +208,33 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 /* ---------- drill (set-aside words, outside FSRS) ---------- */
 .drillArea{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;padding:16px 22px 22px;min-height:0}
 .drillChoices{display:flex;flex-direction:column;gap:10px;width:100%;max-width:420px;margin-top:24px}
-.drillChoice{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--line);
-  background:var(--panel);color:var(--ink);font-size:16px;text-align:center;line-height:1.35}
-.drillChoice:active{filter:brightness(.94)}
-.drillChoice.right{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
-.drillChoice.wrong{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
-.drillChoice.faded{opacity:.5}
 .drillFlagBtn{margin-top:18px}
+/* typed-recall round (2026-08-08, replaced multiple-choice) */
+.drillInput{width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 12px;
+  font-size:16px;background:var(--panel);color:var(--ink);font-family:inherit;text-align:center}
+.drillInput.right{border-color:var(--good-br);color:var(--good)}
+.drillInput.wrong{border-color:var(--again-br);color:var(--again)}
+.drillFeedback{margin-top:12px;font-size:14px;min-height:1.4em}
+.drillFeedback.right{color:var(--good)}
+.drillFeedback.wrong{color:var(--again)}
+/* contrastive match round: prompts (left) vs. shuffled answers (right),
+   tap one from each side to attempt a pair -- see pickContrastTile */
+.drillMatch{display:flex;gap:14px;width:100%}
+.drillMatchCol{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.drillTile{width:100%;padding:12px 10px;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);font-size:14.5px;text-align:center;line-height:1.3}
+.drillTile:active{filter:brightness(.94)}
+.drillTile.sel{border-color:var(--ink);border-width:2px}
+.drillTile.right{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
+.drillTile.wrong{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
+.drillTile:disabled{opacity:.6}
+/* ungraded study list -- Practice/Study-list toggle lives in the bar
+   (#drillViewToggle); a plain always-revealed version of .wordRow */
+.drillListView{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 22px 22px}
+.drillListRow{padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.drillListRow:last-child{border-bottom:none}
+.drillListRow .term{display:block;font-family:var(--serif)}
+.drillListRow .gloss{display:block;margin-top:3px;color:var(--muted);font-size:13.5px;line-height:1.4}
 
 /* ---------- home ---------- */
 .home{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 28px}
@@ -545,6 +565,7 @@ html[data-layout="landscape"] #drillScore{grid-area:score;text-align:left;paddin
 html[data-layout="landscape"] #drillNextRow{grid-area:controls;padding:24px 32px 0}
 html[data-layout="landscape"] #scDrill .revealBtn{height:76px;font-size:19px;border-radius:18px}
 html[data-layout="landscape"] #drillDone{grid-column:1/-1;grid-row:2/-1}
+html[data-layout="landscape"] #drillListView{grid-column:1/-1;grid-row:2/-1}
 
 /* home: the existing sections read as a bento grid instead of one long
    scroll. .homeLead is a single new wrapper (added in the markup) around
@@ -773,7 +794,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
     <div class="bar">
       <button class="icon" id="drillBack" aria-label="Back">&#8249;</button>
       <div class="title" id="drillProgress"></div>
-      <div class="icon" style="visibility:hidden">·</div>
+      <button class="icon" id="drillViewToggle" aria-label="Study list">&#9776;</button>
     </div>
     <div class="drillArea" id="drillArea">
       <div class="prompt" id="drillPrompt"></div>
@@ -791,6 +812,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <button class="act primary" id="drillAgainBtn" style="max-width:230px;margin-top:20px">Drill again</button>
       <button class="act" id="drillBackBtn" style="max-width:230px">Back</button>
     </div>
+    <div class="drillListView hidden" id="drillListView"></div>
   </section>
 
   <!-- ============ CHANGELOG ============ -->
@@ -870,9 +892,13 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
     <div class="set">
       <div class="setCols">
       <div class="field">
-        <label for="fNew">New words a day</label>
-        <input type="number" id="fNew" min="0" max="200" step="5" inputmode="numeric">
-        <div class="fh">Caps how many unseen words enter the rotation each day, counted separately for each direction — so working through forward words no longer leaves the reverse direction with nothing. Words carried over from the audit come first.</div>
+        <label for="fNewL">New words a day — <span id="fNewLblL">—</span></label>
+        <input type="number" id="fNewL" min="0" max="400" step="5" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="fNewE">New words a day — <span id="fNewLblE">—</span></label>
+        <input type="number" id="fNewE" min="0" max="400" step="5" inputmode="numeric">
+        <div class="fh">Caps how many unseen words enter the rotation each day, tracked and capped separately per direction — raising one no longer raises the other. Words carried over from the audit come first.</div>
       </div>
       <div class="field">
         <label for="fRet">Target retention — <b id="fRetVal">90%</b></label>
@@ -1313,8 +1339,20 @@ function schedule(card,rating,now,st){
   }
   c.last=now; c.due=now+ivl; c.reps=(c.reps||0)+1;
   // ---- weekly review day: nudge mid-range intervals onto the chosen weekday ----
+  // The weekday is measured on the study day this card will actually land on
+  // -- dayStart(dayKey(now)+n), the very boundary the snap below rounds to --
+  // not on the raw clock instant now+ivl. The two disagree by a day whenever
+  // the clock time and the study day do: every rating between local midnight
+  // and the rollover hour (02:00 still belongs to the previous study day, §4),
+  // and any evening rating whose raw now+ivl spills past midnight. Taking the
+  // weekday off the clock put every nudged card one day before the weekday
+  // that was chosen -- silently, since the card still looked correctly
+  // scheduled. delta is a whole number of days, so the snap's own
+  // round((c.due-now)/DAY) still comes out as landDays+delta and lands
+  // exactly on this weekday.
   if(st.reviewDay>=0 && ivl>=3*DAY && ivl<=21*DAY){
-    const d0=new Date(c.due); let delta=(st.reviewDay-d0.getDay());
+    const landDays=Math.max(Math.round(ivl/DAY),1);
+    const d0=new Date(dayStart(dayKey(now)+landDays)); let delta=(st.reviewDay-d0.getDay());
     if(delta>3) delta-=7; if(delta<-3) delta+=7;
     if(c.due+delta*DAY>now+2*DAY) c.due+=delta*DAY;
   }
@@ -1389,7 +1427,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off'},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off'},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
@@ -1555,6 +1593,16 @@ function normalise(o){
   const s=Object.assign({},defaults,o);
   s.deck=KEY;
   s.settings=Object.assign({},defaults.settings,o.settings||{});
+  // Pre-split installs stored one shared newPerDay for both directions. Carry
+  // that exact number forward into both new per-direction fields rather than
+  // letting the new defaults quietly replace whatever pace was configured --
+  // a saved settings object from after the split already defines both fields
+  // itself, via the Object.assign above, so this only ever fires once per
+  // device, on the first load after the split ships.
+  if(o.settings&&o.settings.newPerDay!=null&&o.settings.newPerDayL==null&&o.settings.newPerDayE==null){
+    s.settings.newPerDayL=o.settings.newPerDay; s.settings.newPerDayE=o.settings.newPerDay;
+  }
+  delete s.settings.newPerDay;
   // applyTheme() already falls back for an unknown palette, but it does that
   // without writing the fallback down, so a junk value survives in S and
   // renderSet() prints it back out. Settled here instead, once, where every
@@ -1676,7 +1724,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.08.0';
+const BUILD='2026.08.08.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -1704,6 +1752,16 @@ function jitteredDueOrder(ids){
             .sort((a,b)=>a.key-b.key)
             .map(x=>x.id);
 }
+// Today's new-word allowance for one direction: S.settings.newPerDayL/E are
+// the sustained per-direction targets; S.days[d].capL/capE are an optional
+// today-only override (the home screen's +/-/+10 buttons), independent per
+// direction so boosting one side doesn't quietly boost the other's allowance
+// too. Falls back to the sustained target when no override exists for today,
+// the same fallback shape the pre-split single S.settings.newPerDay used.
+function dailyCap(d,dir){
+  const rec=S.days[d], ov=rec&&(dir==='L'?rec.capL:rec.capE);
+  return ov!=null?ov:S.settings['newPerDay'+dir];
+}
 function buildQueue(dir){
   const now=Date.now(), d=today();
   let learn=[], due=[], fresh=[], seeded=[];
@@ -1713,7 +1771,7 @@ function buildQueue(dir){
   const rd=S.days[d]||{};
   const introducedToday=(rd['intro'+dir]!=null)?rd['intro'+dir]
                        :(dir==='L'?(rd.intro||0):0);
-  const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
+  const capToday=dailyCap(d,dir);
   for(const c of CARDS){
     if(c.dir!==dir) continue;
     const cs=peek(c.id);
@@ -1744,7 +1802,9 @@ let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], don
 let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by renderCard()'s recap card, cleared by undo() and by anything that wipes undoStack alongside it
 let calY=null, calM=null;   // calendar fold's own state -- not persisted, not S.dir-linked
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all';   // browse screen's own state
-let drillDeck=[], drillPos=0, drillOpts=null, drillPicked=null, drillRight=0, drillSeen=0;   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags
+let drillDeck=[], drillGroups={}, drillPos=0, drillRight=0, drillSeen=0, drillView='practice';   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags. drillGroups: id -> its similarity block (populated by buildDrillDeck)
+let drillSubmitted=false;   // typed round: has this round already been graded
+let drillContrastIds=null, drillContrastAnswerOrder=null, drillContrastSel=null, drillContrastMatched=null, drillContrastMissed=null;   // contrastive round's own state, rebuilt each time renderContrastRound runs
 
 // ---- study-session timer ----
 // Wall-clock time actually spent in the study screen, distinct from thinkMs
@@ -2429,9 +2489,12 @@ function undo(){
   S.cards[u.id]=u.before;
   (u.buried||[]).forEach(([sid,v])=>{ if(S.cards[sid]) S.cards[sid].buried=v; });
   // restore into the day the rating belonged to, not whichever day it is now
-  { const d0=(u.dk!=null)?u.dk:today(), keep=(S.days[d0]&&S.days[d0].cap!=null)?S.days[d0].cap:null;
+  { const d0=(u.dk!=null)?u.dk:today();
+    const keepL=(S.days[d0]&&S.days[d0].capL!=null)?S.days[d0].capL:null;
+    const keepE=(S.days[d0]&&S.days[d0].capE!=null)?S.days[d0].capE:null;
     S.days[d0]=(u.day&&u.day.n!=null)?u.day:{n:0,intro:0,ok:0,tot:0,words:0};
-    if(keep!=null) S.days[d0].cap=keep; }              // the day's allowance is a setting, not a rating
+    if(keepL!=null) S.days[d0].capL=keepL;
+    if(keepE!=null) S.days[d0].capE=keepE; }            // the day's allowance is a setting, not a rating
   S.log.length=u.logLen;
   S.sinceExport=Math.max((S.sinceExport||1)-1,0);
   lastRated=null; // the rating this described just got undone -- nothing to recap
@@ -2579,39 +2642,31 @@ function shuffled(arr){
 // plain-text form of a card's correct answer -- same join convention already
 // used for a merged reverse card's alternatives (wordRowHtml, renderCard)
 function answerText(c){ return c.dir==='E' ? c.a.join(', ') : c.a; }
-// up to n wrong options for one multiple-choice round, same direction only (an
-// English-gloss round never offers a Latin/Greek term as a wrong answer or vice
-// versa). Ranked in tiers: a term that actually looks like this one first --
-// the real point of the drill, telling those two apart -- then the rest of the
-// same part, then the rest of the direction, only reaching a later tier if the
-// earlier ones can't fill the round. Never repeats a distractor's text, and
-// never offers the card's own correct answer back to itself.
-function pickDistractors(c,n){
-  const correct=answerText(c).trim().toLowerCase();
-  const seen={}; seen[correct]=true;
-  const out=[];
-  const tiers=[
-    CARDS.filter(o=>o.dir===c.dir&&o.id!==c.id&&looksSimilar(o.q,c.q)),
-    CARDS.filter(o=>o.dir===c.dir&&o.id!==c.id&&o.sec===c.sec),
-    CARDS.filter(o=>o.dir===c.dir&&o.id!==c.id)
-  ];
-  for(const tier of tiers){
-    if(out.length>=n) break;
-    for(const t of shuffled(tier)){
-      if(out.length>=n) break;
-      const txt=answerText(t), k=txt.trim().toLowerCase();
-      if(seen[k]) continue;
-      seen[k]=true; out.push(txt);
-    }
-  }
-  return out;
+// Diacritic-insensitive compare for the drill's typed-answer round: NFD-
+// decomposes then strips every combining mark (U+0300-U+036F). Covers Latin
+// macrons (ridēre -> ridere) and every Greek accent/breathing/iota subscript
+// uniformly, since NFD decomposition puts all of them in that one Unicode
+// block regardless of which base letter they're attached to -- one function
+// for both languages rather than a per-script table. Owner's explicit call
+// (2026-08-08): typed grading tests whether you know the word, not exact
+// accent placement, so this is applied, not optional.
+function stripDiacritics(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function normLenient(s){ return stripDiacritics(norm(s)); }
+// The set of strings that count as a correct typed answer for a card. An
+// E-direction card's own c.a is already an array of alternate Latin/Greek
+// terms (any one alone is correct, same as renderCard/wordRowHtml's own
+// join). An L-direction card's c.a is a single English gloss that may itself
+// list synonyms ("receive, accept") -- typing any one synonym counts, not
+// only the exact full string, matching how a learner actually reads a gloss
+// rather than requiring it verbatim.
+function answerVariants(c){
+  if(c.dir==='E') return c.a.slice();
+  const full=c.a, parts=full.split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+  return [full].concat(parts);
 }
-// one full multiple-choice round for a card -- the correct answer plus up to
-// `wrong` distractors, already shuffled into one order
-function drillRound(c,wrong){
-  const opts=pickDistractors(c,wrong).map(t=>({t,ok:false}));
-  opts.push({t:answerText(c),ok:true});
-  return shuffled(opts);
+function answersMatch(input,c){
+  const got=normLenient(input);
+  return !!got && answerVariants(c).some(v=>normLenient(v)===got);
 }
 // union-find so a chain of pairwise-similar terms groups as one block even
 // without every member looking like every other member directly
@@ -2629,10 +2684,16 @@ function similarityBlocks(ids){
 // the current direction's set-aside words as a drill order: look-alike terms
 // are grouped into adjacent blocks (similarityBlocks/looksSimilar above), but
 // which block comes first and which member of a block comes first are both
-// reshuffled fresh every time the drill starts
+// reshuffled fresh every time the drill starts. drillGroups (module state,
+// below) is populated from this exact same grouping call, not a second one --
+// so the contrastive round's lookup can never disagree with the deck's own
+// adjacency about which cards belong to which block.
 function buildDrillDeck(dir){
   const ids=CARDS.filter(c=>c.dir===dir&&S.cards[c.id]&&S.cards[c.id].susp).map(c=>c.id);
-  return shuffled(similarityBlocks(ids)).map(shuffled).flat();
+  const blocks=shuffled(similarityBlocks(ids)).map(shuffled);
+  drillGroups={};
+  blocks.forEach(b=>{ if(b.length>1) b.forEach(id=>drillGroups[id]=b); });
+  return blocks.flat();
 }
 function dirStats(dir){
   const ap=activeParts(); const all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
@@ -2861,11 +2922,20 @@ function wordRowHtml(c){
   // browseResults click handler, which fills it in on first reveal rather
   // than every row paying for a log scan whether or not it's ever opened.
   const learn=(cs&&cs.reps>0)?'<div class="wrLearn"></div>':'';
+  // Same .flagBtn/.on language as the study screen's own flag button and the
+  // Struggling-words list (flagRow) -- reused rather than inventing a second
+  // flagged-state visual. Sits inside .wrTop so it shares the row's own tap
+  // target without needing its own layout; the click handler below guards it
+  // with the same closest('.flagBtn')+stopPropagation pattern already proven
+  // on the Struggling-words list, so a flag tap never also toggles reveal.
+  const flagged=!!(cs&&cs.susp);
   // c.id and st are both built by this file, never read back from stored
   // state -- escaped anyway because this is the one place a value lands
   // inside an attribute, which is precisely the case escHtml() now covers.
   return '<div class="wordRow" data-id="'+escHtml(c.id)+'"><div class="wrTop"><i class="stDot s-'+st+'"></i>'+
-    '<span class="term">'+escHtml(c.q)+'</span></div><div class="gloss">'+escHtml(gloss)+'</div>'+learn+'</div>';
+    '<span class="term">'+escHtml(c.q)+'</span>'+
+    '<button class="flagBtn'+(flagged?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(flagged?'Bring back to normal review':'Set aside')+'">&#9873;</button></div>'+
+    '<div class="gloss">'+escHtml(gloss)+'</div>'+learn+'</div>';
 }
 function renderBrowsePartChips(){
   const box=$('browseParts');
@@ -2916,47 +2986,157 @@ function renderBrowse(){
 }
 /* ======================= drill screen ======================= */
 function startDrill(){
-  drillDeck=buildDrillDeck(S.dir);
-  drillPos=0; drillRight=0; drillSeen=0;
+  drillDeck=buildDrillDeck(S.dir);          // also (re)populates drillGroups
+  drillPos=0; drillRight=0; drillSeen=0; drillView='practice';
   renderDrill();
 }
+// Multiple-choice removed 2026-08-08 (owner: "genuinely not very helpful",
+// too easy to guess) in favour of two round types the pure per-card position
+// switches between, plus an ungraded list view alongside both:
+//   - typed recall (renderTypedRound) for a card with no lookalike currently
+//     also set aside -- production, not recognition, is the whole point.
+//   - a contrastive match round (renderContrastRound) when buildDrillDeck's
+//     own similarityBlocks grouping put two or more lookalikes in today's
+//     deck together (drillGroups, populated by buildDrillDeck itself, so it
+//     can never disagree with the deck's own block adjacency). Consumes the
+//     *whole* block in one round -- that adjacency is what makes jumping
+//     drillPos by the block's length in nextDrillCard() safe.
 function renderDrill(){
+  $('drillViewToggle').classList.toggle('on',drillView==='list');
+  if(drillView==='list'){ renderDrillList(); return; }
+  $('drillListView').classList.add('hidden');
   if(drillPos>=drillDeck.length){ renderDrillDone(); return; }
   $('drillArea').classList.remove('hidden'); $('drillDone').classList.add('hidden');
   $('drillProgress').textContent='Word '+(drillPos+1)+' of '+drillDeck.length;
   $('drillScore').textContent = drillSeen ? (drillRight+' of '+drillSeen+' right this round') : '';
-  const c=BY_ID[drillDeck[drillPos]];
+  $('drillNextRow').classList.add('hidden');
+  const id=drillDeck[drillPos], group=drillGroups[id];
+  if(group&&group.length>1) renderContrastRound(group);
+  else renderTypedRound(BY_ID[id]);
+}
+function drillFlagLabel(plural){ return 'Bring '+(plural?'these words':'this word')+' back to normal review'; }
+/* ---- typed recall ---- */
+function renderTypedRound(c){
+  $('drillFlagBtn').textContent=drillFlagLabel(false);
   $('drillPrompt').className='prompt'+(c.dir==='E'?' eng':'');
   $('drillPrompt').style.fontFamily=(c.dir==='E')?'':'var(--serif)';
   $('drillPrompt').textContent=c.q;
-  drillOpts=drillRound(c,3);
-  drillPicked=null;
+  drillSubmitted=false;
   const box=$('drillChoices'); box.innerHTML='';
-  drillOpts.forEach((o,i)=>{
-    const b=document.createElement('button');
-    b.className='drillChoice'; b.textContent=o.t; b.dataset.i=i;
-    box.appendChild(b);
-  });
-  $('drillNextRow').classList.add('hidden');
+  const input=document.createElement('input');
+  input.type='text'; input.id='drillInput'; input.className='drillInput';
+  input.autocapitalize='off'; input.autocorrect='off'; input.spellcheck=false;
+  input.placeholder='Type the answer…';
+  const btn=document.createElement('button');
+  btn.className='act primary'; btn.id='drillCheckBtn'; btn.textContent='Check';
+  const fb=document.createElement('div');
+  fb.className='drillFeedback'; fb.id='drillFeedback';
+  box.appendChild(input); box.appendChild(btn); box.appendChild(fb);
+  input.focus();
 }
-function pickDrillChoice(i){
-  if(drillPicked!=null) return;                // one pick per round
-  drillPicked=i; drillSeen++;
-  if(drillOpts[i].ok) drillRight++;
-  [...$('drillChoices').children].forEach((b,j)=>{
-    b.classList.add(drillOpts[j].ok?'right':(j===i?'wrong':'faded'));
-  });
+function submitTypedRound(){
+  if(drillSubmitted) return;
+  const c=BY_ID[drillDeck[drillPos]], input=$('drillInput');
+  const ok=answersMatch(input.value,c);
+  drillSubmitted=true; drillSeen++;
+  if(ok) drillRight++;
+  input.disabled=true; input.classList.add(ok?'right':'wrong');
+  $('drillCheckBtn').disabled=true;
+  const fb=$('drillFeedback');
+  fb.textContent = ok ? 'Correct!' : ('Answer: '+answerText(c));
+  fb.classList.add(ok?'right':'wrong');
   $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
   $('drillNextRow').classList.remove('hidden');
 }
-// unsuspends the word on screen right now -- same field, same meaning as the
-// flag everywhere else; the drill only ever clears susp, never sets it
+/* ---- contrastive match round ---- */
+// Prompts keep the block's own order (whatever buildDrillDeck's per-block
+// shuffle already landed on); answers get their own independent shuffle so
+// position alone is never a tell. Matching is prompt-then-answer only, one
+// direction -- simpler than accepting either tap order, and reading the
+// words before their meanings is the natural order anyway.
+function renderContrastRound(group){
+  $('drillFlagBtn').textContent=drillFlagLabel(true);
+  $('drillPrompt').className='prompt';
+  $('drillPrompt').style.fontFamily='';
+  $('drillPrompt').textContent='Match each word to its meaning';
+  drillContrastIds=group.slice();
+  drillContrastAnswerOrder=shuffled(group);
+  drillContrastSel=null;
+  drillContrastMatched=new Set();
+  drillContrastMissed=new Set();
+  renderContrastTiles();
+}
+function renderContrastTiles(){
+  const box=$('drillChoices'); box.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='drillMatch';
+  const left=document.createElement('div'); left.className='drillMatchCol';
+  const right=document.createElement('div'); right.className='drillMatchCol';
+  const tile=(id,side,text)=>{
+    const b=document.createElement('button');
+    const matched=drillContrastMatched.has(id);
+    b.className='drillTile'+(matched?' right':'')+(side==='p'&&drillContrastSel===id?' sel':'');
+    b.textContent=text; b.dataset.side=side; b.dataset.id=id; b.disabled=matched;
+    return b;
+  };
+  drillContrastIds.forEach(id=>left.appendChild(tile(id,'p',BY_ID[id].q)));
+  drillContrastAnswerOrder.forEach(id=>right.appendChild(tile(id,'a',answerText(BY_ID[id]))));
+  wrap.appendChild(left); wrap.appendChild(right);
+  box.appendChild(wrap);
+}
+function pickContrastTile(side,id){
+  if(drillContrastMatched.has(id)) return;
+  if(side==='p'){ drillContrastSel=(drillContrastSel===id)?null:id; renderContrastTiles(); return; }
+  if(drillContrastSel==null) return;             // answer tapped before any prompt -- ignore
+  const selId=drillContrastSel;
+  if(selId===id){
+    drillContrastMatched.add(id); drillContrastSel=null;
+    renderContrastTiles();
+    if(drillContrastMatched.size===drillContrastIds.length) finishContrastRound();
+    return;
+  }
+  drillContrastMissed.add(selId); drillContrastMissed.add(id);
+  const tiles=[...$('drillChoices').querySelectorAll('.drillTile')];
+  const pBtn=tiles.find(b=>b.dataset.side==='p'&&b.dataset.id===selId);
+  const aBtn=tiles.find(b=>b.dataset.side==='a'&&b.dataset.id===id);
+  [pBtn,aBtn].forEach(b=>b&&b.classList.add('wrong'));
+  setTimeout(()=>{ drillContrastSel=null; renderContrastTiles(); },420);
+}
+function finishContrastRound(){
+  const total=drillContrastIds.length;
+  const firstTry=drillContrastIds.filter(id=>!drillContrastMissed.has(id)).length;
+  drillSeen+=total; drillRight+=firstTry;
+  $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
+  $('drillNextRow').classList.remove('hidden');
+}
+/* ---- ungraded study list -- the owner's own replacement for MC, "at least
+   I can look over words and their definition in a clean format" ---- */
+function renderDrillList(){
+  $('drillArea').classList.add('hidden'); $('drillNextRow').classList.add('hidden');
+  $('drillDone').classList.add('hidden'); $('drillListView').classList.remove('hidden');
+  $('drillProgress').textContent='Study list';
+  $('drillListView').innerHTML = drillDeck.length
+    ? drillDeck.map(id=>{ const c=BY_ID[id];
+        return '<div class="drillListRow"><span class="term">'+escHtml(c.q)+'</span>'+
+          '<span class="gloss">'+escHtml(answerText(c))+'</span></div>'; }).join('')
+    : '<div class="note">Nothing set aside right now.</div>';
+}
+function toggleDrillView(){ drillView=(drillView==='practice')?'list':'practice'; renderDrill(); }
+// unsuspends the word (or, mid-contrastive-round, the whole block) on screen
+// right now -- same field, same meaning as the flag everywhere else; the
+// drill only ever clears susp, never sets it
 function bringBackFromDrill(){
   const id=drillDeck[drillPos]; if(id==null) return;
-  setAside(id,false); save();
+  const group=drillGroups[id];
+  const ids=(group&&group.length>1)?group:[id];
+  ids.forEach(x=>setAside(x,false));
+  save();
   toast('Brought back to normal review',1400);
 }
-function nextDrillCard(){ drillPos++; renderDrill(); }
+function nextDrillCard(){
+  const id=drillDeck[drillPos], group=drillGroups[id];
+  drillPos += (group&&group.length>1) ? group.length : 1;
+  renderDrill();
+}
 function renderDrillDone(){
   $('drillArea').classList.add('hidden');
   $('drillNextRow').classList.add('hidden');
@@ -3066,7 +3246,7 @@ function renderHome(){
   }
   const streak=currentStreak(S.days,d);
   const s2=dirStats(S.dir);
-  $('capVal').textContent=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
+  $('capVal').textContent=dailyCap(d,S.dir);
   renderSync();
   renderPace();
   renderSyllabus();
@@ -3151,13 +3331,31 @@ function renderStruggling(){
     ? aside.map(flagRow).join('')
     : '<div class="note">Nothing set aside.</div>';
 }
+// New words introduced on one day in one direction. rate() keeps three
+// counters: rec.intro (either direction) and the rec.introL/introE pair. Same
+// field and same legacy fallback buildQueue() already uses for the daily
+// allowance -- a day record written before the pair existed was forward-only
+// in practice.
+function introOn(rec,dir){
+  if(!rec) return 0;
+  if(!dir) return rec.intro||0;
+  if(rec['intro'+dir]!=null) return rec['intro'+dir];
+  return dir==='L'?(rec.intro||0):0;
+}
 // mean daily introductions across the last 14 days that had any study,
 // falling back to today's allowance when there's no recent history yet.
 // Shared by renderPace() and renderSyllabus(), which used to each run this
 // exact loop themselves.
-function recentPace(d,capToday){
+//
+// `dir` matters: both callers put this rate underneath a count of words left
+// in ONE direction, so summing rec.intro -- which counts a first-ever rep in
+// either direction -- divided one direction's remaining words by both
+// directions' pace and promised a finish date up to twice as early as the
+// real one. Omitting `dir` keeps the old combined total, for any caller that
+// genuinely wants it.
+function recentPace(d,capToday,dir){
   let sum=0,n=0;
-  for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=(r.intro||0); n++; } }
+  for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=introOn(r,dir); n++; } }
   return {rate:n?Math.max(sum/n,1):capToday, hasData:n>0};
 }
 // Total real study time over the trailing `days`-day window ending on day d
@@ -3213,9 +3411,9 @@ const MOTTOS=DECK.mottos; function renderPace(){
   const ap=activeParts(); const dir=S.dir, all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
   const met=all.filter(c=>S.cards[c.id]&&S.cards[c.id].reps>0).length;
   const left=all.length-met, d=today();
-  const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
-  const {rate,hasData}=recentPace(d,capToday);
-  const daysNeeded=left?Math.ceil(left/rate):0;
+  const capToday=dailyCap(d,dir);
+  const {rate,hasData}=recentPace(d,capToday,dir);
+  const daysNeeded=(left&&rate>0)?Math.ceil(left/rate):0;
   const finish=new Date(Date.now()+daysNeeded*DAY);
   const term=new Date(S.settings.term+'T00:00:00');
   const toTerm=Math.ceil((term-Date.now())/DAY);
@@ -3225,6 +3423,16 @@ const MOTTOS=DECK.mottos; function renderPace(){
   if(!left){
     h='<span class="n">'+all.length+'</span> of '+all.length+' met in '+dirName+
       '. Everything now is upkeep.';
+  } else if(!(rate>0)){
+    // The allowance is zero (the field's own min, and where the front screen's
+    // minus button clamps) and nothing has been introduced in a fortnight, so
+    // recentPace falls back to it. left/0 is Infinity, which used to reach
+    // new Date() and print the literal string "Invalid Date" as the finish
+    // date, with "Infinity days after term begins" beside it. There is no date
+    // to give, so say that rather than invent one.
+    h='<span class="n">'+met+'</span> of '+all.length+' met in '+dirName+
+      ', <span class="n">'+left+'</span> to go.'+
+      ' At none a day there is no arrival date \u2014 raise the daily allowance to put one on it.';
   } else {
     h='<span class="n">'+met+'</span> of '+all.length+' met in '+dirName+
       ', <span class="n">'+left+'</span> to go.'+
@@ -3328,8 +3536,8 @@ function renderSyllabus(){
 
   // if you keep going: everything met by term day sits at about the target
   const d=today();
-  const capToday=(S.days[d]&&S.days[d].cap!=null)?S.days[d].cap:S.settings.newPerDay;
-  const {rate:pace}=recentPace(d,capToday);
+  const capToday=dailyCap(d,dir);
+  const {rate:pace}=recentPace(d,capToday,dir);
   const willMeet=Math.min(nowS.total, nowS.met+Math.round(pace*toTerm));
   const keep=willMeet*R;
 
@@ -3706,6 +3914,16 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.08.2',[
+    'The daily new-word allowance ("New words a day" in Settings) is now two separate numbers instead of one shared figure -- one for each direction, so a heavier forward pace no longer silently sets the reverse direction\'s target too. The front screen\'s "+5/-5" and "ten more words" buttons now only bump whichever direction you\'re currently studying, rather than both at once. Existing settings carry forward unchanged into both directions the first time this loads -- nothing actually changes until you edit the two new fields yourself.'
+  ]],
+  ['2026.08.08.1',[
+    'The word list ("Browse the full list") can now flag or bring back any word directly, right from its row -- no need to wait until it trips the automatic Struggling-word warning, or to meet it in a session first.',
+    'The practice-drill screen (for words you\'ve set aside) no longer uses multiple-choice, which turned out to be too easy to get right by elimination without actually knowing the word. Most words now get a plain typed-answer box instead -- checked leniently, so case, spacing, and accents/macrons don\'t need to be exact, since the point is whether you know the word, not whether you reproduced an accent mark. When two or more of today\'s set-aside words look alike, they\'re pulled into their own round together -- every word in that little group and its meanings appear at once, shuffled, and you match each to its meaning, so the actual distinction between them gets drilled directly rather than testing them one at a time as if they weren\'t easily confused with each other. A wrong pairing just resets rather than ending the round. A new list icon at the top of the drill screen switches to a plain, ungraded list of everything currently set aside, with its meaning right there, for reading over rather than being tested -- and switches back to practice without losing your place.',
+    'Fixed: a review nudged onto your chosen weekly review day could land a day earlier than it should, if it was rated between midnight and your rollover hour -- the nudge was reading the target weekday off the exact moment you rated it, while the actual due date it was nudging landed on the study day\'s own boundary just below, and those two disagree in exactly that window.',
+    'Fixed: the "on track to finish by" date on the front screen and the whole-syllabus projection could promise a finish date up to twice as soon as the honest one, for anyone studying both directions -- the pace figure feeding it counted new words met in either direction, but was being divided into a count of words remaining in only one.',
+    'Fixed: a daily new-word allowance set to zero, with no study in the last two weeks, could show the words-per-day figure that projection depends on as literally "Infinity" -- which then printed as the words "Invalid Date" next to a nonsense day count, rather than a plain message that there is nothing to project yet.'
+  ]],
   ['2026.08.08.0',[
     'A security pass over the whole app, with no change to how anything looks or behaves. The one real hole: the Backup screen printed "Last push came from" straight into the page without escaping it, and that name is not typed on this device \u2014 it arrives from the gist or from a backup file you restore. A backup file built to abuse that could have run its own code on the page, on a page that holds your GitHub token. Every row on those panels is now escaped, centrally, so the next one added is safe without anyone having to remember.',
     'All four pages now carry a content-security policy: the app may talk to GitHub and to nothing else, and may not load a script from anywhere at all. It changes nothing you can see; it means that if something ever did get a foothold, it could not quietly send your token somewhere.',
@@ -3898,7 +4116,8 @@ function renderLog(){
 /* ======================= settings screen ======================= */
 function renderSet(){
   const s=S.settings;
-  $('fNew').value=s.newPerDay; $('fRet').value=Math.round(s.retention*100);
+  $('fNewLblL').textContent=DECK.fwd; $('fNewLblE').textContent=DECK.rev;
+  $('fNewL').value=s.newPerDayL; $('fNewE').value=s.newPerDayE; $('fRet').value=Math.round(s.retention*100);
   $('fRetVal').textContent=Math.round(s.retention*100)+'%';
   $('fMax').value=s.maxIvl;
   $('fDevice').value=s.deviceName||'';
@@ -4002,14 +4221,37 @@ tapZone($('drillBackBtn'),()=>{ renderHome(); show('scHome'); });
 tapZone($('drillAgainBtn'),startDrill);
 tapZone($('drillNextBtn'),nextDrillCard);
 tapZone($('drillFlagBtn'),bringBackFromDrill);
+tapZone($('drillViewToggle'),toggleDrillView);
+// Handles both round types since only one is ever mounted inside
+// #drillChoices at a time -- the typed round's Check button, or a
+// contrastive round's prompt/answer tiles (pickContrastTile itself no-ops
+// on a tap that doesn't apply, e.g. an answer before any prompt is picked).
 $('drillChoices').addEventListener('click',e=>{
-  const b=e.target.closest('.drillChoice'); if(!b) return;
-  pickDrillChoice(+b.dataset.i);
+  if(e.target.closest('#drillCheckBtn')){ submitTypedRound(); return; }
+  const tile=e.target.closest('.drillTile');
+  if(tile) pickContrastTile(tile.dataset.side,tile.dataset.id);
+});
+// Enter submits the typed round same as tapping Check -- delegated (the
+// input itself is rebuilt fresh every round) rather than bound per-render.
+$('drillChoices').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.id==='drillInput'){ e.preventDefault(); submitTypedRound(); }
 });
 tapZone($('browseDirL'),()=>{ browseDir='L'; renderBrowse(); });
 tapZone($('browseDirE'),()=>{ browseDir='E'; renderBrowse(); });
 $('browseSearch').addEventListener('input',e=>{ browseQuery=e.target.value; renderBrowse(); });
 $('browseResults').addEventListener('click',e=>{
+  // guarded first, same shape as the Struggling-words list's own flagBtn
+  // handler just below -- must never also toggle this row's reveal
+  const flagBtn=e.target.closest('.flagBtn');
+  if(flagBtn){
+    e.preventDefault(); e.stopPropagation();
+    const id=flagBtn.dataset.id, cs=setAside(id,!cardState(id).susp);
+    save();
+    flagBtn.classList.toggle('on',cs.susp);
+    flagBtn.setAttribute('aria-label',cs.susp?'Bring back to normal review':'Set aside');
+    toast(cs.susp?'Set aside':'Brought back',1400);
+    return;
+  }
   const row=e.target.closest('.wordRow'); if(!row) return;
   row.classList.toggle('revealed');
   // Computed on first reveal, not baked into wordRowHtml -- a log scan per
@@ -4036,16 +4278,17 @@ function toggleFlagFromList(id){
   });
 });
 function bumpCap(delta){
-  const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
-  const cur=(rec.cap!=null)?rec.cap:S.settings.newPerDay;
-  rec.cap=Math.min(Math.max(cur+delta,0),400);
+  const d=today(), dir=S.dir, rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
+  const bumped=Math.min(Math.max(dailyCap(d,dir)+delta,0),400);
+  if(dir==='L') rec.capL=bumped; else rec.capE=bumped;
   save(); renderHome();
 }
 tapZone($('capMinus'),()=>bumpCap(-5));
 tapZone($('capPlus'), ()=>bumpCap(5));
 tapZone($('doneMore'),()=>{
-  const d=today(), rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
-  rec.cap=((rec.cap!=null)?rec.cap:S.settings.newPerDay)+10;
+  const d=today(), dir=S.dir, rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
+  const bumped=dailyCap(d,dir)+10;
+  if(dir==='L') rec.capL=bumped; else rec.capE=bumped;
   save(); next(); if(current) show('scStudy'); else toast('No unseen words left in this direction');
 });
 tapZone($('expBtn'),()=>doExport(false));
@@ -4081,7 +4324,8 @@ tapZone($('resetBtn'),async ()=>{
   undoStack=[]; current=null; lastRated=null;
   S=JSON.parse(JSON.stringify(defaults)); save(); renderHome(); show('scHome'); toast('Erased');
 });
-$('fNew').addEventListener('change',e=>{S.settings.newPerDay=Math.max(0,e.target.value|0);save();});
+$('fNewL').addEventListener('change',e=>{S.settings.newPerDayL=Math.max(0,e.target.value|0);save();});
+$('fNewE').addEventListener('change',e=>{S.settings.newPerDayE=Math.max(0,e.target.value|0);save();});
 $('fRet').addEventListener('input',e=>{S.settings.retention=e.target.value/100;$('fRetVal').textContent=e.target.value+'%';});
 $('fRet').addEventListener('change',()=>save());
 $('fMax').addEventListener('change',e=>{S.settings.maxIvl=Math.max(30,e.target.value|0);save();});
