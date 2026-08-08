@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; media-src 'self' blob:; connect-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -146,7 +147,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
     <div class="pairPanel" id="pairScan" hidden>
       <video id="pairVideo" playsinline muted autoplay></video>
       <div class="fh" id="pairScanHint">Point the camera at the code shown on the other device.</div>
-      <textarea id="pairPaste" rows="3" placeholder="…or paste the code here"></textarea>
+      <textarea id="pairPaste" rows="3" placeholder="…or paste the code here" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
       <div class="pairRow">
         <button type="button" id="btnUsePaste" class="pairBtn">Use this code</button>
         <button type="button" id="btnCancelScan" class="pairBtn">Cancel</button>
@@ -162,7 +163,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
   and token typed in, the same as always.) Safari clears stored data for sites left unvisited for a
   week; installed apps are exempt. The same goes for iPad, and on a Mac use Safari's Add to Dock.</p>
 
-<a class="verlink" id="verLink" href="latin.html#changelog">Version 2026.08.07.5</a>
+<a class="verlink" id="verLink" href="latin.html#changelog">Version 2026.08.08.0</a>
 
 <script>
 // QR Code Generator for JavaScript, by Kazuhiko Arase, MIT licensed.
@@ -218,14 +219,33 @@ function strFromB64(b64){
 function pairEncode(gistId,gistTok){
   return PAIR_PREFIX+b64FromStr(JSON.stringify({g:gistId,t:gistTok}));
 }
+// Prefix match is case-insensitive on purpose (the payload after it is not
+// touched, still decoded exactly as pasted -- base64 IS case-sensitive, only
+// the plain-text marker isn't) -- a live report (2026-08-07g, unresolved at
+// the time) had this fail after a copy/paste round trip, cause unconfirmed;
+// re-testing found atob() already tolerates internal whitespace/newlines
+// (the WHATWG "forgiving-base64" algorithm), but a case-altered prefix
+// (`vocab1:`) decodes as a flat, silent failure today. Costs nothing to
+// tolerate since the prefix is just a format marker, not a secret.
 function pairDecode(code){
   code=(code||'').trim();
-  if(!code.startsWith(PAIR_PREFIX)) return null;
+  if(code.slice(0,PAIR_PREFIX.length).toUpperCase()!==PAIR_PREFIX.toUpperCase()) return null;
   try{
     const obj=JSON.parse(strFromB64(code.slice(PAIR_PREFIX.length)));
     if(obj&&typeof obj.g==='string'&&typeof obj.t==='string'&&obj.g&&obj.t) return {gistId:obj.g,gistTok:obj.t};
   }catch(e){}
   return null;
+}
+// Classifies *why* a code failed, purely for a more useful message than one
+// flat "didn't look right" -- pairDecode() itself keeps its simple
+// null/object contract (the scan path uses that one directly and has no use
+// for a message). Doesn't change what's accepted, only what's said about
+// a rejection.
+function pairDecodeIssue(raw){
+  const code=(raw||'').trim();
+  if(!code) return 'empty';
+  if(code.slice(0,PAIR_PREFIX.length).toUpperCase()!==PAIR_PREFIX.toUpperCase()) return 'prefix';
+  return 'corrupt';   // starts right but the payload after it doesn't decode -- most likely a partial or doubled-up paste
 }
 function renderQR(canvas,text){
   const qr=qrcode(0,'M');
@@ -253,7 +273,34 @@ function closeScan(){
   scanDetector=null;
 }
 function closeShow(){ $('pairShow').hidden=true; }
+// A pairing code carries someone's gist id and token, and accepting one
+// repoints every future backup from this device at whatever gist it names.
+// That is exactly the point when this device has nothing set up yet. It is
+// not the point when credentials are already here: a code from a retired
+// device, or one that arrived from somewhere it had no business coming from,
+// would otherwise swap them out with nothing said and no way to tell it had
+// happened until backups stopped arriving where they used to. So the two
+// gists get named -- the id, never the token, same as offerGistConflict() in
+// the decks -- and Cancel is a genuine no-op, changing nothing at all.
+function pairReplaceMessage(curId,curTok,res){
+  const sameGist=curId===res.gistId;
+  return (curId?'This device is already backing up to gist '+curId+'.':'This device already has a token set up.')+'\n\n'+
+    (sameGist
+      ? 'That code names the same gist but carries a different token.'
+      : 'That code points at a different gist'+(res.gistId?' ('+res.gistId+')':'')+
+        (curTok!==res.gistTok?', with a different token':'')+'.')+'\n\n'+
+    'OK = use the code\u2019s details from now on. Everything this device backs up goes there instead.\n'+
+    'Cancel = keep what is set up here. Nothing changes.';
+}
 function applyPaired(res){
+  const curId=$('fGistId').value.trim(), curTok=$('fGistTok').value.trim();
+  if((curId||curTok)&&(curId!==res.gistId||curTok!==res.gistTok)){
+    if(!confirm(pairReplaceMessage(curId,curTok,res))){
+      closeScan();
+      pairStatus('Left as it was \u2014 this device is still using the gist it had.');
+      return;
+    }
+  }
   closeScan();
   $('fGistId').value=res.gistId;
   $('fGistTok').value=res.gistTok;
@@ -273,8 +320,18 @@ $('btnShowPair').addEventListener('click',()=>{
   pairStatus('');
 });
 $('btnCopyPair').addEventListener('click', async ()=>{
-  try{ await navigator.clipboard.writeText($('pairCode').value); pairStatus('Copied.'); }
-  catch(e){ $('pairCode').focus(); $('pairCode').select(); pairStatus("Couldn't copy automatically — select it above and copy by hand.", true); }
+  const el=$('pairCode');
+  try{ await navigator.clipboard.writeText(el.value); pairStatus('Copied.'); return; }catch(e){}
+  // navigator.clipboard.writeText can silently reject with no error a user
+  // ever sees, notably inside an installed (Add to Home Screen/Dock)
+  // standalone PWA on iOS -- exactly how this app is normally run. The
+  // older, synchronous execCommand path doesn't depend on the async
+  // Permissions API at all, so it's tried here as a second real attempt
+  // before giving up to manual copy; deprecated but still functional
+  // everywhere this app needs to run.
+  el.focus(); el.select();
+  try{ if(document.execCommand('copy')){ pairStatus('Copied.'); return; } }catch(e){}
+  pairStatus("Couldn't copy automatically — the code above is selected: use Copy from the menu, or drag to re-select all of it (all of it, not just part) before copying by hand.", true);
 });
 $('btnScanPair').addEventListener('click', async ()=>{
   closeShow();
@@ -317,8 +374,17 @@ async function scanLoop(){
 }
 $('btnCancelScan').addEventListener('click', ()=>{ closeScan(); pairStatus(''); });
 $('btnUsePaste').addEventListener('click', ()=>{
-  const res=pairDecode($('pairPaste').value);
-  if(!res){ pairStatus("That code didn't look right — copy it again from the other device.", true); return; }
+  const raw=$('pairPaste').value;
+  const res=pairDecode(raw);
+  if(!res){
+    const issue=pairDecodeIssue(raw);
+    pairStatus(
+      issue==='empty' ? 'Paste the code first — the box above is empty.'
+      : issue==='prefix' ? 'That doesn\'t look like a pairing code — make sure you copied the whole thing, starting with "VOCAB1:".'
+      : 'That code looks incomplete or got run together with something else — go back and copy it again, all in one go.',
+      true);
+    return;
+  }
   applyPaired(res);
 });
 

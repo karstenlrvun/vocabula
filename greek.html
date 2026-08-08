@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; connect-src https://api.github.com https://*.githubusercontent.com; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -308,6 +309,17 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .wpart h3 b{font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums}
 .wgrid{display:flex;flex-wrap:wrap;gap:3px}
 .wbox{width:9px;height:9px;border-radius:2px}
+.histChart{display:flex;align-items:flex-end;gap:8px;margin-top:8px}
+.histCol{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.histCount{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;margin-bottom:4px;height:1.3em}
+.histBarWrap{height:110px;width:100%;max-width:36px;display:flex;flex-direction:column-reverse;
+  border-radius:4px 4px 0 0;overflow:hidden;background:var(--panel)}
+.histBarWrap>div{width:100%;flex:0 0 auto}
+.histLabel{font-size:10px;color:var(--faint);margin-top:6px;text-align:center;line-height:1.3}
+.histFlat{background:var(--coral)}
+.histGroup{margin-top:18px}
+.histGroup:first-child{margin-top:4px}
+.histGroup h3{font-size:12px;font-weight:500;color:var(--faint);margin:0 0 4px}
 .build{margin:30px 0 8px;text-align:center;font-size:11px;letter-spacing:.09em;
   text-transform:uppercase;color:var(--faint);padding:8px;cursor:pointer}
 .logv{font-size:13px;font-weight:600;color:var(--coral);margin:16px 0 6px;font-family:var(--sans)}
@@ -705,6 +717,31 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <h2>By part</h2>
         <div id="statsGrid"></div>
       </div>
+      <div class="sect">
+        <h2>Time &amp; learning cost</h2>
+        <div class="note">Only reviews with timing data on file count toward the figures below — a word met before timed reviews were switched on, or read too slowly/quickly for the app to trust the reading, can look faster or slower than it really was.</div>
+        <div id="timeHeadline" style="margin-top:4px"></div>
+        <details class="fold" id="stageCostFold">
+          <summary>Seconds per review, by stage</summary>
+          <div id="stageCostBody"></div>
+        </details>
+        <details class="fold" id="reviewNewFold">
+          <summary>Review vs. new words</summary>
+          <div id="reviewNewBody"></div>
+        </details>
+        <div class="note" style="margin-top:14px;margin-bottom:0">Includes every word rated at least 3 times with timing on, in the fastest/slowest list and the histogram below:</div>
+        <div class="chips" id="timeInclChips" style="margin-top:8px;margin-bottom:0"></div>
+        <details class="fold" id="learnRankFold">
+          <summary>Fastest &amp; slowest to learn</summary>
+          <div id="learnRankBody"></div>
+        </details>
+        <details class="fold" id="histFold">
+          <summary>How long words take to learn</summary>
+          <div class="chips" id="histAxisChips" style="margin-top:12px"></div>
+          <div class="chips" id="histGroupChips"></div>
+          <div id="histBody"></div>
+        </details>
+      </div>
     </div>
   </section>
 
@@ -893,6 +930,21 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           written on the buttons. Animation adds a brief settle when you reveal an answer and a
           brief arrival when the next card appears; off automatically if your system asks for
           reduced motion, regardless of this setting. All three default off.</div>
+      </div>
+      <div class="field">
+        <label for="fQuickRate">Quick rate (1/3 before reveal)</label>
+        <select id="fQuickRate" class="sel">
+          <option value="off">Off</option>
+          <option value="flash">On — flash the answer first</option>
+          <option value="blind">On — no flash, fully blind</option>
+        </select>
+        <div class="fh">Once a word has settled past its first learning steps, 1 (or I) and 3 (or P)
+          grade it straight from the question — no tap to reveal first — for a fast pass through
+          words you already know at a glance. "Flash the answer" briefly shows it right after you
+          grade, so a wrong guess is still visible to catch and undo (0 or Z); fully blind never
+          shows it at all. New and still-learning words are unaffected either way — that's the one
+          place getting it wrong quietly costs the most, so reveal-then-rate stays the only route
+          there. Off by default.</div>
       </div>
       <div class="field">
         <label for="fRoll">A study day begins at</label>
@@ -1128,6 +1180,13 @@ const AGAIN=1, HARD=2, GOOD=3, EASY=4;
 // sitting that is going badly right now, not chronic failure across
 // separate sessions. See againTodayCounts() below.
 const FLAG_MANUAL=5, FLAG_AUTO=8;
+// The f key flags/unflags the current word straight from the keyboard,
+// silently -- no toast, no banner -- once it's drawn this many Agains today.
+// Deliberately below FLAG_MANUAL: a keyboard user doesn't need the leech
+// banner on screen first to reach for the flag, but the key should still
+// wait for real same-day trouble rather than firing on a fresh word's very
+// first slip. See the keydown handler.
+const FLAG_KEY=2;
 // "Time to learn a word" (timeToLearnFor, browse screen) sums thinkMs across
 // a card's whole history as a rough active-engagement figure. reveal()
 // already discards a single reading over 300s as probably-AFK (see its own
@@ -1137,6 +1196,17 @@ const FLAG_MANUAL=5, FLAG_AUTO=8;
 // tighter discard applied only at aggregation time, on top of whatever
 // reveal() already let through.
 const ACTIVE_CAP=45*1000;
+// Guards a review card's day-boundary snap (schedule(), below) and the
+// learn-ahead gate (buildQueue(), further down) against letting a card
+// resurface inside the same sitting it was just rated in -- see both
+// comments for the full incident. SNAP_GUARD: rating within this long of
+// the rollover rounds the snap up to the boundary after next rather than
+// landing minutes away. SHORT_STEP: the gap a genuinely short step (at
+// most 10 minutes, LEARN_STEPS/RELEARN_STEPS/the requireEasy hold) can
+// ever actually have -- SNAP_GUARD keeps every day-snapped review's gap
+// well clear of it, so the two can never be confused regardless of
+// exactly where SNAP_GUARD itself is set.
+const SNAP_GUARD=3*HOUR;
 
 const clampD=d=>Math.min(Math.max(d,1),10);
 const clampS=s=>Math.max(s,S_MIN);
@@ -1261,16 +1331,25 @@ function schedule(card,rating,now,st){
   // the card straight back inside the same sitting. Measured before the fix: a
   // 40-card queue started at 03:42 took 80 ratings to clear, every card served
   // twice, with the on-screen "learning" count climbing by one for every word
-  // rated. So if rounding down would swallow more than half the interval that
-  // was actually earned, round up to the next boundary instead.
+  // rated. Fixed (2026.08.07.3) by rounding up to the next boundary instead,
+  // whenever rounding down would land within SNAP_GUARD of now.
+  // Retuned (2026.08.0X.X): the first version of that guard compared against
+  // half the interval actually earned -- 12 hours for a one-day card -- which
+  // meant almost any evening or night session (this codebase's rollover
+  // options are all small-hours: midnight/3am/4am/6am) landed in the back
+  // half of the study day and got bumped a full extra day out, so a card
+  // that should read "tomorrow" could read "a day and a half" instead.
+  // SNAP_GUARD only actually needs to be big enough that buildQueue's own
+  // learn-ahead gate (SHORT_STEP, see there) can never mistake this snap for
+  // a genuine short step -- it does not need to preserve anything close to a
+  // full day, and landing later the same study day is fine on its own.
   // Arithmetic note: this can only ever fire for a one-day interval -- an
-  // N-day one lands at least (N-1) days out, which beats N/2 for every N>=2 --
-  // and then only in the back half of a study day.
+  // N-day one lands at least (N-1) days out, which already clears SNAP_GUARD
+  // for every N>=2.
   if(c.st==='R' && c.due-now>=DAY){
-    const want=c.due-now;
-    const ivlDays=Math.max(Math.round(want/DAY),1);
+    const ivlDays=Math.max(Math.round((c.due-now)/DAY),1);
     let snapped=dayStart(dayKey(now)+ivlDays);
-    if(snapped-now<want/2) snapped=dayStart(dayKey(now)+ivlDays+1);
+    if(snapped-now<SNAP_GUARD) snapped=dayStart(dayKey(now)+ivlDays+1);
     c.due=snapped;
   }
   return {card:c, ivl:c.due-now};
@@ -1310,7 +1389,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false},
+  settings:{useTiming:true, newPerDay:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off'},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
@@ -1443,7 +1522,10 @@ function save(){
   }catch(e){ storageOK=false; }
   idbPut(S);
   clearTimeout(saveTimer);
-  if(S.settings.gistId&&S.settings.gistTok) saveTimer=setTimeout(()=>pushGist(true),6000);
+  // saveTimer doubles as "a push is still pending" -- nulled the moment it actually
+  // fires (below) or is flushed early (flushPendingPush(), further down), so a
+  // background/close within this 6s window can tell there's something to flush.
+  if(S.settings.gistId&&S.settings.gistTok) saveTimer=setTimeout(()=>{ saveTimer=null; pushGist(true); },6000);
   // #homeWarn lives inside scHome, so this is wasted work unless it is on screen --
   // and save() runs on EVERY rating. With dir 'E' and the gate on, renderWarn()
   // builds the whole reverse queue and may then walk every card's gate, per rating,
@@ -1451,13 +1533,37 @@ function save(){
   // renderWarn(qE) itself, so the banner is always rebuilt on arriving home.
   if($('scHome').classList.contains('on')) renderWarn();
 }
+// A state object reaching normalise() is parsed JSON -- from a file, from the
+// gist, or from localStorage -- and JSON.parse will happily give a plain
+// object a real own "__proto__" key. Object.assign() copies with [[Set]],
+// which hands that key straight to Object.prototype's __proto__ setter, so a
+// crafted backup could silently reparent whatever normalise() builds and
+// every later `S.something` lookup would start finding values it chose.
+// Dropping the key before the assign is the whole fix; nothing in this app
+// has ever stored a field by that name, so there is nothing real to lose.
+// Called on the three objects that are actually handed to an Object.assign():
+// the state itself, its settings, and each card (schedule() copies those).
+function deProto(o){
+  if(o&&typeof o==='object'&&Object.prototype.hasOwnProperty.call(o,'__proto__')) delete o['__proto__'];
+  return o;
+}
 function normalise(o){
   if(!o||typeof o!=='object') return null;
   // card ids are the same shape in both decks, so only this stamp can tell them apart
   if(o.deck&&o.deck!==KEY) return null;
+  deProto(o); deProto(o.settings);
   const s=Object.assign({},defaults,o);
   s.deck=KEY;
   s.settings=Object.assign({},defaults.settings,o.settings||{});
+  // applyTheme() already falls back for an unknown palette, but it does that
+  // without writing the fallback down, so a junk value survives in S and
+  // renderSet() prints it back out. Settled here instead, once, where every
+  // other field arriving from outside is already checked.
+  // PAL_KEYS, not PALETTES[...]: a plain lookup walks the prototype chain, so
+  // a palette of 'constructor' or 'toString' reads as a perfectly valid one --
+  // the same class of trust-the-object mistake as the __proto__ case above.
+  if(PAL_KEYS.indexOf(s.palette)===-1) s.palette=defaults.palette;
+  if(s.theme!=='light'&&s.theme!=='dark'&&s.theme!=='auto') s.theme=defaults.theme;
   s.cards=o.cards&&typeof o.cards==='object'?o.cards:{};
   s.log=Array.isArray(o.log)?o.log:[];
   s.days=o.days&&typeof o.days==='object'?o.days:{};
@@ -1466,11 +1572,34 @@ function normalise(o){
   ROLL_OVR=(s.settings.rollover!=null)?s.settings.rollover:4;
   try{
     for(const k in s.cards){
-      const c=s.cards[k];
-      if(!c||!BY_ID[k]){ delete s.cards[k]; continue; }
+      const c=deProto(s.cards[k]);
+      if(!c||typeof c!=='object'||!BY_ID[k]){ delete s.cards[k]; continue; }
       c.reps|=0; c.lapses|=0; c.buried|=0; c.loops|=0;
-      if(typeof c.due!=='number') c.due=0;
+      // The state check runs first now: the two below depend on knowing
+      // whether this is a review card or not.
       if(c.st!=='L'&&c.st!=='R'&&c.st!=='X') c.st='L';
+      // Finite, not merely "typeof number". JSON.parse('1e999') hands back
+      // Infinity, and typeof calls that a number, so the old check waved it
+      // straight through -- and a card whose due date is Infinity is past no
+      // comparison buildQueue() makes, while its reps>0 keeps it out of the
+      // new-word queue too. Not an error anyone sees: just a word that has
+      // quietly stopped existing.
+      if(!Number.isFinite(c.due)) c.due=0;
+      // s/d are the pair schedule() does its FSRS arithmetic on, and there
+      // are exactly two states it can cope with: both finite, or both null on
+      // a card still in learning, where it initialises them on the next
+      // rating. A *review* card holding a null stability is not one of them --
+      // that branch has no initialise step, so it reaches nextS(null, ...)
+      // and hands back a NaN due date. Anything outside those two goes back
+      // to unrated and back into learning, which is a state the scheduler
+      // already understands end to end. Nothing real is lost: freshCard()
+      // writes both fields, and so do the seeded audit-carryover cards, so a
+      // half-set pair was never something this app produced.
+      const pairSet=Number.isFinite(c.s)&&c.s>0&&Number.isFinite(c.d);
+      const pairUnset=(c.s==null&&c.d==null&&c.st!=='R');
+      if(!pairSet&&!pairUnset){ c.s=null; c.d=null; c.st='L'; c.step=0; }
+      if(c.last!=null&&!Number.isFinite(c.last)) c.last=null;   // dayKey(c.last) otherwise
+      if(c.step!=null&&!Number.isFinite(c.step)) c.step=0;      // indexes LEARN_STEPS
       // A review-card due-date snap used to sit here, described as a one-time
       // migration but in fact re-running on every load (and every gist pull and
       // every file restore), always under whatever rollover happened to be
@@ -1547,8 +1676,14 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.07.5';
+const BUILD='2026.08.08.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
+// See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
+// correctness boundary between a genuine short step and a review whose
+// day-snap merely landed close by -- kept well above the longest real short
+// step (10 minutes) and well below SNAP_GUARD, so this holds regardless of
+// exactly where SNAP_GUARD is tuned.
+const SHORT_STEP=HOUR;
 const BUCKETS=['known','shaky','unseen'];
 function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS; }
 function available(cs,c,now,d){
@@ -1596,7 +1731,7 @@ function buildQueue(dir){
     // tells the two apart: minutes means a genuine short step, a day or more
     // means it was scheduled for another day and can wait for it.
     if(cs.due<=now){ ((cs.st==='L'||cs.st==='X')?learn:due).push(c.id); }
-    else if(cs.due<=now+AHEAD && cs.last!=null && cs.due-cs.last<DAY) learn.push(c.id);
+    else if(cs.due<=now+AHEAD && cs.last!=null && cs.due-cs.last<SHORT_STEP) learn.push(c.id);
   }
   due=jitteredDueOrder(due);
   learn.sort((a,b)=>peek(a).due-peek(b).due);
@@ -1625,25 +1760,31 @@ let drillDeck=[], drillPos=0, drillOpts=null, drillPicked=null, drillRight=0, dr
 // just below) or scStudy is not the screen on screen, so backgrounded time
 // and time spent elsewhere in the app is never counted as study time.
 let studyTickStart=null, studyTimerIv=null, sessionMs=0;
-function creditStudyMs(dk,ms){
+function creditStudyMs(dk,ms,stage){
   if(ms<=0) return;
   const rec=S.days[dk]||(S.days[dk]={n:0,intro:0,ok:0,tot:0,words:0});
   rec.studyMs=(rec.studyMs||0)+ms;
+  // Per-card-stage split of the same wall-clock time (STATS_TIME_PLAN.md
+  // Phase 2a), optional and additive: a caller with no card to attribute
+  // time to (an idle tail flushed at pause, with no rating in it) passes no
+  // stage, and only the day's studyMs total grows -- so Σ stageMs for a day
+  // is <= studyMs for that day, not always equal, and that gap is expected.
+  if(stage){ const sm=rec.stageMs||(rec.stageMs={}); sm[stage]=(sm[stage]||0)+ms; }
 }
 // splits at the rollover boundary so a session straddling the study day's
 // own midnight credits each day correctly instead of dumping the whole
 // segment onto whichever day the flush happened to land on
-function flushStudyTime(now){
+function flushStudyTime(now,stage){
   if(studyTickStart==null) return 0;
   now=(now!=null)?now:Date.now();
   const elapsed=Math.max(now-studyTickStart,0);
   let start=studyTickStart;
   while(dayKey(start)<dayKey(now)){
     const boundary=dayStart(dayKey(start)+1);
-    creditStudyMs(dayKey(start),boundary-start);
+    creditStudyMs(dayKey(start),boundary-start,stage);
     start=boundary;
   }
-  creditStudyMs(dayKey(start),now-start);
+  creditStudyMs(dayKey(start),now-start,stage);
   studyTickStart=now;
   return elapsed;
 }
@@ -1928,6 +2069,83 @@ function learnStatsLine(t,now){
   }
   return bits.join(' · ');
 }
+// Same figure timeToLearnFor computes for one id, but for every rated word
+// in `dir` at once -- one pass over the whole log, the cost class
+// HANDOFF.md §7 flagged as right for a syllabus-wide figure
+// (wholeSyllabusStats() pays the same one-pass cost for card status).
+// Returns an array, not a map: every caller (Phase 1's rankings, Phase 3's
+// histogram) wants to filter/sort/bucket it as a list, not look up by id.
+function allWordTiming(dir,now){
+  const byId={};
+  for(const e of S.log){
+    const id=e[0], c=BY_ID[id];
+    if(!c||c.dir!==dir) continue;
+    let t=byId[id]; if(!t) t=byId[id]={reps:0,firstAt:null,activeMs:0,timed:0,untimed:0};
+    t.reps++;
+    if(t.firstAt==null) t.firstAt=e[2];
+    const ms=e[4];
+    if(ms!=null&&ms<=ACTIVE_CAP){ t.activeMs+=ms; t.timed++; } else t.untimed++;
+  }
+  const out=[];
+  for(const id in byId){
+    const t=byId[id];
+    out.push({id, sec:BY_ID[id].sec, stage:statusOf(S.cards[id]), reps:t.reps,
+               firstAt:t.firstAt, calendarMs:now-t.firstAt,
+               activeMs:t.activeMs, timed:t.timed, untimed:t.untimed});
+  }
+  return out;
+}
+// Mean/median active time-to-learn plus fastest/slowest word lists, over an
+// already-filtered array from allWordTiming() (the caller applies the
+// >=3-timed floor and the young/mature-only toggle before calling this, so
+// this stays a plain statistics function with no filtering rules of its
+// own). Kept separate from allWordTiming() so Phase 3's histogram can reuse
+// the same underlying pass without paying for ranking twice.
+function timeToLearnSummary(entries,topN){
+  if(!topN) topN=10;
+  const sorted=entries.slice().sort((a,b)=>a.activeMs-b.activeMs);
+  if(!sorted.length) return {n:0,meanMs:0,medianMs:0,fastest:[],slowest:[]};
+  const sum=sorted.reduce((s,e)=>s+e.activeMs,0);
+  return {n:sorted.length, meanMs:sum/sorted.length,
+          medianMs:sorted[Math.floor(sorted.length/2)].activeMs,
+          fastest:sorted.slice(0,topN), slowest:sorted.slice(-topN).reverse()};
+}
+// Bucket ladders for the incidence histogram (STATS_TIME_PLAN.md Phase 3,
+// Step 0 §4/§2). Two separate ladders, not one: a word's *summed* active
+// time across all its reviews plausibly spans seconds to tens of minutes
+// (unlike BRACKETS, a single reading's latency), while calendar time since
+// first meeting a word spans hours to months -- different units entirely.
+// Judgement calls, same as ACTIVE_CAP itself -- revisit once real data
+// shows whether these bands actually separate the syllabus usefully.
+const TIME_BUCKETS=[['<15s',0,15000],['15–30s',15000,30000],['30s–1m',30000,60000],
+  ['1–2m',60000,120000],['2–5m',120000,300000],['5m+',300000,Infinity]];
+const CALENDAR_BUCKETS=[['<1d',0,DAY],['1–3d',DAY,3*DAY],['3d–1wk',3*DAY,7*DAY],
+  ['1–2wk',7*DAY,14*DAY],['2–4wk',14*DAY,28*DAY],['1mo+',28*DAY,Infinity]];
+function timeBucketOf(ms){ return TIME_BUCKETS.findIndex(b=>ms>=b[1]&&ms<b[2]); }
+function calendarBucketOf(ms){ return CALENDAR_BUCKETS.findIndex(b=>ms>=b[1]&&ms<b[2]); }
+// Buckets `entries` (from allWordTiming(), pre-filtered by the caller for
+// the >=3-timed floor and the inclusion toggle) into TIME_BUCKETS or
+// CALENDAR_BUCKETS, optionally split by category for stacked/small-
+// multiple rendering. axis: 'active'|'calendar'. groupBy: 'stage'|'part'|
+// null (null -> one flat histogram). 'stage' categories reuse STATUS_ORDER
+// minus 'unseen' (every entry here has reps>0 by construction) rather than
+// hand-rolling a second list -- includes 'susp' on purpose: a set-aside
+// word that was mature before being set aside is still real time-to-learn
+// data, just not "young/mature" for the inclusion toggle's purposes (see
+// that toggle's own filter, built by the caller, not here).
+function histogramOf(entries,axis,groupBy){
+  const buckets=axis==='calendar'?CALENDAR_BUCKETS:TIME_BUCKETS;
+  const bucketOf=axis==='calendar'?calendarBucketOf:timeBucketOf;
+  const cats=groupBy==='part'?SECTIONS:(groupBy==='stage'?STATUS_ORDER.filter(s=>s!=='unseen'):null);
+  const counts=buckets.map(()=>cats?Object.fromEntries(cats.map(c=>[c,0])):0);
+  entries.forEach(e=>{
+    const ms=axis==='calendar'?e.calendarMs:e.activeMs;
+    const b=bucketOf(ms); if(b<0) return;
+    if(cats){ const key=groupBy==='part'?e.sec:e.stage; if(key in counts[b]) counts[b][key]++; }
+    else counts[b]++;
+  });
+  return {buckets:buckets.map(b=>b[0]), counts, cats};
+}
 const RATING_LABEL={1:'Again',2:'Hard',3:'Good',4:'Easy'};
 // Hard has no button of its own (see #bAgain/#bGood/#bEasy) but adjustGrade()
 // can still land a press there via the hesitation upgrade in rate() -- the
@@ -2069,6 +2287,49 @@ function reveal(){
     $(el).textContent=fmtIvl(schedule(cs,adjustGrade(r,thinkMs),now,st).ivl);
   });
 }
+// "Quick rate": once a word is past its first learning steps (st==='R' --
+// the same young/mature review state statusOf()/learnStageOf() already key
+// off), 1/I and 3/P grade it straight from the question, no tap to reveal
+// first -- Settings' "Quick rate" switch. 2/O is left out on purpose: Good
+// is the one grade that still means "I actually looked at it", so it stays
+// reveal-gated. peek(), not cardState(): this runs on every keydown and
+// must never materialise a card as a side effect of a keystroke.
+function quickRateReady(){
+  return current!=null && S.settings.quickRate!=='off' && peek(current).st==='R';
+}
+// A flash-mode press still has to wait out its own flash before grading --
+// this remembers which card that flash belongs to, both to stop a second
+// quick-rate key landing mid-flash and to bail out cleanly (grade nothing)
+// if the card underneath changed while the timer was pending, e.g. an undo.
+let quickFlashId=null;
+function quickRate(pressed){
+  if(quickFlashId!=null) return;
+  if(tooSoonAfter(Date.now(),shownAt,260)) return;   // same stray-keydown guard reveal() gets from rateRow's hidden class -- needed here since nothing else stands between a fresh card and this key
+  const now=Date.now(), t=now-shownAt;
+  thinkMs=(cardDirty||t<120||t>300000)?null:t;        // discard if you looked away -- same rule reveal() uses
+  const id=current;
+  const commit=()=>{
+    quickFlashId=null;
+    if(current!==id) return;         // the card under us changed mid-flash (e.g. undo) -- grade nothing
+    revealAt=shownAt;                // satisfies rate()'s own tooSoonAfter guard without weakening it, same as a real reveal() would
+    rate(pressed);
+  };
+  if(S.settings.quickRate==='flash'){
+    // Reuses reveal()'s own WAAPI fade-in rather than a second mechanism --
+    // the exact CSS-transition race that mechanism was built to dodge (see
+    // renderCard()'s comment) applies here just as much, so there is
+    // deliberately no CSS transition anywhere near this either.
+    quickFlashId=id;
+    const ans=$('answer');
+    ans.classList.add('on');
+    if(typeof ans.animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
+      ans.animate([{opacity:0},{opacity:1}],{duration:100,easing:'ease-out'});
+    }
+    setTimeout(commit,480);
+  } else {
+    commit();
+  }
+}
 const BRACKETS=[['instant',0,2000],['under 10s',2000,10000],['10 to 30s',10000,30000],['over 30s',30000,Infinity]];
 function bracketOf(ms){ return ms==null?-1:BRACKETS.findIndex(b=>ms>=b[1]&&ms<b[2]); }
 // hesitation maps onto the grade, never straight onto the interval:
@@ -2093,6 +2354,18 @@ function rate(pressed){
   const res=schedule(cs,r,now,st_());
   S.cards[current]=res.card;
   S.log.push([current,r,now,Math.round(res.ivl/1000),thinkMs]);
+  // Credit the wall-clock time since the previous rating (or since walking
+  // into the study screen, for the first card of a sitting) to *this*
+  // card's stage -- the gap between one rating and the next is exactly the
+  // time spent looking at the card just rated (reveal, plus the pause
+  // before choosing Again/Good/Easy that thinkMs alone never covered, see
+  // CMRR_PLAN.md). Reuses flushStudyTime's own pause/resume-aware
+  // day-boundary splitting rather than a second accounting path; a
+  // trailing idle gap with no rating in it (e.g. lingering on the Done
+  // screen) is still flushed into studyMs by pauseStudyTimer(), just with
+  // no stage attached -- see creditStudyMs's own comment.
+  const stage=learnStageOf(cs);
+  sessionMs+=flushStudyTime(now,stage);
   // FLAG_AUTO same-day Agains sets a word aside on its own, right when the
   // qualifying press happens -- normalise()'s migration only catches this
   // defensively, on the next load, for a state that reached it without the
@@ -2106,6 +2379,10 @@ function rate(pressed){
   const d=today();
   const rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
   rec.n++;
+  // Per-stage review count, paired with creditStudyMs's stageMs above so
+  // stageCostWindow() has a clean per-review denominator for every stage,
+  // not just the ones rec.intro/rec.tot already happened to count.
+  { const sn=rec.stageN||(rec.stageN={}); sn[stage]=(sn[stage]||0)+1; }
   if(first){ rec.intro=(rec.intro|0)+1; rec['intro'+c.dir]=(rec['intro'+c.dir]|0)+1; }
   // distinct words touched today, not ratings -- a second same-day rating of
   // the same word (a same-day relearn, or a new word stepping through
@@ -2382,6 +2659,27 @@ function statusOf(cs){
 const STATUS_ORDER=['unseen','learning','young','mature','susp'];
 const STATUS_LABEL={unseen:'Still to meet',learning:'In short-term steps',
   young:'Settling (under 3 weeks)',mature:'Holding (3 weeks or more)',susp:'Set aside'};
+// Per-rating stage classifier for crediting elapsed wall-clock time
+// (STATS_TIME_PLAN.md Phase 2a) -- distinct from statusOf() despite the
+// similar shape. statusOf() answers "what do I currently know of this
+// word" and folds a seeded review-state card's pre-materialisation state
+// together with an ordinary unseen word, both as 'unseen', since neither
+// has reps>0 yet. This answers "what kind of cost was *this* rating" -- a
+// seeded card's very first in-app rating is a review of a word the owner
+// already knows, not a new-word introduction, so it must read as
+// 'young'/'mature' like any other review-state card, not 'new' just
+// because reps happens to be 0 still. cs must be the PRE-rating snapshot
+// (schedule() only mutates its own shallow copy, see rate()), so
+// cs.st/cs.s/cs.reps here are exactly the state this rating was made
+// against.
+function learnStageOf(cs){
+  if(!cs) return 'new';
+  if(cs.st!=='R') return cs.reps===0?'new':'learning';
+  return cs.s<21?'young':'mature';
+}
+const LEARN_STAGE_ORDER=['new','learning','young','mature'];
+const LEARN_STAGE_LABEL={new:'New words',learning:'In short-term steps',
+  young:'Settling (under 3 weeks)',mature:'Holding (3 weeks or more)'};
 function wholeSyllabusStats(dir){
   const totals={unseen:0,learning:0,young:0,mature:0,susp:0};
   const bySec={};
@@ -2445,6 +2743,117 @@ function renderStats(){
     gridHtml+='</div></div>';
   });
   $('statsGrid').innerHTML=gridHtml||'<div class="note">No words to show.</div>';
+  renderStatsTiming();
+}
+// STATS_TIME_PLAN.md Phase 1/2/3 render state -- module-level like
+// browsePart/browseStatus above, not on S: this is a view preference, not
+// something worth persisting or syncing across devices.
+let statsInclAll=true, histAxis='active', histGroupBy='stage';
+function renderStatsTiming(){
+  const dir=S.dir, now=Date.now(), d=today();
+
+  const todayMs=studyMsWindow(d,1), weekMs=studyMsWindow(d,7), monthMs=studyMsWindow(d,30);
+  $('timeHeadline').innerHTML=
+    row('Studied today', todayMs?fmtActiveTime(todayMs):'—')+
+    row('Last 7 days', weekMs?fmtActiveTime(weekMs):'—')+
+    row('Last 30 days', monthMs?fmtActiveTime(monthMs):'—');
+
+  const sc=stageCostWindow(d);
+  $('stageCostBody').innerHTML = sc.hasData
+    ? LEARN_STAGE_ORDER.map(s=>row(LEARN_STAGE_LABEL[s], sc.perReview[s]!=null?fmtActiveTime(sc.perReview[s]):'—')).join('')
+      +'<div class="note">Trailing 14 days. Real, measured time per rating, split by what stage the word was at.</div>'
+    : '<div class="note">Not enough recent data yet — this fills in as you study over the next couple of weeks.</div>';
+
+  const rn=reviewVsNewWindow(d,14), rnTot=rn.newMs+rn.reviewMs;
+  $('reviewNewBody').innerHTML = (rn.hasData&&rnTot>0)
+    ? '<div class="stackbar"><div class="s-learning" style="width:'+(100*rn.newMs/rnTot)+'%"></div>'+
+      '<div class="s-mature" style="width:'+(100*rn.reviewMs/rnTot)+'%"></div></div>'+
+      '<div class="legend"><span><i class="sw s-learning"></i>New words — '+fmtActiveTime(rn.newMs)+
+      ' ('+Math.round(100*rn.newMs/rnTot)+'%)</span><span><i class="sw s-mature"></i>Review — '+
+      fmtActiveTime(rn.reviewMs)+' ('+Math.round(100*rn.reviewMs/rnTot)+'%)</span></div>'+
+      '<div class="note">Trailing 14 days, real measured time. Days before this feature shipped aren\'t counted yet, rather than guessed at.</div>'
+    : '<div class="note">Not enough recent data yet.</div>';
+
+  let entries=allWordTiming(dir,now).filter(e=>e.timed>=3);
+  if(!statsInclAll) entries=entries.filter(e=>e.stage==='young'||e.stage==='mature');
+  const sum=timeToLearnSummary(entries,5);
+  if(sum.n){
+    const wordLine=e=>'<div class="flagRow"><span class="term">'+escHtml(BY_ID[e.id].q)+'</span>'+
+      '<span class="cnt">'+fmtActiveTime(e.activeMs)+'</span></div>';
+    $('learnRankBody').innerHTML=
+      row('Median active time to learn', fmtActiveTime(sum.medianMs))+
+      row('Mean', fmtActiveTime(sum.meanMs))+
+      '<div class="note" style="margin-top:14px;margin-bottom:2px">Fastest</div>'+sum.fastest.map(wordLine).join('')+
+      '<div class="note" style="margin-top:14px;margin-bottom:2px">Slowest</div>'+sum.slowest.map(wordLine).join('')+
+      '<div class="note">Based on '+sum.n+' word'+(sum.n===1?'':'s')+' with at least 3 timed readings'+
+      (statsInclAll?'':', young/mature only')+'. "Active time" is thinking time actually spent, not calendar time since first meeting the word.</div>';
+  } else {
+    $('learnRankBody').innerHTML='<div class="note">Not enough timed reviews yet.</div>';
+  }
+
+  renderInclChip();
+  renderHistChips();
+  renderHistogram(entries);
+}
+function renderInclChip(){
+  const box=$('timeInclChips'); box.innerHTML='';
+  const mk=(val,label)=>{
+    const b=document.createElement('button');
+    b.className='chip'+(statsInclAll===val?' on':''); b.textContent=label;
+    b.addEventListener('click',e=>{ e.preventDefault(); statsInclAll=val; renderStatsTiming(); });
+    box.appendChild(b);
+  };
+  mk(true,'All words'); mk(false,'Young & mature only');
+}
+function renderHistChips(){
+  const axisBox=$('histAxisChips'); axisBox.innerHTML='';
+  const mkAxis=(key,label)=>{
+    const b=document.createElement('button');
+    b.className='chip'+(histAxis===key?' on':''); b.textContent=label;
+    b.addEventListener('click',e=>{ e.preventDefault(); histAxis=key; renderStatsTiming(); });
+    axisBox.appendChild(b);
+  };
+  mkAxis('active','Active time'); mkAxis('calendar','Calendar time');
+  const groupBox=$('histGroupChips'); groupBox.innerHTML='';
+  const mkGroup=(key,label)=>{
+    const b=document.createElement('button');
+    b.className='chip'+(histGroupBy===key?' on':''); b.textContent=label;
+    b.addEventListener('click',e=>{ e.preventDefault(); histGroupBy=key; renderStatsTiming(); });
+    groupBox.appendChild(b);
+  };
+  mkGroup('stage','By stage'); mkGroup('part','By part'); mkGroup(null,'Combined');
+}
+// entries: already filtered by the caller (>=3 timed reviews, inclusion
+// toggle) -- this function only buckets and draws, no filtering rules of
+// its own, same split of responsibility as histogramOf/timeToLearnSummary.
+function renderHistogram(entries){
+  const h=histogramOf(entries,histAxis,histGroupBy);
+  const barMaxPx=110;
+  const oneChart=(counts,colorClass)=>{
+    const maxCount=Math.max(1,...counts);
+    let html='';
+    h.buckets.forEach((label,i)=>{
+      const n=counts[i];
+      const px=n?Math.max(2,Math.round(n/maxCount*barMaxPx)):0;
+      html+='<div class="histCol"><div class="histCount">'+(n||'')+'</div>'+
+        '<div class="histBarWrap">'+(n?'<div class="'+colorClass+'" style="height:'+px+'px"></div>':'')+
+        '</div><div class="histLabel">'+escHtml(label)+'</div></div>';
+    });
+    return '<div class="histChart">'+html+'</div>';
+  };
+  if(!h.cats){
+    $('histBody').innerHTML = entries.length ? oneChart(h.counts,'histFlat') : '<div class="note">Not enough data yet.</div>';
+    return;
+  }
+  let out='';
+  h.cats.forEach(cat=>{
+    const counts=h.counts.map(c=>c[cat]||0);
+    if(!counts.some(n=>n)) return;                 // no data for this category at all -- skip it, not a zero row
+    const label=histGroupBy==='stage'?(STATUS_LABEL[cat]||cat):cat;
+    const cls=histGroupBy==='stage'?('s-'+cat):'histFlat';
+    out+='<div class="histGroup"><h3>'+escHtml(label)+'</h3>'+oneChart(counts,cls)+'</div>';
+  });
+  $('histBody').innerHTML = out || '<div class="note">Not enough data yet.</div>';
 }
 function wordRowHtml(c){
   const cs=S.cards[c.id], st=statusOf(cs), gloss=(c.dir==='E')?c.a.join(', '):c.a;
@@ -2452,7 +2861,10 @@ function wordRowHtml(c){
   // browseResults click handler, which fills it in on first reveal rather
   // than every row paying for a log scan whether or not it's ever opened.
   const learn=(cs&&cs.reps>0)?'<div class="wrLearn"></div>':'';
-  return '<div class="wordRow" data-id="'+c.id+'"><div class="wrTop"><i class="stDot s-'+st+'"></i>'+
+  // c.id and st are both built by this file, never read back from stored
+  // state -- escaped anyway because this is the one place a value lands
+  // inside an attribute, which is precisely the case escHtml() now covers.
+  return '<div class="wordRow" data-id="'+escHtml(c.id)+'"><div class="wrTop"><i class="stDot s-'+st+'"></i>'+
     '<span class="term">'+escHtml(c.q)+'</span></div><div class="gloss">'+escHtml(gloss)+'</div>'+learn+'</div>';
 }
 function renderBrowsePartChips(){
@@ -2497,7 +2909,7 @@ function renderBrowse(){
   const openAll=!!browseQuery||browseStatus!=='all'||!!browsePart;
   let html='';
   groups.forEach(g=>{
-    html+='<details class="fold"'+(openAll?' open':'')+'><summary>'+g.sec+' ('+g.cards.length+')</summary><div>'+
+    html+='<details class="fold"'+(openAll?' open':'')+'><summary>'+escHtml(g.sec)+' ('+g.cards.length+')</summary><div>'+
       g.cards.map(wordRowHtml).join('')+'</div></details>';
   });
   $('browseResults').innerHTML = html || '<div class="note">No words match.</div>';
@@ -2689,7 +3101,13 @@ function renderHome(){
 // unlike renderCard()'s $('prompt').textContent=c.q (always safe), this row is
 // built as an HTML string -- today's word list has no &/</> in it to prove it,
 // but escape anyway rather than lean on that staying true forever
-function escHtml(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+// Quotes are escaped as well as the angle brackets, and a non-string is
+// coerced rather than throwing. Every call site today interpolates into
+// element *text*, where &<> alone would do -- but one future call inside an
+// attribute (class="...", data-id="...") would make an unescaped quote an
+// injection point with nothing on screen to show it, and row() below now
+// leans on this for values that never came from this device at all.
+function escHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 // only called when the fold is opened and by the nav buttons -- not on every
 // renderHome(), since it's collapsed most of the time (see HANDOFF.md)
 // each in-month cell shows its own new (green) / reviewed (amber) counts
@@ -2742,6 +3160,55 @@ function recentPace(d,capToday){
   for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=(r.intro||0); n++; } }
   return {rate:n?Math.max(sum/n,1):capToday, hasData:n>0};
 }
+// Total real study time over the trailing `days`-day window ending on day d
+// inclusive, same windowing convention as recentPace() -- raw ms, callers
+// format with fmtActiveTime/fmtStopwatch as fits the context.
+function studyMsWindow(d,days){
+  let sum=0;
+  for(let k=d;k>d-days;k--){ const r=S.days[k]; if(r&&r.studyMs) sum+=r.studyMs; }
+  return sum;
+}
+// Mean real cost per review, split by learn stage (STATS_TIME_PLAN.md
+// Phase 1/2), over the trailing 14 days that have any stage-tagged time --
+// same window recentPace() uses. Only stage-tagged days count: a day before
+// Phase 2a shipped has studyMs but no stageMs, and averaging those in as
+// zero-cost reviews would silently understate the true per-review figure
+// rather than just having less history to average over. hasData mirrors
+// recentPace()'s own honest zero-history fallback; perReview[stage] is null
+// (not 0) wherever a stage has time but no matching review count yet, or no
+// time at all, rather than presenting an unearned number.
+function stageCostWindow(d){
+  const sumMs={}, n={};
+  LEARN_STAGE_ORDER.forEach(s=>{ sumMs[s]=0; n[s]=0; });
+  let hasData=false;
+  for(let k=d;k>d-14;k--){
+    const r=S.days[k]; if(!r||!r.stageMs) continue;
+    hasData=true;
+    LEARN_STAGE_ORDER.forEach(s=>{ sumMs[s]+=(r.stageMs[s]||0); n[s]+=(r.stageN&&r.stageN[s])||0; });
+  }
+  const perReview={};
+  LEARN_STAGE_ORDER.forEach(s=>{ perReview[s]=n[s]?sumMs[s]/n[s]:null; });
+  return {perReview,hasData};
+}
+// Real review-vs-new split (STATS_TIME_PLAN.md Phase 2, the half built on
+// real Phase 2a data). 'new' cost is stageMs.new+stageMs.learning --
+// anything not yet graduated out of the learning-steps loop counts as
+// new-word cost, matching CMRR_PLAN.md's own finding that drillDays/
+// newPerDay, not retention, dominate cost during the ramp-up. 'review' cost
+// is stageMs.young+stageMs.mature. Summed over the trailing `days`-day
+// window ending on day d inclusive. A day before Phase 2a shipped has no
+// stageMs at all and simply contributes nothing to either side yet --
+// backfilling that gap with a modelled estimate is Phase 2b, not built.
+function reviewVsNewWindow(d,days){
+  let newMs=0,reviewMs=0,any=false;
+  for(let k=d;k>d-days;k--){
+    const r=S.days[k]; if(!r||!r.stageMs) continue;
+    any=true;
+    newMs+=(r.stageMs.new||0)+(r.stageMs.learning||0);
+    reviewMs+=(r.stageMs.young||0)+(r.stageMs.mature||0);
+  }
+  return {newMs,reviewMs,hasData:any};
+}
 const MOTTOS=DECK.mottos; function renderPace(){
   const ap=activeParts(); const dir=S.dir, all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
   const met=all.filter(c=>S.cards[c.id]&&S.cards[c.id].reps>0).length;
@@ -2784,7 +3251,14 @@ function latencyStats(){
   const sorted=v.slice().sort((a,b)=>a-b);
   return {med:sorted[Math.floor(sorted.length/2)], n:v.length, counts:counts};
 }
-const row=(a,b)=>'<div class="statRow"><span>'+a+'</span><b>'+b+'</b></div>';
+// Escaped, not trusted. Every caller passes plain text it built itself --
+// except renderBg()'s "Last push came from", which passes S.lastDevice: a
+// label stamped by whichever device last pushed, so it reaches this device
+// through the gist or through an imported backup file, from outside. An
+// unescaped tag there would run script on a page holding a live GitHub token
+// in localStorage. Escaping centrally, rather than at that one call site,
+// is what keeps the next caller safe without having to remember the rule.
+const row=(a,b)=>'<div class="statRow"><span>'+escHtml(a)+'</span><b>'+escHtml(b)+'</b></div>';
 
 /* ================= syllabus stats =================
    Everything here ignores the part chips on purpose: the question is what you
@@ -3232,6 +3706,25 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.08.0',[
+    'A security pass over the whole app, with no change to how anything looks or behaves. The one real hole: the Backup screen printed "Last push came from" straight into the page without escaping it, and that name is not typed on this device \u2014 it arrives from the gist or from a backup file you restore. A backup file built to abuse that could have run its own code on the page, on a page that holds your GitHub token. Every row on those panels is now escaped, centrally, so the next one added is safe without anyone having to remember.',
+    'All four pages now carry a content-security policy: the app may talk to GitHub and to nothing else, and may not load a script from anywhere at all. It changes nothing you can see; it means that if something ever did get a foothold, it could not quietly send your token somewhere.',
+    'A restored backup or a pulled gist is now checked harder before it is trusted: a card carrying a nonsense stability, difficulty, due date or learning step is reset to "not yet rated" rather than being fed to the scheduler, where it would have turned into a word that silently disappeared from the deck. Deliberately-crafted JSON can also no longer tamper with the shape of the state object it is loaded into.',
+    'On the launcher, pairing no longer silently replaces a gist id and token that are already set up. If a scanned or pasted code points somewhere else, it now names both gists and asks first \u2014 the same way the decks already ask when two devices disagree \u2014 and Cancel really does leave everything alone.'
+  ]],
+  ['2026.08.07.9',[
+    'Two new keyboard shortcuts on the study screen: F flags or unflags the word on screen straight away, and X dismisses the struggling-word banner if one\'s showing, the same as tapping its own ×. F works well before the banner itself would appear -- two "Again"s today is enough, not the five a banner needs -- and does it silently, with no toast or banner of its own, since reaching for the key already means you know what you\'re doing.',
+    'A new "Quick rate" setting: once a word has settled past its first learning steps, 1/I and 3/P grade it straight from the question on a keyboard, no tap to reveal first, for a fast pass through words you already know at a glance. Two flavours, since grading a word blind risks mistaking confidence for actually knowing it: "flash the answer" briefly shows it right after you grade, so a wrong guess is still visible to catch and undo; "fully blind" skips that. Off by default, and new or still-learning words always go through the ordinary reveal-then-rate regardless of the setting -- that\'s the one place getting it wrong quietly costs the most.'
+  ]],
+  ['2026.08.07.8',[
+    'A rating made right before leaving -- closing the tab, switching apps, locking the screen -- inside the 6-second window save() waits before pushing to the gist could be dropped silently: the debounced push was purely time-based, with nothing forcing it out early if the tab went away first. No error, no toast, the gist just quietly sat a review or two behind until the next rating happened to trigger a fresh push. The tab going hidden (backgrounding, switching apps, locking the screen) or actually closing/reloading now forces that pending push out immediately instead of waiting on the timer, using the same two hooks (visibilitychange, pagehide) that already paused the study-time clock for the same moments. Nothing changes for a normal sitting where more ratings keep arriving inside the 6s window -- the debounce still coalesces those into one push, same as before.'
+  ]],
+  ['2026.08.07.7',[
+    'A one-day review rated in the evening or at night could come back a day and a half, or even two days, later instead of the next day. 2026.08.07.3\'s fix for words repeating inside the same sitting rounded a card up to the boundary after next whenever the immediate one was closer than half the interval just earned -- twelve hours, for a one-day card -- and since every rollover option here sits in the small hours (midnight, 3am, 4am, 6am), an ordinary evening or night session almost always fell in that back half and got bumped a full extra day for nothing. Two changes: the round-up now only fires within three hours of the rollover, not twelve; and the actual guarantee against a same-sitting repeat moved to where it belongs, the study queue\'s own learn-ahead check, which now only treats a card as a genuine short step if it was scheduled under an hour out -- well above the ten minutes a real short step ever runs, and well below anything the day-snap can still produce, so the two can\'t be confused regardless of how the three-hour figure above is ever retuned again. Re-checked the original incident directly: a card rated 03:45 against a 4am rollover still lands cleanly a day out and is never handed back inside the same sitting; a card rated at 9pm now lands seven hours out, on tomorrow\'s boundary, instead of being pushed to the day after.'
+  ]],
+  ['2026.08.07.6',[
+    'The Stats screen gained a new "Time & learning cost" section: real time studied today/this week/this month, seconds spent per review broken down by what stage the word was at (new, in short-term steps, settling, holding), a real measured split between time spent on new words versus reviews (last 14 days), a fastest/slowest-to-learn word list, and a histogram of how long words actually take to learn -- with toggles for active thinking time vs. calendar time since first meeting the word, and for grouping by stage or by part. The review/new split needed data the app wasn\'t collecting before now: the study-screen stopwatch (studyMs, 2026.08.07.4) only ever credited a whole sitting\'s segment at once, with no record of which card\'s stage that time belonged to. Ratings now also credit the gap since the previous one -- exactly the time spent looking at the card just rated -- to that card\'s own stage, summed into a new per-day stageMs/stageN pair alongside the existing total. That\'s real, forward-only data: days before this build show no split, rather than a guessed one -- filling those in with a modelled estimate is a separate, not-yet-built piece. The fastest/slowest list and histogram reuse the Browse screen\'s existing per-word "time to learn" figure (2026.08.05.1), generalised to one pass over the whole log instead of one word at a time, and only count a word once it has at least 3 timed readings, so one lucky or unlucky reading can\'t swing either.'
+  ]],
   ['2026.08.07.5',[
     'The launcher page (the one linking to Latin, Λέξεις, the manual, and Backup & sync) now shows the current version too, linked straight through to this list -- before this, seeing what changed meant opening a deck first and tapping the build line at the bottom of its own front screen. Reaching it from the launcher needed one small addition here: opening either deck at a #changelog link now shows this screen right away on load, instead of always landing on the front screen first and requiring a second tap.'
   ]],
@@ -3420,6 +3913,7 @@ function renderSet(){
   $('fStudyStats').value=s.studyStats?'1':'0';
   $('fStudyHints').value=s.studyHints?'1':'0';
   $('fStudyMotion').value=s.studyMotion?'1':'0';
+  $('fQuickRate').value=s.quickRate||'off';
   commitPendingRollover();
   $('fRoll').value=String(s.rolloverPending!=null?s.rolloverPending:(s.rollover!=null?s.rollover:4));
   if(s.rolloverPending!=null){
@@ -3595,6 +4089,7 @@ $('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyThe
 $('fStudyStats').addEventListener('change',e=>{S.settings.studyStats=e.target.value==='1';save();applyLayout();});
 $('fStudyHints').addEventListener('change',e=>{S.settings.studyHints=e.target.value==='1';save();applyLayout();});
 $('fStudyMotion').addEventListener('change',e=>{S.settings.studyMotion=e.target.value==='1';save();applyLayout();});
+$('fQuickRate').addEventListener('change',e=>{S.settings.quickRate=e.target.value;save();});
 // a native <details> open/close changes its .sect/.field's height without
 // going through renderHome()/renderSet() or applyLayout() at all -- nothing
 // else would ever notice the two columns need re-balancing after one of
@@ -3648,20 +4143,45 @@ document.addEventListener('keydown',e=>{
       if(e.key==='2'||e.key==='o'||e.key==='O') rate(GOOD);
       if(e.key==='3'||e.key==='p'||e.key==='P') rate(EASY);
     }
+    else if(quickRateReady()){
+      // Same 1/I and 3/P as above, live before reveal too -- see
+      // quickRateReady()/quickRate() and Settings' "Quick rate" switch. 2/O
+      // still does nothing here: Good stays reveal-gated on purpose.
+      if(e.key==='1'||e.key==='i'||e.key==='I') quickRate(AGAIN);
+      if(e.key==='3'||e.key==='p'||e.key==='P') quickRate(EASY);
+    }
     // 0 sits right above P on the number row, the same right-hand-friendly
     // reasoning as I/O/P below -- added alongside Z, not instead of it
     if(e.key==='z'||e.key==='Z'||e.key==='0') undo();
+    // f flags/unflags the current word straight from the keyboard, silently
+    // -- no toast, no banner -- once it's drawn FLAG_KEY Agains today (see
+    // FLAG_KEY's own comment). x dismisses the leech banner if one's up,
+    // same as tapping its own x button -- its own key rather than Escape,
+    // which browsers/extensions already claim for other things.
+    if((e.key==='f'||e.key==='F') && current!=null &&
+       againTodayFor(current,S.log,today())>=FLAG_KEY){
+      setAside(current,!cardState(current).susp); save(); renderLeech();
+    }
+    if(e.key==='x'||e.key==='X') $('leechTag').classList.add('hidden');
   }
 });
 document.addEventListener('gesturestart',e=>e.preventDefault());
+// A rating in the last 6s can leave save()'s debounced gist push still scheduled;
+// backgrounding or closing the tab before it fires would otherwise drop that push
+// silently -- no toast, no error, the gist just quietly falls a few reviews behind.
+// Safe to call more than once: saveTimer is null once already flushed, or once it
+// has already fired on its own.
+function flushPendingPush(){
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; pushGist(true); }
+}
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){ cardDirty=true; pauseStudyTimer(); }
+  if(document.hidden){ cardDirty=true; pauseStudyTimer(); flushPendingPush(); }
   else{
     if($('scStudy').classList.contains('on')) startStudyTimer(false);   // same sitting, not a new one
     if($('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
   }
 });
-window.addEventListener('pagehide',()=>pauseStudyTimer());   // safety net for a close/reload that skips visibilitychange
+window.addEventListener('pagehide',()=>{ pauseStudyTimer(); flushPendingPush(); });   // safety net for a close/reload that skips visibilitychange
 
 load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome');
   // opened as e.g. greek.html#changelog (the launcher's version link does this) --
