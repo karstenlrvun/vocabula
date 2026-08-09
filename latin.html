@@ -1724,7 +1724,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.08.2';
+const BUILD='2026.08.09.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -1859,10 +1859,15 @@ function tickStudyTimer(){
 // fresh=true is "the user just walked into the study screen" (resets the
 // on-screen session clock to zero); fresh=false is "the tab came back to the
 // foreground and scStudy was already the screen showing" (same sitting,
-// keep counting from where it left off).
+// keep counting from where it left off). The fresh-reset only actually fires
+// when the clock was stopped (studyTickStart==null) -- if it's already
+// ticking (e.g. resuming from the Almost-there wait below, which never pauses
+// it), a stray fresh=true from show() must not zero sessionMs out from under
+// a running sitting. Safe to call with the clock already running: both
+// branches below are then no-ops but tickStudyTimer() still refreshes the display.
 function startStudyTimer(fresh){
-  if(fresh) sessionMs=0;
   if(studyTickStart==null){
+    if(fresh) sessionMs=0;
     studyTickStart=Date.now();
     clearInterval(studyTimerIv);
     studyTimerIv=setInterval(tickStudyTimer,1000);
@@ -2033,11 +2038,21 @@ if(typeof window!=='undefined') window.addEventListener('resize', applyLayout);
 // prefers-reduced-motion check -- the global `*{transition:none}` reduced-motion
 // rule has no effect on a JS-driven .animate() call.
 const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-reduced-motion: reduce)'):null;
-const show=name=>{
-  const wasStudy=$('scStudy').classList.contains('on');
+// almostThereWait: true only while the "Almost there" flavor of scDone (soon>0,
+// see renderDone()) is up as part of an unbroken sitting -- the clock keeps
+// running through that particular wait instead of pausing, since it's the same
+// sitting, just waiting on a short-term relearn step, not off in Settings or
+// Browse. show()'s second arg (keepTiming) is how renderDone() tells it that;
+// every other caller omits it, which clears the flag and pauses as before.
+// This is why wasActive below checks the flag alongside scStudy's own .on class
+// -- scDone is the screen actually showing during that wait, not scStudy.
+let almostThereWait=false;
+const show=(name,keepTiming)=>{
+  const wasActive=$('scStudy').classList.contains('on')||almostThereWait;
   ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill'].forEach(s=>$(s).classList.toggle('on',s===name));
-  if(name==='scStudy'){ if(!wasStudy) startStudyTimer(true); }
-  else if(wasStudy) pauseStudyTimer();
+  if(name==='scStudy'){ startStudyTimer(true); }   // no-op on an already-ticking clock -- see startStudyTimer's own guard
+  else if(wasActive && !keepTiming) pauseStudyTimer();
+  almostThereWait=!!keepTiming;
   // Home/Settings both call balanceColumns() at the end of their own
   // render*(), but every "back to home"/"into settings" handler in this
   // file calls render*() *before* show() reveals the screen -- a hidden
@@ -2517,7 +2532,11 @@ function renderDone(){
     : (rec.n||0)+' ratings today.<br>'+tomorrow+' due tomorrow in this direction.';
   const ap=activeParts(); const anyNew=CARDS.some(c=>c.dir===S.dir&&ap.includes(c.sec)&&(!S.cards[c.id]||S.cards[c.id].reps===0));
   $('doneMore').classList.toggle('hidden',!anyNew);
-  show('scDone');
+  // keepTiming=soon>0: "Almost there" is still the same sitting, just waiting
+  // on a short-term relearn step -- the study clock keeps running through it
+  // (see show()'s almostThereWait). The real "Nothing due" end-of-session
+  // state (soon===0) still pauses it, same as leaving to any other screen.
+  show('scDone',soon>0);
   clearInterval(donePoll);
   if(soon) donePoll=setInterval(()=>{
     if(!$('scDone').classList.contains('on')){clearInterval(donePoll);return;}
@@ -3914,6 +3933,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.09.0',[
+    'The study-session clock now keeps running through the "Almost there" screen (a few words still in short-term steps, back in a minute or two) instead of pausing there -- it\'s the same unbroken sitting, just waiting on the algorithm rather than off looking at Settings or Browse. The real "Nothing due" end-of-session screen still pauses it, same as leaving to any other screen. In practice this fires rarely: replaying a real backup\'s full rating history (11,305 reviews) through the actual queue-building code found only one true "nothing due" moment across the entire history, since a deck of any real size keeps the queue non-empty almost continuously -- short-term relearn steps here are 1 and 10 minutes, both comfortably inside the 20-minute "serve it a little early" window the queue already uses, so it essentially never has to make you wait. Fixed alongside it: resuming from that screen, or from a tab that got backgrounded while it was up, used to silently reset the on-screen sitting clock to zero even though the persisted daily total was unaffected -- cosmetic only, but worth closing while touching the same code.'
+  ]],
   ['2026.08.08.2',[
     'The daily new-word allowance ("New words a day" in Settings) is now two separate numbers instead of one shared figure -- one for each direction, so a heavier forward pace no longer silently sets the reverse direction\'s target too. The front screen\'s "+5/-5" and "ten more words" buttons now only bump whichever direction you\'re currently studying, rather than both at once. Existing settings carry forward unchanged into both directions the first time this loads -- nothing actually changes until you edit the two new fields yourself.'
   ]],
@@ -4421,7 +4443,12 @@ function flushPendingPush(){
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){ cardDirty=true; pauseStudyTimer(); flushPendingPush(); }
   else{
-    if($('scStudy').classList.contains('on')) startStudyTimer(false);   // same sitting, not a new one
+    // almostThereWait: backgrounding during the "Almost there" wait still
+    // paused the clock above (pauseStudyTimer doesn't check which screen is
+    // up) even though scDone, not scStudy, was on screen -- so resuming has
+    // to check the flag too, or a wait that got backgrounded would never
+    // restart until a card actually appeared.
+    if($('scStudy').classList.contains('on')||almostThereWait) startStudyTimer(false);   // same sitting, not a new one
     if($('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
   }
 });
