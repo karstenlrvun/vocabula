@@ -176,16 +176,22 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .answer .alt{display:block;margin-top:7px}
 .answer.lat{font-family:var(--serif);font-size:clamp(25px,calc(21.2px + 0.97vw),28px)}
 .hintline{margin-top:22px;font-size:13px;color:var(--faint);height:16px}
-.leechtag{margin-top:10px;font-size:12px;color:var(--amber);display:flex;align-items:center;justify-content:center;gap:8px}
-.leechBtns{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px}
+/* .flagBtn is shared with the Browse and Home struggling-word rows (their
+   own small inline glyph, unaffected below) -- keep this base rule as it
+   was, and enlarge only the study-screen's own instance underneath. */
 .flagBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:16px;line-height:1;color:var(--faint)}
 .flagBtn.on{color:var(--bad-ink)}
-/* dismiss just hides this occurrence of the banner -- it is not the same action
-   as the flag above, and must never touch susp: only the flag (or FLAG_AUTO
-   firing on its own) is allowed to mean "set aside", or that signal stops being
-   trustworthy as the one place that really means "this word is stuck" */
-.leechX{flex:0 0 auto;background:none;border:none;padding:0 4px;font-size:13px;line-height:1;color:var(--faint);opacity:.65}
-.leechX:active{opacity:1}
+/* Just the flag icon now (2026-08-13) -- no text, no dismiss. It used to be
+   a text banner ("Again N times today--tap the flag...") gated on
+   FLAG_MANUAL, with its own small x dismiss button below the flag; both are
+   gone, and renderLeech() now gates on the lower FLAG_KEY instead, so the
+   icon shows up exactly when the flag is actually usable, not two presses
+   later. Sized as a real tap target (44px, the usual minimum) here
+   specifically -- #leechTag's own .flagBtn only, not the shared class above
+   -- rather than the small inline glyph it used to be paired with text. */
+.leechtag{margin-top:10px;display:flex;align-items:center;justify-content:center}
+#leechTag .flagBtn{padding:8px;font-size:26px;min-width:44px;min-height:44px;
+  display:flex;align-items:center;justify-content:center}
 
 /* ---------- rating row ---------- */
 .rateRow{flex:0 0 auto;display:flex;gap:9px;padding:10px 12px 14px}
@@ -357,6 +363,16 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .fold[open] summary::after{content:" \2212"}
 .note{font-size:13px;color:var(--muted);line-height:1.55;margin-top:12px}
 .note.warnish{color:#b06a00}
+/* An explicit, always-available push -- Settings already had "Push to gist
+   now" but it took two screens to reach. Sits right next to the sync-age
+   note it already shares a purpose with, so there's one obvious place to
+   both see and fix "how stale is my backup" before switching devices. */
+.syncRow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.syncRow .note{margin-top:12px;flex:1 1 auto}
+.syncNow{flex:0 0 auto;font-size:12px;font-weight:600;padding:7px 13px;border-radius:9px;
+  border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer;white-space:nowrap}
+.syncNow:active{opacity:.6}
+.syncNow:disabled{opacity:.5}
 .note.bad{color:#c0392b}
 .warn{background:var(--warn-bg);border:1px solid var(--warn-br);border-radius:12px;padding:11px 13px;
   font-size:13.5px;line-height:1.5;color:var(--warn-ink);margin-bottom:16px}
@@ -651,7 +667,10 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="sect">
         <h2>Study days</h2>
         <div class="strip" id="strip"></div>
-        <div class="note" id="syncAge"></div>
+        <div class="syncRow">
+          <div class="note" id="syncAge"></div>
+          <button class="syncNow hidden" id="syncNowBtn">Sync now</button>
+        </div>
         <div class="note" id="streakNote">—</div>
         <details class="fold" id="calFold">
           <summary>Full calendar</summary>
@@ -840,11 +859,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="rule"></div>
       <div class="answer" id="answer"></div>
       <div class="leechtag hidden" id="leechTag">
-        <div class="leechBtns">
-          <button class="flagBtn" id="flagBtn" aria-label="Flag this word">&#9873;</button>
-          <button class="leechX" id="leechDismiss" aria-label="Dismiss this warning">&times;</button>
-        </div>
-        <span id="leechText"></span>
+        <button class="flagBtn" id="flagBtn" aria-label="Flag this word">&#9873;</button>
       </div>
       <div class="hintline" id="hintline"></div>
       <div class="cardMeta" id="cardMeta"></div>
@@ -1197,21 +1212,28 @@ const LEARN_STEPS=[1*MIN,10*MIN], RELEARN_STEPS=[10*MIN];
 const DRILL_CAP=3;
 const S_MIN=0.001;
 const AGAIN=1, HARD=2, GOOD=3, EASY=4;
-// A word can be flagged (set aside, same as susp) by hand once it has drawn
-// this many Agains in a single study day; past FLAG_AUTO it happens on its
-// own. Same-day raw count, not distinct days -- an earlier version counted
-// distinct study days instead (deliberately, to stop one bad cram sitting
-// tripping the flag on its own), changed back to same-day counting
-// 2026.08.03 at the owner's explicit request: the flag is meant to catch a
-// sitting that is going badly right now, not chronic failure across
-// separate sessions. See againTodayCounts() below.
+// FLAG_MANUAL: the threshold for the curated "Struggling words" lists only
+// (the front screen's own section, and Browse) -- past FLAG_AUTO a word is
+// set aside on its own regardless. Same-day raw count, not distinct days --
+// an earlier version counted distinct study days instead (deliberately, to
+// stop one bad cram sitting tripping the flag on its own), changed back to
+// same-day counting 2026.08.03 at the owner's explicit request: the flag is
+// meant to catch a sitting that is going badly right now, not chronic
+// failure across separate sessions. See againTodayCounts() below.
+// Deliberately higher than FLAG_KEY below -- those lists are meant to
+// surface real trouble, not every word that's had a rough couple of presses.
 const FLAG_MANUAL=5, FLAG_AUTO=8;
-// The f key flags/unflags the current word straight from the keyboard,
-// silently -- no toast, no banner -- once it's drawn this many Agains today.
-// Deliberately below FLAG_MANUAL: a keyboard user doesn't need the leech
-// banner on screen first to reach for the flag, but the key should still
-// wait for real same-day trouble rather than firing on a fresh word's very
-// first slip. See the keydown handler.
+// FLAG_KEY: the threshold that actually governs when a word becomes
+// flaggable by hand on the study screen, in either of its two forms -- the
+// keyboard's f key (silently, no toast: see the keydown handler) and the
+// on-screen flag icon (renderLeech; no text, no dismiss, just the icon --
+// tapping it *does* toast, the same confirmation every other flag tap in
+// the app gives). Deliberately below FLAG_MANUAL: two real same-day Agains
+// is enough to want the word out of rotation, well before it's bad enough
+// to earn a spot on the curated Struggling-words lists above. Changed
+// 2026.08.13 at the owner's request from the icon's old FLAG_MANUAL-gated
+// text banner, which made the flag look unavailable two presses later than
+// it actually was.
 const FLAG_KEY=2;
 // "Time to learn a word" (timeToLearnFor, browse screen) sums thinkMs across
 // a card's whole history as a rough active-engagement figure. reveal()
@@ -1603,6 +1625,26 @@ function normalise(o){
     s.settings.newPerDayL=o.settings.newPerDay; s.settings.newPerDayE=o.settings.newPerDay;
   }
   delete s.settings.newPerDay;
+  // Card fields just below get Number.isFinite checks; these settings never did,
+  // even though several feed straight into the same scheduling arithmetic. A
+  // retention of 0 (or missing/garbage, e.g. from a hand-edited or partially
+  // corrupted file) reaches nextInterval()'s Math.pow(st.retention,1/DECAY) and
+  // hands back NaN or a silently maxed-out interval -- for every review-graded
+  // card, not just one, since S.settings is shared. Each field falls back to
+  // its own default independently, same "fix just this one thing" reasoning as
+  // the card checks below, rather than discarding the whole settings object.
+  const SETTINGS_BOUNDS={
+    retention:[0.01,0.99], maxIvl:[1,36500], drillCap:[1,50],
+    newPerDayL:[0,4000], newPerDayE:[0,4000], knownDays:[1,3650],
+    gateDays:[0,3650], drillDays:[0,14], reviewDay:[-1,6]
+  };
+  for(const k in SETTINGS_BOUNDS){
+    const [lo,hi]=SETTINGS_BOUNDS[k];
+    let v=s.settings[k];
+    if(k!=='retention'&&Number.isFinite(v)) v=Math.round(v);
+    if(!Number.isFinite(v)||v<lo||v>hi) v=defaults.settings[k];
+    s.settings[k]=v;
+  }
   // applyTheme() already falls back for an unknown palette, but it does that
   // without writing the fallback down, so a junk value survives in S and
   // renderSet() prints it back out. Settled here instead, once, where every
@@ -1724,7 +1766,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.09.0';
+const BUILD='2026.08.13.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -2315,15 +2357,15 @@ function renderCard(){
   shownAt=Date.now(); thinkMs=null; cardDirty=false;
   renderCounts();
 }
+// Gates on FLAG_KEY, not FLAG_MANUAL -- see FLAG_KEY's own comment. Just the
+// icon: no text, no dismiss button (2026-08-13).
 function renderLeech(){
   const n=againTodayFor(current,S.log,today()), tag=$('leechTag');
-  if(n<FLAG_MANUAL){ tag.classList.add('hidden'); return; }
+  if(n<FLAG_KEY){ tag.classList.add('hidden'); return; }
   tag.classList.remove('hidden');
   const susp=!!(S.cards[current]&&S.cards[current].susp);
   $('flagBtn').classList.toggle('on',susp);
-  $('leechText').textContent = susp
-    ? 'Set aside — tap the flag to bring it back'
-    : 'Again '+n+' time'+(n===1?'':'s')+' today — tap the flag to set it aside';
+  $('flagBtn').setAttribute('aria-label',susp?'Bring back to normal review':'Flag this word');
 }
 // shared by reveal() and rate(): a tap landing within `ms` of `ref` is
 // treated as the tail of a fast double-tap rather than a deliberate one --
@@ -2358,8 +2400,17 @@ function reveal(){
   const t=revealAt-shownAt;
   thinkMs=(cardDirty||t<120||t>300000)?null:t;    // discard if you looked away
   const cs=previewCard(current), now=Date.now(), st=S.settings;
+  // Each button computes its own preview independently -- one grade's
+  // schedule() throwing (a corrupted card shape normalise() didn't catch, or
+  // any other future surprise) must not blank the other two, and must never
+  // leave a button showing nothing at all: '?' is visibly "couldn't preview
+  // this," not a silent gap the owner has to notice on their own. rate()
+  // below has its own matching guard, so the button stays tappable either way
+  // -- this used to be the point a stuck card required leaving the queue and
+  // starting a fresh one to get past.
   [[AGAIN,'iAgain'],[GOOD,'iGood'],[EASY,'iEasy']].forEach(([r,el])=>{
-    $(el).textContent=fmtIvl(schedule(cs,adjustGrade(r,thinkMs),now,st).ivl);
+    try{ $(el).textContent=fmtIvl(schedule(cs,adjustGrade(r,thinkMs),now,st).ivl); }
+    catch(e){ $(el).textContent='?'; }
   });
 }
 // "Quick rate": once a word is past its first learning steps (st==='R' --
@@ -2426,7 +2477,19 @@ function rate(pressed){
   undoStack.push(frame);
   if(undoStack.length>40) undoStack.shift();
   const first=cs.reps===0;
-  const res=schedule(cs,r,now,st_());
+  let res;
+  try{ res=schedule(cs,r,now,st_()); }
+  catch(e){
+    // Whatever made this card un-schedulable (a shape normalise() didn't
+    // catch, or anything else) must not strand the session on it -- the old
+    // failure mode here was a button that looked live but did nothing when
+    // tapped, fixable only by leaving the queue and starting a fresh one.
+    // Reset just this card back to unrated/learning, the same shape
+    // freshCard() always produces and schedule() is proven to handle (test
+    // 3), and still grade the tap that was just made rather than losing it.
+    res=schedule(freshCard(c),r,now,st_());
+    toast('That word’s saved data looked corrupted — reset it to start over',3200);
+  }
   S.cards[current]=res.card;
   S.log.push([current,r,now,Math.round(res.ivl/1000),thinkMs]);
   // Credit the wall-clock time since the previous rating (or since walking
@@ -3604,17 +3667,37 @@ function renderSyllabus(){
   $('fcBody').innerHTML=fh;
 }
 function renderSync(){
-  const el=$('syncAge'); if(!el) return;
+  const el=$('syncAge'), btn=$('syncNowBtn'); if(!el) return;
   const {gistId,gistTok}=S.settings;
-  if(!gistId||!gistTok){ el.className='note'; el.textContent='Gist backup is off — Settings can turn it on.'; return; }
+  if(!gistId||!gistTok){
+    el.className='note'; el.textContent='Gist backup is off — Settings can turn it on.';
+    if(btn) btn.classList.add('hidden');
+    return;
+  }
+  if(btn) btn.classList.remove('hidden');
+  // S.syncedLogLen is the review count the gist last actually confirmed (set
+  // only inside pushGist()'s success branch) -- reviews past it are sitting
+  // local-only, whether that's the normal 6s debounce mid-session or a push
+  // that quietly never landed (see flushPendingPush()'s own comment on why
+  // that happens more than it should on a backgrounded tab). Surfacing this
+  // the moment it's true, right next to the one-tap fix, is the point: the
+  // owner should never have to guess "did that last review make it over"
+  // before switching devices.
+  const unsynced=S.syncedLogLen!=null?Math.max(S.log.length-S.syncedLogLen,0):0;
   if(!S.lastSync){ el.className='note bad'; el.textContent='Gist configured but nothing has been pushed yet.'; return; }
   const age=Date.now()-S.lastSync;
   const txt = age<MIN? 'just now'
             : age<HOUR? Math.round(age/MIN)+'m ago'
             : age<DAY? Math.round(age/HOUR)+'h ago'
             : Math.round(age/DAY)+'d ago';
-  el.className='note'+(age>3*DAY?' bad':(age>DAY?' warnish':''));
-  el.textContent='Backed up to the gist '+txt+' as '+deviceLabel()+(age>DAY?' — check the token has not expired.':'.');
+  if(unsynced>0){
+    el.className='note warnish';
+    el.textContent=unsynced+' review'+(unsynced===1?'':'s')+' not pushed yet (last synced '+txt+
+      ') — tap Sync now before switching devices.';
+  } else {
+    el.className='note'+(age>3*DAY?' bad':(age>DAY?' warnish':''));
+    el.textContent='Backed up to the gist '+txt+' as '+deviceLabel()+(age>DAY?' — check the token has not expired.':'.');
+  }
 }
 function renderWarn(qE){
   const w=$('homeWarn'); if(!w||!S) return; let h='';
@@ -3933,6 +4016,14 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.13.1',[
+    'Backup: getting the last review or two across before switching devices should no longer take any luck. Going back to the front screen now pushes to the gist right away if a rating in the last few seconds hadn\'t been pushed yet, instead of waiting out the rest of its 6-second debounce -- pushing while the app is still fully open gives that request its best chance of actually finishing before a phone gets locked or another app opens, which is the likelier explanation for the odd review going missing than the debounce window itself. There\'s also a new "Sync now" button on the front screen, right next to the existing "backed up N ago" line, so pushing by hand no longer means a trip through Settings -- and that line now says plainly when there are reviews sitting local-only, rather than only warning once a backup has gone quiet for days.',
+    'Fixed: a card could occasionally show up with no time on any of its three buttons, tappable but stuck -- leaving the queue and starting a fresh one was the only way past it. The buttons\' interval preview, and the rating itself, now recover instead of silently breaking: a preview that can\'t be computed shows "?" rather than nothing, a bad rating resets just that one card and still records the tap that triggered it, and a gap in how imported or synced settings were checked -- some scheduling-related numbers were never validated the way a card\'s own fields already were -- is closed too.'
+  ]],
+  ['2026.08.13.0',[
+    'Space/Enter, pressed a second time once the answer is showing, now rates the card Easy instead of Good -- changed from Anki\'s own convention (Space as Good) at the owner\'s request, so the fastest path through a sitting -- reveal, Space, reveal, Space -- is also the honest one, for a word that genuinely needed no thought at all. The number/letter keys (2/O for Good) and the on-screen buttons are unchanged.',
+    'The study screen\'s flag -- for setting a struggling word aside by hand, mid-session -- used to appear as a small text banner ("Again N times today -- tap the flag...") once a word had drawn 5 Agains in the same study day, even though the flag itself, and the keyboard\'s F key, had actually been usable from 2 Agains onward the whole time; the banner just never said so. It\'s now a single flag icon, nothing else -- no text, no dismiss button -- sized as a proper tap target (44px), and it appears at that same lower threshold (2) the flag and the F key already used, rather than three presses late. Tapping it still sets the word aside or brings it back, with the same toast confirmation as everywhere else in the app; the F key is unchanged, still silent. The front screen\'s own "Struggling words" list, and Browse\'s per-row flag, are untouched -- both are a different, deliberately later signal (5 Agains) for what is actually worth surfacing on a curated list, not just technically flaggable.'
+  ]],
   ['2026.08.09.0',[
     'The study-session clock now keeps running through the "Almost there" screen (a few words still in short-term steps, back in a minute or two) instead of pausing there -- it\'s the same unbroken sitting, just waiting on the algorithm rather than off looking at Settings or Browse. The real "Nothing due" end-of-session screen still pauses it, same as leaving to any other screen. In practice this fires rarely: replaying a real backup\'s full rating history (11,305 reviews) through the actual queue-building code found only one true "nothing due" moment across the entire history, since a deck of any real size keeps the queue non-empty almost continuously -- short-term relearn steps here are 1 and 10 minutes, both comfortably inside the 20-minute "serve it a little early" window the queue already uses, so it essentially never has to make you wait. Fixed alongside it: resuming from that screen, or from a tab that got backgrounded while it was up, used to silently reset the on-screen sitting clock to zero even though the persisted daily total was unaffected -- cosmetic only, but worth closing while touching the same code.'
   ]],
@@ -4187,7 +4278,7 @@ function renderSet(){
     ? (flagged?flagged+' word'+(flagged===1?'':'s')+' set aside. ':'')+
       (watch?watch+' more at '+FLAG_MANUAL+'+ "Again" presses today, not yet flagged.':'')+
       ' Words you set aside stop appearing until you bring them back.'
-    : 'Nothing flagged yet. "Again" '+FLAG_MANUAL+' times in one day lets you flag a word by hand; '+FLAG_AUTO+' does it on its own.';
+    : 'Nothing flagged yet. "Again" '+FLAG_KEY+' times in one day lets you flag a word by hand; '+FLAG_AUTO+' does it on its own.';
   balanceColumns(document.querySelector('#scSet .setCols'));
 }
 
@@ -4209,17 +4300,21 @@ $('flagBtn').addEventListener('click',e=>{
   renderLeech();
   toast(cs.susp?'Set aside':'Brought back',1400);
 });
-// dismiss just hides this occurrence of the banner -- never touches susp.
-// Acknowledging "this is a rough day for this word" is not the same decision as
-// "set it aside", and FLAG_AUTO must keep counting toward 8 either way.
-$('leechDismiss').addEventListener('click',e=>{
-  e.preventDefault(); e.stopPropagation();
-  $('leechTag').classList.add('hidden');
-});
 tapZone($('undoBtn'),undo);
-// seven buttons across six screens, all "go back to the front screen"
+// seven buttons across six screens, all "go back to the front screen".
+// Also flushes any still-debounced gist push right here, while the page is
+// fully foregrounded -- "go back to Home" is the natural pause point right
+// before someone backgrounds the tab or switches devices, and pushing now
+// gives the request its best chance to actually finish. The existing
+// visibilitychange/pagehide flush (flushPendingPush(), further down) is not
+// reliable for this: a fetch kicked off right as the tab backgrounds can be
+// suspended mid-flight before it completes (confirmed pattern on iOS Safari,
+// especially a Home Screen "Add to Dock" install), which is the likeliest
+// explanation for reviews occasionally not making it to the gist before the
+// owner switches to another device. flushPendingPush() is a no-op if nothing
+// is pending, so this costs nothing on every other tap back to Home.
 ['toHome','toHome2','toHome3','doneBack','statsBack','logBack','browseBack']
-  .forEach(id=>tapZone($(id),()=>{renderHome();show('scHome');}));
+  .forEach(id=>tapZone($(id),()=>{flushPendingPush();renderHome();show('scHome');}));
 tapZone($('toSettings'),()=>{renderSet();show('scSet');});
 tapZone($('toStats'),()=>{renderStats();show('scStats');});
 tapZone($('statsDirL'),()=>{S.dir='L';save();renderStats();});
@@ -4318,6 +4413,21 @@ tapZone($('impBtn'),()=>$('impFile').click());
 $('impFile').addEventListener('change',e=>{ if(e.target.files[0]) doImport(e.target.files[0]); e.target.value=''; });
 tapZone($('pushBtn'),()=>pushGist(false));
 tapZone($('pullBtn'),pullGist);
+// Home screen's own one-tap push (§syncRow), so getting the last review or two
+// across before switching devices never requires a trip to Settings. Clears
+// any still-debounced auto-push first so an explicit tap here doesn't leave a
+// second, redundant push scheduled a few seconds behind it.
+let syncNowBusy=false;
+tapZone($('syncNowBtn'),async ()=>{
+  if(syncNowBusy) return;
+  syncNowBusy=true;
+  clearTimeout(saveTimer); saveTimer=null;
+  const btn=$('syncNowBtn'); btn.disabled=true; btn.textContent='Syncing…';
+  await pushGist(false);
+  syncNowBusy=false;
+  btn.disabled=false; btn.textContent='Sync now';
+  renderSync();
+});
 tapZone($('unsuspBtn'),()=>{
   let n=0; for(const k in S.cards){ if(S.cards[k].susp){setAside(k,false);n++;} }
   save(); renderSet(); toast(n?(n+' brought back'):'Nothing was set aside');
@@ -4395,11 +4505,13 @@ $('fGistTok').addEventListener('change',e=>{S.settings.gistTok=e.target.value.tr
 document.addEventListener('keydown',e=>{
   if($('scStudy').classList.contains('on')){
     if(e.key===' '||e.key==='Enter'){e.preventDefault();
-      // Space/Enter reveals when the answer is hidden, then doubles as Good
-      // once it's showing -- the same double duty Anki's own Space key does,
-      // so the single most common rating never needs a second key.
+      // Space/Enter reveals when the answer is hidden, then doubles as Easy
+      // once it's showing -- changed 2026.08.13 from Good (Anki's own
+      // convention for Space) at the owner's request, so the fastest path
+      // through the deck -- reveal, Space, reveal, Space -- is also the
+      // honest one: a word you didn't need to think about at all.
       if($('rateRow').classList.contains('hidden')) reveal();
-      else rate(GOOD);
+      else rate(EASY);
     }
     else if(!$('rateRow').classList.contains('hidden')){
       // 1/2/3 sit on the left of the number row -- I/O/P are the right-hand
@@ -4420,15 +4532,13 @@ document.addEventListener('keydown',e=>{
     // reasoning as I/O/P below -- added alongside Z, not instead of it
     if(e.key==='z'||e.key==='Z'||e.key==='0') undo();
     // f flags/unflags the current word straight from the keyboard, silently
-    // -- no toast, no banner -- once it's drawn FLAG_KEY Agains today (see
-    // FLAG_KEY's own comment). x dismisses the leech banner if one's up,
-    // same as tapping its own x button -- its own key rather than Escape,
-    // which browsers/extensions already claim for other things.
+    // -- no toast -- once it's drawn FLAG_KEY Agains today (see FLAG_KEY's
+    // own comment). The on-screen flag icon gates on the same threshold, so
+    // this never fires "early" relative to what's already visible.
     if((e.key==='f'||e.key==='F') && current!=null &&
        againTodayFor(current,S.log,today())>=FLAG_KEY){
       setAside(current,!cardState(current).susp); save(); renderLeech();
     }
-    if(e.key==='x'||e.key==='X') $('leechTag').classList.add('hidden');
   }
 });
 document.addEventListener('gesturestart',e=>e.preventDefault());
