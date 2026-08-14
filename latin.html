@@ -916,6 +916,17 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh">Caps how many unseen words enter the rotation each day, tracked and capped separately per direction — raising one no longer raises the other. Words carried over from the audit come first.</div>
       </div>
       <div class="field">
+        <label for="fLearnBufL">Learning at once — <span id="fLearnBufLblL">—</span> — <b id="fLearnBufLVal">4</b></label>
+        <input type="range" id="fLearnBufL" min="3" max="6" step="1">
+        <div class="fh" id="fLearnBufSuggestL" hidden></div>
+      </div>
+      <div class="field">
+        <label for="fLearnBufE">Learning at once — <span id="fLearnBufLblE">—</span> — <b id="fLearnBufEVal">4</b></label>
+        <input type="range" id="fLearnBufE" min="3" max="6" step="1">
+        <div class="fh">Separate from the daily total above: caps how many brand-new words can be mid-acquisition—not yet graduated out of learning—at once in a single sitting, independent per direction. New words trickle in only as earlier ones graduate or drop below the cap, instead of arriving as a cluster that all comes due together and starts looking the same. Never stalls a sitting—only holds back new intros while there's other due or learning work to fall back on. Once there's roughly two weeks of real use under this cap, a personalised suggestion can appear below, based on your own actual "Again" rate at different concurrency levels—never applied for you, always your call.</div>
+        <div class="fh" id="fLearnBufSuggestE" hidden></div>
+      </div>
+      <div class="field">
         <label for="fRet">Target retention—<b id="fRetVal">90%</b></label>
         <input type="range" id="fRet" min="80" max="95" step="1">
         <div class="fh">How often you want to succeed at review time. Lower means fewer reviews and more forgetting.</div>
@@ -1096,6 +1107,11 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           keep before anything switches; nothing is chosen for you silently.</div>
       </div>
       <div class="field">
+        <label for="fFlagAuto">Same-day "Again" presses before a word sets itself aside—<b id="fFlagAutoVal">12</b></label>
+        <input type="range" id="fFlagAuto" min="5" max="15" step="1">
+        <div class="fh">Lower parks a struggling word sooner; higher gives it more real, spaced attempts first. Raising this never brings an already-set-aside word back on its own. Lowering it takes effect at once for any new "Again" press, but never reaches back to reinterpret presses already logged earlier today—those are only judged against today's higher starting number, so nothing already in progress this session gets swept out from under you. It applies in full, with no exceptions, from your next study day on.</div>
+      </div>
+      <div class="field">
         <label>Set aside</label>
         <div class="fh" id="leechNote">—</div>
         <button class="act" id="unsuspBtn">Bring all set-aside words back</button>
@@ -1222,7 +1238,58 @@ const AGAIN=1, HARD=2, GOOD=3, EASY=4;
 // failure across separate sessions. See againTodayCounts() below.
 // Deliberately higher than FLAG_KEY below -- those lists are meant to
 // surface real trouble, not every word that's had a rough couple of presses.
-const FLAG_MANUAL=5, FLAG_AUTO=8;
+// Deliberately left a fixed constant, not a setting, even after FLAG_AUTO
+// below became one (2026.08.14): the "warning before auto-set-aside" gap
+// this creates only matters while FLAG_AUTO sits above it, which is true
+// for its whole 5-15 range except the single value 5 -- see FLAG_AUTO's
+// own comment for that one collision case.
+const FLAG_MANUAL=5;
+// FLAG_AUTO: same-day Agains before a word is set aside on its own -- see
+// rate() and normalise(). Promoted 2026.08.14 from a bare constant to
+// S.settings.flagAuto (Settings' own slider, range 5-15), at the owner's
+// request, after his own report that the old fixed value of 8 was parking
+// words before they'd had a fair number of genuinely-spaced attempts.
+// FLAG_AUTO_DEFAULT is only: (a) normalise()'s merge-default for a state
+// that doesn't carry the setting yet, same role DRILL_CAP plays for
+// drillCap above, and (b) the fallback SETTINGS_BOUNDS clamps back to if a
+// stored value is missing, non-finite, or outside [5,15] (hand-edited file,
+// crafted backup). Never read directly for the live check itself -- that
+// always goes through S.settings.flagAuto, live, at LEARNING_LOAD_PLAN.md
+// §2's own request, so a change takes effect on the very next qualifying
+// Again press, not on some later reload.
+// Chosen at 12, not 8: same first-hand report as above -- 8 was already
+// shown to feel like the app giving up on a word before it had a fair
+// number of real, spaced attempts, so the shipped default starts higher
+// than the old constant while staying inside his own specified 5-15 range.
+// At flagAuto=5 this collides with the fixed FLAG_MANUAL=5 above: a word
+// would hit the curated Struggling-words list and get auto-set-aside on
+// the exact same press, instead of FLAG_MANUAL firing a few presses
+// earlier as a warning. Left as-is deliberately (LEARNING_LOAD_PLAN.md §2)
+// -- harmless (the list is just "words currently in trouble" either way),
+// and the "warning before set-aside" property only matters in the 6-15
+// range regardless.
+//
+// Lowering flagAuto mid-day must not retroactively sweep Agains that were
+// already logged earlier today, back when a higher threshold was still in
+// effect -- the same "a setting change reinterprets already-written
+// history" bug class the deferred-rollover machinery above exists to stop,
+// just for a different field (see the due-date-snap removal comment in
+// normalise()). Unlike rollover, though, a live Again press right now
+// should still use whatever flagAuto reads right now, immediately -- only
+// normalise()'s passive defensive rescan needs holding back. So rather than
+// deferring the *setting itself* (rolloverPending's shape), normalise()
+// snapshots flagAuto once per study day (S.settings.flagAutoBaseline) and
+// rescans today's log against whichever is loosest -- today's snapshot or
+// the live value -- so a same-day lowering can never trip a word out of
+// nowhere, while a same-day raising (always safe: it can only make the
+// rescan MORE conservative, and susp is one-way regardless, see setAside())
+// still applies at once. The snapshot resets every study day, so a lowered
+// threshold is fully in force, unqualified, from the next one on. See the
+// rescan in normalise() for the actual mechanics, and note this is a
+// same-day approximation, not a per-Again-event ledger: changing flagAuto
+// more than once in a single study day only grandfathers against the day's
+// *first* value seen, not every intermediate one.
+const FLAG_AUTO_DEFAULT=12;
 // FLAG_KEY: the threshold that actually governs when a word becomes
 // flaggable by hand on the study screen, in either of its two forms -- the
 // keyboard's f key (silently, no toast: see the keydown handler) and the
@@ -1449,7 +1516,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off'},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferL:4, learnBufferE:4, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
@@ -1636,7 +1703,8 @@ function normalise(o){
   const SETTINGS_BOUNDS={
     retention:[0.01,0.99], maxIvl:[1,36500], drillCap:[1,50],
     newPerDayL:[0,4000], newPerDayE:[0,4000], knownDays:[1,3650],
-    gateDays:[0,3650], drillDays:[0,14], reviewDay:[-1,6]
+    gateDays:[0,3650], drillDays:[0,14], reviewDay:[-1,6], flagAuto:[5,15],
+    learnBufferL:[3,6], learnBufferE:[3,6]
   };
   for(const k in SETTINGS_BOUNDS){
     const [lo,hi]=SETTINGS_BOUNDS[k];
@@ -1644,6 +1712,32 @@ function normalise(o){
     if(k!=='retention'&&Number.isFinite(v)) v=Math.round(v);
     if(!Number.isFinite(v)||v<lo||v>hi) v=defaults.settings[k];
     s.settings[k]=v;
+  }
+  // flagAutoBaseline isn't a bounded number, so SETTINGS_BOUNDS above can't
+  // cover it -- a hand-edited or crafted backup could still hand it a
+  // non-object, a day that isn't a real dayKey, or a value outside flagAuto's
+  // own already-clamped range. Reset rather than repair: normalise()'s own
+  // rescan below recreates it correctly on its next pass, exactly as if this
+  // were a state that had never had the setting at all.
+  { const bl=s.settings.flagAutoBaseline;
+    if(!bl||typeof bl!=='object'||!Number.isFinite(bl.day)||!Number.isFinite(bl.value)||bl.value<5||bl.value>15)
+      s.settings.flagAutoBaseline=null; }
+  // learnBufferSinceL/E anchor Feature A's suggest-a-cap data window (see
+  // learnBufferSuggestion, further down) -- stamped to this load's "today"
+  // the first time either is ever missing, which in practice is also the
+  // moment the concurrent-learning cap itself first goes live on a device,
+  // exactly when its ~2-week data-sufficiency clock should start. A junk
+  // value (hand-edited/crafted) is treated the same as missing, not repaired.
+  for(const k of ['learnBufferSinceL','learnBufferSinceE']){
+    if(!Number.isFinite(s.settings[k])) s.settings[k]=today();
+  }
+  // learnBufferDismissedL/E remembers a suggested value he already waved
+  // off, so the same number doesn't nag him again -- but a *different*
+  // freshly-computed suggestion still surfaces. Any value outside the
+  // slider's own 3-6 range is just cleared rather than repaired.
+  for(const k of ['learnBufferDismissedL','learnBufferDismissedE']){
+    const v=s.settings[k];
+    if(!(v===3||v===4||v===5||v===6)) s.settings[k]=null;
   }
   // applyTheme() already falls back for an unknown palette, but it does that
   // without writing the fallback down, so a junk value survives in S and
@@ -1722,9 +1816,25 @@ function normalise(o){
     // rate()'s live check stand down for that one day; tomorrow's FLAG_AUTO
     // Agains flag the word again as they should.
     const dk=today();
+    // flagAuto is a live setting (see its own comment, above FLAG_AUTO_DEFAULT)
+    // and this rescan runs on every load/import/gist-pull, not just once --
+    // read naively it would let a same-day *lowering* reinterpret Agains
+    // already logged under the old, higher threshold, sweeping a word aside
+    // with no live action on it at all. flagAutoBaseline snapshots flagAuto
+    // once per study day (recreated here whenever the stored snapshot is
+    // missing or stale for today); the rescan then uses whichever is
+    // loosest -- today's snapshot or the current live value -- so a same-day
+    // lowering can't retroactively trip anything, while a same-day raising
+    // (never unsafe -- see FLAG_AUTO_DEFAULT's comment) still applies right
+    // away. rate()'s own live check just below is unaffected by any of this
+    // and always reads S.settings.flagAuto directly.
+    let flBase=s.settings.flagAutoBaseline;
+    if(!flBase||flBase.day!==dk) flBase={day:dk, value:s.settings.flagAuto};
+    s.settings.flagAutoBaseline=flBase;
+    const rescanFlagAuto=Math.max(s.settings.flagAuto, flBase.value);
     const bad=againTodayCounts(s.log, dk);
     for(const id in bad){
-      if(bad[id]>=FLAG_AUTO && s.cards[id] && !s.cards[id].susp && s.cards[id].unflagDay!==dk) s.cards[id].susp=true;
+      if(bad[id]>=rescanFlagAuto && s.cards[id] && !s.cards[id].susp && s.cards[id].unflagDay!==dk) s.cards[id].susp=true;
     }
   } finally { ROLL_OVR=null; }
   return s;
@@ -1766,7 +1876,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.13.1';
+const BUILD='2026.08.14.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -1804,6 +1914,16 @@ function dailyCap(d,dir){
   const rec=S.days[d], ov=rec&&(dir==='L'?rec.capL:rec.capE);
   return ov!=null?ov:S.settings['newPerDay'+dir];
 }
+// Concurrent-learning cap: separate from dailyCap above, this throttles how
+// many words can be mid-acquisition (not yet graduated out of learning) at
+// once within a single sitting -- see LEARNING_LOAD_PLAN.md sec1 for the
+// interference research and his real-backup validation (1,407/1,407 replay
+// match). S.settings.learnBufferL/E, range 3-6, default 4, split per
+// direction like newPerDayL/E above.
+function learnBufferFor(dir){
+  const v=S.settings['learnBuffer'+dir];
+  return v>0?v:4;
+}
 function buildQueue(dir){
   const now=Date.now(), d=today();
   let learn=[], due=[], fresh=[], seeded=[];
@@ -1835,10 +1955,95 @@ function buildQueue(dir){
   }
   due=jitteredDueOrder(due);
   learn.sort((a,b)=>peek(a).due-peek(b).due);
-  const room=Math.max(capToday-introducedToday,0);
+  // Soft throttle only: Anki's own rejected feature request for this exact
+  // idea flagged a real risk -- a hard concurrency cap can stall a sitting,
+  // new intros blocked while nothing else is due yet either, even though
+  // real work still exists just gated behind the cap. So this only clamps
+  // room while learn/due already has other work to fall back on; once those
+  // genuinely run dry, new words keep coming rather than ending the sitting
+  // early. Counts every same-direction word already mid-acquisition
+  // (reps>0, st 'L'/'X') -- not just the ones already surfaced into learn/due
+  // above, since a word still waiting out its own step is just as much "in
+  // flight" as one that's ready right now.
+  const inFlight=CARDS.reduce((n,c)=>{
+    if(c.dir!==dir) return n;
+    const cs=peek(c.id);
+    return n+((cs.reps>0&&(cs.st==='L'||cs.st==='X'))?1:0);
+  },0);
+  const otherWorkPending=learn.length>0||due.length>0;
+  const concurrencyRoom=otherWorkPending?Math.max(learnBufferFor(dir)-inFlight,0):Infinity;
+  const room=Math.max(Math.min(capToday-introducedToday,concurrencyRoom),0);
   const order=S.settings.weakFirst ? fresh.concat(seeded) : seeded.concat(fresh);
   const intro=order.slice(0,room);
   return {learn,due,intro,seededTotal:seeded.length,freshTotal:fresh.length};
+}
+
+// ---- learnBuffer suggestion (Feature A, "suggest-and-confirm" -- see
+// LEARNING_LOAD_PLAN.md sec1's Adaptive mode and DEVELOPMENT_IDEAS.md sec A).
+// Replays S.log through the REAL schedule() above -- not a duplicate copy,
+// so unlike tools/replay_concurrency.js this can never quietly drift out of
+// sync with it -- to reconstruct, for every same-direction word's first-ever
+// acquisition (first exposure to its first real graduation to 'R'; a later
+// relapse into 'X' is a different phenomenon and is not re-counted, same
+// distinction the original research drew), how many OTHER words were
+// concurrently also mid-acquisition at that instant, bucketed against
+// whether that rating was "Again". Both LB_SUGGEST thresholds below are
+// judgement calls, same as ACTIVE_CAP/looksSimilar's cutoff elsewhere in
+// this file -- not tuned against his real post-cap data, because none exists
+// yet; worth revisiting once it does.
+const LB_SUGGEST_MIN_DAYS=14;   // matches the two-week noise-averaging finding, sec1
+const LB_SUGGEST_MIN_N=20;      // events a candidate bucket needs before its rate is trusted
+let learnBufSugCache={L:null,E:null};
+function learnBufferSuggestion(dir){
+  const since=S.settings['learnBufferSince'+dir];
+  if(!Number.isFinite(since)) return {ready:false};
+  const daysActive=today()-since;
+  if(daysActive<LB_SUGGEST_MIN_DAYS) return {ready:false, daysActive};
+  const cache=learnBufSugCache[dir];
+  if(cache && cache.atLog===S.log.length && cache.atDay===today() && cache.since===since) return cache.result;
+
+  const sinceTs=dayStart(since);
+  const log=S.log.filter(e=>BY_ID[e[0]]&&BY_ID[e[0]].dir===dir).slice().sort((a,b)=>a[2]-b[2]);
+  const sim={}, graduated={}, stat={};   // stat: concurrency bucket(int) -> [again,total]
+  for(const row of log){
+    const id=row[0], rating=row[1], ts=row[2];
+    if(!sim[id]){ sim[id]=freshCard(BY_ID[id]); graduated[id]=(sim[id].st==='R'); }
+    const pre=sim[id];
+    if(!graduated[id] && ts>=sinceTs){
+      let conc=0;
+      for(const oid in sim){
+        if(oid===id||graduated[oid]) continue;
+        const o=sim[oid];
+        if(o.reps>0&&(o.st==='L'||o.st==='X')) conc++;
+      }
+      const b=Math.min(conc,9);
+      const s=stat[b]||(stat[b]=[0,0]);
+      s[1]++; if(rating===AGAIN) s[0]++;
+    }
+    const res=schedule(pre,rating,ts,S.settings);
+    sim[id]=res.card;
+    if(res.card.st==='R') graduated[id]=true;
+  }
+
+  const rates={};
+  for(let b=3;b<=6;b++){
+    const s=stat[b];
+    if(s && s[1]>=LB_SUGGEST_MIN_N) rates[b]=s[0]/s[1];
+  }
+  const reliable=Object.keys(rates).map(Number).sort((a,b)=>a-b);
+  let result;
+  if(reliable.length<2) result={ready:false, daysActive, table:stat};
+  else{
+    const best=Math.min(...reliable.map(b=>rates[b]));
+    // the smallest cap within 3 points of the best observed rate -- the
+    // cheapest concurrency that doesn't cost accuracy, not just whichever
+    // single bucket happens to show the lowest (possibly noisy) number
+    let suggested=reliable[0];
+    for(const b of reliable){ if(rates[b]<=best+0.03){ suggested=b; break; } }
+    result={ready:true, suggested, rates, daysActive, table:stat};
+  }
+  learnBufSugCache[dir]={atLog:S.log.length, atDay:today(), since, result};
+  return result;
 }
 let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], donePoll=null, cardDirty=false;
 let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by renderCard()'s recap card, cleared by undo() and by anything that wipes undoStack alongside it
@@ -2507,11 +2712,16 @@ function rate(pressed){
   // FLAG_AUTO same-day Agains sets a word aside on its own, right when the
   // qualifying press happens -- normalise()'s migration only catches this
   // defensively, on the next load, for a state that reached it without the
-  // live check having fired (see normalise()).
+  // live check having fired (see normalise()). Reads S.settings.flagAuto
+  // live, deliberately unguarded by normalise()'s flagAutoBaseline: a fresh
+  // Again press, right now, is exactly the "new word reaching the threshold"
+  // case that should always honour whatever the setting currently is, even
+  // seconds after being lowered -- only the passive rescan needs holding
+  // back (see flagAutoBaseline's own comment in normalise()).
   if(r===AGAIN&&!S.cards[current].susp&&S.cards[current].unflagDay!==today()&&
-     againTodayFor(current,S.log,today())>=FLAG_AUTO){
+     againTodayFor(current,S.log,today())>=S.settings.flagAuto){
     S.cards[current].susp=true;
-    toast('Set aside automatically—"Again" '+FLAG_AUTO+' times today',3200);
+    toast('Set aside automatically—"Again" '+S.settings.flagAuto+' times today',3200);
   }
   if(r!==pressed) toast(pressed===EASY?'Recorded as Good—that one took a while':'Recorded as Hard—that one took a while',1600);
   const d=today();
@@ -4016,6 +4226,12 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.14.1',[
+    'A second cap on new words, separate from the existing daily total: "Learning at once" (Settings, next to the daily allowance) limits how many brand-new words can be mid-acquisition -- not yet graduated out of learning -- in a single sitting. Split per direction, 3 to 6, default 4. This targets a different problem than the daily cap does: a burst of new words that all fail their first look together, then all come back due at the same moment a few minutes later, competing against each other with no room for any one of them to actually land -- a real pattern in his own study data, and a documented phenomenon in the memory-research and spaced-repetition literature. It\'s a soft limit -- new words only hold back while there\'s other due or already-learning work to fall back on, so a sitting never runs dry because of it; once that other work genuinely runs out, new words keep coming as before. After roughly two weeks of real use under this cap, Settings can start suggesting a personalised value for it, based on your own actual "Again" rate at each concurrency level -- nothing is ever changed for you; a suggestion only ever appears as a note you approve or dismiss.'
+  ]],
+  ['2026.08.14.0',[
+    'The automatic set-aside threshold ("Again" presses in one day before a word parks itself, so it stops appearing until you bring it back) is now a Settings slider instead of a fixed number -- 5 to 15, default 12, up from the old hardcoded 8. Raising it never brings an already-set-aside word back on its own -- it only affects what happens from here on. Lowering it applies at once to any fresh "Again" press, but never reaches backward into presses already logged earlier the same study day; those stay judged against whatever the number was when they happened, so nothing already in progress this session gets swept aside with no warning. It reaches full, unqualified effect starting your next study day.'
+  ]],
   ['2026.08.13.1',[
     'Backup: getting the last review or two across before switching devices should no longer take any luck. Going back to the front screen now pushes to the gist right away if a rating in the last few seconds hadn\'t been pushed yet, instead of waiting out the rest of its 6-second debounce -- pushing while the app is still fully open gives that request its best chance of actually finishing before a phone gets locked or another app opens, which is the likelier explanation for the odd review going missing than the debounce window itself. There\'s also a new "Sync now" button on the front screen, right next to the existing "backed up N ago" line, so pushing by hand no longer means a trip through Settings -- and that line now says plainly when there are reviews sitting local-only, rather than only warning once a backup has gone quiet for days.',
     'Fixed: a card could occasionally show up with no time on any of its three buttons, tappable but stuck -- leaving the queue and starting a fresh one was the only way past it. The buttons\' interval preview, and the rating itself, now recover instead of silently breaking: a preview that can\'t be computed shows "?" rather than nothing, a bad rating resets just that one card and still records the tap that triggered it, and a gap in how imported or synced settings were checked -- some scheduling-related numbers were never validated the way a card\'s own fields already were -- is closed too.'
@@ -4227,10 +4443,33 @@ function renderLog(){
 }
 
 /* ======================= settings screen ======================= */
+// A note next to the slider, not a toast: this only becomes relevant after
+// ~2 weeks (learnBufferSuggestion's own gate), so it needs to sit somewhere
+// he'll see it exactly when it's ready, not something transient he could
+// easily miss. Suggest-and-confirm, never silent -- Apply and Dismiss are
+// both explicit clicks, wired on #scSet's delegated click handler below.
+function renderLearnBufferSuggest(dir){
+  const el=$('fLearnBufSuggest'+dir);
+  const sug=learnBufferSuggestion(dir);
+  const current=S.settings['learnBuffer'+dir]>0?S.settings['learnBuffer'+dir]:4;
+  const dismissed=S.settings['learnBufferDismissed'+dir];
+  if(!sug.ready || sug.suggested==null || sug.suggested===current || dismissed===sug.suggested){
+    el.hidden=true; el.innerHTML=''; return;
+  }
+  el.hidden=false;
+  el.innerHTML='Your last '+sug.daysActive+' days under this cap suggest <b>'+sug.suggested+'</b> (currently '+current+
+    ') keeps the same-day "Again" rate about as low as any higher setting does. '+
+    '<button type="button" class="act lbApply" data-dir="'+dir+'" data-val="'+sug.suggested+'" style="margin-top:8px">Use '+sug.suggested+'</button> '+
+    '<button type="button" class="act lbDismiss" data-dir="'+dir+'" style="margin-top:8px">Not now</button>';
+}
 function renderSet(){
   const s=S.settings;
   $('fNewLblL').textContent=DECK.fwd; $('fNewLblE').textContent=DECK.rev;
   $('fNewL').value=s.newPerDayL; $('fNewE').value=s.newPerDayE; $('fRet').value=Math.round(s.retention*100);
+  $('fLearnBufLblL').textContent=DECK.fwd; $('fLearnBufLblE').textContent=DECK.rev;
+  $('fLearnBufL').value=s.learnBufferL>0?s.learnBufferL:4; $('fLearnBufLVal').textContent=$('fLearnBufL').value;
+  $('fLearnBufE').value=s.learnBufferE>0?s.learnBufferE:4; $('fLearnBufEVal').textContent=$('fLearnBufE').value;
+  renderLearnBufferSuggest('L'); renderLearnBufferSuggest('E');
   $('fRetVal').textContent=Math.round(s.retention*100)+'%';
   $('fMax').value=s.maxIvl;
   $('fDevice').value=s.deviceName||'';
@@ -4255,6 +4494,8 @@ function renderSet(){
   } else $('fRollPending').hidden=true;
   $('fDrillCap').value=s.drillCap>0?s.drillCap:3;
   $('fDrillCapVal').textContent=($('fDrillCap').value);
+  $('fFlagAuto').value=s.flagAuto>0?s.flagAuto:FLAG_AUTO_DEFAULT;
+  $('fFlagAutoVal').textContent=($('fFlagAuto').value);
   $('fRot').value=S.rotate||'off';
   $('palNote').innerHTML='<span class="swatch" style="background:var(--coral)"></span>'+
     PALETTES[S.palette]+', '+((S.theme==='auto')?'following the system':S.theme)+
@@ -4278,7 +4519,7 @@ function renderSet(){
     ? (flagged?flagged+' word'+(flagged===1?'':'s')+' set aside. ':'')+
       (watch?watch+' more at '+FLAG_MANUAL+'+ "Again" presses today, not yet flagged.':'')+
       ' Words you set aside stop appearing until you bring them back.'
-    : 'Nothing flagged yet. "Again" '+FLAG_KEY+' times in one day lets you flag a word by hand; '+FLAG_AUTO+' does it on its own.';
+    : 'Nothing flagged yet. "Again" '+FLAG_KEY+' times in one day lets you flag a word by hand; '+s.flagAuto+' does it on its own.';
   balanceColumns(document.querySelector('#scSet .setCols'));
 }
 
@@ -4493,6 +4734,42 @@ $('fTiming').addEventListener('change',e=>{S.settings.useTiming=(e.target.value=
 $('fEasy').addEventListener('change',e=>{S.settings.requireEasy=(e.target.value==='1');save();});
 $('fDrillCap').addEventListener('input',e=>{S.settings.drillCap=e.target.value|0;$('fDrillCapVal').textContent=e.target.value;});
 $('fDrillCap').addEventListener('change',()=>save());
+// Live, not deferred like fRoll -- flagAuto itself takes effect immediately
+// (see FLAG_AUTO_DEFAULT's comment); only normalise()'s own defensive rescan
+// holds a same-day lowering back, via flagAutoBaseline, not this listener.
+$('fFlagAuto').addEventListener('input',e=>{S.settings.flagAuto=e.target.value|0;$('fFlagAutoVal').textContent=e.target.value;});
+$('fFlagAuto').addEventListener('change',()=>save());
+// A hand-adjusted value restarts learnBufferSince's ~2-week data-sufficiency
+// clock (see learnBufferSuggestion) -- the data before this change reflects
+// a different enforced ceiling, so it shouldn't feed a suggestion computed
+// under the new one. Clearing the dismissed-suggestion memory too: a value
+// he waved off under the old setting shouldn't silently suppress a fresh
+// suggestion once real data exists again.
+$('fLearnBufL').addEventListener('input',e=>{S.settings.learnBufferL=e.target.value|0;$('fLearnBufLVal').textContent=e.target.value;});
+$('fLearnBufL').addEventListener('change',()=>{S.settings.learnBufferSinceL=today();S.settings.learnBufferDismissedL=null;save();renderSet();});
+$('fLearnBufE').addEventListener('input',e=>{S.settings.learnBufferE=e.target.value|0;$('fLearnBufEVal').textContent=e.target.value;});
+$('fLearnBufE').addEventListener('change',()=>{S.settings.learnBufferSinceE=today();S.settings.learnBufferDismissedE=null;save();renderSet();});
+// Apply/Dismiss on the dormant suggest-a-cap note (renderLearnBufferSuggest)
+// -- delegated, same shape as browseResults' own click handler above, since
+// the buttons only exist once a suggestion is actually rendered in.
+$('scSet').addEventListener('click',e=>{
+  const ap=e.target.closest('.lbApply');
+  if(ap){
+    const dir=ap.dataset.dir, val=ap.dataset.val|0;
+    S.settings['learnBuffer'+dir]=val;
+    S.settings['learnBufferSince'+dir]=today();
+    S.settings['learnBufferDismissed'+dir]=null;
+    save(); renderSet();
+    return;
+  }
+  const ds=e.target.closest('.lbDismiss');
+  if(ds){
+    const dir=ds.dataset.dir;
+    const sug=learnBufferSuggestion(dir);
+    if(sug.ready) S.settings['learnBufferDismissed'+dir]=sug.suggested;
+    save(); renderSet();
+  }
+});
 $('fDrill').addEventListener('change',e=>{S.settings.drillDays=Math.min(Math.max(e.target.value|0,0),14);save();});
 $('fRevDay').addEventListener('change',e=>{S.settings.reviewDay=parseInt(e.target.value,10);save();});
 $('fKnown').addEventListener('change',e=>{S.settings.knownDays=Math.max(1,e.target.value|0);save();});
