@@ -1813,6 +1813,25 @@ function normalise(o){
       // hold briefly over-counts toward the concurrency cap again, same as
       // before this field existed, never under-counts into a wrong exclusion.
       if(c.holdSince!=null&&!Number.isFinite(c.holdSince)) c.holdSince=null;
+      // Backfill for a card that was ALREADY stuck in 'L'/'X' before this
+      // field existed -- without this, a pre-existing backlog (a live report
+      // had 54 words simultaneously "in steps" under the old code) only
+      // starts clearing once each word is touched again under the new code
+      // and then survives to the next day, which could take a while to work
+      // through one word at a time. A card not yet rated today that's still
+      // unresolved has, by definition, already spanned at least one day
+      // boundary -- so it can be backdated immediately rather than making
+      // the owner wait for a fresh rating to prove it. Re-checked on every
+      // load (not one-time), so it keeps catching up any word that goes a
+      // day without being touched, exactly like the live stamp in
+      // schedule() would once it starts firing for that word instead.
+      // Deliberately left alone if already touched today: same "same-day
+      // still counts" rule the live hold uses, and there's no way to tell
+      // here whether today's touch started a fresh hold or continued an old
+      // one -- counting it is the conservative default either way.
+      if(c.holdSince==null&&(c.st==='L'||c.st==='X')&&(c.reps|0)>0&&
+         c.last!=null&&Number.isFinite(c.last)&&dayKey(c.last)<today())
+        c.holdSince=dayKey(c.last);
       // A review-card due-date snap used to sit here, described as a one-time
       // migration but in fact re-running on every load (and every gist pull and
       // every file restore), always under whatever rollover happened to be
@@ -4331,7 +4350,7 @@ function renderBg(){
 /* ======================= changelog ======================= */
 const CHANGES=[
   ['2026.08.14.4',[
-    'Fixed "Learning at once" (the concurrent new-word cap added 2026.08.14.1): after the very first new word, no more would come in for the rest of a sitting, no matter how high the slider was set -- effectively stuck at 1 regardless of its real number. Cause: a word held back by "Require Easy to graduate" (Settings) can sit in learning for real days, not the few minutes the cap assumed "mid-acquisition" would ever last -- if it only gets studied once a day, it can stay there indefinitely without ever graduating. Enough such words pile up over time to fill the cap by themselves and keep it full permanently, even though none of them are part of the sitting actually in front of you. The cap now only counts a word as "in flight" for the day it was first held back -- still there the next day, it\'s treated as ordinary backlog instead, and stops eating the budget meant for genuinely new words. Nothing about "Require Easy" itself changed; a word can still take as many sittings as before to actually graduate.'
+    'Fixed "Learning at once" (the concurrent new-word cap added 2026.08.14.1): after the very first new word, no more would come in for the rest of a sitting, no matter how high the slider was set -- effectively stuck at 1 regardless of its real number. Cause: a word held back by "Require Easy to graduate" (Settings) can sit in learning for real days, not the few minutes the cap assumed "mid-acquisition" would ever last -- if it only gets studied once a day, it can stay there indefinitely without ever graduating. Enough such words pile up over time to fill the cap by themselves and keep it full permanently, even though none of them are part of the sitting actually in front of you. The cap now only counts a word as "in flight" for the day it was first held back -- still there the next day, it\'s treated as ordinary backlog instead, and stops eating the budget meant for genuinely new words. This applies immediately to any backlog that built up before this update too, not only to words that get stuck from here on -- a word not yet reviewed today that was already stuck picks up today\'s date as if it had just been held back, rather than needing to be reviewed once more first before it starts being excluded. Nothing about "Require Easy" itself changed; a word can still take as many sittings as before to actually graduate.'
   ]],
   ['2026.08.14.3',[
     'Fixed a real data-loss bug in gist sync: pairing a new device -- most likely a second "Add to Home Screen" icon, which iOS gives its own completely separate storage -- used to push that device\'s own near-empty history to the gist within seconds of typing in the gist id and token, before it had ever looked at what was already there. Reported live: a new iPhone icon silently overwriting the Mac\'s fuller review list. The cause was save()\'s automatic push, which only ever checked "is a gist id and token filled in", never "has this device actually reconciled with that gist before" -- so a device typing in credentials for the very first time was treated exactly the same as one that had been syncing for months. A device that has never reconciled with its gist now looks first instead of writing blind, the same way opening the app or returning to it already does, and only ever pushes automatically once it can prove there is nothing to lose (a genuinely empty gist, nothing pushed to it yet). Repointing an existing device at a different gist id gets the same protection, for the same reason. Nothing changes for an already-syncing device -- the normal few-seconds-after-a-rating push is untouched.'
