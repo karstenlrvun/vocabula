@@ -1369,7 +1369,11 @@ function schedule(card,rating,now,st){
   // 05:30 the next morning is one day apart, not zero
   const daysSince=(c.last!=null)?(dayKey(now)-dayKey(c.last)):null;
   let ivl=0;
-  const toReview=()=>{c.st='R';c.step=null;ivl=nextInterval(c.s,st)*DAY;};
+  // holdSince (added alongside the concurrent-learning cap, see buildQueue()'s
+  // inFlight below) is cleared on every real graduation -- true toReview()
+  // here, not the requireEasy hold's fake one -- since a graduated word can
+  // no longer be "mid-acquisition" by any definition.
+  const toReview=()=>{c.st='R';c.step=null;ivl=nextInterval(c.s,st)*DAY;c.holdSince=null;};
   const steps=(c.st==='L')?LEARN_STEPS:RELEARN_STEPS;
 
   if(c.st==='L'||c.st==='X'){
@@ -1391,7 +1395,7 @@ function schedule(card,rating,now,st){
     if(rating===AGAIN){
       c.lapses=(c.lapses||0)+1;
       if(RELEARN_STEPS.length===0) ivl=nextInterval(c.s,st)*DAY;
-      else { c.st='X'; c.step=0; ivl=RELEARN_STEPS[0]; }
+      else { c.st='X'; c.step=0; c.holdSince=null; ivl=RELEARN_STEPS[0]; }
     } else ivl=nextInterval(c.s,st)*DAY;
   }
   // ---- drill layer: same-day repetition and consecutive-day requirement ----
@@ -1419,6 +1423,15 @@ function schedule(card,rating,now,st){
     ivl=10*MIN;                                   // Good is not enough to clear the day
     c.st=card.st; c.step=card.step; c.streak=card.streak|0; c.lastDay=card.lastDay;
     c.loops=loopsToday+1; c.loopDay=dk;
+    // First time this episode gets held back (not yet re-held on a later
+    // day -- card.holdSince already carries the earliest day forward via the
+    // Object.assign at the top of this function). buildQueue()'s inFlight
+    // uses this to tell "just earned a Good, waiting out today's hold" (still
+    // a fresh, interference-prone new word -- counts) apart from "still stuck
+    // days later" (backlog, not this sitting -- see sec1's own "few minutes
+    // at most" assumption, which requireEasy/drillCap can violate for a word
+    // that only gets served once a day).
+    if(card.holdSince==null) c.holdSince=dk;
   } else {
     c.loops=0; c.loopDay=dk;
     if(capOut) toReview();
@@ -1525,7 +1538,7 @@ let S=null;
 function freshCard(c){
   const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
             reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null,
-            unflagDay:null};
+            unflagDay:null, holdSince:null};
   if(c.dir==='L'&&(c.seed===1||c.seed===2)){
     st.st='R'; st.step=null;
     st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
@@ -1794,6 +1807,12 @@ function normalise(o){
       if(!pairSet&&!pairUnset){ c.s=null; c.d=null; c.st='L'; c.step=0; }
       if(c.last!=null&&!Number.isFinite(c.last)) c.last=null;   // dayKey(c.last) otherwise
       if(c.step!=null&&!Number.isFinite(c.step)) c.step=0;      // indexes LEARN_STEPS
+      // holdSince is a dayKey int or null (see schedule()'s requireEasy hold
+      // and buildQueue()'s inFlight) -- junk is cleared, not repaired, same
+      // as flagAutoBaseline/learnBufferDismissed* below: worst case a stale
+      // hold briefly over-counts toward the concurrency cap again, same as
+      // before this field existed, never under-counts into a wrong exclusion.
+      if(c.holdSince!=null&&!Number.isFinite(c.holdSince)) c.holdSince=null;
       // A review-card due-date snap used to sit here, described as a one-time
       // migration but in fact re-running on every load (and every gist pull and
       // every file restore), always under whatever rollover happened to be
@@ -1886,7 +1905,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.14.3';
+const BUILD='2026.08.14.4';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -1975,10 +1994,27 @@ function buildQueue(dir){
   // (reps>0, st 'L'/'X') -- not just the ones already surfaced into learn/due
   // above, since a word still waiting out its own step is just as much "in
   // flight" as one that's ready right now.
+  //
+  // Bug fixed here (reported 2026-08-14: one new word introduces, then the
+  // cap acts as if it were 1 forever after): a word held by requireEasy's
+  // same-day drill loop (schedule(), sec above) never leaves 'L'/'X' just
+  // because it's only served once a day -- it can sit "mid-acquisition" for
+  // real days or weeks, not the "few minutes at most" this cap's own design
+  // assumed (LEARNING_LOAD_PLAN.md sec1). On a deck with any real backlog of
+  // such words (confirmed against a real backup: 139 concurrently for one
+  // direction alone), those stale holds saturate learnBufferL/E by
+  // themselves and never clear, permanently blocking Q.intro even though
+  // none of them are this sitting's fresh burst -- the exact thing this
+  // throttle exists to protect against, not the thing it's supposed to
+  // throttle. cs.holdSince (stamped the first time a word's requireEasy hold
+  // fires, cleared on real graduation or a fresh relapse) tells the two
+  // apart: still within the day it was first held counts same as always,
+  // spilling into a later day means it's backlog, not a new-word burst.
   const inFlight=CARDS.reduce((n,c)=>{
     if(c.dir!==dir) return n;
     const cs=peek(c.id);
-    return n+((cs.reps>0&&(cs.st==='L'||cs.st==='X'))?1:0);
+    const staleHold=cs.holdSince!=null&&(d-cs.holdSince)>=1;
+    return n+((cs.reps>0&&(cs.st==='L'||cs.st==='X')&&!staleHold)?1:0);
   },0);
   const otherWorkPending=learn.length>0||due.length>0;
   const concurrencyRoom=otherWorkPending?Math.max(learnBufferFor(dir)-inFlight,0):Infinity;
@@ -2020,11 +2056,17 @@ function learnBufferSuggestion(dir){
     if(!sim[id]){ sim[id]=freshCard(BY_ID[id]); graduated[id]=(sim[id].st==='R'); }
     const pre=sim[id];
     if(!graduated[id] && ts>=sinceTs){
+      // Mirrors buildQueue()'s own inFlight exactly (down to the stale-hold
+      // exclusion, see its comment) -- this replay drives the real schedule()
+      // above, so `o.holdSince` is the same field, just replayed history
+      // instead of live state. dayKey(ts), not today(): "stale" is judged
+      // against the moment being replayed, not the moment this function runs.
       let conc=0;
       for(const oid in sim){
         if(oid===id||graduated[oid]) continue;
         const o=sim[oid];
-        if(o.reps>0&&(o.st==='L'||o.st==='X')) conc++;
+        const staleHold=o.holdSince!=null&&(dayKey(ts)-o.holdSince)>=1;
+        if(o.reps>0&&(o.st==='L'||o.st==='X')&&!staleHold) conc++;
       }
       const b=Math.min(conc,15);
       const s=stat[b]||(stat[b]=[0,0]);
@@ -4289,6 +4331,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.14.4',[
+    'Fixed "Learning at once" (the concurrent new-word cap added 2026.08.14.1): after the very first new word, no more would come in for the rest of a sitting, no matter how high the slider was set -- effectively stuck at 1 regardless of its real number. Cause: a word held back by "Require Easy to graduate" (Settings) can sit in learning for real days, not the few minutes the cap assumed "mid-acquisition" would ever last -- if it only gets studied once a day, it can stay there indefinitely without ever graduating. Enough such words pile up over time to fill the cap by themselves and keep it full permanently, even though none of them are part of the sitting actually in front of you. The cap now only counts a word as "in flight" for the day it was first held back -- still there the next day, it\'s treated as ordinary backlog instead, and stops eating the budget meant for genuinely new words. Nothing about "Require Easy" itself changed; a word can still take as many sittings as before to actually graduate.'
+  ]],
   ['2026.08.14.3',[
     'Fixed a real data-loss bug in gist sync: pairing a new device -- most likely a second "Add to Home Screen" icon, which iOS gives its own completely separate storage -- used to push that device\'s own near-empty history to the gist within seconds of typing in the gist id and token, before it had ever looked at what was already there. Reported live: a new iPhone icon silently overwriting the Mac\'s fuller review list. The cause was save()\'s automatic push, which only ever checked "is a gist id and token filled in", never "has this device actually reconciled with that gist before" -- so a device typing in credentials for the very first time was treated exactly the same as one that had been syncing for months. A device that has never reconciled with its gist now looks first instead of writing blind, the same way opening the app or returning to it already does, and only ever pushes automatically once it can prove there is nothing to lose (a genuinely empty gist, nothing pushed to it yet). Repointing an existing device at a different gist id gets the same protection, for the same reason. Nothing changes for an already-syncing device -- the normal few-seconds-after-a-rating push is untouched.'
   ]],
