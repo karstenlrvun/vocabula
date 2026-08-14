@@ -916,6 +916,15 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh">Caps how many unseen words enter the rotation each day, tracked and capped separately per direction — raising one no longer raises the other. Words carried over from the audit come first.</div>
       </div>
       <div class="field">
+        <label for="fLearnBufOn">Learning at once (experimental)</label>
+        <select id="fLearnBufOn" class="sel">
+          <option value="1">On—throttle new words while other work is pending</option>
+          <option value="0">Off—new words are capped only by the daily limit above</option>
+        </select>
+        <div class="fh">Still being tuned against real usage data, see below. Off goes back to exactly how new words were introduced before this existed—the two sliders below have no effect while it's off, but keep whatever they're set to for whenever it's back on.</div>
+      </div>
+      <div id="fLearnBufWrap">
+      <div class="field">
         <label for="fLearnBufL">Learning at once — <span id="fLearnBufLblL">—</span> — <b id="fLearnBufLVal">10</b></label>
         <input type="range" id="fLearnBufL" min="3" max="15" step="1">
         <div class="fh" id="fLearnBufSuggestL" hidden></div>
@@ -925,6 +934,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <input type="range" id="fLearnBufE" min="3" max="15" step="1">
         <div class="fh">Separate from the daily total above: caps how many brand-new words can be mid-acquisition—not yet graduated out of learning—at once in a single sitting, independent per direction. New words trickle in only as earlier ones graduate or drop below the cap, instead of arriving as a cluster that all comes due together and starts looking the same. Never stalls a sitting—only holds back new intros while there's other due or learning work to fall back on. Once there's roughly two weeks of real use under this cap, a personalised suggestion can appear below, based on your own actual "Again" rate at different concurrency levels—never applied for you, always your call.</div>
         <div class="fh" id="fLearnBufSuggestE" hidden></div>
+      </div>
       </div>
       <div class="field">
         <label for="fRet">Target retention—<b id="fRetVal">90%</b></label>
@@ -1529,7 +1539,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferOn:true, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
@@ -1924,7 +1934,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.14.4';
+const BUILD='2026.08.14.5';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -2029,14 +2039,19 @@ function buildQueue(dir){
   // fires, cleared on real graduation or a fresh relapse) tells the two
   // apart: still within the day it was first held counts same as always,
   // spilling into a later day means it's backlog, not a new-word burst.
-  const inFlight=CARDS.reduce((n,c)=>{
+  // Whole cap is still experimental (his call, Settings' "Learning at once"
+  // toggle) -- off means exactly the pre-2026.08.14.1 behaviour, room
+  // governed by the daily cap alone, and skips the CARDS scan below entirely
+  // rather than computing an inFlight nothing will read.
+  const learnBufOn=S.settings.learnBufferOn!==false;
+  const inFlight=learnBufOn?CARDS.reduce((n,c)=>{
     if(c.dir!==dir) return n;
     const cs=peek(c.id);
     const staleHold=cs.holdSince!=null&&(d-cs.holdSince)>=1;
     return n+((cs.reps>0&&(cs.st==='L'||cs.st==='X')&&!staleHold)?1:0);
-  },0);
+  },0):0;
   const otherWorkPending=learn.length>0||due.length>0;
-  const concurrencyRoom=otherWorkPending?Math.max(learnBufferFor(dir)-inFlight,0):Infinity;
+  const concurrencyRoom=(learnBufOn&&otherWorkPending)?Math.max(learnBufferFor(dir)-inFlight,0):Infinity;
   const room=Math.max(Math.min(capToday-introducedToday,concurrencyRoom),0);
   const order=S.settings.weakFirst ? fresh.concat(seeded) : seeded.concat(fresh);
   const intro=order.slice(0,room);
@@ -4350,6 +4365,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.14.5',[
+    '"Learning at once" (Settings) now has an on/off switch above its two sliders, labelled "experimental" -- it\'s still being tuned against real usage data (see the "Adaptive" plan this cap came from), so there\'s now a plain way to turn it off entirely rather than only turning it down. Off reproduces exactly how new words were introduced before this cap existed on 2026.08.14.1 -- the daily "New words a day" limit is the only thing governing how many come in, with no separate concurrency ceiling at all. The two sliders stay visible only while it\'s on; switching it off hides them (they keep whatever they were set to, for whenever it\'s back on), and switching it back on picks up right where they left off, immediately, with no re-arming delay. On by default, so nothing changes for anyone not touching this setting.'
+  ]],
   ['2026.08.14.4',[
     'Fixed "Learning at once" (the concurrent new-word cap added 2026.08.14.1): after the very first new word, no more would come in for the rest of a sitting, no matter how high the slider was set -- effectively stuck at 1 regardless of its real number. Cause: a word held back by "Require Easy to graduate" (Settings) can sit in learning for real days, not the few minutes the cap assumed "mid-acquisition" would ever last -- if it only gets studied once a day, it can stay there indefinitely without ever graduating. Enough such words pile up over time to fill the cap by themselves and keep it full permanently, even though none of them are part of the sitting actually in front of you. The cap now only counts a word as "in flight" for the day it was first held back -- still there the next day, it\'s treated as ordinary backlog instead, and stops eating the budget meant for genuinely new words. This applies immediately to any backlog that built up before this update too, not only to words that get stuck from here on -- a word not yet reviewed today that was already stuck picks up today\'s date as if it had just been held back, rather than needing to be reviewed once more first before it starts being excluded. Nothing about "Require Easy" itself changed; a word can still take as many sittings as before to actually graduate.'
   ]],
@@ -4583,6 +4601,10 @@ function renderLog(){
 // both explicit clicks, wired on #scSet's delegated click handler below.
 function renderLearnBufferSuggest(dir){
   const el=$('fLearnBufSuggest'+dir);
+  // Suggesting a tuned value for a cap that's currently switched off would
+  // be confusing -- goes quiet the moment it's off, same as if it were never
+  // ready, and comes back on its own once the toggle is back on.
+  if(S.settings.learnBufferOn===false){ el.hidden=true; el.innerHTML=''; return; }
   const sug=learnBufferSuggestion(dir);
   const current=S.settings['learnBuffer'+dir]>0?S.settings['learnBuffer'+dir]:10;
   const dismissed=S.settings['learnBufferDismissed'+dir];
@@ -4599,6 +4621,8 @@ function renderSet(){
   const s=S.settings;
   $('fNewLblL').textContent=DECK.fwd; $('fNewLblE').textContent=DECK.rev;
   $('fNewL').value=s.newPerDayL; $('fNewE').value=s.newPerDayE; $('fRet').value=Math.round(s.retention*100);
+  $('fLearnBufOn').value=(s.learnBufferOn===false)?'0':'1';
+  $('fLearnBufWrap').hidden=(s.learnBufferOn===false);
   $('fLearnBufLblL').textContent=DECK.fwd; $('fLearnBufLblE').textContent=DECK.rev;
   $('fLearnBufL').value=s.learnBufferL>0?s.learnBufferL:10; $('fLearnBufLVal').textContent=$('fLearnBufL').value;
   $('fLearnBufE').value=s.learnBufferE>0?s.learnBufferE:10; $('fLearnBufEVal').textContent=$('fLearnBufE').value;
@@ -4872,6 +4896,7 @@ $('fDrillCap').addEventListener('change',()=>save());
 // holds a same-day lowering back, via flagAutoBaseline, not this listener.
 $('fFlagAuto').addEventListener('input',e=>{S.settings.flagAuto=e.target.value|0;$('fFlagAutoVal').textContent=e.target.value;});
 $('fFlagAuto').addEventListener('change',()=>save());
+$('fLearnBufOn').addEventListener('change',e=>{S.settings.learnBufferOn=(e.target.value==='1');save();renderSet();});
 // A hand-adjusted value restarts learnBufferSince's ~2-week data-sufficiency
 // clock (see learnBufferSuggestion) -- the data before this change reflects
 // a different enforced ceiling, so it shouldn't feed a suggestion computed
