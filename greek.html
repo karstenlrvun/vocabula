@@ -916,13 +916,13 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh">Caps how many unseen words enter the rotation each day, tracked and capped separately per direction — raising one no longer raises the other. Words carried over from the audit come first.</div>
       </div>
       <div class="field">
-        <label for="fLearnBufL">Learning at once — <span id="fLearnBufLblL">—</span> — <b id="fLearnBufLVal">4</b></label>
-        <input type="range" id="fLearnBufL" min="3" max="6" step="1">
+        <label for="fLearnBufL">Learning at once — <span id="fLearnBufLblL">—</span> — <b id="fLearnBufLVal">10</b></label>
+        <input type="range" id="fLearnBufL" min="3" max="15" step="1">
         <div class="fh" id="fLearnBufSuggestL" hidden></div>
       </div>
       <div class="field">
-        <label for="fLearnBufE">Learning at once — <span id="fLearnBufLblE">—</span> — <b id="fLearnBufEVal">4</b></label>
-        <input type="range" id="fLearnBufE" min="3" max="6" step="1">
+        <label for="fLearnBufE">Learning at once — <span id="fLearnBufLblE">—</span> — <b id="fLearnBufEVal">10</b></label>
+        <input type="range" id="fLearnBufE" min="3" max="15" step="1">
         <div class="fh">Separate from the daily total above: caps how many brand-new words can be mid-acquisition—not yet graduated out of learning—at once in a single sitting, independent per direction. New words trickle in only as earlier ones graduate or drop below the cap, instead of arriving as a cluster that all comes due together and starts looking the same. Never stalls a sitting—only holds back new intros while there's other due or learning work to fall back on. Once there's roughly two weeks of real use under this cap, a personalised suggestion can appear below, based on your own actual "Again" rate at different concurrency levels—never applied for you, always your call.</div>
         <div class="fh" id="fLearnBufSuggestE" hidden></div>
       </div>
@@ -1516,7 +1516,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferL:4, learnBufferE:4, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
@@ -1652,7 +1652,17 @@ function save(){
   // saveTimer doubles as "a push is still pending" -- nulled the moment it actually
   // fires (below) or is flushed early (flushPendingPush(), further down), so a
   // background/close within this 6s window can tell there's something to flush.
-  if(S.settings.gistId&&S.settings.gistTok) saveTimer=setTimeout(()=>{ saveTimer=null; pushGist(true); },6000);
+  // Arming it blind is only safe once this device has actually looked at what
+  // the gist holds (syncedLogLen set, by a real push or pull) -- see
+  // syncArmDecision()'s own comment: a freshly-paired "Add to Home Screen"
+  // icon starts from an empty log, and entering its credentials used to arm
+  // this exact timer, so a few seconds (or one backgrounding -- see
+  // flushPendingPush()) after pairing a new device, its near-empty state
+  // silently overwrote every other device's history in the gist. Reported
+  // live: a second iPhone icon erasing the Mac's fuller review list.
+  const armDecision=syncArmDecision(S.settings.gistId,S.settings.gistTok,S.syncedLogLen);
+  if(armDecision==='debounce-push') saveTimer=setTimeout(()=>{ saveTimer=null; pushGist(true); },6000);
+  else if(armDecision==='reconcile-first') syncOnLaunch();   // look before writing -- see syncFetchOutcome()
   // #homeWarn lives inside scHome, so this is wasted work unless it is on screen --
   // and save() runs on EVERY rating. With dir 'E' and the gate on, renderWarn()
   // builds the whole reverse queue and may then walk every card's gate, per rating,
@@ -1704,7 +1714,7 @@ function normalise(o){
     retention:[0.01,0.99], maxIvl:[1,36500], drillCap:[1,50],
     newPerDayL:[0,4000], newPerDayE:[0,4000], knownDays:[1,3650],
     gateDays:[0,3650], drillDays:[0,14], reviewDay:[-1,6], flagAuto:[5,15],
-    learnBufferL:[3,6], learnBufferE:[3,6]
+    learnBufferL:[3,15], learnBufferE:[3,15]
   };
   for(const k in SETTINGS_BOUNDS){
     const [lo,hi]=SETTINGS_BOUNDS[k];
@@ -1734,10 +1744,10 @@ function normalise(o){
   // learnBufferDismissedL/E remembers a suggested value he already waved
   // off, so the same number doesn't nag him again -- but a *different*
   // freshly-computed suggestion still surfaces. Any value outside the
-  // slider's own 3-6 range is just cleared rather than repaired.
+  // slider's own 3-15 range is just cleared rather than repaired.
   for(const k of ['learnBufferDismissedL','learnBufferDismissedE']){
     const v=s.settings[k];
-    if(!(v===3||v===4||v===5||v===6)) s.settings[k]=null;
+    if(!(Number.isInteger(v)&&v>=3&&v<=15)) s.settings[k]=null;
   }
   // applyTheme() already falls back for an unknown palette, but it does that
   // without writing the fallback down, so a junk value survives in S and
@@ -1876,7 +1886,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.14.1';
+const BUILD='2026.08.14.3';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -1918,11 +1928,11 @@ function dailyCap(d,dir){
 // many words can be mid-acquisition (not yet graduated out of learning) at
 // once within a single sitting -- see LEARNING_LOAD_PLAN.md sec1 for the
 // interference research and his real-backup validation (1,407/1,407 replay
-// match). S.settings.learnBufferL/E, range 3-6, default 4, split per
+// match). S.settings.learnBufferL/E, range 3-15, default 10, split per
 // direction like newPerDayL/E above.
 function learnBufferFor(dir){
   const v=S.settings['learnBuffer'+dir];
-  return v>0?v:4;
+  return v>0?v:10;
 }
 function buildQueue(dir){
   const now=Date.now(), d=today();
@@ -2016,7 +2026,7 @@ function learnBufferSuggestion(dir){
         const o=sim[oid];
         if(o.reps>0&&(o.st==='L'||o.st==='X')) conc++;
       }
-      const b=Math.min(conc,9);
+      const b=Math.min(conc,15);
       const s=stat[b]||(stat[b]=[0,0]);
       s[1]++; if(rating===AGAIN) s[0]++;
     }
@@ -2026,7 +2036,7 @@ function learnBufferSuggestion(dir){
   }
 
   const rates={};
-  for(let b=3;b<=6;b++){
+  for(let b=3;b<=15;b++){
     const s=stat[b];
     if(s && s[1]>=LB_SUGGEST_MIN_N) rates[b]=s[0]/s[1];
   }
@@ -4038,7 +4048,13 @@ async function fetchGist(quiet){
     if(!r.ok) throw new Error(r.status);
     const j=await r.json();
     const f=j.files&&j.files[GIST_FILE];
-    if(!f) throw new Error('no '+GIST_FILE);
+    // Distinguishable from every other failure below: the gist itself answered
+    // fine, it just has never had this deck's file pushed to it -- a genuinely
+    // brand-new gist, not a network hiccup or a bad token. syncFetchOutcome()
+    // treats this as provably safe to push (there is nothing there to lose),
+    // unlike every other failure here, which it leaves alone rather than
+    // guesses at.
+    if(!f) return 'missing';
     // The list endpoint truncates each file's `content` (~1MB combined across
     // a gist's files, confirmed lower in practice for a multi-file gist like
     // this one) -- `truncated` names it explicitly, but a large save has also
@@ -4075,6 +4091,45 @@ function syncDecision(localLen,remoteLen,base){
   if(localMoved) return 'push-local';
   return 'in-sync';
 }
+// What syncOnLaunch() should do with whatever fetchGist() resolved to. inc is
+// one of: a parsed incoming state object (a normal fetch), the string
+// 'missing' (the gist answered fine but has never had this deck's file
+// pushed to it yet -- see fetchGist()'s own comment), or null (the fetch
+// failed for any other reason -- bad token, offline, truncated content that
+// wouldn't parse, ...). Only the first case defers to syncDecision(); the
+// 'missing' case is provably safe to push outright once there's anything
+// local worth protecting, and a real failure is left alone rather than acted
+// on -- "try again next time" beats guessing from data we never actually
+// saw. Pure, like syncDecision() itself.
+function syncFetchOutcome(inc,localLen,base){
+  if(inc==null) return 'none';
+  if(inc==='missing') return localLen>0 ? 'push-local' : 'none';
+  return syncDecision(localLen,inc.log.length,base);
+}
+// What save() should do about the gist, given the credentials it currently
+// has and whether this device has ever actually reconciled with them.
+// syncedLogLen is set only inside pushGist()'s success branch and adopt() --
+// a device that has gistId/gistTok but has never pushed or pulled with them
+// (a freshly-paired "Add to Home Screen" icon, or an existing device just
+// repointed at a different gist -- see gistRepointed()) has never looked at
+// what that gist actually holds, so writing to it blind risks overwriting
+// another device's whole history with next to nothing. 'reconcile-first'
+// routes through syncOnLaunch() instead of arming the usual timer --
+// syncOnLaunch() only ever pushes once it can prove there's nothing to lose
+// (see syncFetchOutcome() above). Pure: exactly the three inputs save() has
+// on hand already, so this is provable without a network call or a fake
+// clock -- see tests.js for the reproduction of the bug this closes.
+function syncArmDecision(gistId,gistTok,syncedLogLen){
+  if(!gistId||!gistTok) return 'none';
+  return syncedLogLen==null ? 'reconcile-first' : 'debounce-push';
+}
+// Re-pointing this device at a different gist (not just filling the field in
+// for the first time) means whatever it reconciled with before doesn't apply
+// to the new one -- keeping the old syncedLogLen would tell syncArmDecision()
+// this device is safe to auto-push into a gist it has actually never looked
+// at, the same hole that closes for a brand-new device. Re-saving the same
+// id, or setting it for the first time from empty, is not a repoint.
+function gistRepointed(oldId,newId){ return !!oldId && oldId!==newId; }
 // Both copies are named and counted, not just "this device" vs "the gist" --
 // the whole point is never being unsure which is which across three devices.
 // Cancel is a genuine no-op, on purpose: a plain confirm() cannot tell a
@@ -4105,10 +4160,10 @@ async function syncOnLaunch(){
   if(!S.settings.gistId||!S.settings.gistTok) return;
   const lenAtStart=S.log.length;
   const inc=await fetchGist(true);
-  if(!inc) return;
   if(S.log.length!==lenAtStart) return;              // rated while the fetch was in flight
   const base=(S.syncedLogLen==null)?S.log.length:S.syncedLogLen;
-  const decision=syncDecision(S.log.length,inc.log.length,base);
+  const decision=syncFetchOutcome(inc,S.log.length,base);
+  if(decision==='none') return;
   if(decision==='conflict'){
     offerConflict(inc,base);
   } else if(decision==='take-remote'){
@@ -4120,6 +4175,13 @@ async function syncOnLaunch(){
     // error?" (reported concern, see HANDOFF.md's rollover-change writeup).
     const dueBefore=buildQueue(S.dir).due.length;
     adopt(inc); renderHome();
+    // save()'s new reconcile-first path (see syncArmDecision()) can land here
+    // while the owner is sitting in Settings, right after pairing a device --
+    // a screen no earlier caller of syncOnLaunch() could ever be on. Without
+    // this, the visible fields would keep showing this device's old values
+    // (or Settings' own bootstrap defaults) until Settings happened to be
+    // reopened; adopt() itself never re-renders a form, see its own comment.
+    if($('scSet').classList.contains('on')) renderSet();
     const dueNote=Q.due.length!==dueBefore?(' — due went '+dueBefore+' → '+Q.due.length):'';
     toast('Synced — '+S.log.length+' reviews from '+(inc.lastDevice||'your other device')+dueNote,3200);
   } else if(decision==='push-local'){
@@ -4168,6 +4230,7 @@ async function pullGist(){
   const {gistId,gistTok}=S.settings;
   if(!gistId||!gistTok){ toast('Fill in the gist id and token first'); return; }
   const inc=await fetchGist(false);
+  if(inc==='missing'){ toast('Nothing has been pushed to this gist yet'); return; }
   if(!inc) return;
   if(inc.log.length<S.log.length&&
      !confirm('The gist (last pushed by '+(inc.lastDevice||'another device')+') has fewer reviews ('+
@@ -4226,6 +4289,12 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.14.3',[
+    'Fixed a real data-loss bug in gist sync: pairing a new device -- most likely a second "Add to Home Screen" icon, which iOS gives its own completely separate storage -- used to push that device\'s own near-empty history to the gist within seconds of typing in the gist id and token, before it had ever looked at what was already there. Reported live: a new iPhone icon silently overwriting the Mac\'s fuller review list. The cause was save()\'s automatic push, which only ever checked "is a gist id and token filled in", never "has this device actually reconciled with that gist before" -- so a device typing in credentials for the very first time was treated exactly the same as one that had been syncing for months. A device that has never reconciled with its gist now looks first instead of writing blind, the same way opening the app or returning to it already does, and only ever pushes automatically once it can prove there is nothing to lose (a genuinely empty gist, nothing pushed to it yet). Repointing an existing device at a different gist id gets the same protection, for the same reason. Nothing changes for an already-syncing device -- the normal few-seconds-after-a-rating push is untouched.'
+  ]],
+  ['2026.08.14.2',[
+    '"Learning at once" (2026.08.14.1\'s concurrent new-word cap) had its range widened from 3-6 to 3-15, and its default raised from 4 to 10 -- for anyone running a high daily new-word pace, the old ceiling of 6 sat far below their normal in-flight learning count, so with any review queue at all (essentially always) the cap held new words back completely rather than just thinning a burst, the "soft" part of the throttle never actually engaging. This does not silently reach into a device that already loaded 2026.08.14.0/.1: your settings already have a real, saved learnBufferL/E value (4, if you never opened Settings) from that first load, and a saved value always wins over the new code default -- Settings still shows exactly what it showed before this update, and only actually moving the slider changes anything. New devices, and anyone who never opened this app before today, start at 10.'
+  ]],
   ['2026.08.14.1',[
     'A second cap on new words, separate from the existing daily total: "Learning at once" (Settings, next to the daily allowance) limits how many brand-new words can be mid-acquisition -- not yet graduated out of learning -- in a single sitting. Split per direction, 3 to 6, default 4. This targets a different problem than the daily cap does: a burst of new words that all fail their first look together, then all come back due at the same moment a few minutes later, competing against each other with no room for any one of them to actually land -- a real pattern in his own study data, and a documented phenomenon in the memory-research and spaced-repetition literature. It\'s a soft limit -- new words only hold back while there\'s other due or already-learning work to fall back on, so a sitting never runs dry because of it; once that other work genuinely runs out, new words keep coming as before. After roughly two weeks of real use under this cap, Settings can start suggesting a personalised value for it, based on your own actual "Again" rate at each concurrency level -- nothing is ever changed for you; a suggestion only ever appears as a note you approve or dismiss.'
   ]],
@@ -4451,7 +4520,7 @@ function renderLog(){
 function renderLearnBufferSuggest(dir){
   const el=$('fLearnBufSuggest'+dir);
   const sug=learnBufferSuggestion(dir);
-  const current=S.settings['learnBuffer'+dir]>0?S.settings['learnBuffer'+dir]:4;
+  const current=S.settings['learnBuffer'+dir]>0?S.settings['learnBuffer'+dir]:10;
   const dismissed=S.settings['learnBufferDismissed'+dir];
   if(!sug.ready || sug.suggested==null || sug.suggested===current || dismissed===sug.suggested){
     el.hidden=true; el.innerHTML=''; return;
@@ -4467,8 +4536,8 @@ function renderSet(){
   $('fNewLblL').textContent=DECK.fwd; $('fNewLblE').textContent=DECK.rev;
   $('fNewL').value=s.newPerDayL; $('fNewE').value=s.newPerDayE; $('fRet').value=Math.round(s.retention*100);
   $('fLearnBufLblL').textContent=DECK.fwd; $('fLearnBufLblE').textContent=DECK.rev;
-  $('fLearnBufL').value=s.learnBufferL>0?s.learnBufferL:4; $('fLearnBufLVal').textContent=$('fLearnBufL').value;
-  $('fLearnBufE').value=s.learnBufferE>0?s.learnBufferE:4; $('fLearnBufEVal').textContent=$('fLearnBufE').value;
+  $('fLearnBufL').value=s.learnBufferL>0?s.learnBufferL:10; $('fLearnBufLVal').textContent=$('fLearnBufL').value;
+  $('fLearnBufE').value=s.learnBufferE>0?s.learnBufferE:10; $('fLearnBufEVal').textContent=$('fLearnBufE').value;
   renderLearnBufferSuggest('L'); renderLearnBufferSuggest('E');
   $('fRetVal').textContent=Math.round(s.retention*100)+'%';
   $('fMax').value=s.maxIvl;
@@ -4776,7 +4845,15 @@ $('fKnown').addEventListener('change',e=>{S.settings.knownDays=Math.max(1,e.targ
 $('fWeak').addEventListener('change',e=>{S.settings.weakFirst=(e.target.value==='1');save();});
 $('fTerm').addEventListener('change',e=>{S.settings.term=e.target.value;save();});
 $('fDevice').addEventListener('change',e=>{S.settings.deviceName=e.target.value.trim();save();saveSharedGist(S.settings);});
-$('fGistId').addEventListener('change',e=>{S.settings.gistId=e.target.value.trim();save();saveSharedGist(S.settings);});
+// gistRepointed()'s reset has to happen before save() -- save() is what
+// reads syncedLogLen to decide whether it's safe to auto-push (see
+// syncArmDecision()), so clearing it after save() would let one blind push
+// slip through on the very change that made it unsafe.
+$('fGistId').addEventListener('change',e=>{
+  const v=e.target.value.trim();
+  if(gistRepointed(S.settings.gistId,v)){ S.syncedLogLen=null; S.lastSync=null; }
+  S.settings.gistId=v; save(); saveSharedGist(S.settings);
+});
 $('fGistTok').addEventListener('change',e=>{S.settings.gistTok=e.target.value.trim();save();saveSharedGist(S.settings);});
 
 document.addEventListener('keydown',e=>{
