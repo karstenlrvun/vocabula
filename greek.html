@@ -132,6 +132,62 @@ html[data-palette="legacy"][data-theme="dark"]{
   --warn-br:#66523b; --warn-ink:#e1b362; --bad-bg:#432a3f; --bad-br:#73414d; --bad-ink:#fc9087;
   --toast:#181d47;
 }
+/* Three bold, high-contrast additions (2026-08-15, his request: "contrast
+   well / are different from the existing seven... be bold"). Dracula and
+   Monokai are real, well-known vivid-on-near-black developer themes -- a
+   deliberately different register from the seven calm/muted palettes above.
+   Amphora is original to this app (like Vellum/Legacy), not a borrowed
+   theme: black-figure/red-figure Attic pottery's stark black + terracotta,
+   a bold high-contrast look with no vivid-neon precedent among the other
+   nine, and thematically apt for a classical-language app either deck. */
+html[data-palette="dracula"][data-theme="light"]{
+  --bg:#f8f8f2; --panel:#eeeef7; --ink:#282a36; --muted:#4d4f66; --faint:#6272a4;
+  --line:#dcdce8; --coral:#d6266f; --accent-soft:#f9dceb; --raise:#ffffff; --again:#d1274a;
+  --again-bg:#f7dde3; --again-br:#eab8c7; --good:#1f9c4d; --good-bg:#dcf0e0; --good-br:#b3dcc0;
+  --easy:#7c4fd1; --easy-bg:#e9e0fb; --easy-br:#cfc0f2; --amber:#b5690a; --warn-bg:#f7e6cf;
+  --warn-br:#e9c896; --warn-ink:#8a570f; --bad-bg:#f7dde3; --bad-br:#eab8c7; --bad-ink:#b31940;
+  --toast:#282a36;
+}
+html[data-palette="dracula"][data-theme="dark"]{
+  --bg:#282a36; --panel:#343746; --ink:#f8f8f2; --muted:#b6b8d1; --faint:#6272a4;
+  --line:#44475a; --coral:#ff79c6; --accent-soft:#4a2f42; --raise:#3d3f52; --again:#ff5555;
+  --again-bg:#4a2530; --again-br:#6b3542; --good:#50fa7b; --good-bg:#1f3b2e; --good-br:#2f5943;
+  --easy:#bd93f9; --easy-bg:#33294f; --easy-br:#4a3d72; --amber:#ffb86c; --warn-bg:#453421;
+  --warn-br:#6b5030; --warn-ink:#f0c78a; --bad-bg:#4a2530; --bad-br:#6b3542; --bad-ink:#ff6e6e;
+  --toast:#343746;
+}
+html[data-palette="monokai"][data-theme="light"]{
+  --bg:#fafaf0; --panel:#f0f0e2; --ink:#272822; --muted:#5a5b4e; --faint:#83816d;
+  --line:#e0e0cf; --coral:#c4720a; --accent-soft:#f7e6cc; --raise:#ffffff; --again:#d31160;
+  --again-bg:#f9dbe6; --again-br:#edb3c9; --good:#5f8a0f; --good-bg:#e3edc9; --good-br:#c5d99a;
+  --easy:#7c4fd6; --easy-bg:#ece0fb; --easy-br:#d3c0f2; --amber:#8a7a0e; --warn-bg:#f0ecc9;
+  --warn-br:#ddd196; --warn-ink:#6b5e0c; --bad-bg:#f9dbe6; --bad-br:#edb3c9; --bad-ink:#b30d4d;
+  --toast:#272822;
+}
+html[data-palette="monokai"][data-theme="dark"]{
+  --bg:#272822; --panel:#33342c; --ink:#f8f8f2; --muted:#c8c6bd; --faint:#75715e;
+  --line:#49483e; --coral:#fd971f; --accent-soft:#4a3820; --raise:#3a3b32; --again:#f92672;
+  --again-bg:#4a2438; --again-br:#6e3552; --good:#a6e22e; --good-bg:#38401f; --good-br:#535c2c;
+  --easy:#ae81ff; --easy-bg:#362c52; --easy-br:#514176; --amber:#e6db74; --warn-bg:#463f24;
+  --warn-br:#6b6035; --warn-ink:#e8dd8a; --bad-bg:#4a2438; --bad-br:#6e3552; --bad-ink:#ff5f96;
+  --toast:#33342c;
+}
+html[data-palette="amphora"][data-theme="light"]{
+  --bg:#f0dcc3; --panel:#e6cca8; --ink:#241a10; --muted:#5c4530; --faint:#8a6f4f;
+  --line:#d4b78c; --coral:#a8331a; --accent-soft:#e8c4a0; --raise:#f8ecd8; --again:#8f1d10;
+  --again-bg:#e8c9b8; --again-br:#d4a488; --good:#3f5c2e; --good-bg:#dbe0c4; --good-br:#bcc699;
+  --easy:#4a3a7a; --easy-bg:#ddd6ef; --easy-br:#c0b4e0; --amber:#9c6b0a; --warn-bg:#ecdcb4;
+  --warn-br:#d6bc80; --warn-ink:#6b4808; --bad-bg:#e8c9b8; --bad-br:#d4a488; --bad-ink:#6e130a;
+  --toast:#241a10;
+}
+html[data-palette="amphora"][data-theme="dark"]{
+  --bg:#100c08; --panel:#1c140d; --ink:#f0dcc3; --muted:#c4a37e; --faint:#8a6f4f;
+  --line:#3a2c1c; --coral:#e0693a; --accent-soft:#3f2416; --raise:#241a10; --again:#e0432a;
+  --again-bg:#3f2019; --again-br:#5e3226; --good:#8fae5c; --good-bg:#2a3320; --good-br:#425030;
+  --easy:#a08ce0; --easy-bg:#332a52; --easy-br:#4c3f78; --amber:#e0a83a; --warn-bg:#3f3018;
+  --warn-br:#5e4826; --warn-ink:#e8c477; --bad-bg:#3f2019; --bad-br:#5e3226; --bad-ink:#f0684a;
+  --toast:#1c140d;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
 body{
@@ -175,12 +231,29 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .answer.on{opacity:1}
 .answer .alt{display:block;margin-top:7px}
 .answer.lat{font-family:var(--serif);font-size:clamp(25px,calc(21.2px + 0.97vw),28px)}
+/* quickFlash: never takes up layout space or eats a tap -- it floats over
+   whatever's already there. Legacy/portrait: a fixed banner below the bar,
+   since there's no stable "answer" position to sit over without measuring
+   (a phone-width column reflows with prompt length). Landscape gets a
+   cheaper, exact placement below instead (grid-area:answer, stacking on the
+   real #answer's own cell -- CSS grid allows two items in one named area,
+   later DOM order painting on top -- see html[data-layout="landscape"]
+   #quickFlash further down). */
+.quickFlash{pointer-events:none;z-index:40}
+html:not([data-layout="landscape"]) .quickFlash{
+  position:fixed;top:calc(52px + env(safe-area-inset-top) + 14px);left:16px;right:16px;max-width:none}
 .hintline{margin-top:22px;font-size:13px;color:var(--faint);height:16px}
 /* .flagBtn is shared with the Browse and Home struggling-word rows (their
    own small inline glyph, unaffected below) -- keep this base rule as it
    was, and enlarge only the study-screen's own instance underneath. */
 .flagBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:16px;line-height:1;color:var(--faint)}
 .flagBtn.on{color:var(--bad-ink)}
+/* Browse-row-only "bury for today" toggle -- same shape as .flagBtn right
+   above, deliberately not shared with it: permanent (flag/susp) and
+   temporary (bury) are two independent states a word can be in at once, so
+   they need two independently-toggleable icons, not one repurposed. */
+.buryBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:15px;line-height:1;color:var(--faint)}
+.buryBtn.on{color:var(--warn-ink)}
 /* Just the flag icon now (2026-08-13) -- no text, no dismiss. It used to be
    a text banner ("Again N times today--tap the flag...") gated on
    FLAG_MANUAL, with its own small x dismiss button below the flag; both are
@@ -290,16 +363,81 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .calDow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px;
   font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;text-align:center}
 .calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
-.calCell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+.calCell{position:relative;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
   min-height:54px;border-radius:8px;padding:4px 2px;
   font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--panel);border:1px solid var(--line)}
-.calCell.out{color:var(--faint);opacity:.35;border-color:transparent;background:none}
-.calCell.did{background:var(--accent-soft);border-color:var(--coral);color:var(--coral);font-weight:600}
+.calCell.out{color:var(--faint);opacity:.35;border-color:transparent;background:none;cursor:default}
 .calCell.today{box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--coral)}
+.calCell.future{border-style:dashed}
+.calCell.sel{outline:2px solid var(--coral);outline-offset:1px}
 .calNum{line-height:1.1}
 .calNew{font-size:9.5px;line-height:1;font-weight:600;color:var(--good)}
 .calWords{font-size:9.5px;line-height:1;font-weight:600;color:var(--amber)}
 .calTot{font-size:9.5px;line-height:1;font-weight:600;color:var(--faint)}
+.calDue{font-size:9.5px;line-height:1;font-weight:600;color:var(--faint)}
+.noteDot{position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--coral)}
+
+/* ---- heatmap stat chips: current/longest streak, days learned, daily
+   average (the last with its own inline week/month/year/all-time window
+   picker -- see windowedDailyAverage()). Fresh classes rather than reusing
+   .statChip (scoped to .cardMeta/.recapCard, a different, smaller single-
+   line badge) or .chip (a filter toggle, not a label+value display). ---- */
+.hmStats{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.hmStat{padding:8px 12px;border:1px solid var(--line);border-radius:13px;background:var(--raise);
+  font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:1px;min-width:80px}
+.hmStat b{font-size:15.5px;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.hmStat select{margin-top:2px;font:inherit;font-size:10.5px;color:var(--faint);background:none;
+  border:none;padding:0}
+
+/* ---- calendar toolbar: month/all-time + volume/retention toggles (reuse
+   the existing .chip/.chip.on filter-toggle pattern rather than inventing a
+   new control), plus the config-gear icon and its fold-out panel. ---- */
+.calToolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;flex-wrap:wrap}
+.calToolbar .chips{margin:0}
+.calGearBtn{width:32px;height:32px;border:1px solid var(--line);border-radius:9px;background:none;
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--muted);flex:0 0 auto}
+.calGearBtn:active{background:var(--panel)}
+.calGearPanel{margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.calGearPanel .field{margin-bottom:10px}
+.calGearPanel .field:last-child{margin-bottom:0}
+.calGearPanel label{display:block;font-size:11.5px;color:var(--faint);text-transform:uppercase;
+  letter-spacing:.05em;margin-bottom:5px}
+.calGearPanel select,.calGearPanel input[type=date]{width:100%;padding:8px 10px;border:1px solid var(--line);
+  border-radius:9px;background:var(--raise);color:var(--ink);font:inherit;font-size:13.5px;box-sizing:border-box}
+.calGearRow{display:flex;gap:8px;align-items:center}
+.calGearRow input{flex:1;min-width:0}
+.calGearRow button{border:1px solid var(--line);background:var(--raise);border-radius:9px;
+  padding:8px 12px;font-size:12.5px;color:var(--muted);white-space:nowrap;flex:0 0 auto}
+
+/* ---- all-time continuous strip: weeks as columns, small colour-only dots,
+   horizontally scrollable (auto-scrolled to today on render) -- the
+   GitHub-contribution-graph shape, distinct from month view's bigger
+   number-carrying cells since a decade of daily cells has no room for
+   digits at any legible size. ---- */
+.calAllScroll{display:flex;gap:3px;overflow-x:auto;padding:8px 2px 10px;margin-top:6px}
+.calWeekCol{display:flex;flex-direction:column;gap:3px;flex:0 0 auto}
+.calDayDot{width:11px;height:11px;border-radius:3px;background:var(--panel);border:1px solid var(--line);cursor:pointer}
+.calDayDot.today{box-shadow:0 0 0 1px var(--bg),0 0 0 2px var(--coral)}
+.calDayDot.future{border-style:dashed}
+.calDayDot.sel{outline:2px solid var(--coral);outline-offset:1px}
+.calDayDot.empty{visibility:hidden;cursor:default}
+
+/* ---- day-detail panel: opens on any calendar-cell/dot click, past or
+   future. Stats + journal note inline; the actual word list lives in
+   Browse now (browseDate filter), reached via this panel's own button --
+   see renderBrowse()'s own comment for why click-through went there
+   instead of an in-place list. ---- */
+.dayDetail{display:none;margin-top:14px;padding:14px 16px;border:1px solid var(--line);
+  border-radius:13px;background:var(--panel)}
+.dayDetail.on{display:block}
+.dayDetail .ddTitle{font-family:var(--serif);font-size:16px;margin-bottom:8px}
+.dayDetail textarea{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:9px;
+  background:var(--raise);color:var(--ink);font-family:inherit;font-size:13px;padding:9px 11px;
+  resize:vertical;min-height:44px;box-sizing:border-box}
+.dayDetail .ddBtns{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.dayDetail button.small{border:1px solid var(--line);background:var(--raise);border-radius:9px;
+  padding:8px 13px;font-size:12.5px;color:var(--muted)}
+.dayDetail button.small.primary{background:var(--coral);border-color:var(--coral);color:#fff}
 .statRow{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
@@ -313,12 +451,34 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .wordRow{padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .wordRow:last-child{border-bottom:none}
 .wordRow .wrTop{display:flex;align-items:center;gap:9px}
+.wordRow input[type=checkbox]{width:16px;height:16px;accent-color:var(--coral);flex:0 0 auto}
 .wordRow .stDot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
 .wordRow .term{flex:1}
 .wordRow .gloss{display:none;margin:6px 0 0 18px;color:var(--muted);font-size:13.5px;line-height:1.4}
 .wordRow.revealed .gloss{display:block}
 .wordRow .wrLearn{display:none;margin:4px 0 0 18px;color:var(--faint);font-size:12px;line-height:1.4}
 .wordRow.revealed .wrLearn{display:block}
+.wordRow .wrNote{display:none;margin:5px 0 0 25px;color:var(--warn-ink);font-size:12px}
+.wordRow.buried .wrNote{display:block}
+
+/* ---- Browse bulk-action bar (multi-select) + the active-date filter bar
+   (click-a-day, Home's calendar -> here). Bulk bar animates open/closed by
+   max-height rather than plain display:none, matching the app's other
+   reveal-style transitions (.answer etc.) rather than a hard snap. ---- */
+.bulkBar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  max-height:0;overflow:hidden;opacity:0;transition:max-height .2s ease,opacity .16s ease,margin .2s ease}
+.bulkBar.on{max-height:60px;opacity:1;margin-bottom:14px}
+.bulkBar b{font-size:13px;color:var(--ink)}
+.bulkBtns{display:flex;gap:7px;flex-wrap:wrap}
+.bulkBtns button{border:1px solid var(--line);background:var(--raise);border-radius:9px;
+  padding:7px 12px;font-size:12px;color:var(--muted);white-space:nowrap}
+#bulkFlag{color:var(--bad-ink);border-color:var(--bad-br)}
+#bulkBury{color:var(--warn-ink);border-color:var(--warn-br)}
+.browseDateBar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 13px;border:1px solid var(--coral);border-radius:11px;background:var(--accent-soft);
+  color:var(--coral);font-size:13px;margin-bottom:12px}
+.browseDateBar button{border:1px solid var(--coral);background:none;color:var(--coral);
+  border-radius:8px;padding:5px 10px;font-size:12px;flex:0 0 auto}
 .stackbar{display:flex;height:20px;border-radius:7px;overflow:hidden;background:var(--panel);margin-top:4px}
 .stackbar>div{height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:7px 16px;margin-top:12px;font-size:13px;color:var(--muted)}
@@ -475,6 +635,8 @@ html[data-layout="landscape"] .cardarea>.rule{display:none}
 html[data-layout="landscape"] #answer{grid-area:answer;text-align:left;max-width:30em;
   padding:0 32px;border-left:1px solid var(--line);
   font-size:clamp(22px,calc(16px + 0.9vw),32px)}
+html[data-layout="landscape"] #quickFlash{grid-area:answer;text-align:left;max-width:30em;
+  padding:0 32px;font-size:clamp(22px,calc(16px + 0.9vw),32px)}
 html[data-layout="landscape"] #leechTag{grid-area:leech;justify-content:flex-start;padding:12px 32px 0}
 html[data-layout="landscape"] #hintline{grid-area:hint;text-align:left;padding:10px 32px 0;margin-top:0}
 html[data-layout="landscape"] #revealRow{grid-area:controls;padding:24px 32px 0}
@@ -671,16 +833,46 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <div class="note" id="syncAge"></div>
           <button class="syncNow hidden" id="syncNowBtn">Sync now</button>
         </div>
-        <div class="note" id="streakNote">—</div>
+        <div class="hmStats" id="hmStats"></div>
         <details class="fold" id="calFold">
           <summary>Full calendar</summary>
-          <div class="calHead">
-            <button class="calNav" id="calPrev" aria-label="Previous month">&#8249;</button>
-            <div class="calTitle" id="calTitle">—</div>
-            <button class="calNav" id="calNext" aria-label="Next month">&#8250;</button>
+          <div class="calToolbar">
+            <div class="chips" id="calViewChips"></div>
+            <div class="chips" id="calColChips"></div>
+            <button class="calGearBtn" id="calGearBtn" aria-label="Calendar settings">&#9881;</button>
           </div>
-          <div class="calDow" id="calDow"></div>
-          <div class="calGrid" id="calGrid"></div>
+          <div class="calGearPanel hidden" id="calGearPanel">
+            <div class="field">
+              <label for="gearAccent">Volume colour</label>
+              <select id="gearAccent">
+                <option value="coral">Coral (default)</option>
+                <option value="good">Green</option>
+                <option value="easy">Purple</option>
+                <option value="amber">Amber</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="gearStreakStart">Streak &amp; days-learned count from</label>
+              <div class="calGearRow">
+                <input type="date" id="gearStreakStart">
+                <button id="gearStreakClear">From the start</button>
+              </div>
+            </div>
+          </div>
+          <div id="calMonth">
+            <div class="calHead">
+              <button class="calNav" id="calPrev" aria-label="Previous month">&#8249;</button>
+              <div class="calTitle" id="calTitle">—</div>
+              <button class="calNav" id="calNext" aria-label="Next month">&#8250;</button>
+            </div>
+            <div class="calDow" id="calDow"></div>
+            <div class="calGrid" id="calGrid"></div>
+          </div>
+          <div class="calAll hidden" id="calAll">
+            <div class="calAllScroll" id="calAllScroll"></div>
+          </div>
+          <div class="calLegend note" id="calLegend"></div>
+          <div class="dayDetail" id="dayDetail"></div>
         </details>
       </div>
 
@@ -803,7 +995,21 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="chips" id="browseParts"></div>
       <div class="chips" id="browseStatusChips"></div>
       </div>
+      <div>
+      <div class="browseDateBar hidden" id="browseDateBar">
+        <span id="browseDateLbl"></span>
+        <button id="browseDateClear">Clear</button>
+      </div>
+      <div class="bulkBar" id="bulkBar">
+        <b id="bulkCount">0 selected</b>
+        <div class="bulkBtns">
+          <button id="bulkFlag">&#9873; Flag</button>
+          <button id="bulkBury">&#8986; Bury today</button>
+          <button id="bulkClear">Clear</button>
+        </div>
+      </div>
       <div id="browseResults"></div>
+      </div>
       </div>
     </div>
   </section>
@@ -858,6 +1064,13 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="prompt" id="prompt"></div>
       <div class="rule"></div>
       <div class="answer" id="answer"></div>
+      <!-- Decorative-only receipt for quick-rate's "flash" variant (quickFlash()
+           in the script below) -- never the live #answer node above, which
+           renderCard() overwrites immediately for the next card the instant a
+           grade lands. Shares the .answer class purely for its typography/
+           opacity mechanics (own opacity/.on toggle, no CSS transition -- see
+           that rule's own comment for why), not because it IS the answer. -->
+      <div class="answer quickFlash" id="quickFlash" aria-hidden="true"></div>
       <div class="leechtag hidden" id="leechTag">
         <button class="flagBtn" id="flagBtn" aria-label="Flag this word">&#9873;</button>
       </div>
@@ -955,6 +1168,9 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <option value="gruvbox">Gruvbox</option>
           <option value="everforest">Everforest</option>
           <option value="legacy">Legacy</option>
+          <option value="dracula">Dracula</option>
+          <option value="monokai">Monokai</option>
+          <option value="amphora">Amphora</option>
         </select>
         <select id="fTheme" class="sel" style="margin-top:9px">
           <option value="light">Light</option>
@@ -1000,11 +1216,16 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <option value="flash">On — flash the answer first</option>
           <option value="blind">On — no flash, fully blind</option>
         </select>
-        <div class="fh">Once a word has settled past its first learning steps, 1 (or I) and 3 (or P)
-          grade it straight from the question — no tap to reveal first — for a fast pass through
-          words you already know at a glance. "Flash the answer" briefly shows it right after you
-          grade, so a wrong guess is still visible to catch and undo (0 or Z); fully blind never
-          shows it at all. New and still-learning words are unaffected either way — that's the one
+        <div class="fh">Once a word is past its first learning steps — including a brief post-lapse
+          relearn step, not only a fully settled review — 1 (or I) and 3 (or P) grade it straight
+          from the question — no tap to reveal first — and the next word's front appears immediately,
+          for a fast pass through words you already know at a glance. "Flash the answer" also lets
+          2 (or O) grade this way, and shows the answer briefly right after you grade, floating
+          over the next word rather than holding it up; fully blind never shows it and leaves 2/O
+          reveal-gated, since Good is the one grade that still means "I actually looked at it".
+          Either way, pressing 0 or Z right after a quick-rate grades that same word Again instead
+          of undoing it — one keystroke to fix a mis-press without losing your place; any other 0/Z
+          is a normal undo. New and still-learning words are unaffected either way — that's the one
           place getting it wrong quietly costs the most, so reveal-then-rate stays the only route
           there. Off by default.</div>
       </div>
@@ -1539,8 +1760,8 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferOn:true, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null},
-  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, sinceExport:0, lastExport:null,
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferOn:true, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null},
+  dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, dayNotes:{}, sinceExport:0, lastExport:null,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
 let S=null;
@@ -1548,7 +1769,7 @@ let S=null;
 function freshCard(c){
   const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
             reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null,
-            unflagDay:null, holdSince:null};
+            unflagDay:null, holdSince:null, buryUntil:0};
   if(c.dir==='L'&&(c.seed===1||c.seed===2)){
     st.st='R'; st.step=null;
     st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
@@ -1662,7 +1883,7 @@ function reconcileGistSettings(local,shared){
   }
   return {gistId:shared.gistId||'', gistTok:shared.gistTok||'', deviceName:shared.deviceName||local.deviceName||'', seed:false, conflict:false};
 }
-let storageOK=true, saveTimer=null, pendingGistConflict=null;
+let storageOK=true, saveTimer=null, pendingGistConflict=null, lastSyncCheck=0;
 function save(){
   S.lastSave=Date.now();
   const json=JSON.stringify(S);
@@ -1781,9 +2002,44 @@ function normalise(o){
   // the same class of trust-the-object mistake as the __proto__ case above.
   if(PAL_KEYS.indexOf(s.palette)===-1) s.palette=defaults.palette;
   if(s.theme!=='light'&&s.theme!=='dark'&&s.theme!=='auto') s.theme=defaults.theme;
+  // Heatmap view-state settings: plain enum checks, same shape as the palette
+  // check just above -- a hand-edited or crafted value falls back to the
+  // default rather than reaching renderCalendar()/statsFor() with something
+  // that indexes nowhere.
+  if(['month','all'].indexOf(s.settings.heatmapView)===-1) s.settings.heatmapView=defaults.settings.heatmapView;
+  if(['week','month','year','all'].indexOf(s.settings.heatmapAvgWindow)===-1) s.settings.heatmapAvgWindow=defaults.settings.heatmapAvgWindow;
+  if(['volume','retention'].indexOf(s.settings.heatmapColourMode)===-1) s.settings.heatmapColourMode=defaults.settings.heatmapColourMode;
+  // heatmapAccent only ever picks WHICH existing semantic palette variable
+  // drives the volume gradient (coral/good/easy/amber) -- never a raw hex --
+  // so every palette/theme combination stays automatically legible and in
+  // step with the rest of the app's colour system, with nothing new for
+  // applyTheme() to carry.
+  if(['coral','good','easy','amber'].indexOf(s.settings.heatmapAccent)===-1) s.settings.heatmapAccent=defaults.settings.heatmapAccent;
+  // streakStart: a custom day-key the streak/heatmap average windows count
+  // from (config-gear "streak start date"), or null for "from the beginning
+  // of real data". A future day-key is allowed through here (harmless --
+  // every consumer already treats "no days yet" as zero, same as a device
+  // with no history at all) but garbage is not.
+  if(s.settings.streakStart!=null&&!Number.isFinite(s.settings.streakStart)) s.settings.streakStart=null;
   s.cards=o.cards&&typeof o.cards==='object'?o.cards:{};
   s.log=Array.isArray(o.log)?o.log:[];
   s.days=o.days&&typeof o.days==='object'?o.days:{};
+  // Per-day journal notes (heatmap config-gear / Interactive-Heatmap-style
+  // journaling). Keyed by the same integer day-key as S.days, so it reuses
+  // every existing day-key helper rather than inventing a date-string
+  // format. Each entry is coerced to a short plain string -- a crafted
+  // backup handing this a huge blob, an object, or a non-day-key key is
+  // just dropped rather than repaired, same "fix just this one thing"
+  // reasoning as the settings bounds above.
+  { const dn={}, raw=(o.dayNotes&&typeof o.dayNotes==='object')?o.dayNotes:{};
+    for(const k in raw){
+      const dk=Number(k);
+      if(!Number.isFinite(dk)) continue;
+      const v=raw[k];
+      if(typeof v==='string'&&v.trim()) dn[dk]=v.slice(0,500);
+    }
+    s.dayNotes=dn;
+  }
   // snap with the state's own rollover: during load() the global S is not yet
   // assigned, and the default hour would drag every due date onto the wrong day
   ROLL_OVR=(s.settings.rollover!=null)?s.settings.rollover:4;
@@ -1791,7 +2047,7 @@ function normalise(o){
     for(const k in s.cards){
       const c=deProto(s.cards[k]);
       if(!c||typeof c!=='object'||!BY_ID[k]){ delete s.cards[k]; continue; }
-      c.reps|=0; c.lapses|=0; c.buried|=0; c.loops|=0;
+      c.reps|=0; c.lapses|=0; c.buried|=0; c.loops|=0; c.buryUntil|=0;
       // The state check runs first now: the two below depend on knowing
       // whether this is a review card or not.
       if(c.st!=='L'&&c.st!=='R'&&c.st!=='X') c.st='L';
@@ -1934,7 +2190,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.14.5';
+const BUILD='2026.08.15.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -1947,6 +2203,7 @@ function activeBuckets(){ return (S.buckets&&S.buckets.length)?S.buckets:BUCKETS
 function available(cs,c,now,d){
   if(cs.susp) return false;
   if(cs.buried>d) return false;
+  if(cs.buryUntil>d) return false;   // manual "bury for today" -- see buryToday()
   if(!activeParts().includes(c.sec)) return false;
   if(cs.reps===0&&!activeBuckets().includes(c.bucket)) return false;   // filter applies to new words only
   if(cs.reps===0&&!gateOpen(c)) return false;
@@ -2047,7 +2304,15 @@ function buildQueue(dir){
     if(c.dir!==dir) return n;
     const cs=peek(c.id);
     const staleHold=cs.holdSince!=null&&(d-cs.holdSince)>=1;
-    return n+((cs.reps>0&&(cs.st==='L'||cs.st==='X')&&!staleHold)?1:0);
+    // A manually-buried word (buryToday(), Browse) is excluded the same way
+    // a stale hold is: it's not part of the sitting in front of you today,
+    // so it shouldn't spend the budget meant for that sitting either. This
+    // is the whole point of bury-for-today freeing its slot -- burying a
+    // word stuck mid-acquisition is usually reached for exactly because the
+    // cap feels full; if it stayed counted here that reason to bury it
+    // would never actually relieve anything.
+    const manuallyBuried=cs.buryUntil>d;
+    return n+((cs.reps>0&&(cs.st==='L'||cs.st==='X')&&!staleHold&&!manuallyBuried)?1:0);
   },0):0;
   const otherWorkPending=learn.length>0||due.length>0;
   const concurrencyRoom=(learnBufOn&&otherWorkPending)?Math.max(learnBufferFor(dir)-inFlight,0):Infinity;
@@ -2132,8 +2397,8 @@ function learnBufferSuggestion(dir){
 }
 let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], donePoll=null, cardDirty=false;
 let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by renderCard()'s recap card, cleared by undo() and by anything that wipes undoStack alongside it
-let calY=null, calM=null;   // calendar fold's own state -- not persisted, not S.dir-linked
-let browseDir='L', browseQuery='', browsePart=null, browseStatus='all';   // browse screen's own state
+let calY=null, calM=null, calSelectedDay=null;   // calendar fold's own state -- not persisted, not S.dir-linked
+let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseDate=null, browseSelected=new Set();   // browse screen's own state
 let drillDeck=[], drillGroups={}, drillPos=0, drillRight=0, drillSeen=0, drillView='practice';   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags. drillGroups: id -> its similarity block (populated by buildDrillDeck)
 let drillSubmitted=false;   // typed round: has this round already been graded
 let drillContrastIds=null, drillContrastAnswerOrder=null, drillContrastSel=null, drillContrastMatched=null, drillContrastMissed=null;   // contrastive round's own state, rebuilt each time renderContrastRound runs
@@ -2255,7 +2520,10 @@ const PALETTES={
   kanagawa:   'Kanagawa',
   gruvbox:    'Gruvbox',
   everforest: 'Everforest',
-  legacy:     'Legacy'
+  legacy:     'Legacy',
+  dracula:    'Dracula',
+  monokai:    'Monokai',
+  amphora:    'Amphora'
 };
 const PAL_KEYS=Object.keys(PALETTES);
 /* Daily rotation walks a shuffled cycle: every theme appears once before any
@@ -2703,48 +2971,79 @@ function reveal(){
     catch(e){ $(el).textContent='?'; }
   });
 }
-// "Quick rate": once a word is past its first learning steps (st==='R' --
-// the same young/mature review state statusOf()/learnStageOf() already key
-// off), 1/I and 3/P grade it straight from the question, no tap to reveal
-// first -- Settings' "Quick rate" switch. 2/O is left out on purpose: Good
-// is the one grade that still means "I actually looked at it", so it stays
-// reveal-gated. peek(), not cardState(): this runs on every keydown and
-// must never materialise a card as a side effect of a keystroke.
+// "Quick rate": once a word is past its first learning steps (st==='R' or
+// 'X' -- graduated review, at any stability, or mid a short post-lapse
+// relearn step; the same young/mature split statusOf()/learnStageOf() key
+// off is just a stability threshold within 'R', so it was already covered)
+// 1/I and 3/P grade it straight from the question, no tap to reveal first --
+// Settings' "Quick rate" switch. 2/O grades it too, but flash-variant only
+// (see the call site below): Good is the one grade that still means "I
+// actually looked at it", so blind mode -- which never shows the answer at
+// all -- keeps it reveal-gated; flash mode at least shows you the answer a
+// moment later, which is enough of a look to trust here. 'L' (still-learning,
+// never graduated) stays excluded either way -- the one place getting it
+// wrong quietly costs the most, per the Settings copy. peek(), not
+// cardState(): this runs on every keydown and must never materialise a card
+// as a side effect of a keystroke.
 function quickRateReady(){
-  return current!=null && S.settings.quickRate!=='off' && peek(current).st==='R';
+  if(current==null || S.settings.quickRate==='off') return false;
+  const st=peek(current).st;
+  return st==='R'||st==='X';
 }
-// A flash-mode press still has to wait out its own flash before grading --
-// this remembers which card that flash belongs to, both to stop a second
-// quick-rate key landing mid-flash and to bail out cleanly (grade nothing)
-// if the card underneath changed while the timer was pending, e.g. an undo.
-let quickFlashId=null;
+// Grades immediately and moves straight to the next card's front, exactly
+// like a reveal-then-rate press does -- no more waiting out a flash first
+// (that used to be how long you'd wait between one card and the next; see
+// HANDOFF for the owner's own read on why that pause cost more than it
+// bought). quickFlash() below is purely decorative: a floating receipt of
+// what you just graded, playing on its own element (#quickFlash), never
+// blocking or gating this. Undo (Z/0) therefore works the ordinary way too
+// -- see undo()/revertLast() -- rather than the old "cancel before it
+// commits" trick, since there's no longer a window where it hasn't
+// committed yet. Z pressed as the very next key specifically after a
+// quick-rate press gets a sharper tool for the same job instead: see
+// lastQuickRateId/quickCorrectToAgain() below.
+let lastQuickRateId=null, lastQuickRateGrade=null;
 function quickRate(pressed){
-  if(quickFlashId!=null) return;
   if(tooSoonAfter(Date.now(),shownAt,260)) return;   // same stray-keydown guard reveal() gets from rateRow's hidden class -- needed here since nothing else stands between a fresh card and this key
   const now=Date.now(), t=now-shownAt;
   thinkMs=(cardDirty||t<120||t>300000)?null:t;        // discard if you looked away -- same rule reveal() uses
-  const id=current;
-  const commit=()=>{
-    quickFlashId=null;
-    if(current!==id) return;         // the card under us changed mid-flash (e.g. undo) -- grade nothing
-    revealAt=shownAt;                // satisfies rate()'s own tooSoonAfter guard without weakening it, same as a real reveal() would
-    rate(pressed);
-  };
-  if(S.settings.quickRate==='flash'){
-    // Reuses reveal()'s own WAAPI fade-in rather than a second mechanism --
-    // the exact CSS-transition race that mechanism was built to dodge (see
-    // renderCard()'s comment) applies here just as much, so there is
-    // deliberately no CSS transition anywhere near this either.
-    quickFlashId=id;
-    const ans=$('answer');
-    ans.classList.add('on');
-    if(typeof ans.animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
-      ans.animate([{opacity:0},{opacity:1}],{duration:100,easing:'ease-out'});
-    }
-    setTimeout(commit,480);
-  } else {
-    commit();
-  }
+  const id=current, c=BY_ID[id];
+  if(S.settings.quickRate==='flash') quickFlash(c);
+  revealAt=shownAt;   // satisfies rate()'s own tooSoonAfter guard without weakening it, same as a real reveal() would
+  rate(pressed);
+  lastQuickRateId=id; lastQuickRateGrade=pressed;   // armed for exactly one keydown -- see the keydown listener
+}
+// The decorative flash itself. Deliberately never touches #answer -- that
+// element belongs to whichever card is now on screen (rate() above has
+// already called next()/renderCard() by the time this plays out), and
+// renderCard() rewrites it unconditionally on every card. #quickFlash is a
+// separate node (shares the .answer class purely for its opacity/.on
+// mechanics and typography, see that rule's own comment) so the two can
+// never fight over the same content. Content mirrors renderCard()'s own
+// answer-building logic exactly (same c.dir==='E' multi-alt branch), since
+// this is showing the same data, just as a receipt rather than the record.
+// At most one flash on screen at a time -- a second quick-rate landing
+// before the first has faded cancels it outright and starts fresh, rather
+// than queuing or overlapping, so it's always showing the most recent grade.
+let quickFlashOutTimer=null, quickFlashClearTimer=null;
+function quickFlash(c){
+  const el=$('quickFlash');
+  clearTimeout(quickFlashOutTimer); clearTimeout(quickFlashClearTimer);
+  el.className='answer quickFlash'+(c.dir==='E'?' lat':'');
+  el.innerHTML='';
+  if(c.dir==='E') c.a.forEach((x,i)=>{
+    const s=document.createElement('span'); s.className=i?'alt':''; s.textContent=x; el.appendChild(s);
+  });
+  else el.textContent=c.a;
+  el.classList.add('on');
+  const canAnimate=typeof el.animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches);
+  if(canAnimate) el.animate([{opacity:0},{opacity:1}],{duration:100,easing:'ease-out'});
+  quickFlashOutTimer=setTimeout(()=>{
+    if(canAnimate){
+      el.animate([{opacity:1},{opacity:0}],{duration:180,easing:'ease-in'});
+      quickFlashClearTimer=setTimeout(()=>el.classList.remove('on'),180);
+    } else el.classList.remove('on');
+  },480);   // same hold the old blocking flash used, just no longer anything waits on it
 }
 const BRACKETS=[['instant',0,2000],['under 10s',2000,10000],['10 to 30s',10000,30000],['over 30s',30000,Infinity]];
 function bracketOf(ms){ return ms==null?-1:BRACKETS.findIndex(b=>ms>=b[1]&&ms<b[2]); }
@@ -2856,9 +3155,14 @@ function next(){
   if(!current){ renderDone(); return; }
   renderCard();
 }
-function undo(){
+// Pure state revert: pops the most recent undo frame and restores S to it,
+// without any of undo()'s own UI side effects (toast, save(), re-render) --
+// shared with quickCorrectToAgain() below, which needs the revert but then
+// immediately re-rates rather than sitting on the reverted state. Returns
+// the popped frame, or null if the stack was empty.
+function revertLast(){
   const u=undoStack.pop();
-  if(!u){ toast('Nothing to undo'); return; }
+  if(!u) return null;
   S.cards[u.id]=u.before;
   (u.buried||[]).forEach(([sid,v])=>{ if(S.cards[sid]) S.cards[sid].buried=v; });
   // restore into the day the rating belonged to, not whichever day it is now
@@ -2871,9 +3175,35 @@ function undo(){
   S.log.length=u.logLen;
   S.sinceExport=Math.max((S.sinceExport||1)-1,0);
   lastRated=null; // the rating this described just got undone -- nothing to recap
-  save();
   current=u.id;
+  return u;
+}
+function undo(){
+  if(!revertLast()){ toast('Nothing to undo'); return; }
+  save();
   show('scStudy'); renderCard();
+}
+// Z/0 pressed as the very next keydown after a quick-rate press (see
+// lastQuickRateId, armed for exactly that one keydown by quickRate() and
+// cleared by every other key the study-screen listener handles -- reveal,
+// a normal rate(), another quick-rate, or Z itself) means "no, that one
+// should have been Again", not "put it back unrated" -- one keystroke to
+// fix a fat-fingered 1/2/3 and keep moving forward, rather than reverting
+// and then having to rate it again by hand. Goes through revertLast()+
+// rate() rather than mutating the just-popped frame in place, so a
+// correction is logged and scheduled through the exact same path any other
+// Again is (FLAG_AUTO included) -- if you really did mean Again, Again is
+// the honest grade to record, mis-press or not. Falls back to a plain
+// undo() if the undo stack's top doesn't match what this expected (state
+// drifted some other way in between) rather than risk re-grading the wrong
+// card.
+function quickCorrectToAgain(){
+  const id=lastQuickRateId, top=undoStack[undoStack.length-1];
+  lastQuickRateId=null; lastQuickRateGrade=null;
+  if(!top || top.id!==id){ undo(); return; }
+  revertLast();
+  thinkMs=null;   // whatever the mis-press's own think-time was, the correction itself isn't a second one
+  rate(AGAIN);
 }
 function renderDone(){
   refresh();
@@ -2951,6 +3281,22 @@ function setAside(id,on,now){
   cs.unflagDay = on ? null : dayKey(now!=null?now:Date.now());
   return cs;
 }
+// Manual "bury for today" (Browse screen) -- a temporary, self-clearing
+// defer, distinct from both setAside() above (permanent, stays until
+// brought back by hand) and rate()'s own automatic same-word-other-direction
+// bury (cs.buried, unrelated -- pure anti-interference bookkeeping the user
+// never sees or controls). Reuses the exact "hidden while cs.X>d" shape that
+// existing field already uses: cs.buryUntil holds the day-key it becomes
+// available again, so there is nothing to explicitly clear -- the next real
+// study day, available()'s own check simply stops matching. Excluded from
+// buildQueue()'s inFlight count while buried (see its own comment), so
+// burying a word actually frees the concurrent-learning slot it was holding.
+function buryToday(id,on){
+  const cs=cardState(id);
+  cs.buryUntil = on ? today()+1 : 0;
+  return cs;
+}
+function isBuriedToday(cs){ return !!(cs&&cs.buryUntil>today()); }
 // Every card in this direction at FLAG_MANUAL+ today's Agains, ranked worst
 // first, unioned with every already-set-aside card regardless of today's
 // count -- susp is persistent (sticks until brought back by hand), so a
@@ -3306,13 +3652,32 @@ function wordRowHtml(c){
   // with the same closest('.flagBtn')+stopPropagation pattern already proven
   // on the Struggling-words list, so a flag tap never also toggles reveal.
   const flagged=!!(cs&&cs.susp);
+  // buryToday()'s temporary state -- independent of flagged (susp), its own
+  // icon, its own guard in the click handler below.
+  const buried=isBuriedToday(cs);
+  const checked=browseSelected.has(c.id)?' checked':'';
+  const note=buried?'<div class="wrNote">Buried — back to normal review tomorrow</div>':'';
   // c.id and st are both built by this file, never read back from stored
   // state -- escaped anyway because this is the one place a value lands
   // inside an attribute, which is precisely the case escHtml() now covers.
-  return '<div class="wordRow" data-id="'+escHtml(c.id)+'"><div class="wrTop"><i class="stDot s-'+st+'"></i>'+
+  return '<div class="wordRow'+(buried?' buried':'')+'" data-id="'+escHtml(c.id)+'"><div class="wrTop">'+
+    '<input type="checkbox" class="wrCheck" data-id="'+escHtml(c.id)+'"'+checked+'>'+
+    '<i class="stDot s-'+st+'"></i>'+
     '<span class="term">'+escHtml(c.q)+'</span>'+
-    '<button class="flagBtn'+(flagged?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(flagged?'Bring back to normal review':'Set aside')+'">&#9873;</button></div>'+
-    '<div class="gloss">'+escHtml(gloss)+'</div>'+learn+'</div>';
+    '<button class="flagBtn'+(flagged?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(flagged?'Bring back to normal review':'Set aside')+'">&#9873;</button>'+
+    '<button class="buryBtn'+(buried?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(buried?'Bring back today':'Bury for today')+'">&#8986;</button>'+
+    '</div>'+
+    '<div class="gloss">'+escHtml(gloss)+'</div>'+learn+note+'</div>';
+}
+// Every card id whose S.log has a row timestamped on day dk -- powers
+// Browse's click-a-day filter (Home calendar -> openDay()'s ddViewBrowse
+// button). A full log scan, same cost class as timeToLearnFor()'s own
+// per-word walk and wholeSyllabusStats()'s whole-CARDS pass -- run only on
+// demand, when a day is actually opened, never on every render.
+function wordsTouchedOnDay(dk){
+  const seen={};
+  for(const e of S.log) if(dayKey(e[2])===dk) seen[e[0]]=true;
+  return Object.keys(seen);
 }
 function renderBrowsePartChips(){
   const box=$('browseParts');
@@ -3321,7 +3686,7 @@ function renderBrowsePartChips(){
   const mk=(sec,label)=>{
     const b=document.createElement('button');
     b.className='chip'+(browsePart===sec?' on':''); b.textContent=label;
-    b.addEventListener('click',e=>{ e.preventDefault(); browsePart=(browsePart===sec?null:sec); renderBrowse(); });
+    b.addEventListener('click',e=>{ e.preventDefault(); browsePart=(browsePart===sec?null:sec); browseSelected.clear(); renderBrowse(); });
     box.appendChild(b);
   };
   mk(null,'All parts');
@@ -3332,14 +3697,17 @@ function renderBrowseStatusChips(){
   const mk=(key,label)=>{
     const b=document.createElement('button');
     b.className='chip'+(browseStatus===key?' on':''); b.textContent=label;
-    b.addEventListener('click',e=>{ e.preventDefault(); browseStatus=key; renderBrowse(); });
+    b.addEventListener('click',e=>{ e.preventDefault(); browseStatus=key; browseSelected.clear(); renderBrowse(); });
     box.appendChild(b);
   };
   mk('all','All');
   STATUS_ORDER.forEach(k=>mk(k,STATUS_LABEL[k]));
 }
 // purely a read over CARDS/S.cards -- no new fields on S, no duplicate word
-// index; groupByPart/filterWords/statusOf already exist for the Stats screen
+// index; groupByPart/filterWords/statusOf already exist for the Stats screen.
+// browseDate (click-a-day, see wordsTouchedOnDay()'s own comment) is the
+// real filtered-and-actionable list Home's calendar hands off to, rather
+// than the calendar's own day-detail panel trying to be a second Browse.
 function renderBrowse(){
   $('browseDirL').classList.toggle('sel',browseDir==='L');
   $('browseDirE').classList.toggle('sel',browseDir==='E');
@@ -3351,15 +3719,29 @@ function renderBrowse(){
   let cards=CARDS.filter(c=>c.dir===browseDir);
   if(browsePart) cards=cards.filter(c=>c.sec===browsePart);
   if(browseStatus!=='all') cards=cards.filter(c=>statusOf(S.cards[c.id])===browseStatus);
+  if(browseDate!=null){
+    const touched=new Set(wordsTouchedOnDay(browseDate));
+    cards=cards.filter(c=>touched.has(c.id));
+  }
   cards=filterWords(cards,browseQuery);
   const groups=groupByPart(cards);
-  const openAll=!!browseQuery||browseStatus!=='all'||!!browsePart;
+  const openAll=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null;
   let html='';
   groups.forEach(g=>{
     html+='<details class="fold"'+(openAll?' open':'')+'><summary>'+escHtml(g.sec)+' ('+g.cards.length+')</summary><div>'+
       g.cards.map(wordRowHtml).join('')+'</div></details>';
   });
   $('browseResults').innerHTML = html || '<div class="note">No words match.</div>';
+  $('browseDateBar').classList.toggle('hidden',browseDate==null);
+  if(browseDate!=null){
+    $('browseDateLbl').textContent='Showing '+new Date(dayStart(browseDate)).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});
+  }
+  renderBulkBar();
+}
+function renderBulkBar(){
+  const n=browseSelected.size;
+  $('bulkBar').classList.toggle('on',n>0);
+  $('bulkCount').textContent=n+' selected';
 }
 /* ======================= drill screen ======================= */
 function startDrill(){
@@ -3576,22 +3958,102 @@ function dayStatsFor(days,dk){
   if(!rec||!rec.n) return {studied:false,intro:0,words:0,ratings:0};
   return {studied:true,intro:rec.intro||0,words:(rec.words!=null?rec.words:null),ratings:rec.n||0};
 }
-function currentStreak(days,todayKey){
+// since (optional, 3rd arg): a custom day-key floor -- config-gear "streak
+// start date" (S.settings.streakStart). Omitted, both functions behave
+// exactly as before (existing callers untouched); passed, neither counts
+// anything earlier than it, same as if history before that day didn't exist.
+function currentStreak(days,todayKey,since){
   let streak=0;
   for(let k=todayKey;;k--){
+    if(since!=null&&k<since) break;
     if(days[k]&&days[k].n) streak++;
     else { if(k!==todayKey) break; }
     if(todayKey-k>3650) break;
   }
   return streak;
 }
-function longestStreak(days,todayKey){
+function longestStreak(days,todayKey,since){
   let best=0,run=0;
-  for(let k=todayKey-3650;k<=todayKey;k++){
+  const floor=(since!=null)?Math.max(since,todayKey-3650):todayKey-3650;
+  for(let k=floor;k<=todayKey;k++){
     if(days[k]&&days[k].n){ run++; best=Math.max(best,run); } else run=0;
   }
   return best;
 }
+// % of days with any study, from `since` (or, with none given, this
+// device's own S.created -- "since I started using this app", not an
+// arbitrary window) through today inclusive. A brand-new device with no
+// history at all reads as 0%, not NaN or 100% off a zero-length span.
+function daysLearnedPct(days,todayKey,since){
+  const createdKey=S&&S.created?dayKey(S.created):todayKey;
+  const floor=(since!=null)?since:createdKey;
+  const span=Math.max(todayKey-floor+1,1);
+  let studied=0;
+  for(let k=floor;k<=todayKey;k++) if(days[k]&&days[k].n) studied++;
+  return Math.round(100*studied/span);
+}
+// Daily average of ratings made, over a configurable trailing window
+// (heatmap stat chip's own inline picker, S.settings.heatmapAvgWindow).
+// 'week'/'month'/'year' are fixed spans ending today, same windowing shape
+// recentPace() already uses; 'all' walks every recorded day rather than a
+// fixed count -- no invented cutoff, same honesty recentPace()'s hasData
+// flag already applies elsewhere.
+const AVG_WINDOW_DAYS={week:7,month:30,year:365};
+function windowedDailyAverage(days,todayKey,window){
+  if(window==='all'){
+    let sum=0,n=0;
+    for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
+    return n?Math.round(sum/n):0;
+  }
+  const span=AVG_WINDOW_DAYS[window]||AVG_WINDOW_DAYS.month;
+  let sum=0,n=0;
+  for(let k=todayKey;k>todayKey-span;k--){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
+  return n?Math.round(sum/n):0;
+}
+// Average ratings-per-studied-day across the whole collection -- the
+// baseline the heatmap's Volume colour scales against (Review Heatmap's own
+// approach: colour relative to *your* average, not a fixed number, so a
+// light or heavy user both get a readable spread rather than one all-coral
+// wall or one that never leaves the palest tint).
+function heatmapAvgRatings(days){
+  let sum=0,n=0;
+  for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
+  return n?sum/n:0;
+}
+function volumePct(ratings,avg){
+  if(!avg) return 0;
+  return Math.max(0,Math.min(1,ratings/(avg*1.6)))*100;
+}
+// Stretched so the readable band sits over 60-100% recall (below 60% is
+// rare enough in practice, and this app's own retention target lives at
+// 90-95%, that spending colour resolution below 60 would waste it) --
+// same "compress the scale where the data actually lives" reasoning as
+// BRACKETS/CALENDAR_BUCKETS elsewhere in this file.
+function retentionPct(ok,tot){
+  if(!tot) return 0;
+  const r=100*ok/tot;
+  return Math.max(0,Math.min(1,(r-60)/40))*100;
+}
+function heatRec(dk){
+  const r=S.days[dk];
+  return {ratings:(r&&r.n)||0, ok:(r&&r.ok)||0, tot:(r&&r.tot)||0};
+}
+// A CSS background string for one day cell/dot, or '' for a day with no
+// data (left to the plain --panel base). color-mix() with a `var(--x)`
+// reference is resolved by the browser at paint time, not here -- this
+// never reads an actual colour, so the exact same string is correct across
+// every palette and both light/dark modes automatically, with nothing new
+// for applyTheme() to know about.
+function heatCellBg(rec,avg){
+  if(!rec||!rec.ratings) return '';
+  if(S.settings.heatmapColourMode==='retention'&&rec.tot){
+    const p=retentionPct(rec.ok,rec.tot);
+    return 'background:color-mix(in srgb, var(--good) '+p+'%, var(--again) '+(100-p)+'%)';
+  }
+  const p=volumePct(rec.ratings,avg);
+  return 'background:color-mix(in srgb, var(--'+S.settings.heatmapAccent+') '+p+'%, var(--panel))';
+}
+const HEATMAP_FORECAST_DAYS=90;   // matches the researched Review Heatmap default horizon
 function renderHome(){
   refresh();                                    // Q = buildQueue(S.dir) -- reused below,
                                                  // rather than building that same direction again
@@ -3614,14 +4076,18 @@ function renderHome(){
     ? (rec.n+' rated today'+(studiedToday>0?' · '+fmtStopwatch(studiedToday)+' studied':''))
     : 'Nothing rated today yet';
 
-  // study-day strip, last 35 days
+  // study-day strip, last 35 days -- colour-graded (heatCellBg), same
+  // Volume/Retention mode and accent Settings' calendar config gear controls
+  const avgR=heatmapAvgRatings(S.days);
   const strip=$('strip'); strip.innerHTML='';
   for(let i=34;i>=0;i--){
     const k=d-i, el=document.createElement('div');
-    el.className='dot'+((S.days[k]&&S.days[k].n)?' did':'')+(i===0?' today':'');
+    el.className='dot'+(i===0?' today':'');
+    const bg=heatCellBg(heatRec(k),avgR);
+    if(bg) el.style.cssText=bg;
     strip.appendChild(el);
   }
-  const streak=currentStreak(S.days,d);
+  renderHeatmapStats();
   const s2=dirStats(S.dir);
   $('capVal').textContent=dailyCap(d,S.dir);
   renderSync();
@@ -3631,7 +4097,6 @@ function renderHome(){
   if($('calFold').open) renderCalendar();       // stay fresh if left open across a study session
   renderWarn(qE);                               // already computed above -- don't build it again
   $('buildTag').textContent='Version '+BUILD+' · '+PALETTES[S.palette||'vellum'];
-  $('streakNote').textContent = streak? (streak+' day'+(streak===1?'':'s')+' running') : 'No streak yet — the first day starts it.';
 
   const seen=s2.total-s2.unseen;
   const lat=latencyStats();
@@ -3665,12 +4130,73 @@ function renderHome(){
 // injection point with nothing on screen to show it, and row() below now
 // leans on this for values that never came from this device at all.
 function escHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-// only called when the fold is opened and by the nav buttons -- not on every
-// renderHome(), since it's collapsed most of the time (see HANDOFF.md)
+// Heatmap stat chips: current/longest streak (both honour the config-gear
+// streakStart override), days-learned %, and daily average with its own
+// inline week/month/year/all-time window picker. Rebuilt (not just its
+// numbers patched) on every call since the picker's own selected option can
+// change out from under it -- cheap, a handful of small chips.
+function renderHeatmapStats(){
+  const d=today(), since=S.settings.streakStart;
+  const cur=currentStreak(S.days,d,since), longest=longestStreak(S.days,d,since);
+  const pct=daysLearnedPct(S.days,d,since);
+  const avg=windowedDailyAverage(S.days,d,S.settings.heatmapAvgWindow);
+  const winOpt=w=>'<option value="'+w+'"'+(S.settings.heatmapAvgWindow===w?' selected':'')+'>'+
+    (w==='all'?'all-time':'per '+w)+'</option>';
+  $('hmStats').innerHTML=
+    '<div class="hmStat">Current streak<b>'+cur+' day'+(cur===1?'':'s')+'</b></div>'+
+    '<div class="hmStat">Longest streak<b>'+longest+' day'+(longest===1?'':'s')+'</b></div>'+
+    '<div class="hmStat">Days learned<b>'+pct+'%</b></div>'+
+    '<div class="hmStat">Daily average<b>'+avg+'</b><select id="hmAvgWindow">'+
+      ['week','month','year','all'].map(winOpt).join('')+'</select></div>';
+}
+function renderCalToolbar(){
+  const viewLbl={month:'Month',all:'All-time'};
+  $('calViewChips').innerHTML=['month','all'].map(v=>
+    '<button class="chip'+(S.settings.heatmapView===v?' on':'')+'" data-view="'+v+'">'+viewLbl[v]+'</button>').join('');
+  const colLbl={volume:'Volume',retention:'Retention'};
+  $('calColChips').innerHTML=['volume','retention'].map(v=>
+    '<button class="chip'+(S.settings.heatmapColourMode===v?' on':'')+'" data-col="'+v+'">'+colLbl[v]+'</button>').join('');
+}
+function renderCalGear(){
+  $('gearAccent').value=S.settings.heatmapAccent;
+  $('gearStreakStart').value=(S.settings.streakStart!=null)
+    ? new Date(dayStart(S.settings.streakStart)).toISOString().slice(0,10) : '';
+}
+function renderCalLegend(){
+  $('calLegend').textContent = (S.settings.heatmapColourMode==='retention'
+    ? 'Colour: lower to higher recall that day.'
+    : 'Colour: fewer to more ratings that day, scaled to your own average.')
+    +' Dashed cells are forecast — not yet real. Tap any day, past or future, for its detail and notes.';
+}
+// Forecast-cell background: grey, scaled to the busiest day in the same
+// forecast() call rather than any fixed number, so a light or heavy future
+// load both read sensibly. Pure and separate from heatCellBg() (past data)
+// since a future day has a due-count, never a ratings/retention pair.
+function heatFutureBg(due,fcArray){
+  const max=Math.max(1,...fcArray);
+  const p=Math.max(0,Math.min(1,due/max))*100;
+  return 'background:color-mix(in srgb, var(--faint) '+p+'%, var(--bg))';
+}
+// only called when the fold is opened and by the nav/toggle buttons -- not
+// on every renderHome(), since it's collapsed most of the time (see
+// HANDOFF.md). Dispatches on S.settings.heatmapView; both view functions
+// and the toolbar/gear/legend chrome around them share this one entry
+// point so every call site (fold-open, prev/next, view/colour toggle,
+// gear change) stays in step without needing to know which view is active.
+function renderCalendar(){
+  renderCalToolbar();
+  renderCalGear();
+  $('calMonth').classList.toggle('hidden',S.settings.heatmapView!=='month');
+  $('calAll').classList.toggle('hidden',S.settings.heatmapView!=='all');
+  if(S.settings.heatmapView==='all') renderCalendarAll(); else renderCalendarMonth();
+  renderCalLegend();
+}
 // each in-month cell shows its own new (green) / reviewed (amber) counts
 // directly, always -- no tap needed, and no separate selected-day state to
-// keep in step with what's already visible in the grid
-function renderCalendar(){
+// keep in step with what's already visible in the grid. A future cell in
+// the visible month shows a forecast due-count instead, and every in-month
+// cell (past or future) is now a tap target -- see openDay().
+function renderCalendarMonth(){
   const now=new Date();
   if(calY==null){ calY=now.getFullYear(); calM=now.getMonth(); }
   $('calTitle').textContent=new Date(calY,calM,1).toLocaleDateString(undefined,{month:'long',year:'numeric'});
@@ -3678,19 +4204,98 @@ function renderCalendar(){
   $('calDow').innerHTML=[0,1,2,3,4,5,6].map(i=>
     '<div>'+new Date(sun.getFullYear(),sun.getMonth(),sun.getDate()+i).toLocaleDateString(undefined,{weekday:'narrow'})+'</div>'
   ).join('');
-  const d0=today();
+  const d0=today(), avgR=heatmapAvgRatings(S.days), fc=forecast(S.dir,HEATMAP_FORECAST_DAYS);
   let gh='';
   monthMatrix(calY,calM).forEach(week=>week.forEach(cell=>{
     if(!cell.inMonth){ gh+='<div class="calCell out">'+cell.d+'</div>'; return; }
     const dk=dayKeyForDate(cell.y,cell.m,cell.d);
-    const st=dayStatsFor(S.days,dk);
     const cls=['calCell'];
-    if(st.studied) cls.push('did');
     if(dk===d0) cls.push('today');
-    const nums = st.studied ? ('<span class="calNew">'+st.intro+'</span><span class="calWords">'+(st.words!=null?st.words:'–')+'</span><span class="calTot">'+st.ratings+'</span>') : '';
-    gh+='<div class="'+cls.join(' ')+'"><span class="calNum">'+cell.d+'</span>'+nums+'</div>';
+    if(dk===calSelectedDay) cls.push('sel');
+    let style='', inner='';
+    const noteDot=(S.dayNotes&&S.dayNotes[dk]!=null)?'<span class="noteDot"></span>':'';
+    if(dk>d0){
+      cls.push('future');
+      const off=dk-d0, due=(off<fc.length)?fc[off]:null;
+      if(due!=null) style=' style="'+heatFutureBg(due,fc)+'"';
+      inner='<span class="calDue">'+(due!=null?due+' due':'')+'</span>';
+    } else {
+      const st=dayStatsFor(S.days,dk);
+      if(st.studied){
+        const bg=heatCellBg(heatRec(dk),avgR);
+        if(bg) style=' style="'+bg+'"';
+        inner='<span class="calNew">'+st.intro+'</span><span class="calWords">'+(st.words!=null?st.words:'–')+'</span><span class="calTot">'+st.ratings+'</span>';
+      }
+    }
+    gh+='<div class="'+cls.join(' ')+'"'+style+' data-dk="'+dk+'">'+noteDot+'<span class="calNum">'+cell.d+'</span>'+inner+'</div>';
   }));
   $('calGrid').innerHTML=gh;
+}
+// All-time continuous view: weeks as columns (Sunday-aligned, matching the
+// month view's own week rows), small colour-only dots from this device's
+// earliest real day (S.created, or an even earlier S.days entry if a
+// restored backup predates that stamp -- never an arbitrary fixed window)
+// through the forecast horizon. Auto-scrolled to today on every render so
+// recent activity is always the first thing visible.
+function renderCalendarAll(){
+  const d0=today(), avgR=heatmapAvgRatings(S.days), fc=forecast(S.dir,HEATMAP_FORECAST_DAYS);
+  let startKey=S.created?dayKey(S.created):d0;
+  for(const k in S.days) startKey=Math.min(startKey,+k);
+  const endKey=d0+HEATMAP_FORECAST_DAYS;
+  const startDow=new Date(dayStart(startKey)).getDay();
+  const gridStart=startKey-startDow;
+  let html='', col='';
+  const closeCol=()=>{ if(col){ html+='<div class="calWeekCol">'+col+'</div>'; col=''; } };
+  for(let k=gridStart;k<=endKey;k++){
+    if((k-gridStart)%7===0) closeCol();
+    if(k<startKey){ col+='<div class="calDayDot empty"></div>'; continue; }
+    const cls=['calDayDot'];
+    if(k===d0) cls.push('today');
+    if(k===calSelectedDay) cls.push('sel');
+    if(S.dayNotes&&S.dayNotes[k]!=null) cls.push('hasNote');
+    let style='';
+    if(k>d0){
+      cls.push('future');
+      const off=k-d0, due=(off<fc.length)?fc[off]:null;
+      if(due!=null) style=' style="'+heatFutureBg(due,fc)+'"';
+    } else {
+      const bg=heatCellBg(heatRec(k),avgR);
+      if(bg) style=' style="'+bg+'"';
+    }
+    col+='<div class="'+cls.join(' ')+'"'+style+' data-dk="'+k+'" title="'+escHtml(new Date(dayStart(k)).toLocaleDateString())+'"></div>';
+  }
+  closeCol();
+  $('calAllScroll').innerHTML=html;
+  const sc=$('calAllScroll'); sc.scrollLeft=sc.scrollWidth;
+}
+// Day-detail panel: opens on any calendar cell/dot tap, past or future.
+// Stats (or, for a future day, the forecast) plus the journal note live
+// here inline; the actual word list for a studied day is one tap further,
+// via ddViewBrowse -- see renderBrowse()'s own browseDate comment for why
+// the full list lives on Browse rather than being duplicated here.
+function openDay(dk){
+  calSelectedDay=dk;
+  renderCalendar();
+  const dd=$('dayDetail'); dd.classList.add('on');
+  const d0=today();
+  const label=new Date(dayStart(dk)).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  let out='<div class="ddTitle">'+escHtml(label)+'</div>';
+  if(dk>d0){
+    const fc=forecast(S.dir,HEATMAP_FORECAST_DAYS), off=dk-d0;
+    const due=(off<fc.length)?fc[off]:null;
+    out+=row('Forecast', due!=null ? (due+' card'+(due===1?'':'s')+' due') : ('Beyond the '+HEATMAP_FORECAST_DAYS+'-day forecast horizon'));
+  } else {
+    const st=dayStatsFor(S.days,dk), rc=heatRec(dk);
+    out+=row('New words',st.intro)+
+      row('Distinct words touched',st.words!=null?st.words:'–')+
+      row('Ratings made',st.ratings)+
+      row('Recall that day',rc.tot?Math.round(100*rc.ok/rc.tot)+'%':'—');
+    if(st.studied) out+='<div class="ddBtns"><button class="small primary" id="ddViewBrowse">View in Browse →</button></div>';
+  }
+  const noteVal=(S.dayNotes&&S.dayNotes[dk])||'';
+  out+='<textarea id="ddNote" maxlength="500" placeholder="Add a note for this day — an exam, a rough night, a reason the numbers look the way they do…">'+escHtml(noteVal)+'</textarea>';
+  out+='<div class="ddBtns"><button class="small primary" id="ddSave">Save note</button><button class="small" id="ddClose">Close</button></div>';
+  dd.innerHTML=out;
 }
 function flagRow(r){
   const c=BY_ID[r.id];
@@ -4233,6 +4838,7 @@ function offerConflict(inc,base){
 }
 async function syncOnLaunch(){
   if(!S.settings.gistId||!S.settings.gistTok) return;
+  lastSyncCheck=Date.now();
   const lenAtStart=S.log.length;
   const inc=await fetchGist(true);
   if(S.log.length!==lenAtStart) return;              // rated while the fetch was in flight
@@ -4364,6 +4970,17 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.15.2',[
+    'Quick rate is noticeably faster to click through: 1/I and 3/P (and, in "flash the answer" mode, 2/O too) now grade a word and move straight to the next one\'s front immediately, instead of waiting out the flash first. "Flash the answer" still shows you the answer right after you grade -- it just floats over the next word as a brief receipt now, rather than holding it up. Quick rate also now applies to a word mid its short post-lapse relearn step, not only to a fully settled review -- previously it dropped back to reveal-then-rate for those. New: pressing 0 or Z right after a quick-rate press grades that same word Again instead of undoing it -- one keystroke to fix a mis-press (a 3 that should have been a 1, say) without losing your place or having to look at the card again; any other 0/Z is still a normal undo. New and still-learning words are unaffected by any of this -- reveal-then-rate stays the only route there, same as always.'
+  ]],
+  ['2026.08.15.1',[
+    'The "Study days" calendar is substantially richer: cells are now colour-graded by how much you studied that day (or, toggled to "Retention", by how well you recalled it) instead of a plain did/didn\'t dot, scaled to your own average rather than a fixed number. A new stat row adds longest streak and days-learned % next to the existing current streak, plus a daily-average figure with its own week/month/year/all-time picker. Upcoming days now show a real forecast -- how many cards will be due, projected from today\'s actual schedule -- shaded in dashed grey to keep them visually distinct from real history. A new "All-time" view (next to "Month") lays out your whole history as a scrollable GitHub-style grid of small coloured squares, auto-scrolled to today. Tapping any day, past or future, opens a small panel with that day\'s numbers (or the forecast) and a free-text note you can attach to it -- a rough night, an exam, a reason the numbers look the way they do -- marked on the calendar with a small dot. A new gear icon lets you pick which colour drives the Volume scale (coral/green/purple/amber) and set a custom date for the streak and days-learned figures to count from, for anyone who wants those numbers to reflect a fresh start rather than this account\'s whole history.',
+    'Tapping a studied day now opens that day\'s actual word list on the Browse screen (a "Showing [date]" bar, with a Clear button, filters it down) rather than just showing numbers -- every row there still has its own working flag/bury buttons. Browse also gained multi-select: a checkbox per row and a bulk-action bar for flagging or burying many words at once. "Bury for today" is new and distinct from the existing flag: a temporary, self-clearing defer -- back in rotation on its own the next study day, with no separate un-bury step -- for "not this word, right now" without committing it to the struggling-word list. Unlike flagging, burying a word frees the concurrent-learning slot it was holding, so it can actually relieve a full "Learning at once" cap rather than just hiding a word while still counting against it.',
+    'Three new palette options, deliberately bolder and higher-contrast than the existing seven: Dracula and Monokai (well-known vivid-on-near-black developer themes) and Amphora, an original palette styled after black-figure and red-figure Attic pottery -- stark black paired with burnt terracotta. All three come with a full light and dark variant like every other palette.'
+  ]],
+  ['2026.08.15.0',[
+    'Fixed unnecessary GitHub API traffic that could trip the gist\'s hourly rate limit: returning to the app -- switching back from another app or tab -- while sitting on the home screen fired a fresh authenticated sync check every single time, even seconds after the last one. Ordinary alt-tabbing during a long session was enough on its own to burn through GitHub\'s 5000-requests-per-hour cap, producing a "Gist push failed (403)" toast that looked exactly like a bad or expired token but was not -- confirmed live 2026-08-15 (GitHub\'s own error was "API rate limit exceeded", not a credentials failure). That refocus check is now throttled to once a minute: returning after a real gap away still checks and catches up exactly as before, only rapid repeated refocusing is skipped. Nothing about the normal few-seconds-after-a-rating push debounce changes.'
+  ]],
   ['2026.08.14.5',[
     '"Learning at once" (Settings) now has an on/off switch above its two sliders, labelled "experimental" -- it\'s still being tuned against real usage data (see the "Adaptive" plan this cap came from), so there\'s now a plain way to turn it off entirely rather than only turning it down. Off reproduces exactly how new words were introduced before this cap existed on 2026.08.14.1 -- the daily "New words a day" limit is the only thing governing how many come in, with no separate concurrency ceiling at all. The two sliders stay visible only while it\'s on; switching it off hides them (they keep whatever they were set to, for whenever it\'s back on), and switching it back on picks up right where they left off, immediately, with no re-arming delay. On by default, so nothing changes for anyone not touching this setting.'
   ]],
@@ -4728,7 +5345,62 @@ function shiftCalMonth(delta){
 }
 tapZone($('calPrev'),()=>shiftCalMonth(-1));
 tapZone($('calNext'),()=>shiftCalMonth(1));
-tapZone($('toBrowse'),()=>{ browseDir=S.dir; renderBrowse(); show('scBrowse'); });
+// Month/All-time and Volume/Retention are both delegated (the chip rows are
+// rebuilt on every renderCalToolbar() call, same reason browseResults'
+// flag/checkbox handlers are delegated rather than bound per-row).
+$('calViewChips').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-view]'); if(!b) return;
+  S.settings.heatmapView=b.dataset.view; save(); renderCalendar();
+});
+$('calColChips').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-col]'); if(!b) return;
+  S.settings.heatmapColourMode=b.dataset.col; save(); renderCalendar();
+});
+tapZone($('calGearBtn'),()=>{ $('calGearPanel').classList.toggle('hidden'); });
+$('gearAccent').addEventListener('change',e=>{ S.settings.heatmapAccent=e.target.value; save(); renderCalendar(); });
+$('gearStreakStart').addEventListener('change',e=>{
+  const v=e.target.value;
+  S.settings.streakStart = v ? dayKeyForDate(+v.slice(0,4),+v.slice(5,7)-1,+v.slice(8,10)) : null;
+  save(); renderHeatmapStats();
+});
+tapZone($('gearStreakClear'),()=>{ S.settings.streakStart=null; $('gearStreakStart').value=''; save(); renderHeatmapStats(); });
+// hmAvgWindow (the daily-average stat chip's own inline window picker) is
+// rebuilt by renderHeatmapStats() on every call, so this is delegated too.
+$('hmStats').addEventListener('change',e=>{
+  if(e.target.id!=='hmAvgWindow') return;
+  S.settings.heatmapAvgWindow=e.target.value; save(); renderHeatmapStats();
+});
+// Calendar cell/dot taps -- delegated on each container (both are rebuilt
+// wholesale on every render, same reasoning as every other delegated
+// listener in this file). .out (month-view padding cells) and .empty
+// (all-time's pre-history filler dots) are the only non-tappable cells.
+$('calGrid').addEventListener('click',e=>{
+  const cell=e.target.closest('.calCell'); if(!cell||cell.classList.contains('out')) return;
+  openDay(+cell.dataset.dk);
+});
+$('calAllScroll').addEventListener('click',e=>{
+  const dot=e.target.closest('.calDayDot'); if(!dot||dot.classList.contains('empty')) return;
+  openDay(+dot.dataset.dk);
+});
+// Day-detail panel: Save/Close/View-in-Browse. Delegated -- dd.innerHTML is
+// rebuilt wholesale by every openDay() call, so a bound-per-render listener
+// would need rebinding every time anyway.
+$('dayDetail').addEventListener('click',e=>{
+  if(e.target.id==='ddSave'){
+    const v=$('ddNote').value.trim();
+    if(v) S.dayNotes[calSelectedDay]=v.slice(0,500); else delete S.dayNotes[calSelectedDay];
+    save(); toast(v?'Note saved':'Note cleared',1400);
+    openDay(calSelectedDay);
+  } else if(e.target.id==='ddClose'){
+    calSelectedDay=null; $('dayDetail').classList.remove('on'); renderCalendar();
+  } else if(e.target.id==='ddViewBrowse'){
+    browseDate=calSelectedDay; browseDir=S.dir; browsePart=null; browseStatus='all'; browseQuery='';
+    browseSelected.clear(); $('browseSearch').value='';
+    renderBrowse(); show('scBrowse');
+  }
+});
+tapZone($('browseDateClear'),()=>{ browseDate=null; browseSelected.clear(); renderBrowse(); });
+tapZone($('toBrowse'),()=>{ browseDir=S.dir; browseDate=null; browseSelected.clear(); renderBrowse(); show('scBrowse'); });
 tapZone($('toDrill'),()=>{ startDrill(); show('scDrill'); });
 tapZone($('drillBack'),()=>{ renderHome(); show('scHome'); });
 tapZone($('drillBackBtn'),()=>{ renderHome(); show('scHome'); });
@@ -4750,10 +5422,20 @@ $('drillChoices').addEventListener('click',e=>{
 $('drillChoices').addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='drillInput'){ e.preventDefault(); submitTypedRound(); }
 });
-tapZone($('browseDirL'),()=>{ browseDir='L'; renderBrowse(); });
-tapZone($('browseDirE'),()=>{ browseDir='E'; renderBrowse(); });
-$('browseSearch').addEventListener('input',e=>{ browseQuery=e.target.value; renderBrowse(); });
+// Switching direction/part/status/search is "I'm looking at something new
+// now" -- any stale multi-select from a previous view is cleared so a bulk
+// action can never silently reach words the current screen doesn't even
+// show. Bulk actions and individual row taps deliberately do NOT clear
+// selection themselves (a bulk action manages its own clearing; a single
+// flag/bury tap on one row shouldn't disturb a selection of others).
+tapZone($('browseDirL'),()=>{ browseDir='L'; browseSelected.clear(); renderBrowse(); });
+tapZone($('browseDirE'),()=>{ browseDir='E'; browseSelected.clear(); renderBrowse(); });
+$('browseSearch').addEventListener('input',e=>{ browseQuery=e.target.value; browseSelected.clear(); renderBrowse(); });
 $('browseResults').addEventListener('click',e=>{
+  // checkbox toggling is handled by the 'change' listener just below --
+  // a checkbox click also bubbles here first, so it's guarded out before
+  // anything below can mistake it for a row-reveal tap
+  if(e.target.closest('.wrCheck')) return;
   // guarded first, same shape as the Struggling-words list's own flagBtn
   // handler just below -- must never also toggle this row's reveal
   const flagBtn=e.target.closest('.flagBtn');
@@ -4764,6 +5446,18 @@ $('browseResults').addEventListener('click',e=>{
     flagBtn.classList.toggle('on',cs.susp);
     flagBtn.setAttribute('aria-label',cs.susp?'Bring back to normal review':'Set aside');
     toast(cs.susp?'Set aside':'Brought back',1400);
+    return;
+  }
+  const buryBtn=e.target.closest('.buryBtn');
+  if(buryBtn){
+    e.preventDefault(); e.stopPropagation();
+    const id=buryBtn.dataset.id, wasBuried=isBuriedToday(cardState(id));
+    buryToday(id,!wasBuried);
+    save();
+    buryBtn.classList.toggle('on',!wasBuried);
+    buryBtn.setAttribute('aria-label',!wasBuried?'Bring back today':'Bury for today');
+    buryBtn.closest('.wordRow').classList.toggle('buried',!wasBuried);
+    toast(!wasBuried?'Buried — back tomorrow':'Brought back',1400);
     return;
   }
   const row=e.target.closest('.wordRow'); if(!row) return;
@@ -4778,6 +5472,22 @@ $('browseResults').addEventListener('click',e=>{
     learnEl.dataset.computed='1';
   }
 });
+$('browseResults').addEventListener('change',e=>{
+  const cb=e.target.closest('.wrCheck'); if(!cb) return;
+  if(cb.checked) browseSelected.add(cb.dataset.id); else browseSelected.delete(cb.dataset.id);
+  renderBulkBar();
+});
+tapZone($('bulkFlag'),()=>{
+  browseSelected.forEach(id=>setAside(id,true));
+  save(); const n=browseSelected.size; browseSelected.clear(); renderBrowse();
+  toast(n+' word'+(n===1?'':'s')+' flagged',1400);
+});
+tapZone($('bulkBury'),()=>{
+  browseSelected.forEach(id=>buryToday(id,true));
+  save(); const n=browseSelected.size; browseSelected.clear(); renderBrowse();
+  toast(n+' word'+(n===1?'':'s')+' buried for today',1400);
+});
+tapZone($('bulkClear'),()=>{ browseSelected.clear(); renderBrowse(); });
 function toggleFlagFromList(id){
   const cs=setAside(id,!cardState(id).susp);
   save();
@@ -4946,6 +5656,20 @@ $('fGistTok').addEventListener('change',e=>{S.settings.gistTok=e.target.value.tr
 
 document.addEventListener('keydown',e=>{
   if($('scStudy').classList.contains('on')){
+    // Armed only for the single keydown right after a quick-rate press (see
+    // quickRate()'s own lastQuickRateId comment) -- read before this
+    // keydown's own handling below clears it, so Z can tell "I just
+    // fat-fingered a quick-rate press" from "I want a normal undo", however
+    // long ago the most recent quick-rate happened to be. Every OTHER branch
+    // below (reveal, a normal rate(), another quick-rate) starts this
+    // keydown by clearing it; quickRate() alone re-arms it, right at the end
+    // of its own call, if this keydown turns out to be a fresh quick-rate
+    // press. Z/0 itself is exempted from this clear -- it needs the value
+    // still intact when it reads it further down, and quickCorrectToAgain()
+    // clears it there instead, once it's actually been consumed.
+    const isUndoKey=e.key==='z'||e.key==='Z'||e.key==='0';
+    const wasQuickRated=lastQuickRateId;
+    if(!isUndoKey) lastQuickRateId=null;
     if(e.key===' '||e.key==='Enter'){e.preventDefault();
       // Space/Enter reveals when the answer is hidden, then doubles as Easy
       // once it's showing -- changed 2026.08.13 from Good (Anki's own
@@ -4966,13 +5690,20 @@ document.addEventListener('keydown',e=>{
     else if(quickRateReady()){
       // Same 1/I and 3/P as above, live before reveal too -- see
       // quickRateReady()/quickRate() and Settings' "Quick rate" switch. 2/O
-      // still does nothing here: Good stays reveal-gated on purpose.
+      // works here too, but flash-variant only -- see quickRate()'s own
+      // comment for why blind mode still leaves Good reveal-gated.
       if(e.key==='1'||e.key==='i'||e.key==='I') quickRate(AGAIN);
+      if((e.key==='2'||e.key==='o'||e.key==='O')&&S.settings.quickRate==='flash') quickRate(GOOD);
       if(e.key==='3'||e.key==='p'||e.key==='P') quickRate(EASY);
     }
     // 0 sits right above P on the number row, the same right-hand-friendly
-    // reasoning as I/O/P below -- added alongside Z, not instead of it
-    if(e.key==='z'||e.key==='Z'||e.key==='0') undo();
+    // reasoning as I/O/P below -- added alongside Z, not instead of it.
+    // Right after a quick-rate press specifically, this corrects to Again
+    // instead of undoing -- see quickCorrectToAgain()'s own comment.
+    if(isUndoKey){
+      if(wasQuickRated!=null) quickCorrectToAgain();
+      else undo();
+    }
     // f flags/unflags the current word straight from the keyboard, silently
     // -- no toast -- once it's drawn FLAG_KEY Agains today (see FLAG_KEY's
     // own comment). The on-screen flag icon gates on the same threshold, so
@@ -5001,7 +5732,16 @@ document.addEventListener('visibilitychange',()=>{
     // to check the flag too, or a wait that got backgrounded would never
     // restart until a card actually appeared.
     if($('scStudy').classList.contains('on')||almostThereWait) startStudyTimer(false);   // same sitting, not a new one
-    if($('scHome').classList.contains('on')){ renderHome(); syncOnLaunch(); }
+    // Throttled to once a minute: this fires on every tab refocus, not just a
+    // real return-to-study -- alt-tabbing to check something else and back
+    // was burning a live api.github.com call each time, adding up fast
+    // against GitHub's 5000/hour cap on ordinary days with no bug involved.
+    // syncOnLaunch() itself stamps lastSyncCheck, so this covers every path
+    // that calls it (boot, reconcile-first), not just this one.
+    if($('scHome').classList.contains('on')){
+      renderHome();
+      if(Date.now()-lastSyncCheck>MIN) syncOnLaunch();
+    }
   }
 });
 window.addEventListener('pagehide',()=>{ pauseStudyTimer(); flushPendingPush(); });   // safety net for a close/reload that skips visibilitychange
