@@ -16,10 +16,12 @@
 :root{
   --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
-  /* vellum, the decks' own default palette -- fixed here, not switchable.
-     This is a launcher, not a deck: it borrows the same look, not the
-     seven-palette machinery that exists to let a long study session pick
-     its own mood. */
+  /* vellum, the launcher's own chrome colour -- fixed here, not switchable.
+     The ten-palette machinery below (2026-08-15 preview) is NOT for this:
+     it exists only so each deck's own progress card (.deckProg) can show
+     that deck's own real palette, scoped to its own subtree. The page
+     chrome around it -- h1, cards, backup/sync form -- stays fixed vellum
+     regardless of what any deck is set to. */
   --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
   --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6;
   --good:#5a6b32; --good-bg:#e6e5d4; --good-br:#c7cab0;
@@ -31,6 +33,196 @@
     --good:#a9bd72; --good-bg:#393b25; --good-br:#565c39;
   }
 }
+/* ============================================================
+   PREVIEW (2026-08-15): the decks' own ten-palette system, copied verbatim
+   from latin.html/greek.html (identical in both). Deliberately not scoped
+   to `html` -- see latin.html's own comment above this same block for why:
+   any element carrying data-palette+data-theme re-declares the whole
+   palette for its own subtree. Used below only by .deckProg, one per deck,
+   each reading that deck's own real S.palette/S.theme. The launcher's own
+   :root above is untouched by this -- nothing here redefines bare :root.
+   ============================================================ */
+[data-palette="vellum"][data-theme="light"]{
+  --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
+  --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6; --again:#a3342a;
+  --again-bg:#f0ded3; --again-br:#dfb9ae; --good:#5a6b32; --good-bg:#e6e5d4; --good-br:#c7cab0;
+  --easy:#7d5f9c; --easy-bg:#ebe3e2; --easy-br:#d3c6d2; --amber:#9a7318; --warn-bg:#eee6d0;
+  --warn-br:#dccda8; --warn-ink:#7b5d18; --bad-bg:#f0ded3; --bad-br:#dfb9ae; --bad-ink:#812f25;
+  --toast:#2a2318;
+}
+[data-palette="vellum"][data-theme="dark"]{
+  --bg:#1a160f; --panel:#241f16; --ink:#ece3cf; --muted:#a89a80; --faint:#7a6f5c;
+  --line:#3a3222; --coral:#d4795e; --accent-soft:#3f2a1f; --raise:#2c2519; --again:#e0796b;
+  --again-bg:#462c23; --again-br:#6d4036; --good:#a9bd72; --good-bg:#393b25; --good-br:#565c39;
+  --easy:#c3a3e0; --easy-bg:#3f353d; --easy-br:#615167; --amber:#d4a24a; --warn-bg:#43351c;
+  --warn-br:#685128; --warn-ink:#d7ab5d; --bad-bg:#462c23; --bad-br:#6d4036; --bad-ink:#e28879;
+  --toast:#241f16;
+}
+[data-palette="catppuccin"][data-theme="light"]{
+  --bg:#eff1f5; --panel:#e6e9ef; --ink:#4c4f69; --muted:#66687d; --faint:#8a8d9b;
+  --line:#ccd0da; --coral:#de590c; --accent-soft:#f0e1db; --raise:#ffffff; --again:#d20934;
+  --again-bg:#edd2dd; --again-br:#e6a9b9; --good:#288f12; --good-bg:#d7e6d9; --good-br:#b3d7b0;
+  --easy:#8732f6; --easy-bg:#e1d7f6; --easy-br:#d0bdec; --amber:#be7208; --warn-bg:#e9e1d7;
+  --warn-br:#e3cba9; --warn-ink:#a3671b; --bad-bg:#edd2dd; --bad-br:#e6a9b9; --bad-ink:#b40836;
+  --toast:#4c4f69;
+}
+[data-palette="catppuccin"][data-theme="dark"]{
+  --bg:#1e1e2e; --panel:#181825; --ink:#cdd6f4; --muted:#a6adc8; --faint:#6c7086;
+  --line:#45475a; --coral:#f9b58b; --accent-soft:#4b3b3f; --raise:#313244; --again:#fa86a6;
+  --again-bg:#4f344a; --again-br:#7b4861; --good:#9cef95; --good-bg:#3b4a48; --good-br:#54745d;
+  --easy:#cba2fb; --easy-bg:#43395d; --easy-br:#665386; --amber:#fce3ac; --warn-bg:#4e494a;
+  --warn-br:#7c7062; --warn-ink:#fce3b0; --bad-bg:#4f344a; --bad-br:#7b4861; --bad-ink:#fa8eb1;
+  --toast:#181825;
+}
+[data-palette="rosepine"][data-theme="light"]{
+  --bg:#faf4ed; --panel:#fffaf3; --ink:#575279; --muted:#6b6782; --faint:#8f8a9b;
+  --line:#dfdad9; --coral:#c86a65; --accent-soft:#f6e6de; --raise:#ffffff; --again:#c25574;
+  --again-bg:#f3e0dc; --again-br:#e7c3c5; --good:#17698b; --good-bg:#dfe2df; --good-br:#b5c9cd;
+  --easy:#8f72b1; --easy-bg:#ede3e3; --easy-br:#d9ccd8; --amber:#c1760e; --warn-bg:#f4e4d0;
+  --warn-br:#e7cdac; --warn-ink:#a56c2d; --bad-bg:#f3e0dc; --bad-br:#e7c3c5; --bad-ink:#a45379;
+  --toast:#575279;
+}
+[data-palette="rosepine"][data-theme="dark"]{
+  --bg:#191724; --panel:#1f1d2e; --ink:#e0def4; --muted:#908caa; --faint:#6e6a86;
+  --line:#403d52; --coral:#f2bab8; --accent-soft:#443743; --raise:#26233a; --again:#f8638d;
+  --again-bg:#4a273d; --again-br:#763751; --good:#92d6e2; --good-bg:#343f4e; --good-br:#4d6573;
+  --easy:#c6a2f3; --easy-bg:#3e3551; --easy-br:#60507a; --amber:#f9c274; --warn-bg:#4c3b34;
+  --warn-br:#7b5e42; --warn-ink:#fac681; --bad-bg:#4a273d; --bad-br:#763751; --bad-ink:#f9739c;
+  --toast:#1f1d2e;
+}
+[data-palette="kanagawa"][data-theme="light"]{
+  --bg:#f2ecbc; --panel:#e7dba0; --ink:#545464; --muted:#6a675b; --faint:#8a8980;
+  --line:#dcd5aa; --coral:#b6650a; --accent-soft:#ebdeab; --raise:#f9f4d2; --again:#db203a;
+  --again-bg:#ecd6af; --again-br:#e2b69d; --good:#65853d; --good-bg:#e6e3a9; --good-br:#ccd194;
+  --easy:#60428d; --easy-bg:#e3d9b1; --easy-br:#c7b9a7; --amber:#787132; --warn-bg:#e7e0a7;
+  --warn-br:#d0c98e; --warn-ink:#716b41; --bad-bg:#ecd6af; --bad-br:#e2b69d; --bad-ink:#b8354d;
+  --toast:#545464;
+}
+[data-palette="kanagawa"][data-theme="dark"]{
+  --bg:#1f1f28; --panel:#2a2a37; --ink:#dcd7ba; --muted:#c8c093; --faint:#727169;
+  --line:#363646; --coral:#f8a572; --accent-soft:#4e3832; --raise:#2a2a37; --again:#f85567;
+  --again-bg:#4c2d38; --again-br:#773946; --good:#9ac95e; --good-bg:#3a4236; --good-br:#526442;
+  --easy:#977ac4; --easy-bg:#38324a; --easy-br:#504467; --amber:#f7c873; --warn-bg:#4c433b;
+  --warn-br:#77654b; --warn-ink:#f5cb7c; --bad-bg:#4c2d38; --bad-br:#773946; --bad-ink:#f66a74;
+  --toast:#2a2a37;
+}
+[data-palette="gruvbox"][data-theme="light"]{
+  --bg:#fbf1c7; --panel:#f2e5bc; --ink:#3c3836; --muted:#665c54; --faint:#928374;
+  --line:#e3d5ab; --coral:#a93c09; --accent-soft:#eeddb8; --raise:#fdf6da; --again:#97060c;
+  --again-bg:#edd2b0; --again-br:#dda489; --good:#7a7405; --good-bg:#ece2ad; --good-br:#d8ce85;
+  --easy:#9d3174; --easy-bg:#efdaba; --easy-br:#dcb6a6; --amber:#b97408; --warn-bg:#eedfb4;
+  --warn-br:#e0c893; --warn-ink:#996009; --bad-bg:#edd2b0; --bad-br:#dda489; --bad-ink:#840609;
+  --toast:#3c3836;
+}
+[data-palette="gruvbox"][data-theme="dark"]{
+  --bg:#282828; --panel:#32302f; --ink:#ebdbb2; --muted:#bdae93; --faint:#928374;
+  --line:#504945; --coral:#f4872f; --accent-soft:#573a21; --raise:#3c3836; --again:#f74d39;
+  --again-bg:#5a2c27; --again-br:#873127; --good:#d1d50c; --good-bg:#4b4b25; --good-br:#6a6c21;
+  --easy:#e17d98; --easy-bg:#503b40; --easy-br:#734c56; --amber:#f7bf3b; --warn-bg:#5a4b26;
+  --warn-br:#856926; --warn-ink:#f8c651; --bad-bg:#5a2c27; --bad-br:#873127; --bad-ink:#f75e48;
+  --toast:#32302f;
+}
+[data-palette="everforest"][data-theme="light"]{
+  --bg:#fdf6e3; --panel:#f4f0d9; --ink:#5c6a72; --muted:#667165; --faint:#8a9285;
+  --line:#e0dcc7; --coral:#d6600b; --accent-soft:#f5e7d3; --raise:#fffbef; --again:#f6231f;
+  --again-bg:#f5e1d5; --again-br:#ecc7be; --good:#798906; --good-bg:#efebc3; --good-br:#dadb95;
+  --easy:#d644a8; --easy-bg:#f6e2db; --easy-br:#edc3ce; --amber:#a77a07; --warn-bg:#f2e5c6;
+  --warn-br:#e2ce9c; --warn-ink:#9b750a; --bad-bg:#f5e1d5; --bad-br:#ecc7be; --bad-ink:#d54444;
+  --toast:#5c6a72;
+}
+[data-palette="everforest"][data-theme="dark"]{
+  --bg:#2d353b; --panel:#343f44; --ink:#d3c6aa; --muted:#a7b0a4; --faint:#859289;
+  --line:#3d484d; --coral:#f49267; --accent-soft:#534846; --raise:#3a464c; --again:#f87173;
+  --again-bg:#584349; --again-br:#7f5055; --good:#7bd250; --good-bg:#3f5a38; --good-br:#577f48;
+  --easy:#e292b8; --easy-bg:#524a57; --easy-br:#765d70; --amber:#ebc16f; --warn-bg:#545449;
+  --warn-br:#796f55; --warn-ink:#e9c276; --bad-bg:#584349; --bad-br:#7f5055; --bad-ink:#f47d7a;
+  --toast:#343f44;
+}
+[data-palette="legacy"][data-theme="light"]{
+  --bg:#ffffff; --panel:#faf8f5; --ink:#1b1a18; --muted:#77746e; --faint:#928f89;
+  --line:#e7e3dc; --coral:#d85a30; --accent-soft:#fbeeea; --raise:#ffffff; --again:#b03b2e;
+  --again-bg:#f5e6e4; --again-br:#e6c0bc; --good:#2f7d4f; --good-bg:#e4eee8; --good-br:#bcd5c7;
+  --easy:#7a6bcf; --easy-bg:#eeecf9; --easy-br:#d4d0f0; --amber:#b07715; --warn-bg:#f5ede1;
+  --warn-br:#e6d3b4; --warn-ink:#865d16; --bad-bg:#f5e6e4; --bad-br:#e6c0bc; --bad-ink:#863228;
+  --toast:#1b1a18;
+}
+[data-palette="legacy"][data-theme="dark"]{
+  --bg:#0e1230; --panel:#181d47; --ink:#e9ecf8; --muted:#a3abd0; --faint:#7780ab;
+  --line:#2a3169; --coral:#ff8a5c; --accent-soft:#3e2a39; --raise:#1f2555; --again:#ff8175;
+  --again-bg:#432a3f; --again-br:#73414d; --good:#5ecb92; --good-bg:#203b46; --good-br:#306059;
+  --easy:#b0a4ff; --easy-bg:#32325e; --easy-br:#524f87; --amber:#e0aa4a; --warn-bg:#3c3336;
+  --warn-br:#66523b; --warn-ink:#e1b362; --bad-bg:#432a3f; --bad-br:#73414d; --bad-ink:#fc9087;
+  --toast:#181d47;
+}
+[data-palette="dracula"][data-theme="light"]{
+  --bg:#f8f8f2; --panel:#eeeef7; --ink:#282a36; --muted:#4d4f66; --faint:#6272a4;
+  --line:#dcdce8; --coral:#d6266f; --accent-soft:#f9dceb; --raise:#ffffff; --again:#d1274a;
+  --again-bg:#f7dde3; --again-br:#eab8c7; --good:#1f9c4d; --good-bg:#dcf0e0; --good-br:#b3dcc0;
+  --easy:#7c4fd1; --easy-bg:#e9e0fb; --easy-br:#cfc0f2; --amber:#b5690a; --warn-bg:#f7e6cf;
+  --warn-br:#e9c896; --warn-ink:#8a570f; --bad-bg:#f7dde3; --bad-br:#eab8c7; --bad-ink:#b31940;
+  --toast:#282a36;
+}
+[data-palette="dracula"][data-theme="dark"]{
+  --bg:#282a36; --panel:#343746; --ink:#f8f8f2; --muted:#b6b8d1; --faint:#6272a4;
+  --line:#44475a; --coral:#ff79c6; --accent-soft:#4a2f42; --raise:#3d3f52; --again:#ff5555;
+  --again-bg:#4a2530; --again-br:#6b3542; --good:#50fa7b; --good-bg:#1f3b2e; --good-br:#2f5943;
+  --easy:#bd93f9; --easy-bg:#33294f; --easy-br:#4a3d72; --amber:#ffb86c; --warn-bg:#453421;
+  --warn-br:#6b5030; --warn-ink:#f0c78a; --bad-bg:#4a2530; --bad-br:#6b3542; --bad-ink:#ff6e6e;
+  --toast:#343746;
+}
+[data-palette="monokai"][data-theme="light"]{
+  --bg:#fafaf0; --panel:#f0f0e2; --ink:#272822; --muted:#5a5b4e; --faint:#83816d;
+  --line:#e0e0cf; --coral:#c4720a; --accent-soft:#f7e6cc; --raise:#ffffff; --again:#d31160;
+  --again-bg:#f9dbe6; --again-br:#edb3c9; --good:#5f8a0f; --good-bg:#e3edc9; --good-br:#c5d99a;
+  --easy:#7c4fd6; --easy-bg:#ece0fb; --easy-br:#d3c0f2; --amber:#8a7a0e; --warn-bg:#f0ecc9;
+  --warn-br:#ddd196; --warn-ink:#6b5e0c; --bad-bg:#f9dbe6; --bad-br:#edb3c9; --bad-ink:#b30d4d;
+  --toast:#272822;
+}
+[data-palette="monokai"][data-theme="dark"]{
+  --bg:#272822; --panel:#33342c; --ink:#f8f8f2; --muted:#c8c6bd; --faint:#75715e;
+  --line:#49483e; --coral:#fd971f; --accent-soft:#4a3820; --raise:#3a3b32; --again:#f92672;
+  --again-bg:#4a2438; --again-br:#6e3552; --good:#a6e22e; --good-bg:#38401f; --good-br:#535c2c;
+  --easy:#ae81ff; --easy-bg:#362c52; --easy-br:#514176; --amber:#e6db74; --warn-bg:#463f24;
+  --warn-br:#6b6035; --warn-ink:#e8dd8a; --bad-bg:#4a2438; --bad-br:#6e3552; --bad-ink:#ff5f96;
+  --toast:#33342c;
+}
+[data-palette="amphora"][data-theme="light"]{
+  --bg:#f0dcc3; --panel:#e6cca8; --ink:#241a10; --muted:#5c4530; --faint:#8a6f4f;
+  --line:#d4b78c; --coral:#a8331a; --accent-soft:#e8c4a0; --raise:#f8ecd8; --again:#8f1d10;
+  --again-bg:#e8c9b8; --again-br:#d4a488; --good:#3f5c2e; --good-bg:#dbe0c4; --good-br:#bcc699;
+  --easy:#4a3a7a; --easy-bg:#ddd6ef; --easy-br:#c0b4e0; --amber:#9c6b0a; --warn-bg:#ecdcb4;
+  --warn-br:#d6bc80; --warn-ink:#6b4808; --bad-bg:#e8c9b8; --bad-br:#d4a488; --bad-ink:#6e130a;
+  --toast:#241a10;
+}
+[data-palette="amphora"][data-theme="dark"]{
+  --bg:#100c08; --panel:#1c140d; --ink:#f0dcc3; --muted:#c4a37e; --faint:#8a6f4f;
+  --line:#3a2c1c; --coral:#e0693a; --accent-soft:#3f2416; --raise:#241a10; --again:#e0432a;
+  --again-bg:#3f2019; --again-br:#5e3226; --good:#8fae5c; --good-bg:#2a3320; --good-br:#425030;
+  --easy:#a08ce0; --easy-bg:#332a52; --easy-br:#4c3f78; --amber:#e0a83a; --warn-bg:#3f3018;
+  --warn-br:#5e4826; --warn-ink:#e8c477; --bad-bg:#3f2019; --bad-br:#5e3226; --bad-ink:#f0684a;
+  --toast:#1c140d;
+}
+
+/* Home strip (last 35 study days) + stat chips -- copied verbatim from
+   latin.html/greek.html's own .strip/.dot/.hmStats rules, since .deckProg
+   below reuses the identical markup shape those rules were written for. */
+.strip{display:flex;flex-wrap:wrap;gap:5px}
+.dot{width:15px;height:15px;border-radius:4px;background:var(--panel);border:1px solid var(--line)}
+.dot.today{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--coral)}
+.hmStats{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.hmStat{padding:8px 12px;border:1px solid var(--line);border-radius:13px;background:var(--raise);
+  font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:1px;min-width:80px}
+.hmStat b{font-size:15.5px;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.hmStat select{margin-top:2px;font:inherit;font-size:10.5px;color:var(--faint);background:none;
+  border:none;padding:0}
+
+/* One card per deck, scoped to that deck's own real palette+theme via
+   data-palette/data-theme set in JS (renderDeckProgress). Sits right under
+   that deck's nav card, same visual language (a.card's own values). */
+.deckProg{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:15px 18px 4px;margin:-2px 0 14px}
+.deckProg .sect{margin-top:0}
+.deckProg .empty{color:var(--faint);font-size:13.5px;padding:2px 0 12px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg)}
 body{
@@ -59,15 +251,16 @@ a.card .d{color:var(--muted);font-size:13.5px}
 .field:last-child{border-bottom:none}
 .field label{display:block;font-size:15px;margin-bottom:5px}
 .field .fh{font-size:13px;color:var(--muted);line-height:1.55;margin-top:7px}
-.field input[type=text],.field input[type=password]{
+.field input[type=text],.field input[type=password],.field select{
   width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 12px;
   font-size:16px;background:var(--raise);color:var(--ink);font-family:inherit}
+.field select{-webkit-appearance:none;appearance:none;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M1 1l4 4 4-4" fill="none" stroke="%23988c75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:32px}
+.field #fDeviceOther{margin-top:10px}
 .savedTag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--good);
   margin-left:8px;opacity:0;transition:opacity .25s ease}
 .savedTag.on{opacity:1}
-
-.note{font-size:12.5px;color:var(--faint);line-height:1.6;margin-top:26px}
-.note b{color:var(--muted)}
 
 /* ---------- version line, same idiom as the decks' own .build ---------- */
 .verlink{display:block;text-align:center;margin:34px 0 0;padding:8px;font-size:11px;
@@ -95,51 +288,40 @@ a.card .d{color:var(--muted);font-size:13.5px}
   <div class="t">Latin</div>
   <div class="d">3,034 words, Parts I–VIII, both directions</div>
 </a>
+<div class="deckProg" id="progLatin"></div>
 <a class="card" href="greek.html">
   <div class="t">Λέξεις</div>
   <div class="d">983 words, both directions</div>
 </a>
-<a class="card" href="manual.html">
-  <div class="t">How this works</div>
-  <div class="d">The manual — start here</div>
-</a>
-
+<div class="deckProg" id="progGreek"></div>
 <div class="sect">
   <h2>Backup &amp; sync</h2>
   <div class="field">
     <label for="fDevice">This device's name</label>
-    <input type="text" id="fDevice" placeholder="e.g. iPhone, iPad, Mac" autocapitalize="words" autocorrect="off" spellcheck="false">
+    <select id="fDevice">
+      <option value="" disabled hidden>Choose…</option>
+      <option value="Mac">Mac</option>
+      <option value="Mac Web">Mac Web</option>
+      <option value="iPhone">iPhone</option>
+      <option value="iPhone Web">iPhone Web</option>
+      <option value="other">Other…</option>
+    </select>
+    <input type="text" id="fDeviceOther" placeholder="Device name" autocapitalize="words" autocorrect="off" spellcheck="false" hidden>
     <div class="fh">Stamped onto anything pushed to the gist or saved as a backup file, so if this device and another ever disagree, you can tell whose copy is whose.</div>
   </div>
   <div class="field">
-    <label for="fGistId">Gist id <span class="savedTag" id="savedId">✓ saved</span></label>
-    <input type="text" id="fGistId" placeholder="gist id" autocapitalize="off" autocorrect="off" spellcheck="false">
-  </div>
-  <div class="field">
-    <label for="fGistTok">Gist token <span class="savedTag" id="savedTok">✓ saved</span></label>
-    <input type="password" id="fGistTok" placeholder="fine-grained token, gists scope" autocapitalize="off" autocorrect="off" spellcheck="false">
-    <div class="fh">Set once, here. Both Latin and Λέξεις pick this up automatically — no need to
-      enter it again in either one's own Settings, unless you've pinned them as two separate
-      Home Screen icons rather than opening them from this page (see below), in which case each
-      keeps its own copy as it always has. <b>The token is never written into the gist or into a
-      backup file</b> — it stays in this browser's storage on this device. Anything on the device
-      can still read it, so scope it to gists alone and revoke it if the phone goes astray.</div>
-  </div>
-  <div class="field">
-    <label>Add another device</label>
-    <div class="fh">Set this device up with the fields above first, then use this to carry the same
-      connection to another device without retyping the token by hand. The code carries the token
-      itself, so treat it the same way — don't leave it sitting in your clipboard or send it anywhere
-      else.</div>
-    <div class="pairRow">
-      <button type="button" id="btnCopyPair" class="pairBtn">Copy code for another device</button>
-      <button type="button" id="btnEnterPair" class="pairBtn">Enter a code from another device</button>
+    <label for="fGistId">Gist ID <span class="savedTag" id="savedId">✓ saved</span></label>
+    <input type="text" id="fGistId" placeholder="Gist ID" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label for="fGistTok" style="margin-top:14px">Gist token <span class="savedTag" id="savedTok">✓ saved</span></label>
+    <input type="password" id="fGistTok" placeholder="Gist token" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="pairRow" style="margin-top:14px">
+      <button type="button" id="btnCopyPair" class="pairBtn">Copy code</button>
+      <button type="button" id="btnEnterPair" class="pairBtn">Paste code</button>
     </div>
     <div class="pairPanel" id="pairFallback" hidden>
       <textarea id="pairCode" rows="3" readonly></textarea>
     </div>
     <div class="pairPanel" id="pairEnter" hidden>
-      <div class="fh">Paste the code shown on the other device.</div>
       <textarea id="pairPaste" rows="3" placeholder="paste the code here" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
       <div class="pairRow">
         <button type="button" id="btnUsePaste" class="pairBtn">Use this code</button>
@@ -150,13 +332,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
   </div>
 </div>
 
-<p class="note">Add this page to your Home Screen and open Latin and Λέξεις from the links above,
-  rather than pinning each deck separately — that's what lets the backup fields above reach both
-  of them. (Pinning them separately still works exactly as before; each just needs its own gist id
-  and token typed in, the same as always.) Safari clears stored data for sites left unvisited for a
-  week; installed apps are exempt. The same goes for iPad, and on a Mac use Safari's Add to Dock.</p>
-
-<a class="verlink" id="verLink" href="latin.html#changelog">Version 2026.08.14.5</a>
+<a class="verlink" id="verLink" href="latin.html#changelog">Version 2026.08.15.6</a>
 
 <script>
 const GIST_SHARED_KEY='vocabula.gist.v1';
@@ -176,13 +352,35 @@ function flash(id){
   clearTimeout(el._t);
   el._t=setTimeout(()=>el.classList.remove('on'),1600);
 }
+// Presets cover the devices actually in use; "Other…" reveals a free-text
+// field for anything else, so the dropdown never blocks an unlisted device.
+const DEVICE_PRESETS=['Mac','Mac Web','iPhone','iPhone Web'];
+function applyDeviceName(name){
+  if(DEVICE_PRESETS.includes(name)){
+    $('fDevice').value=name; $('fDeviceOther').hidden=true; $('fDeviceOther').value='';
+  }else if(name){
+    $('fDevice').value='other'; $('fDeviceOther').hidden=false; $('fDeviceOther').value=name;
+  }else{
+    $('fDevice').value=''; $('fDeviceOther').hidden=true; $('fDeviceOther').value='';
+  }
+}
 (function init(){
   const s=loadShared();
-  $('fDevice').value=s.deviceName||'';
+  applyDeviceName(s.deviceName||'');
   $('fGistId').value=s.gistId||'';
   $('fGistTok').value=s.gistTok||'';
 })();
-$('fDevice').addEventListener('change',e=>{ saveShared({deviceName:e.target.value.trim()}); });
+$('fDevice').addEventListener('change',e=>{
+  const v=e.target.value;
+  if(v==='other'){
+    $('fDeviceOther').hidden=false; $('fDeviceOther').focus();
+    saveShared({deviceName:$('fDeviceOther').value.trim()});
+  }else{
+    $('fDeviceOther').hidden=true; $('fDeviceOther').value='';
+    saveShared({deviceName:v});
+  }
+});
+$('fDeviceOther').addEventListener('change',e=>{ saveShared({deviceName:e.target.value.trim()}); });
 $('fGistId').addEventListener('change',e=>{ saveShared({gistId:e.target.value.trim()}); flash('savedId'); });
 $('fGistTok').addEventListener('change',e=>{ saveShared({gistTok:e.target.value.trim()}); flash('savedTok'); });
 
@@ -288,7 +486,7 @@ $('btnCopyPair').addEventListener('click', async ()=>{
   const id=$('fGistId').value.trim(), tok=$('fGistTok').value.trim();
   if(!id||!tok){ pairStatus('Fill in the gist id and token on this device first.', true); return; }
   const code=pairEncode(id,tok);
-  try{ await navigator.clipboard.writeText(code); pairStatus('Copied — paste it into "Enter a code from another device" on the other device.'); return; }catch(e){}
+  try{ await navigator.clipboard.writeText(code); pairStatus('Copied — use "Paste code" on the other device.'); return; }catch(e){}
   // navigator.clipboard.writeText can silently reject with no error a user
   // ever sees, notably inside an installed (Add to Home Screen/Dock)
   // standalone PWA on iOS -- exactly how this app is normally run. The
@@ -334,6 +532,152 @@ fetch('latin.html',{cache:'no-store'}).then(r=>r.text()).then(text=>{
   const m=text.match(/const BUILD='([^']+)'/);
   if(m) $('verLink').textContent='Version '+m[1];
 }).catch(()=>{ /* offline or blocked -- the hardcoded fallback above stands */ });
+
+// ============================================================
+// PREVIEW (2026-08-15): per-deck coloured study strip, proving out
+// PLATFORM_PLAN.md §6b before any of Phase 1 is built. READ-ONLY throughout
+// -- everything below only ever calls localStorage.getItem on a deck's own
+// key, never .setItem. This page cannot alter either deck's real state.
+// The maths (dayKey/heatCellBg/streak/average) is copied verbatim from
+// latin.html (identical in greek.html), with S.settings.* turned into
+// explicit parameters since this page holds two decks' state at once, not
+// one global S. One known gap: a deck on daily palette rotation shows
+// whichever palette it last actually rendered, not today's rotated pick --
+// rollTheme() mutates and saves S, which a read-only preview must not do.
+// Superseded once Phase 1's shared engine exists (PLATFORM_PLAN.md §5.3a).
+// ============================================================
+const MIN=60000, HOUR=3600000, DAY=86400000;
+const dayKey=(ts,roll)=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-roll*HOUR)/DAY);
+const HEAT_SPACE='oklch';
+const PALETTE_KEYS=['vellum','catppuccin','rosepine','kanagawa','gruvbox','everforest','legacy','dracula','monokai','amphora'];
+const AVG_WINDOW_DAYS={week:7,month:30,year:365};
+
+function heatRec(days,dk){
+  const r=days[dk];
+  return {ratings:(r&&r.n)||0, ok:(r&&r.ok)||0, tot:(r&&r.tot)||0};
+}
+function volumePct(ratings,avg){
+  if(!avg) return 0;
+  return Math.max(0,Math.min(1,ratings/(avg*1.6)))*100;
+}
+function retentionPct(ok,tot){
+  if(!tot) return 0;
+  const r=100*ok/tot;
+  return Math.max(0,Math.min(1,(r-60)/40))*100;
+}
+function heatmapAvgRatings(days){
+  let sum=0,n=0;
+  for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
+  return n?sum/n:0;
+}
+function heatCellBg(rec,avg,mode,accent){
+  if(!rec||!rec.ratings) return '';
+  if(mode==='retention'&&rec.tot){
+    const p=retentionPct(rec.ok,rec.tot);
+    return 'background:color-mix(in '+HEAT_SPACE+', var(--good) '+p+'%, var(--again) '+(100-p)+'%)';
+  }
+  const p=volumePct(rec.ratings,avg);
+  return 'background:color-mix(in '+HEAT_SPACE+', var(--'+accent+') '+p+'%, var(--panel))';
+}
+function currentStreak(days,todayKey,since){
+  let streak=0;
+  for(let k=todayKey;;k--){
+    if(since!=null&&k<since) break;
+    if(days[k]&&days[k].n) streak++;
+    else { if(k!==todayKey) break; }
+    if(todayKey-k>3650) break;
+  }
+  return streak;
+}
+function longestStreak(days,todayKey,since){
+  let best=0,run=0;
+  const floor=(since!=null)?Math.max(since,todayKey-3650):todayKey-3650;
+  for(let k=floor;k<=todayKey;k++){
+    if(days[k]&&days[k].n){ run++; best=Math.max(best,run); } else run=0;
+  }
+  return best;
+}
+function daysLearnedPct(days,todayKey,since,createdKey){
+  const floor=(since!=null)?since:createdKey;
+  const span=Math.max(todayKey-floor+1,1);
+  let studied=0;
+  for(let k=floor;k<=todayKey;k++) if(days[k]&&days[k].n) studied++;
+  return Math.round(100*studied/span);
+}
+function windowedDailyAverage(days,todayKey,window){
+  if(window==='all'){
+    let sum=0,n=0;
+    for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
+    return n?Math.round(sum/n):0;
+  }
+  const span=AVG_WINDOW_DAYS[window]||AVG_WINDOW_DAYS.month;
+  let sum=0,n=0;
+  for(let k=todayKey;k>todayKey-span;k--){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
+  return n?Math.round(sum/n):0;
+}
+
+// Renders one deck's strip+stats into #<id> from its own real localStorage
+// state -- storageKey matches that deck's own `const KEY` exactly
+// (latin.html:1843 'vocabula.latin.v2', greek.html:1842 'vocabula.greek.v1').
+// Never throws on a device that's never opened this deck: falls back to a
+// quiet empty state instead.
+function renderDeckProgress(id,storageKey){
+  const el=$(id);
+  let data=null;
+  try{ data=JSON.parse(localStorage.getItem(storageKey)); }catch(e){}
+  if(!data||!data.days){
+    el.innerHTML='<div class="sect"><h2>Study days</h2>'+
+      '<div class="empty">No study data on this device yet.</div></div>';
+    return;
+  }
+  let theme=data.theme||'light';
+  if(theme==='auto') theme=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+  const palette=PALETTE_KEYS.includes(data.palette)?data.palette:'vellum';
+  el.dataset.palette=palette; el.dataset.theme=theme;
+
+  const settings=data.settings||{};
+  const rollover=(settings.rollover!=null)?settings.rollover:4;
+  const d=dayKey(Date.now(),rollover);
+  const days=data.days||{};
+  const avgR=heatmapAvgRatings(days);
+  const mode=settings.heatmapColourMode||'volume';
+  const accent=settings.heatmapAccent||'coral';
+
+  let stripHtml='';
+  for(let i=34;i>=0;i--){
+    const k=d-i;
+    const bg=heatCellBg(heatRec(days,k),avgR,mode,accent);
+    stripHtml+='<div class="dot'+(i===0?' today':'')+'"'+(bg?' style="'+bg+'"':'')+'></div>';
+  }
+
+  const since=(settings.streakStart!=null)?settings.streakStart:null;
+  const createdKey=data.created?dayKey(data.created,rollover):d;
+  const cur=currentStreak(days,d,since);
+  const longest=longestStreak(days,d,since);
+  const pct=daysLearnedPct(days,d,since,createdKey);
+  const win=settings.heatmapAvgWindow||'month';
+  const avg=windowedDailyAverage(days,d,win);
+  const winOpt=w=>'<option value="'+w+'"'+(win===w?' selected':'')+'>'+(w==='all'?'all-time':'per '+w)+'</option>';
+
+  el.innerHTML=
+    '<div class="sect"><h2>Study days</h2>'+
+    '<div class="strip">'+stripHtml+'</div>'+
+    '<div class="hmStats">'+
+      '<div class="hmStat">Current streak<b>'+cur+' day'+(cur===1?'':'s')+'</b></div>'+
+      '<div class="hmStat">Longest streak<b>'+longest+' day'+(longest===1?'':'s')+'</b></div>'+
+      '<div class="hmStat">Days learned<b>'+pct+'%</b></div>'+
+      '<div class="hmStat">Daily average<b id="'+id+'_avg">'+avg+'</b><select id="'+id+'_sel">'+
+        ['week','month','year','all'].map(winOpt).join('')+'</select></div>'+
+    '</div></div>';
+
+  // The window picker only recomputes the one figure it owns, locally -- it
+  // never writes back to the deck's own S.settings.heatmapAvgWindow.
+  $(id+'_sel').addEventListener('change',e=>{
+    $(id+'_avg').textContent=windowedDailyAverage(days,d,e.target.value);
+  });
+}
+renderDeckProgress('progLatin','vocabula.latin.v2');
+renderDeckProgress('progGreek','vocabula.greek.v1');
 </script>
 </body>
 </html>
