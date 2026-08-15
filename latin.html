@@ -262,9 +262,31 @@ html:not([data-layout="landscape"]) .quickFlash{
    later. Sized as a real tap target (44px, the usual minimum) here
    specifically -- #leechTag's own .flagBtn only, not the shared class above
    -- rather than the small inline glyph it used to be paired with text. */
-.leechtag{margin-top:10px;display:flex;align-items:center;justify-content:center}
+.leechtag{margin-top:10px;display:flex;align-items:center;justify-content:center;gap:16px}
 #leechTag .flagBtn{padding:8px;font-size:26px;min-width:44px;min-height:44px;
   display:flex;align-items:center;justify-content:center}
+/* The one-turn warning that a word is one "Again" away from setting itself
+   aside, and the control that overrides it -- see keepWarnState()/
+   keepInToday(). Deliberately no text: 2026-08-13's strip-the-banner decision
+   stands (owner's call again 2026-08-15), so the glyph has to carry this on
+   its own. The U+FE0E after it forces text presentation, so it renders
+   monochrome in the palette's own warn ink on every theme instead of as a
+   colour emoji -- which is exactly why an alarm clock isn't used here, that
+   character has no text form at all and would always paint itself orange.
+   Same 44px tap target and the same .on-toggles-colour idiom as the flag
+   right above; and deliberately ONE glyph in two states rather than two
+   glyphs, so there is nothing extra to learn at the moment a word is already
+   being frustrating. Armed it pulses, held it is the same mark defused. The
+   pulse needs no reduced-motion guard of its own -- the global rule further
+   down already kills every animation on the page. The 16px gap added above is
+   for this pairing specifically: the flag and this button do opposite things
+   to the same word, so they must not sit a thumb-width apart. */
+#leechTag .keepBtn{flex:0 0 auto;background:none;border:none;padding:8px;
+  font-size:26px;line-height:1;color:var(--warn-ink);min-width:44px;min-height:44px;
+  display:flex;align-items:center;justify-content:center;
+  animation:keepPulse 1.9s ease-in-out infinite}
+#leechTag .keepBtn.on{color:var(--faint);opacity:.45;animation:none}
+@keyframes keepPulse{0%,100%{opacity:1}50%{opacity:.38}}
 
 /* ---------- rating row ---------- */
 .rateRow{flex:0 0 auto;display:flex;gap:9px;padding:10px 12px 14px}
@@ -1073,6 +1095,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="answer quickFlash" id="quickFlash" aria-hidden="true"></div>
       <div class="leechtag hidden" id="leechTag">
         <button class="flagBtn" id="flagBtn" aria-label="Flag this word">&#9873;</button>
+        <button class="keepBtn hidden" id="keepBtn" aria-label="About to set itself aside — keep it in for today">&#9888;&#65038;</button>
       </div>
       <div class="hintline" id="hintline"></div>
       <div class="cardMeta" id="cardMeta"></div>
@@ -1340,7 +1363,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="field">
         <label for="fFlagAuto">Same-day "Again" presses before a word sets itself aside—<b id="fFlagAutoVal">12</b></label>
         <input type="range" id="fFlagAuto" min="5" max="15" step="1">
-        <div class="fh">Lower parks a struggling word sooner; higher gives it more real, spaced attempts first. Raising this never brings an already-set-aside word back on its own. Lowering it takes effect at once for any new "Again" press, but never reaches back to reinterpret presses already logged earlier today—those are only judged against today's higher starting number, so nothing already in progress this session gets swept out from under you. It applies in full, with no exceptions, from your next study day on.</div>
+        <div class="fh">Lower parks a struggling word sooner; higher gives it more real, spaced attempts first. Raising this never brings an already-set-aside word back on its own. Lowering it takes effect at once for any new "Again" press, but never reaches back to reinterpret presses already logged earlier today—those are only judged against today's higher starting number, so nothing already in progress this session gets swept out from under you. It applies in full, with no exceptions, from your next study day on. Whatever it is set to, the study card warns you one press before it happens, and that warning can be overridden for the rest of the day.</div>
       </div>
       <div class="field">
         <label>Set aside</label>
@@ -2204,7 +2227,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.15.3';
+const BUILD='2026.08.15.4';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -2944,7 +2967,20 @@ function renderCard(){
 // icon: no text, no dismiss button (2026-08-13).
 function renderLeech(){
   const n=againTodayFor(current,S.log,today()), tag=$('leechTag');
-  if(n<FLAG_KEY){ tag.classList.add('hidden'); return; }
+  // Computed before the early return below, not after: this must be cleared
+  // on a card that shows no tag at all, or the previous card's warning would
+  // still be sitting in the DOM the next time the tag is shown for any reason.
+  const warn=keepWarnState(current), keep=$('keepBtn');
+  keep.classList.toggle('hidden',!warn);
+  keep.classList.toggle('on',warn==='held');
+  keep.setAttribute('aria-label', warn==='held'
+    ? 'Kept in for today — press to let it set itself aside again'
+    : 'About to set itself aside — keep it in for today');
+  // `&&!warn` cannot currently be false-y here (a warning needs flagAuto-1
+  // Agains, and the slider's floor of 5 puts that at 4, above FLAG_KEY's 2) --
+  // it is there so that widening the slider's range downwards can never hide
+  // the more urgent of the two controls behind the threshold for the lesser.
+  if(n<FLAG_KEY&&!warn){ tag.classList.add('hidden'); return; }
   tag.classList.remove('hidden');
   const susp=!!(S.cards[current]&&S.cards[current].susp);
   $('flagBtn').classList.toggle('on',susp);
@@ -3327,6 +3363,77 @@ function setAside(id,on,now){
   cs.susp=!!on;
   cs.unflagDay = on ? null : dayKey(now!=null?now:Date.now());
   return cs;
+}
+// "Keep this word in" -- the one-turn override on automatic set-aside, added
+// 2026-08-15. A word one "Again" away from parking itself shows the warning
+// glyph on the study card (renderLeech below); this, and the K key, are what
+// that glyph actually does.
+//
+// Deliberately NOT a new field. cs.unflagDay already means precisely "a
+// deliberate decision was made about this word on this study day, so neither
+// rate()'s live FLAG_AUTO check nor normalise()'s passive rescan may act on
+// today's log for it" -- it exists because the log is append-only, so without
+// it a manual bring-back was re-parked on the very next load. A keep-in is the
+// same claim made one press earlier, so it reuses the same stamp: nothing new
+// to store, nothing new to sync, and it survives a reload, an import and a
+// gist pull for free, through machinery already proven for the bring-back.
+//
+// Today-only on purpose (owner's call): the FLAG_AUTO counter is itself
+// same-day (againTodayFor), so tomorrow's count starts at zero and the safety
+// valve is live again with no state to expire. A word that needs rescuing five
+// days running genuinely is a leech, and being asked afresh each day is how
+// that becomes visible rather than being quietly exempted forever.
+//
+// Turning it back OFF re-runs the same threshold test rate() would, right
+// here, rather than only clearing the stamp. At flagAuto-1 that test is false
+// and this simply re-arms the trap for the next "Again" -- but a word already
+// AT or past flagAuto (kept in earlier in the day, then failed again) has to
+// be set aside now, visibly, in response to the press. Clearing the stamp
+// alone would leave it in the queue looking untouched until some later load,
+// where normalise()'s rescan would park it with no action to attribute it to.
+function keepInToday(id,on,now){
+  const cs=cardState(id), t=(now!=null)?now:Date.now();
+  if(on){ cs.unflagDay=dayKey(t); return cs; }
+  cs.unflagDay=null;
+  if(!cs.susp && againTodayFor(id,S.log,dayKey(t))>=S.settings.flagAuto) cs.susp=true;
+  return cs;
+}
+// The gate for both the warning glyph and the K key: 'armed' when this word is
+// one "Again" from setting itself aside, 'held' when that has already been
+// overridden today, null when neither applies (which is what hides the glyph
+// and makes K a no-op, so the key is never live while nothing is showing).
+//
+// >= rather than === on purpose. A word can sit PAST the threshold without
+// being set aside -- lower flagAuto mid-day and normalise()'s flagAutoBaseline
+// deliberately holds the passive rescan back, while rate()'s live check will
+// still fire on the very next "Again". === would show no warning in exactly
+// the case where the next press is most certainly fatal.
+//
+// Already-set-aside words return null: the flag, not this, is their control,
+// and two adjacent buttons offering to un-park the same word would be worse
+// than one. Reads S.cards[id] directly rather than cardState(id) so that
+// merely rendering a card can never materialise state for it.
+function keepWarnState(id){
+  if(id==null) return null;
+  const cs=S.cards[id];
+  if(cs&&cs.susp) return null;
+  const dk=today();
+  if(againTodayFor(id,S.log,dk)<S.settings.flagAuto-1) return null;
+  return (cs&&cs.unflagDay===dk)?'held':'armed';
+}
+// Shared by the warning glyph's tap and by K, so the two can never drift.
+// Unlike F -- silent by design, since the flag's own red .on state and the
+// word leaving the queue are confirmation enough -- this toasts on both paths:
+// the only other visible result is one small glyph changing colour, which is
+// too quiet for a decision that governs whether a word stays in the deck.
+function toggleKeepIn(){
+  const st=keepWarnState(current);
+  if(!st) return;
+  const cs=keepInToday(current,st!=='held');
+  save(); renderLeech();
+  toast(cs.susp ? 'Set aside'
+      : st==='held' ? 'No longer kept in — the next "Again" sets it aside'
+      : 'Kept in for today', 1800);
 }
 // Manual "bury for today" (Browse screen) -- a temporary, self-clearing
 // defer, distinct from both setAside() above (permanent, stays until
@@ -5025,7 +5132,7 @@ function renderBg(){
     ['When nothing else is due','serves a learning card up to 20 minutes early, so a day cannot end with cards still circling.'],
     ['Rating a word','buries its opposite direction for the rest of the day, so you never meet the same word both ways in one sitting.'],
     ['At the rollover hour','the day turns over: the new-word allowance resets, buried words come back, and everything scheduled for the new day unlocks at once.'],
-    [S.settings.flagAuto+' failures in one day','sets a word aside and stops showing it until you bring it back. The number is Settings\' own "Again presses before a word is set aside".'],
+    [S.settings.flagAuto+' failures in one day','sets a word aside and stops showing it until you bring it back. One press before that happens, the card shows a warning mark you can tap -- or press K -- to keep the word in for the rest of the day. The number is Settings\' own "Again presses before a word is set aside".'],
     ['Answering slowly','records a lower grade than the button you pressed. Never a higher one, and never on a failure.'],
     ['A forward card holding long enough','unlocks its reverse card, subject to the gate in these settings.'],
     ['Intervals between 3 and 21 days','get nudged onto your chosen review weekday, by up to three days.'],
@@ -5040,6 +5147,9 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.15.4',[
+    'New: a word about to set itself aside now warns you first, and you can overrule it. Once a word is one \"Again\" away from the threshold in Settings, a small amber warning mark appears on the study card beside the flag; tap it, or press K, and that word is kept in for the rest of the study day \u2014 the failure that would have parked it no longer does. It exists because the count cannot tell two very different situations apart: sometimes a word simply will not come, but sometimes you have three of its four meanings and being cast out of the deck is the last thing it needs. The override lasts the study day and no further, deliberately \u2014 the count that triggers a set-aside is itself same-day, so tomorrow starts at zero and the warning is live again; a word you find yourself rescuing several days running is one the app is probably right about. Press it a second time to let the word go after all \u2014 and if it is already past the threshold by then, it is set aside there and then rather than quietly later. Words you have already set aside are untouched by any of this: the flag is still what brings those back.'
+  ]],
   ['2026.08.15.3',[
     'Fixed: with gist backup switched on, some devices were contacting GitHub on every single rating instead of once every few seconds. This happened whenever a device that already had review history was pointed at a gist holding fewer reviews than it -- and also whenever the token had expired, where every rating fired another doomed request. Either way it burned through GitHub\'s hourly request limit and caused the "push failed" toasts; the fix from yesterday only closed one of the two ways in.',
     'Fixed: undoing a rating also erased the time you had spent on that card, so "studied today" and the Stats time figures quietly drifted below the stopwatch on the study screen, which never rolled back. The rating itself still reverts in full -- only the minutes you genuinely sat there are now kept. This mattered more than it used to, because the new 0/Z quick-rate correction runs an undo every time you use it.',
@@ -5390,6 +5500,13 @@ $('flagBtn').addEventListener('click',e=>{
   save();
   renderLeech();
   toast(cs.susp?'Set aside':'Brought back',1400);
+});
+// not tapZone either, and for the same reason as the flag directly above: it
+// sits inside cardArea, whose own click handler would otherwise reveal the
+// card on the same bubbled click that pressed this.
+$('keepBtn').addEventListener('click',e=>{
+  e.preventDefault(); e.stopPropagation();
+  toggleKeepIn();
 });
 tapZone($('undoBtn'),undo);
 // seven buttons across six screens, all "go back to the front screen".
@@ -5789,6 +5906,12 @@ document.addEventListener('keydown',e=>{
        againTodayFor(current,S.log,today())>=FLAG_KEY){
       setAside(current,!cardState(current).susp); save(); renderLeech();
     }
+    // k keeps the current word in for today, overriding the automatic
+    // set-aside it is one "Again" away from. No threshold test here:
+    // toggleKeepIn() self-gates on keepWarnState(), the same gate that decides
+    // whether the glyph is on screen at all, so the key can never fire while
+    // nothing is showing and the two can never disagree about when it applies.
+    if(e.key==='k'||e.key==='K') toggleKeepIn();
   }
 });
 document.addEventListener('gesturestart',e=>e.preventDefault());
