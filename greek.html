@@ -1437,6 +1437,20 @@ const rollLabel=h=>h===0?'midnight':h+'am';
 // safely inside the day regardless of rollover hour, so this reuses dayKey's
 // own rollover-aware bucketing rather than reimplementing it for the calendar
 function dayKeyForDate(y,m,day){ return dayKey(new Date(y,m,day,12,0,0).getTime()); }
+// The inverse, in the YYYY-MM-DD form an <input type="date"> expects: the
+// LOCAL calendar date the study day begins on. Built from the local getters,
+// not toISOString(): dayStart(k) is the rollover hour in local time, and
+// rendering that instant in UTC is a day early on any device whose offset
+// exceeds the rollover hour -- measured on UTC+8, day-key 20680 (15 Aug) came
+// out as "2026-08-14" for every rollover option, and #gearStreakStart's own
+// change handler reads the field straight back through dayKeyForDate(), so
+// re-committing what it showed walked the streak-start setting a day earlier
+// each time. Oxford hits this under BST with the study day set to begin at
+// midnight. Paired with dayKeyForDate() above so the round-trip is exact.
+function dayKeyToDateInput(k){
+  const dt=new Date(dayStart(k)), p=n=>String(n).padStart(2,'0');
+  return dt.getFullYear()+'-'+p(dt.getMonth()+1)+'-'+p(dt.getDate());
+}
 // a Gregorian month as weeks of 7 cells (Sun-Sat), padded with inMonth:false
 // cells so every week is a full row; pure date math, no S or DOM access
 function monthMatrix(y,m){
@@ -2190,7 +2204,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.15.2';
+const BUILD='2026.08.15.3';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -2650,6 +2664,16 @@ let almostThereWait=false;
 const show=(name,keepTiming)=>{
   const wasActive=$('scStudy').classList.contains('on')||almostThereWait;
   ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill'].forEach(s=>$(s).classList.toggle('on',s===name));
+  // The quick-rate Z/0 correction is armed for exactly ONE keydown (see
+  // quickRate()/quickCorrectToAgain()), and the keydown listener that clears
+  // it only runs while scStudy is on -- so leaving the study screen used to
+  // freeze the arm indefinitely. Coming back without clearing undoStack (the
+  // "Almost there" donePoll resume, or doneMore) then turned the next Z into
+  // "grade the previous, off-screen word Again" -- a silent extra lapse -- on
+  // a keystroke the user meant as a plain undo, and which the on-screen Undo
+  // button did treat as one. Disarming on the way out puts the two back in
+  // step and keeps the arm's life to the one keydown it is documented to have.
+  if(name!=='scStudy'){ lastQuickRateId=null; lastQuickRateGrade=null; }
   if(name==='scStudy'){ startStudyTimer(true); }   // no-op on an already-ticking clock -- see startStudyTimer's own guard
   else if(wasActive && !keepTiming) pauseStudyTimer();
   almostThereWait=!!keepTiming;
@@ -3011,7 +3035,16 @@ function quickRate(pressed){
   if(S.settings.quickRate==='flash') quickFlash(c);
   revealAt=shownAt;   // satisfies rate()'s own tooSoonAfter guard without weakening it, same as a real reveal() would
   rate(pressed);
-  lastQuickRateId=id; lastQuickRateGrade=pressed;   // armed for exactly one keydown -- see the keydown listener
+  // Armed for exactly one keydown -- see the keydown listener. Only if we are
+  // still ON the study screen: rate() above may have emptied the queue and
+  // pushed scDone, and this assignment runs after it, so an unguarded re-arm
+  // would put the flag straight back after show()'s own disarm and survive
+  // until study resumed (donePoll's "Almost there" hand-back, or doneMore) --
+  // where the next Z, meant as a plain undo, would silently re-grade the
+  // previous word Again instead.
+  // current!=null is exactly that test and needs no DOM: next() nulls it and
+  // hands over to renderDone() precisely when there is no next card.
+  if(current!=null){ lastQuickRateId=id; lastQuickRateGrade=pressed; }
 }
 // The decorative flash itself. Deliberately never touches #answer -- that
 // element belongs to whichever card is now on screen (rate() above has
@@ -3167,11 +3200,24 @@ function revertLast(){
   (u.buried||[]).forEach(([sid,v])=>{ if(S.cards[sid]) S.cards[sid].buried=v; });
   // restore into the day the rating belonged to, not whichever day it is now
   { const d0=(u.dk!=null)?u.dk:today();
-    const keepL=(S.days[d0]&&S.days[d0].capL!=null)?S.days[d0].capL:null;
-    const keepE=(S.days[d0]&&S.days[d0].capE!=null)?S.days[d0].capE:null;
+    const cur=S.days[d0]||{};
+    const keepL=(cur.capL!=null)?cur.capL:null;
+    const keepE=(cur.capE!=null)?cur.capE:null;
+    // Elapsed wall clock is not a rating either, and undoing one cannot
+    // un-spend it. rate() snapshots the day record BEFORE flushStudyTime()
+    // credits that rating's segment to it, so restoring the snapshot wholesale
+    // threw away time genuinely spent in the study screen -- while sessionMs
+    // (the same clock, driving the on-screen stopwatch) kept it, leaving the
+    // two to disagree and Home's "· N studied" and Stats' Studied today/7/30
+    // to under-report. It cannot be recovered later: flushStudyTime() has
+    // already moved studyTickStart past the segment. Carried forward on the
+    // same reasoning as capL/capE just above.
+    const keepMs=cur.studyMs, keepStage=cur.stageMs;
     S.days[d0]=(u.day&&u.day.n!=null)?u.day:{n:0,intro:0,ok:0,tot:0,words:0};
     if(keepL!=null) S.days[d0].capL=keepL;
-    if(keepE!=null) S.days[d0].capE=keepE; }            // the day's allowance is a setting, not a rating
+    if(keepE!=null) S.days[d0].capE=keepE;              // the day's allowance is a setting, not a rating
+    if(keepMs!=null) S.days[d0].studyMs=keepMs;
+    if(keepStage!=null) S.days[d0].stageMs=keepStage; } // ...and stageN, its per-stage review COUNT, is deliberately NOT kept: that one really is a count of the rating being taken back
   S.log.length=u.logLen;
   S.sinceExport=Math.max((S.sinceExport||1)-1,0);
   lastRated=null; // the rating this described just got undone -- nothing to recap
@@ -3903,7 +3949,7 @@ function renderDrillDone(){
   $('drillProgress').textContent='';
   $('drillDoneText').textContent = drillSeen
     ? ('Drilled '+drillDeck.length+' word'+(drillDeck.length===1?'':'s')+' — '+drillRight+' of '+drillSeen+' right.')
-    : 'Nothing set aside right now — words show up here once you flag one, or "Again" lands on one 8 times in a day.';
+    : 'Nothing set aside right now — words show up here once you flag one, or "Again" lands on one '+S.settings.flagAuto+' times in a day.';
 }
 function renderChips(){
   const box=$('chips');
@@ -4160,7 +4206,7 @@ function renderCalToolbar(){
 function renderCalGear(){
   $('gearAccent').value=S.settings.heatmapAccent;
   $('gearStreakStart').value=(S.settings.streakStart!=null)
-    ? new Date(dayStart(S.settings.streakStart)).toISOString().slice(0,10) : '';
+    ? dayKeyToDateInput(S.settings.streakStart) : '';
 }
 function renderCalLegend(){
   $('calLegend').textContent = (S.settings.heatmapColourMode==='retention'
@@ -4838,6 +4884,18 @@ function offerConflict(inc,base){
 }
 async function syncOnLaunch(){
   if(!S.settings.gistId||!S.settings.gistTok) return;
+  // Throttled HERE, not only at the visibilitychange caller. save() routes
+  // every single rating through this function while S.syncedLogLen is null
+  // (syncArmDecision()'s 'reconcile-first'), and two outcomes below leave it
+  // null -- 'none' (a failed fetch: offline, expired token, already rate-
+  // limited, which must never claim reconciliation since this device did not
+  // see the gist) and, before the branch added at the bottom, 'in-sync'. Each
+  // rating then fetched again, unthrottled: exactly the api.github.com quota
+  // exhaustion diagnosed in 2026.08.15.0, one caller further in than the fix
+  // that shipped then. The boot call still goes through (lastSyncCheck starts
+  // at 0), and the refocus caller's own identical gate is now merely
+  // redundant rather than load-bearing.
+  if(Date.now()-lastSyncCheck<MIN) return;
   lastSyncCheck=Date.now();
   const lenAtStart=S.log.length;
   const inc=await fetchGist(true);
@@ -4867,6 +4925,17 @@ async function syncOnLaunch(){
     toast('Synced — '+S.log.length+' reviews from '+(inc.lastDevice||'your other device')+dueNote,3200);
   } else if(decision==='push-local'){
     pushGist(true);                                  // only this device moved; put it back
+  } else if(decision==='in-sync'){
+    // Nothing to move either way -- but this device has now actually looked at
+    // what the gist holds, which is the whole question syncArmDecision() is
+    // asking. Recording that is what lets the next rating arm the ordinary
+    // debounced push instead of another live GET. Reachable with syncedLogLen
+    // null whenever the gist holds fewer or equal reviews than this device
+    // (base falls back to the local length, so localMoved is false by
+    // construction) -- i.e. pointing an already-used device at a gist another
+    // device has not caught up to yet. Safe: local is by definition no smaller
+    // than remote here, so the push this unblocks can lose nothing.
+    S.syncedLogLen=S.log.length;
   }
 }
 // Pure: the confirm() text for a genuine disagreement between this device's own
@@ -4955,7 +5024,7 @@ function renderBg(){
     ['When nothing else is due','serves a learning card up to 20 minutes early, so a day cannot end with cards still circling.'],
     ['Rating a word','buries its opposite direction for the rest of the day, so you never meet the same word both ways in one sitting.'],
     ['At the rollover hour','the day turns over: the new-word allowance resets, buried words come back, and everything scheduled for the new day unlocks at once.'],
-    ['Eight failures','sets a word aside and stops showing it until you bring it back.'],
+    [S.settings.flagAuto+' failures in one day','sets a word aside and stops showing it until you bring it back. The number is Settings\' own "Again presses before a word is set aside".'],
     ['Answering slowly','records a lower grade than the button you pressed. Never a higher one, and never on a failure.'],
     ['A forward card holding long enough','unlocks its reverse card, subject to the gate in these settings.'],
     ['Intervals between 3 and 21 days','get nudged onto your chosen review weekday, by up to three days.'],
@@ -4970,6 +5039,13 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.15.3',[
+    'Fixed: with gist backup switched on, some devices were contacting GitHub on every single rating instead of once every few seconds. This happened whenever a device that already had review history was pointed at a gist holding fewer reviews than it -- and also whenever the token had expired, where every rating fired another doomed request. Either way it burned through GitHub\'s hourly request limit and caused the "push failed" toasts; the fix from yesterday only closed one of the two ways in.',
+    'Fixed: undoing a rating also erased the time you had spent on that card, so "studied today" and the Stats time figures quietly drifted below the stopwatch on the study screen, which never rolled back. The rating itself still reverts in full -- only the minutes you genuinely sat there are now kept. This mattered more than it used to, because the new 0/Z quick-rate correction runs an undo every time you use it.',
+    'Fixed: the 0/Z shortcut that corrects a quick-rate press to "Again" could fire far later than intended. If you quick-rated the last card, waited on the "Almost there" screen, and pressed 0 or Z once a card came back, it marked the previous, no-longer-visible word Again -- adding a lapse -- instead of undoing. It is now strictly the very next keypress, as described, and going back to the front screen in between cancels it. Used normally, straight after a quick-rate press, it is unchanged.',
+    'Fixed: the calendar gear\'s "streak start date" could show the day before the one actually saved, and re-saving what it showed walked the date a further day back each time. Only affected people whose study day begins at midnight.',
+    'Fixed: two places still said a word is set aside after eight "Again" presses in a day. That number has been your own adjustable setting since last update -- both now show whatever it is actually set to.'
+  ]],
   ['2026.08.15.2',[
     'Quick rate is noticeably faster to click through: 1/I and 3/P (and, in "flash the answer" mode, 2/O too) now grade a word and move straight to the next one\'s front immediately, instead of waiting out the flash first. "Flash the answer" still shows you the answer right after you grade -- it just floats over the next word as a brief receipt now, rather than holding it up. Quick rate also now applies to a word mid its short post-lapse relearn step, not only to a fully settled review -- previously it dropped back to reveal-then-rate for those. New: pressing 0 or Z right after a quick-rate press grades that same word Again instead of undoing it -- one keystroke to fix a mis-press (a 3 that should have been a 1, say) without losing your place or having to look at the card again; any other 0/Z is still a normal undo. New and still-learning words are unaffected by any of this -- reveal-then-rate stays the only route there, same as always.'
   ]],
