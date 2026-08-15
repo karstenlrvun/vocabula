@@ -17,7 +17,7 @@
   --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
 }
-/* Ten palettes, each with a light and a dark variant. The mode is chosen
+/* Thirteen palettes, each with a light and a dark variant. The mode is chosen
    separately from the palette, so any palette can be read either way.
    Vellum is the default; Legacy reproduces the original colours exactly.
 
@@ -26,12 +26,20 @@
    carried those two attributes was the root element. Dropping the `html`
    means any element can carry them and re-declare the whole palette for its
    own subtree -- which is the entire mechanism behind the theme previews in
-   Settings: eleven themes, each shown in both light and dark at once, on one
-   screen, with no duplicated colour values anywhere. A preview is a real
-   `<div data-palette="kanagawa" data-theme="dark">` reading these exact
+   Settings: thirteen themes, each shown in both light and dark at once, on
+   one screen, with no duplicated colour values anywhere. A preview is a real
+   `<div data-palette="steel" data-theme="dark">` reading these exact
    tokens, so it cannot drift from the real thing the way a hand-built swatch
    list would. Nothing else in the file defines --bg and friends, so the small
-   specificity drop (0,2,1 -> 0,2,0) changes no existing cascade. */
+   specificity drop (0,2,1 -> 0,2,0) changes no existing cascade.
+
+   2026-08-16: Kanagawa and Everforest retired -- both sat inside the same
+   9-degree, 84-95%-lightness hue band as Vellum and Gruvbox (measured, not
+   eyeballed), and Gruvbox/Everforest's "good" accents were near-identical
+   (#7a7405 vs #798906). Gruvbox stays as the family's one representative:
+   most recognised name of the three, most saturated, and the only fully
+   achromatic dark mode in the whole roster. Five new palettes replace them
+   and fill the room freed for a target of sixteen -- see the block below. */
 [data-palette="vellum"][data-theme="light"]{
   --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
   --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6; --again:#a3342a;
@@ -80,22 +88,6 @@
   --warn-br:#7b5e42; --warn-ink:#fac681; --bad-bg:#4a273d; --bad-br:#763751; --bad-ink:#f9739c;
   --toast:#1f1d2e;
 }
-[data-palette="kanagawa"][data-theme="light"]{
-  --bg:#f2ecbc; --panel:#e7dba0; --ink:#545464; --muted:#6a675b; --faint:#8a8980;
-  --line:#dcd5aa; --coral:#b6650a; --accent-soft:#ebdeab; --raise:#f9f4d2; --again:#db203a;
-  --again-bg:#ecd6af; --again-br:#e2b69d; --good:#65853d; --good-bg:#e6e3a9; --good-br:#ccd194;
-  --easy:#60428d; --easy-bg:#e3d9b1; --easy-br:#c7b9a7; --amber:#787132; --warn-bg:#e7e0a7;
-  --warn-br:#d0c98e; --warn-ink:#716b41; --bad-bg:#ecd6af; --bad-br:#e2b69d; --bad-ink:#b8354d;
-  --toast:#545464;
-}
-[data-palette="kanagawa"][data-theme="dark"]{
-  --bg:#1f1f28; --panel:#2a2a37; --ink:#dcd7ba; --muted:#c8c093; --faint:#727169;
-  --line:#363646; --coral:#f8a572; --accent-soft:#4e3832; --raise:#2a2a37; --again:#f85567;
-  --again-bg:#4c2d38; --again-br:#773946; --good:#9ac95e; --good-bg:#3a4236; --good-br:#526442;
-  --easy:#977ac4; --easy-bg:#38324a; --easy-br:#504467; --amber:#f7c873; --warn-bg:#4c433b;
-  --warn-br:#77654b; --warn-ink:#f5cb7c; --bad-bg:#4c2d38; --bad-br:#773946; --bad-ink:#f66a74;
-  --toast:#2a2a37;
-}
 [data-palette="gruvbox"][data-theme="light"]{
   --bg:#fbf1c7; --panel:#f2e5bc; --ink:#3c3836; --muted:#665c54; --faint:#928374;
   --line:#e3d5ab; --coral:#a93c09; --accent-soft:#eeddb8; --raise:#fdf6da; --again:#97060c;
@@ -111,22 +103,6 @@
   --easy:#e17d98; --easy-bg:#503b40; --easy-br:#734c56; --amber:#f7bf3b; --warn-bg:#5a4b26;
   --warn-br:#856926; --warn-ink:#f8c651; --bad-bg:#5a2c27; --bad-br:#873127; --bad-ink:#f75e48;
   --toast:#32302f;
-}
-[data-palette="everforest"][data-theme="light"]{
-  --bg:#fdf6e3; --panel:#f4f0d9; --ink:#5c6a72; --muted:#667165; --faint:#8a9285;
-  --line:#e0dcc7; --coral:#d6600b; --accent-soft:#f5e7d3; --raise:#fffbef; --again:#f6231f;
-  --again-bg:#f5e1d5; --again-br:#ecc7be; --good:#798906; --good-bg:#efebc3; --good-br:#dadb95;
-  --easy:#d644a8; --easy-bg:#f6e2db; --easy-br:#edc3ce; --amber:#a77a07; --warn-bg:#f2e5c6;
-  --warn-br:#e2ce9c; --warn-ink:#9b750a; --bad-bg:#f5e1d5; --bad-br:#ecc7be; --bad-ink:#d54444;
-  --toast:#5c6a72;
-}
-[data-palette="everforest"][data-theme="dark"]{
-  --bg:#2d353b; --panel:#343f44; --ink:#d3c6aa; --muted:#a7b0a4; --faint:#859289;
-  --line:#3d484d; --coral:#f49267; --accent-soft:#534846; --raise:#3a464c; --again:#f87173;
-  --again-bg:#584349; --again-br:#7f5055; --good:#7bd250; --good-bg:#3f5a38; --good-br:#577f48;
-  --easy:#e292b8; --easy-bg:#524a57; --easy-br:#765d70; --amber:#ebc16f; --warn-bg:#545449;
-  --warn-br:#796f55; --warn-ink:#e9c276; --bad-bg:#584349; --bad-br:#7f5055; --bad-ink:#f47d7a;
-  --toast:#343f44;
 }
 [data-palette="legacy"][data-theme="light"]{
   --bg:#ffffff; --panel:#faf8f5; --ink:#1b1a18; --muted:#77746e; --faint:#928f89;
@@ -200,6 +176,102 @@
   --warn-br:#5e4826; --warn-ink:#e8c477; --bad-bg:#3f2019; --bad-br:#5e3226; --bad-ink:#f0684a;
   --toast:#1c140d;
 }
+/* Five new palettes (2026-08-16), replacing Kanagawa/Everforest -- see the
+   comment above PALETTES. Each is grounded in real research (written up in
+   full for him as an artifact), not guessed:
+     Rubric -- illuminated-manuscript rubrication (red ink chapter headings,
+       Latin rubrica) and gold leaf, on a warmer parchment than Vellum's.
+     Steel  -- chess.com's "Metal" board: brushed gunmetal with an
+       oxide-copper accent, deliberately low-contrast (his call).
+     Glass  -- chess.com's "Glass" board: cool slate with a bevel-highlight
+       standing in for translucency, same trick the real board uses.
+     Neon   -- chess.com's actual "Neon" set is a muted pastel, not a glow;
+       this one intentionally follows the popular glow-on-black convention
+       instead, which is what "neon" means to everyone who isn't looking at
+       that specific board skin.
+     8-Bit  -- the real, hardware-documented original Game Boy DMG screen
+       (#9bbc0f/#8bac0f/#306230/#0f380f) for light mode; a dark arcade
+       cabinet for dark mode. */
+[data-palette="rubric"][data-theme="light"]{
+  --bg:#f6ecd4; --panel:#efe0bc; --ink:#241610; --muted:#6b4a30; --faint:#9c7a54;
+  --line:#ddc38f; --coral:#a3161f; --accent-soft:#f3ddb0; --raise:#fdf6e2; --again:#8f1018;
+  --again-bg:#f0dcc0; --again-br:#dcb583; --good:#3c6b2e; --good-bg:#e3e6c4; --good-br:#c7cd94;
+  --easy:#5b3a8e; --easy-bg:#e6ddf0; --easy-br:#cbb8e2; --amber:#a67c0e; --warn-bg:#f0e0ad;
+  --warn-br:#dcbf6c; --warn-ink:#7a5a08; --bad-bg:#f0dcc0; --bad-br:#dcb583; --bad-ink:#6b0d12;
+  --toast:#241610;
+}
+[data-palette="rubric"][data-theme="dark"]{
+  --bg:#1c0f0c; --panel:#2a1712; --ink:#f0dfc0; --muted:#c4a06e; --faint:#8a6a48;
+  --line:#4a2e20; --coral:#e0483f; --accent-soft:#3f2313; --raise:#331c14; --again:#e2564a;
+  --again-bg:#3f221c; --again-br:#63362a; --good:#8fae5c; --good-bg:#2c3320; --good-br:#455035;
+  --easy:#b399e0; --easy-bg:#332a4a; --easy-br:#4f4270; --amber:#e0b23e; --warn-bg:#40300f;
+  --warn-br:#634a1a; --warn-ink:#e8bd5c; --bad-bg:#3f221c; --bad-br:#63362a; --bad-ink:#ef8b7f;
+  --toast:#2a1712;
+}
+[data-palette="steel"][data-theme="light"]{
+  --bg:#eef0f1; --panel:#e2e5e7; --ink:#23282b; --muted:#5c6569; --faint:#8b9296;
+  --line:#ccd1d4; --coral:#b0472e; --accent-soft:#e7e2dc; --raise:#f8f9fa; --again:#a83a2c;
+  --again-bg:#ecdfd9; --again-br:#d9bcae; --good:#3f6e52; --good-bg:#dde6de; --good-br:#b9cdbf;
+  --easy:#4a5a7a; --easy-bg:#dde2ea; --easy-br:#b9c4d6; --amber:#96731e; --warn-bg:#ece3cc;
+  --warn-br:#d8c496; --warn-ink:#6e5314; --bad-bg:#ecdfd9; --bad-br:#d9bcae; --bad-ink:#7a2a1e;
+  --toast:#23282b;
+}
+[data-palette="steel"][data-theme="dark"]{
+  --bg:#16191b; --panel:#202426; --ink:#dfe3e5; --muted:#a7aeb2; --faint:#6c7377;
+  --line:#33393c; --coral:#d97c5c; --accent-soft:#3a2c24; --raise:#262b2e; --again:#e08268;
+  --again-bg:#3f2c24; --again-br:#634033; --good:#7fae8e; --good-bg:#26362c; --good-br:#3f5747;
+  --easy:#8fa3c9; --easy-bg:#262e3d; --easy-br:#3c4a63; --amber:#cda54c; --warn-bg:#3a301b;
+  --warn-br:#5c4828; --warn-ink:#d4ac5c; --bad-bg:#3f2c24; --bad-br:#634033; --bad-ink:#e3927a;
+  --toast:#202426;
+}
+[data-palette="glass"][data-theme="light"]{
+  --bg:#eef2f6; --panel:#e1e8f0; --ink:#1d2733; --muted:#54626f; --faint:#8996a3;
+  --line:#c9d5e0; --coral:#1f7fa3; --accent-soft:#dcebf2; --raise:#fbfdff; --again:#c23b4e;
+  --again-bg:#f7dfe1; --again-br:#eab9bd; --good:#2f8f6e; --good-bg:#dcefe6; --good-br:#b7dbc9;
+  --easy:#6a5ecf; --easy-bg:#e6e2f8; --easy-br:#cbc3ef; --amber:#b3860f; --warn-bg:#f2e6c4;
+  --warn-br:#e2cb8e; --warn-ink:#7d5c0c; --bad-bg:#f7dfe1; --bad-br:#eab9bd; --bad-ink:#94202f;
+  --toast:#1d2733;
+}
+[data-palette="glass"][data-theme="dark"]{
+  --bg:#12181f; --panel:#1b232c; --ink:#e6edf3; --muted:#a7b4bf; --faint:#66727d;
+  --line:#2c3844; --coral:#5ec2e8; --accent-soft:#1c2e38; --raise:#212b35; --again:#e2687a;
+  --again-bg:#3a2229; --again-br:#5c333e; --good:#6fcba8; --good-bg:#193226; --good-br:#2b4d3c;
+  --easy:#a79af0; --easy-bg:#241f3e; --easy-br:#392f5c; --amber:#e8c168; --warn-bg:#392c14;
+  --warn-br:#5c4720; --warn-ink:#eec478; --bad-bg:#3a2229; --bad-br:#5c333e; --bad-ink:#ef8797;
+  --toast:#1b232c;
+}
+[data-palette="neon"][data-theme="light"]{
+  --bg:#f5f4fb; --panel:#ebe9f7; --ink:#16142b; --muted:#514f72; --faint:#85839f;
+  --line:#d8d5ee; --coral:#d6116e; --accent-soft:#fbe0ee; --raise:#ffffff; --again:#e0113f;
+  --again-bg:#fbdde4; --again-br:#f0b6c3; --good:#0e9e6d; --good-bg:#d9f3e7; --good-br:#a8e0c4;
+  --easy:#6427e0; --easy-bg:#e7ddfb; --easy-br:#cbb5f4; --amber:#c98d00; --warn-bg:#f7e7bf;
+  --warn-br:#ecce85; --warn-ink:#93650a; --bad-bg:#fbdde4; --bad-br:#f0b6c3; --bad-ink:#b60d34;
+  --toast:#16142b;
+}
+[data-palette="neon"][data-theme="dark"]{
+  --bg:#0a0a12; --panel:#131320; --ink:#eef0ff; --muted:#9a9bc4; --faint:#5c5d82;
+  --line:#262640; --coral:#ff3ea5; --accent-soft:#2a1830; --raise:#181828; --again:#ff3b5c;
+  --again-bg:#2c121c; --again-br:#5c1f34; --good:#39ffb0; --good-bg:#0e2b22; --good-br:#1c4e3c;
+  --easy:#7c5cff; --easy-bg:#201238; --easy-br:#3a2266; --amber:#ffcc33; --warn-bg:#332508;
+  --warn-br:#5c440f; --warn-ink:#ffd766; --bad-bg:#2c121c; --bad-br:#5c1f34; --bad-ink:#ff6f8f;
+  --toast:#131320;
+}
+[data-palette="8bit"][data-theme="light"]{
+  --bg:#9bbc0f; --panel:#8bac0f; --ink:#0f380f; --muted:#306230; --faint:#4f7a3a;
+  --line:#729c2a; --coral:#c23a2b; --accent-soft:#7a9f22; --raise:#a8c93a; --again:#b8321f;
+  --again-bg:#a8c93a; --again-br:#5f7d1c; --good:#0b6e35; --good-bg:#87a531; --good-br:#4f6a18;
+  --easy:#3a2f96; --easy-bg:#a8c93a; --easy-br:#5f7d1c; --amber:#c99a10; --warn-bg:#87a531;
+  --warn-br:#5f7d1c; --warn-ink:#7a5c00; --bad-bg:#a8c93a; --bad-br:#5f7d1c; --bad-ink:#8f2415;
+  --toast:#0f380f;
+}
+[data-palette="8bit"][data-theme="dark"]{
+  --bg:#0c0e10; --panel:#17191c; --ink:#e7ecd8; --muted:#9aa08c; --faint:#585c4e;
+  --line:#2a2d24; --coral:#ff4b3e; --accent-soft:#241a14; --raise:#1e211a; --again:#ff5b4a;
+  --again-bg:#2c1712; --again-br:#4a251c; --good:#3ddc6f; --good-bg:#132318; --good-br:#20402c;
+  --easy:#7a6bff; --easy-bg:#1c1830; --easy-br:#332a54; --amber:#ffcb2e; --warn-bg:#332608;
+  --warn-br:#544011; --warn-ink:#ffd25c; --bad-bg:#2c1712; --bad-br:#4a251c; --bad-ink:#ff8a7a;
+  --toast:#17191c;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
 body{
@@ -267,8 +339,8 @@ html:not([data-layout="landscape"]) .quickFlash{
 .buryBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:15px;line-height:1;color:var(--faint)}
 .buryBtn.on{color:var(--warn-ink)}
 /* Just the flag icon now (2026-08-13) -- no text, no dismiss. It used to be
-   a text banner ("Again N times today--tap the flag...") gated on
-   FLAG_MANUAL, with its own small x dismiss button below the flag; both are
+   a text banner ("Again N times today--tap the flag...") gated on a higher
+   threshold, with its own small x dismiss button below the flag; both are
    gone, and renderLeech() now gates on the lower FLAG_KEY instead, so the
    icon shows up exactly when the flag is actually usable, not two presses
    later. Sized as a real tap target (44px, the usual minimum) here
@@ -578,10 +650,31 @@ html:not([data-layout="landscape"]) .quickFlash{
 .logi{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 4px;padding-left:14px;
   text-indent:-14px}
 .logi::before{content:"— ";color:var(--faint)}
+/* Two directions under one label, instead of two near-identical fields whose
+   only difference was which way round the arrow pointed. */
+.pairRow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.pairRow .pairLbl{flex:1;min-width:0;font-size:13.5px;color:var(--muted)}
+.pairRow input{width:104px;margin-top:0}
+
+/* Advanced group (2026.08.16.1). Amber, not the red .danger uses -- that red
+   marks the single irreversible action in the app and is worth keeping rare.
+   The fields themselves stay direct children of .setCols so balanceColumns()
+   can still distribute them one by one across the landscape columns; hiding
+   them with display:none means they measure zero and the balance stays right
+   in both states. A <details> would have made the whole group one tall child
+   and lopsided the two columns the moment it opened. */
+.advToggle{display:block;width:100%;margin:18px 0 4px;padding:13px 14px;
+  background:var(--warn-bg);border:1px solid var(--warn-br);border-radius:11px;
+  color:var(--warn-ink);font:inherit;font-size:14px;font-weight:600;
+  text-align:center;cursor:pointer;-webkit-appearance:none;appearance:none}
+.advToggle:active{opacity:.75}
+.advToggle::after{content:" ▾";font-size:11px}
+#scSet[data-adv] .advToggle::after{content:" ▴"}
+#scSet:not([data-adv]) .advOnly{display:none}
 .swatch{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;
   margin-right:7px;border:1px solid var(--line)}
 
-/* ---- theme previews (2026.08.15.6) -------------------------------------
+/* ---- theme previews (2026.08.15.6, shrunk 2026-08-16) ------------------
    Every theme, both modes, on one screen -- replacing a plain <select> that
    named eleven themes and showed none of them, and could only ever be
    evaluated by picking one, leaving Settings, disliking it, and going back.
@@ -590,33 +683,35 @@ html:not([data-layout="landscape"]) .quickFlash{
    data-palette/data-theme, so they read the SAME custom properties the app
    itself does (see the palette block's own note) -- no swatch list to keep in
    step, and a palette edit shows up here for free.
-   What is inside each half is a miniature of the study screen rather than a
-   row of colour chips, because that is what these colours are actually for:
-   the panel card and its serif specimen in --ink, the three rate buttons in
-   their own -bg/-br pairs, and the accent bar. A palette that looks pleasant
-   as six squares but muddy as a card is exactly the failure this is meant to
-   catch. */
-.palGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:2px}
-@media(min-width:700px){.palGrid{grid-template-columns:repeat(3,1fr)}}
-.palCard{padding:0;border:1.5px solid var(--line);border-radius:12px;background:none;
+
+   2026-08-16: dropped the three-chip again/good/easy rate strip from each
+   half -- his call, and correct: those three colours are lit by the SAME
+   accent logic in both halves of one card, so the strip mostly just repeated
+   itself twice at thumbnail size, and the row count for what is about to
+   become thirteen (heading toward sixteen) palettes was the real cost.
+   Kept -- shrunk, not removed -- the serif word sample (panel + --ink),
+   because "does the actual body text stay legible" is a different question
+   from "are these six colours pleasant," and a flat colour swatch can't
+   answer it; and one --coral accent bar, since it's the app's one CTA colour
+   and the single most identity-carrying thing a theme has. Went 2/3 columns
+   -> 3/4, since shorter cards had headroom for it: 4 columns is an exact
+   4 rows at the sixteen-palette target this is scaling toward. */
+.palGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:2px}
+@media(min-width:700px){.palGrid{grid-template-columns:repeat(4,1fr)}}
+.palCard{padding:0;border:1.5px solid var(--line);border-radius:10px;background:none;
   overflow:hidden;display:block;width:100%;text-align:center;cursor:pointer;
   -webkit-appearance:none;appearance:none;font:inherit}
 .palCard.on{border-color:var(--coral);box-shadow:0 0 0 1.5px var(--coral)}
 .palCard:active{transform:scale(.985)}
-.palPrev{display:flex;height:74px}
+.palPrev{display:flex;height:46px}
 .palHalf{flex:1;min-width:0;background:var(--bg);display:flex;flex-direction:column;
-  justify-content:center;gap:4px;padding:7px 6px}
-.palMini{background:var(--panel);border:1px solid var(--line);border-radius:5px;
-  color:var(--ink);font-family:var(--serif);font-size:13px;line-height:1.45;
+  justify-content:center;gap:3px;padding:5px}
+.palMini{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  color:var(--ink);font-family:var(--serif);font-size:11px;line-height:1.5;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.palRates{display:flex;gap:3px}
-.palRates i{flex:1;height:8px;border-radius:2px;border:1px solid}
-.palRates i.a{background:var(--again-bg);border-color:var(--again-br)}
-.palRates i.g{background:var(--good-bg);border-color:var(--good-br)}
-.palRates i.e{background:var(--easy-bg);border-color:var(--easy-br)}
-.palAccent{height:8px;border-radius:3px;background:var(--coral)}
-.palName{display:block;padding:6px 4px;font-size:12px;font-weight:500;color:var(--ink);
-  border-top:1px solid var(--line)}
+.palAccent{height:6px;border-radius:3px;background:var(--coral)}
+.palName{display:block;padding:5px 3px;font-size:11px;font-weight:500;color:var(--ink);
+  border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .palCard.on .palName{color:var(--coral)}
 .fold{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .fold summary{font-size:13px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;
@@ -776,7 +871,7 @@ html[data-layout="landscape"][data-study-stats] .cardMeta:empty{display:none}
    .cardMeta and .keycap below, so portrait layouts never see it regardless
    of the setting. */
 .recapCard{display:none}
-html[data-layout="landscape"][data-study-stats] .recapCard.on{
+html[data-layout="landscape"] .recapCard.on{
   grid-area:recap; display:flex; flex-direction:column; gap:6px;
   align-self:start; justify-self:end; margin:16px 16px 0 8px;
   padding:12px 14px; max-width:200px; box-sizing:border-box;
@@ -1013,13 +1108,9 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       </div>
 
       <div class="sect">
-        <h2>Struggling words</h2>
-        <details class="fold" id="againFold">
-          <summary>Hit "Again" 5+ times today (<span id="againCount">0</span>)</summary>
-          <div id="againList"></div>
-        </details>
+        <h2>Set aside</h2>
         <details class="fold" id="asideFold">
-          <summary>Set aside (<span id="asideCount">0</span>)</summary>
+          <summary>Words parked out of rotation (<span id="asideCount">0</span>)</summary>
           <div id="asideList"></div>
         </details>
         <button class="chip" id="toDrill" style="margin-top:10px">Drill these words &#8594;</button>
@@ -1229,43 +1320,21 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
     <div class="set">
       <div class="setCols">
       <div class="field">
-        <label for="fNewL">New words a day — <span id="fNewLblL">—</span></label>
-        <input type="number" id="fNewL" min="0" max="400" step="5" inputmode="numeric">
-      </div>
-      <div class="field">
-        <label for="fNewE">New words a day — <span id="fNewLblE">—</span></label>
-        <input type="number" id="fNewE" min="0" max="400" step="5" inputmode="numeric">
-        <div class="fh">Caps how many unseen words enter the rotation each day, tracked and capped separately per direction — raising one no longer raises the other. Words carried over from the audit come first.</div>
-      </div>
-      <div class="field">
-        <label for="fLearnBufOn">Learning at once (experimental)</label>
-        <select id="fLearnBufOn" class="sel">
-          <option value="1">On—throttle new words while other work is pending</option>
-          <option value="0">Off—new words are capped only by the daily limit above</option>
-        </select>
-        <div class="fh">Still being tuned against real usage data, see below. Off goes back to exactly how new words were introduced before this existed—the two sliders below have no effect while it's off, but keep whatever they're set to for whenever it's back on.</div>
-      </div>
-      <div id="fLearnBufWrap">
-      <div class="field">
-        <label for="fLearnBufL">Learning at once — <span id="fLearnBufLblL">—</span> — <b id="fLearnBufLVal">10</b></label>
-        <input type="range" id="fLearnBufL" min="3" max="15" step="1">
-        <div class="fh" id="fLearnBufSuggestL" hidden></div>
-      </div>
-      <div class="field">
-        <label for="fLearnBufE">Learning at once — <span id="fLearnBufLblE">—</span> — <b id="fLearnBufEVal">10</b></label>
-        <input type="range" id="fLearnBufE" min="3" max="15" step="1">
-        <div class="fh">Separate from the daily total above: caps how many brand-new words can be mid-acquisition—not yet graduated out of learning—at once in a single sitting, independent per direction. New words trickle in only as earlier ones graduate or drop below the cap, instead of arriving as a cluster that all comes due together and starts looking the same. Never stalls a sitting—only holds back new intros while there's other due or learning work to fall back on. Once there's roughly two weeks of real use under this cap, a personalised suggestion can appear below, based on your own actual "Again" rate at different concurrency levels—never applied for you, always your call.</div>
-        <div class="fh" id="fLearnBufSuggestE" hidden></div>
-      </div>
+        <label for="fNewL">New words a day</label>
+        <div class="pairRow">
+          <span class="pairLbl" id="fNewLblL">—</span>
+          <input type="number" id="fNewL" min="0" max="400" step="5" inputmode="numeric">
+        </div>
+        <div class="pairRow">
+          <span class="pairLbl" id="fNewLblE">—</span>
+          <input type="number" id="fNewE" min="0" max="400" step="5" inputmode="numeric">
+        </div>
+        <div class="fh">Capped separately per direction — raising one no longer raises the other. 0 stops new words entirely and leaves you reviewing what you already have.</div>
       </div>
       <div class="field">
         <label for="fRet">Target retention—<b id="fRetVal">90%</b></label>
         <input type="range" id="fRet" min="80" max="95" step="1">
         <div class="fh">How often you want to succeed at review time. Lower means fewer reviews and more forgetting.</div>
-      </div>
-      <div class="field">
-        <label for="fMax">Longest interval (days)</label>
-        <input type="number" id="fMax" min="30" max="36500" step="30" inputmode="numeric">
       </div>
       <div class="field">
         <label>Theme</label>
@@ -1283,29 +1352,12 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh" id="palNote">—</div>
       </div>
       <div class="field">
-        <label>Study screen, wide layout</label>
-        <select id="fStudyStats" class="sel">
-          <option value="0">Hide review history on the card</option>
-          <option value="1">Show review history on the card</option>
+        <label for="fSimple">Study screen, wide layout</label>
+        <select id="fSimple" class="sel">
+          <option value="0">Full—review history, keyboard hints, animation</option>
+          <option value="1">Simplified—the card and nothing else</option>
         </select>
-        <select id="fStudyHints" class="sel" style="margin-top:9px">
-          <option value="0">Hide keyboard hints</option>
-          <option value="1">Show keyboard hints</option>
-        </select>
-        <select id="fStudyMotion" class="sel" style="margin-top:9px">
-          <option value="0">No extra animation</option>
-          <option value="1">Animate reveal and card changes</option>
-        </select>
-        <div class="fh">A laptop, iPad, or phone turned sideways already gets a wider study card
-          automatically—a screen at least 700px wide, in landscape, on any device; nothing to turn
-          on for that part, and a phone held upright is never affected. These three only decide what
-          fills the extra room there, each independent of the others. Review history shows how many
-          times you've seen a word, your current streak, and your last result. Keyboard hints show
-          the actual keys next to each button—Space to reveal, 1/2/3 (or I/O/P) to rate, 0 or Z to
-          undo—the keys themselves already work everywhere; this only decides whether they're
-          written on the buttons. Animation adds a brief settle when you reveal an answer and a
-          brief arrival when the next card appears; off automatically if your system asks for
-          reduced motion, regardless of this setting. All three default off.</div>
+        <div class="fh">Only affects a screen wide enough for the two-column study card. The last card you rated is always shown either way.</div>
       </div>
       <div class="field">
         <label for="fQuickRate">Quick rate (1/3 before reveal)</label>
@@ -1314,88 +1366,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <option value="flash">On—flash the answer first</option>
           <option value="blind">On—no flash, fully blind</option>
         </select>
-        <div class="fh">Once a word is past its first learning steps—including a brief post-lapse
-          relearn step, not only a fully settled review—1 (or I) and 3 (or P) grade it straight
-          from the question—no tap to reveal first—and the next word's front appears immediately,
-          for a fast pass through words you already know at a glance. "Flash the answer" also lets
-          2 (or O) grade this way, and shows the answer briefly right after you grade, floating
-          over the next word rather than holding it up; fully blind never shows it and leaves 2/O
-          reveal-gated, since Good is the one grade that still means "I actually looked at it".
-          Either way, pressing 0 or Z right after a quick-rate grades that same word Again instead
-          of undoing it—one keystroke to fix a mis-press without losing your place; any other 0/Z
-          is a normal undo. New and still-learning words are unaffected either way—that's the one
-          place getting it wrong quietly costs the most, so reveal-then-rate stays the only route
-          there. Off by default.</div>
-      </div>
-      <div class="field">
-        <label for="fRoll">A study day begins at</label>
-        <select id="fRoll" class="sel">
-          <option value="0">Midnight</option>
-          <option value="3">3am</option>
-          <option value="4">4am</option>
-          <option value="6">6am</option>
-        </select>
-        <div class="fh">Everything scheduled for a day becomes available at this hour, together,
-          however late in the previous day you earned it. A late-night session before this hour
-          still counts as the previous day, which is why 4am is the usual choice. Changing it
-          never rewrites anything already scheduled—it takes effect from the <em>next</em> time
-          today's current hour comes around, not immediately, so nothing already due (or not)
-          changes because of the switch itself.</div>
-        <div class="fh" id="fRollPending" hidden></div>
-      </div>
-      <div class="field">
-        <label for="fGate">Unlock the reverse direction after</label>
-        <input type="number" id="fGate" min="0" max="180" step="7" inputmode="numeric">
-        <div class="fh">Days a forward card must be holding before its reverse card can appear. 0 removes the gate and opens everything at once. Production is harder than recognition, so this stops you meeting a word backwards before it has settled.</div>
-      </div>
-      <div class="field">
-        <label for="fTiming">Let hesitation adjust the grade</label>
-        <select id="fTiming" class="sel">
-          <option value="1">Yes—a slow answer is recorded one grade lower</option>
-          <option value="0">No—record exactly what I press</option>
-        </select>
-        <div class="fh">Over 30 seconds, Easy is recorded as Good and Good as Hard. Between 10 and 30, Easy is recorded as Good. Nothing is ever promoted, and a failure is never altered.</div>
-      </div>
-      <div class="field">
-        <label for="fEasy">Clearing a word for the day</label>
-        <select id="fEasy" class="sel">
-          <option value="1">Only Easy clears it—Good repeats in 10 minutes</option>
-          <option value="0">Good is enough</option>
-        </select>
-        <div class="fh">Applies while a word is still being drilled, not to mature reviews. Good and Hard bounce it 10 minutes; after enough same-day bounces without an Easy (set below), it clears anyway rather than repeating forever.</div>
-      </div>
-      <div class="field">
-        <label for="fDrillCap">Same-day bounces before it clears anyway—<b id="fDrillCapVal">3</b></label>
-        <input type="range" id="fDrillCap" min="3" max="10" step="1">
-        <div class="fh">Only matters when "Only Easy clears it" is selected above. Lower means a word you keep answering Good (never Easy) gets out of the drill sooner; higher drills it harder before letting it through.</div>
-      </div>
-      <div class="field">
-        <label for="fDrill">Consecutive good days before release</label>
-        <input type="number" id="fDrill" min="0" max="14" step="1" inputmode="numeric">
-        <div class="fh">0 switches this off and lets the scheduler choose. Any higher number holds a word at a one-day interval until you have got it right that many days running; one failure restarts the count. Costly—check the front screen load before setting this above 3.</div>
-      </div>
-      <div class="field">
-        <label for="fRevDay">Weekly review day</label>
-        <select id="fRevDay" class="sel">
-          <option value="-1">None—spread reviews evenly</option>
-          <option value="0">Sunday</option><option value="1">Monday</option>
-          <option value="2">Tuesday</option><option value="3">Wednesday</option>
-          <option value="4">Thursday</option><option value="5">Friday</option>
-          <option value="6">Saturday</option>
-        </select>
-        <div class="fh">Nudges intervals between 3 and 21 days onto that weekday, by up to three days either way. Longer intervals are left alone so the day cannot fill up without limit.</div>
-      </div>
-      <div class="field">
-        <label for="fKnown">Head start for words you marked known</label>
-        <input type="number" id="fKnown" min="1" max="365" step="7" inputmode="numeric">
-        <div class="fh">Days before a known word is first tested. Only applies to words not yet introduced. Longer means they surface as an occasional spot-check rather than a lesson.</div>
-      </div>
-      <div class="field">
-        <label for="fWeak">Introduce unseen words before shaky ones</label>
-        <select id="fWeak" class="sel">
-          <option value="0">No—work through in list order</option>
-          <option value="1">Yes—hardest first</option>
-        </select>
+        <div class="fh">Grades a settled word straight from the question, no tap to reveal first. Pressing 0 or Z right afterwards corrects that same word to Again rather than undoing it. New and still-learning words always stay reveal-then-rate.</div>
       </div>
       <div class="field">
         <label for="fTerm">Michaelmas begins</label>
@@ -1410,35 +1381,19 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh" id="backupNote">—</div>
       </div>
       <div class="field">
-        <label for="fDevice">This device's name</label>
-        <input type="text" id="fDevice" placeholder="e.g. iPhone, iPad, Mac" autocapitalize="words" autocorrect="off" spellcheck="false">
-        <div class="fh">Stamped onto anything pushed to the gist or saved as a backup file from
-          here, so if this device and another ever disagree, you can tell whose copy is whose.</div>
-      </div>
-      <div class="field">
         <label for="fGistId">Back up to a GitHub gist</label>
         <input type="text" id="fGistId" placeholder="gist id" autocapitalize="off" autocorrect="off" spellcheck="false">
         <input type="password" id="fGistTok" placeholder="fine-grained token, gists scope" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-top:9px">
+        <input type="text" id="fDevice" placeholder="this device's name — e.g. iPhone, iPad, Mac" autocapitalize="words" autocorrect="off" spellcheck="false" style="margin-top:9px">
         <button class="act" id="pushBtn">Push to gist now</button>
         <button class="act" id="pullBtn">Pull from gist</button>
-        <div class="fh">This is the primary backup: every save is pushed here a few seconds
-          later, and the front screen shows how long ago that last worked. Off unless you fill both
-          fields. Use the same gist id and token on every device you want kept in step. If this
-          device and another have both moved on since the last sync, you'll be asked which copy to
-          keep, labelled by device name—nothing is overwritten silently.
-          <b>The token is never written into the gist or into a backup file</b>—it stays
-          in this browser's storage on this device. Anything on the device can still read it, so
-          scope it to gists alone and revoke it if the phone goes astray.
-          If you open this deck through the launcher page rather than a separate Home Screen icon
-          for it, these three fields are shared with the other deck automatically—set them once,
-          from here or from the launcher, and both pick it up. If the two ever disagree—say, this
-          gist id was set here before the launcher had one of its own—you'll be asked which to
-          keep before anything switches; nothing is chosen for you silently.</div>
-      </div>
-      <div class="field">
-        <label for="fFlagAuto">Same-day "Again" presses before a word sets itself aside—<b id="fFlagAutoVal">12</b></label>
-        <input type="range" id="fFlagAuto" min="5" max="15" step="1">
-        <div class="fh">Lower parks a struggling word sooner; higher gives it more real, spaced attempts first. Raising this never brings an already-set-aside word back on its own. Lowering it takes effect at once for any new "Again" press, but never reaches back to reinterpret presses already logged earlier today—those are only judged against today's higher starting number, so nothing already in progress this session gets swept out from under you. It applies in full, with no exceptions, from your next study day on. Whatever it is set to, the study card warns you one press before it happens, and that warning can be overridden for the rest of the day.</div>
+        <div class="fh">The primary backup: every save is pushed here a few seconds later. Off unless
+          both the id and the token are filled. Use the same pair on every device you want kept in
+          step; the device name is what labels each copy if two ever disagree.
+          <b>The token is never written into the gist or into a backup file</b>—it stays in this
+          browser's storage on this device, so scope it to gists alone and revoke it if the phone
+          goes astray. Opened through the launcher page, all three fields are shared with the other
+          deck automatically.</div>
       </div>
       <div class="field">
         <label>Set aside</label>
@@ -1446,6 +1401,124 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <button class="act" id="unsuspBtn">Bring all set-aside words back</button>
       </div>
       <div class="field">
+        <label>Instructions</label>
+        <a class="act" href="manual.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit">How this works</a>
+        <div class="fh">Opens the manual, if it is sitting alongside this file.</div>
+      </div>
+      <div class="field">
+        <label>Start over</label>
+        <button class="act danger" id="resetBtn">Erase all progress</button>
+        <div class="fh">Pushes a backup to the gist first and only erases once that push is confirmed. Needs gist backup set up above -- without it, there is no reliable way to confirm a backup landed anywhere first.</div>
+      </div>
+      <div class="field" style="border-bottom:none">
+        <div class="fh">Grading rule: for a word with several glosses, count it as recalled only once you've produced every sense listed. Otherwise press Again.</div>
+      </div>
+
+      <!-- Everything below is one thematic group: how the scheduler itself
+           behaves. Amber rather than the red .danger uses, deliberately --
+           that red marks the single irreversible action in the app (Erase all
+           progress) and spending it on a settings group would weaken the one
+           place it genuinely matters. These are consequential, not dangerous. -->
+      <button class="advToggle" id="advToggle" aria-expanded="false" aria-controls="advBody">
+        Advanced — how the scheduler behaves
+      </button>
+      <div class="field advOnly" id="advBody">
+        <label for="fLearnBufOn">Learning at once</label>
+        <select id="fLearnBufOn" class="sel">
+          <option value="1">On—throttle new words while other work is pending</option>
+          <option value="0">Off—new words are capped only by the daily limit</option>
+        </select>
+        <div class="fh">Off goes back to exactly how new words were introduced before this existed—the two sliders below have no effect while it's off, but keep whatever they're set to for whenever it's back on. Off by default.</div>
+      </div>
+      <div class="field advOnly" id="fLearnBufWrap">
+        <label for="fLearnBufL">Learning at once — <span id="fLearnBufLblL">—</span> — <b id="fLearnBufLVal">10</b></label>
+        <input type="range" id="fLearnBufL" min="3" max="15" step="1">
+        <div class="fh" id="fLearnBufSuggestL" hidden></div>
+        <label for="fLearnBufE" style="margin-top:12px">Learning at once — <span id="fLearnBufLblE">—</span> — <b id="fLearnBufEVal">10</b></label>
+        <input type="range" id="fLearnBufE" min="3" max="15" step="1">
+        <div class="fh">Caps how many brand-new words can be mid-acquisition—not yet graduated out of learning—at once in a single sitting, independent per direction. New words trickle in only as earlier ones graduate, instead of arriving as a cluster that all comes due together and starts looking the same. Never stalls a sitting—only holds back new intros while there's other due or learning work to fall back on.</div>
+        <div class="fh" id="fLearnBufSuggestE" hidden></div>
+      </div>
+      <div class="field advOnly">
+        <label for="fMax">Longest interval (days)</label>
+        <input type="number" id="fMax" min="30" max="36500" step="30" inputmode="numeric">
+        <div class="fh">A ceiling on how far ahead a well-known word can be pushed. The default of 36500 is a hundred years—effectively no ceiling at all.</div>
+      </div>
+      <div class="field advOnly">
+        <label for="fRoll">A study day begins at</label>
+        <select id="fRoll" class="sel">
+          <option value="0">Midnight</option>
+          <option value="3">3am</option>
+          <option value="4">4am</option>
+          <option value="6">6am</option>
+        </select>
+        <div class="fh">Everything scheduled for a day becomes available at this hour, together,
+          however late in the previous day you earned it. A late-night session before this hour
+          still counts as the previous day. Changing it never rewrites anything already
+          scheduled—it takes effect from the <em>next</em> time today's current hour comes around,
+          not immediately, so nothing already due (or not) changes because of the switch itself.</div>
+        <div class="fh" id="fRollPending" hidden></div>
+      </div>
+      <div class="field advOnly">
+        <label for="fGate">Unlock the reverse direction after</label>
+        <input type="number" id="fGate" min="0" max="180" step="7" inputmode="numeric">
+        <div class="fh">Days a forward card must be holding before its reverse card can appear. 0—the default—removes the gate and opens everything at once. Production is harder than recognition, so a higher number stops you meeting a word backwards before it has settled.</div>
+      </div>
+      <div class="field advOnly">
+        <label for="fTiming">Let hesitation adjust the grade</label>
+        <select id="fTiming" class="sel">
+          <option value="1">Yes—a slow answer is recorded one grade lower</option>
+          <option value="0">No—record exactly what I press</option>
+        </select>
+        <div class="fh">Over 30 seconds, Easy is recorded as Good and Good as Hard. Between 10 and 30, Easy is recorded as Good. Nothing is ever promoted, and a failure is never altered.</div>
+      </div>
+      <div class="field advOnly">
+        <label for="fEasy">Clearing a word for the day</label>
+        <select id="fEasy" class="sel">
+          <option value="1">Only Easy clears it—Good repeats in 10 minutes</option>
+          <option value="0">Good is enough</option>
+        </select>
+        <div class="fh">Applies while a word is still being drilled, not to mature reviews. Good and Hard bounce it 10 minutes; after enough same-day bounces without an Easy (set below), it clears anyway rather than repeating forever.</div>
+      </div>
+      <div class="field advOnly">
+        <label for="fDrillCap">Same-day bounces before it clears anyway—<b id="fDrillCapVal">3</b></label>
+        <input type="range" id="fDrillCap" min="3" max="10" step="1">
+        <div class="fh">Only matters when "Only Easy clears it" is selected above. Lower means a word you keep answering Good (never Easy) gets out of the drill sooner; higher drills it harder before letting it through.</div>
+      </div>
+      <div class="field advOnly">
+        <label for="fDrill">Consecutive good days before release</label>
+        <input type="number" id="fDrill" min="0" max="14" step="1" inputmode="numeric">
+        <div class="fh">0 switches this off and lets the scheduler choose. Any higher number holds a word at a one-day interval until you have got it right that many days running; one failure restarts the count. Costly—check the front screen load before setting this above 3.</div>
+      </div>
+      <div class="field advOnly">
+        <label for="fRevDay">Weekly review day</label>
+        <select id="fRevDay" class="sel">
+          <option value="-1">None—spread reviews evenly</option>
+          <option value="0">Sunday</option><option value="1">Monday</option>
+          <option value="2">Tuesday</option><option value="3">Wednesday</option>
+          <option value="4">Thursday</option><option value="5">Friday</option>
+          <option value="6">Saturday</option>
+        </select>
+        <div class="fh">Nudges intervals between 3 and 21 days onto that weekday, by up to three days either way. Longer intervals are left alone so the day cannot fill up without limit.</div>
+      </div>
+      <div class="field advOnly">
+        <label for="fKnown">Head start for words you marked known</label>
+        <input type="number" id="fKnown" min="1" max="365" step="7" inputmode="numeric">
+        <div class="fh">Days before a known word is first tested. Only applies to words not yet introduced. Longer means they surface as an occasional spot-check rather than a lesson.</div>
+      </div>
+      <div class="field advOnly">
+        <label for="fWeak">Introduce unseen words before shaky ones</label>
+        <select id="fWeak" class="sel">
+          <option value="0">No—work through in list order</option>
+          <option value="1">Yes—hardest first</option>
+        </select>
+      </div>
+      <div class="field advOnly">
+        <label for="fFlagAuto">Same-day "Again" presses before a word sets itself aside—<b id="fFlagAutoVal">12</b></label>
+        <input type="range" id="fFlagAuto" min="5" max="15" step="1">
+        <div class="fh">Lower parks a struggling word sooner; higher gives it more real, spaced attempts first. Raising this never brings an already-set-aside word back on its own. Lowering it takes effect at once for any new "Again" press, but never reaches back to reinterpret presses already logged earlier today. Whatever it is set to, the study card warns you one press before it happens, and that warning can be overridden for the rest of the day.</div>
+      </div>
+      <div class="field advOnly" style="border-bottom:none">
         <label>What happens on its own</label>
         <div id="bgLive"></div>
         <button class="act" id="bgBackupBtn" style="display:none">Back up now</button>
@@ -1453,19 +1526,6 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <summary>Every background process</summary>
           <div id="bgList"></div>
         </details>
-      </div>
-      <div class="field">
-        <label>Start over</label>
-        <button class="act danger" id="resetBtn">Erase all progress</button>
-        <div class="fh">Pushes a backup to the gist first and only erases once that push is confirmed. Needs gist backup set up above -- without it, there is no reliable way to confirm a backup landed anywhere first.</div>
-      </div>
-      <div class="field">
-        <label>Instructions</label>
-        <a class="act" href="manual.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit">How this works</a>
-        <div class="fh">Opens the manual, if it is sitting alongside this file.</div>
-      </div>
-      <div class="field" style="border-bottom:none">
-        <div class="fh">Grading rule: for a word with several glosses, count it as recalled only once you've produced every sense listed. Otherwise press Again.</div>
       </div>
       </div>
     </div>
@@ -1572,22 +1632,17 @@ const LEARN_STEPS=[1*MIN,10*MIN], RELEARN_STEPS=[10*MIN];
 const DRILL_CAP=3;
 const S_MIN=0.001;
 const AGAIN=1, HARD=2, GOOD=3, EASY=4;
-// FLAG_MANUAL: the threshold for the curated "Struggling words" lists only
-// (the front screen's own section, and Browse) -- past FLAG_AUTO a word is
-// set aside on its own regardless. Same-day raw count, not distinct days --
-// an earlier version counted distinct study days instead (deliberately, to
-// stop one bad cram sitting tripping the flag on its own), changed back to
-// same-day counting 2026.08.03 at the owner's explicit request: the flag is
-// meant to catch a sitting that is going badly right now, not chronic
-// failure across separate sessions. See againTodayCounts() below.
-// Deliberately higher than FLAG_KEY below -- those lists are meant to
-// surface real trouble, not every word that's had a rough couple of presses.
-// Deliberately left a fixed constant, not a setting, even after FLAG_AUTO
-// below became one (2026.08.14): the "warning before auto-set-aside" gap
-// this creates only matters while FLAG_AUTO sits above it, which is true
-// for its whole 5-15 range except the single value 5 -- see FLAG_AUTO's
-// own comment for that one collision case.
-const FLAG_MANUAL=5;
+// FLAG_MANUAL (=5) lived here until 2026.08.16.1. It was the threshold for a
+// curated "words in trouble right now" watch list on the front screen, shown
+// alongside the set-aside list. Removed at the owner's request: it was built
+// for a heavy new-word intake, where a sitting can genuinely go wrong in real
+// time, and stops earning its place once study is mostly review. Its removal
+// also closed a real bug -- strugglingWords() returned the UNION of that
+// watch list and the set-aside pile, under a summary hardcoded to describe
+// only the first of the two, so the front screen would announce
+// `Hit "Again" 5+ times today (15)` above fifteen rows each showing 0.
+// Nothing replaced it: FLAG_KEY below still governs flagging by hand, and
+// S.settings.flagAuto still parks a word automatically.
 // FLAG_AUTO: same-day Agains before a word is set aside on its own -- see
 // rate() and normalise(). Promoted 2026.08.14 from a bare constant to
 // S.settings.flagAuto (Settings' own slider, range 5-15), at the owner's
@@ -1605,13 +1660,10 @@ const FLAG_MANUAL=5;
 // shown to feel like the app giving up on a word before it had a fair
 // number of real, spaced attempts, so the shipped default starts higher
 // than the old constant while staying inside his own specified 5-15 range.
-// At flagAuto=5 this collides with the fixed FLAG_MANUAL=5 above: a word
-// would hit the curated Struggling-words list and get auto-set-aside on
-// the exact same press, instead of FLAG_MANUAL firing a few presses
-// earlier as a warning. Left as-is deliberately (LEARNING_LOAD_PLAN.md §2)
-// -- harmless (the list is just "words currently in trouble" either way),
-// and the "warning before set-aside" property only matters in the 6-15
-// range regardless.
+// The old FLAG_MANUAL=5 collision note that stood here is void as of
+// 2026.08.16.1: the curated watch list it described is gone, so there is
+// nothing left for flagAuto=5 to collide with, and the whole 5-15 range
+// now behaves identically.
 //
 // Lowering flagAuto mid-day must not retroactively sweep Agains that were
 // already logged earlier today, back when a higher threshold was still in
@@ -1639,12 +1691,11 @@ const FLAG_AUTO_DEFAULT=12;
 // keyboard's f key (silently, no toast: see the keydown handler) and the
 // on-screen flag icon (renderLeech; no text, no dismiss, just the icon --
 // tapping it *does* toast, the same confirmation every other flag tap in
-// the app gives). Deliberately below FLAG_MANUAL: two real same-day Agains
-// is enough to want the word out of rotation, well before it's bad enough
-// to earn a spot on the curated Struggling-words lists above. Changed
-// 2026.08.13 at the owner's request from the icon's old FLAG_MANUAL-gated
-// text banner, which made the flag look unavailable two presses later than
-// it actually was.
+// the app gives). Deliberately low: two real same-day Agains is enough to
+// want the word out of rotation, well before flagAuto would park it there
+// automatically. Changed 2026.08.13 at the owner's request from the icon's
+// old higher-gated text banner, which made the flag look unavailable
+// several presses later than it actually was.
 const FLAG_KEY=2;
 // "Time to learn a word" (timeToLearnFor, browse screen) sums thinkMs across
 // a card's whole history as a rough active-engagement figure. reveal()
@@ -1873,7 +1924,7 @@ CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
 
 const defaults={
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:4, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:14, studyStats:false, studyHints:false, studyMotion:false, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferOn:true, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:0, studyStats:true, studyHints:true, studyMotion:true, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferOn:false, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, dayNotes:{}, drillLog:[], sinceExport:0, lastExport:null, lastPushBytes:0,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
 };
@@ -2397,7 +2448,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.15.6';
+const BUILD='2026.08.16.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -2608,7 +2659,7 @@ let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by
 let calY=null, calM=null, calSelectedDay=null;   // calendar fold's own state -- not persisted, not S.dir-linked
 let noteEditId=null;   // which word's note panel is open (openWordNote/#wordNoteOverlay) -- not persisted, same shape as calSelectedDay above
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseDate=null, browseSelected=new Set();   // browse screen's own state
-let drillDeck=[], drillGroups={}, drillPos=0, drillRight=0, drillSeen=0, drillView='choose', drillMode=null, drillLogged=false;   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags. drillGroups: id -> its similarity block (populated by buildDrillDeck). drillView starts on the chooser so a stray render before openDrillChooser() runs never shows a stale practice round.
+let drillDeck=[], drillGroups={}, drillPos=0, drillRight=0, drillSeen=0, drillView='choose', drillMode=null, drillLogged=false, drillRequeued=new Set();   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags. drillGroups: id -> its similarity block (populated by buildDrillDeck). drillView starts on the chooser so a stray render before openDrillChooser() runs never shows a stale practice round. drillRequeued: ids (or, for a block, every member) already given a second look this session via requeueDrillItem -- caps a miss to exactly one requeue so a word that's wrong every time can't grow the deck forever.
 let drillSubmitted=false;   // typed round: has this round already been graded
 let drillContrastIds=null, drillContrastAnswerOrder=null, drillContrastSel=null, drillContrastMatched=null, drillContrastMissed=null;   // contrastive round's own state, rebuilt each time renderContrastRound runs
 
@@ -2726,13 +2777,16 @@ const PALETTES={
   vellum:     'Vellum',
   catppuccin: 'Catppuccin',
   rosepine:   'Rose Pine',
-  kanagawa:   'Kanagawa',
   gruvbox:    'Gruvbox',
-  everforest: 'Everforest',
   legacy:     'Legacy',
   dracula:    'Dracula',
   monokai:    'Monokai',
-  amphora:    'Amphora'
+  amphora:    'Amphora',
+  rubric:     'Rubric',
+  steel:      'Steel',
+  glass:      'Glass',
+  neon:       'Neon',
+  '8bit':     '8-Bit'
 };
 const PAL_KEYS=Object.keys(PALETTES);
 /* Daily rotation walks a shuffled cycle: every theme appears once before any
@@ -3100,13 +3154,16 @@ function renderCard(){
   }
   // Recap of the card rate() just graded, not this one -- top-right corner
   // of the landscape grid (the "recap" area, previously an unnamed spacer;
-  // see the CSS comment at .recapCard). Shares the studyStats switch rather
-  // than getting a fourth toggle: it's the same "extra card info" idea as
-  // cardMeta just above, aimed at the card behind you instead of the one in
-  // front of you. Cleared (lastRated=null) by undo() and by anything that
-  // wipes undoStack alongside it, so it never shows a rating that's since
-  // been reverted or import/erase.
-  if(S.settings.studyStats){
+  // see the CSS comment at .recapCard). ALWAYS on as of 2026.08.16.1: it used
+  // to share the studyStats switch, but when those three flags collapsed into
+  // one Simplified-layout toggle this was the one piece worth keeping in both
+  // states, so it was decoupled instead (his call). Costs nothing to leave on
+  // -- unlike cardMeta just above, it reads the in-memory lastRated rather
+  // than walking the log via lastRatingFor(), so there is no per-card work to
+  // skip. Cleared (lastRated=null) by undo() and by anything that wipes
+  // undoStack alongside it, so it never shows a rating that's since been
+  // reverted or import/erase.
+  {
     const rc=$('recapCard');
     if(lastRated){
       $('recapWord').textContent=lastRated.q;
@@ -3134,8 +3191,9 @@ function renderCard(){
   shownAt=Date.now(); thinkMs=null; cardDirty=false;
   renderCounts();
 }
-// Gates on FLAG_KEY, not FLAG_MANUAL -- see FLAG_KEY's own comment. Just the
-// icon: no text, no dismiss button (2026-08-13).
+// Gates on FLAG_KEY -- the low by-hand threshold, not the much higher
+// flagAuto that parks a word on its own. See FLAG_KEY's own comment. Just
+// the icon: no text, no dismiss button (2026-08-13).
 function renderLeech(){
   const n=againTodayFor(current,S.log,today()), tag=$('leechTag');
   // Computed before the early return below, not after: this must be cleared
@@ -3638,21 +3696,28 @@ function buryToday(id,on){
   return cs;
 }
 function isBuriedToday(cs){ return !!(cs&&cs.buryUntil>today()); }
-// Every card in this direction at FLAG_MANUAL+ today's Agains, ranked worst
-// first, unioned with every already-set-aside card regardless of today's
-// count -- susp is persistent (sticks until brought back by hand), so a
-// word set aside on an earlier day must keep showing under "Set aside" even
-// on a day it hasn't been touched at all. Callers filter susp out separately
-// for the "Set aside" list.
+// Every set-aside card in this direction, worst first, carrying today's own
+// "Again" count for the row (usually 0 -- susp is persistent and sticks until
+// brought back by hand, so most of this list was parked on an earlier day).
+//
+// This used to be a UNION: cards at FLAG_MANUAL+ Agains today, PLUS every
+// set-aside card. That union was shown under a summary hardcoded to describe
+// only the first half of it, so the front screen would read
+// `Hit "Again" 5+ times today (15)` above fifteen rows each showing a count
+// of 0 -- none of which had been answered wrong even once that day. Removed
+// entirely 2026.08.16.1 at the owner's request rather than relabelled: the
+// "watch list" half was built for a heavy new-word intake, and it stops
+// earning its place once study is mostly review. Automatic set-aside
+// (S.settings.flagAuto) is untouched and is what fills this list now; so is
+// FLAG_KEY, the separate and much lower threshold that lets a word be
+// flagged by hand from the study card.
 function strugglingWords(dir){
-  const dk=today(), counts=againTodayCounts(S.log,dk), rows=[], seen={};
-  const add=(id,n)=>{
-    if(seen[id]) return; seen[id]=true;
-    const c=BY_ID[id]; if(!c||c.dir!==dir) return;
-    rows.push({id,n,susp:!!(S.cards[id]&&S.cards[id].susp)});
-  };
-  for(const id in counts) if(counts[id]>=FLAG_MANUAL) add(id,counts[id]);
-  for(const id in S.cards) if(S.cards[id].susp) add(id,counts[id]||0);
+  const counts=againTodayCounts(S.log,today()), rows=[];
+  for(const id in S.cards){
+    if(!S.cards[id].susp) continue;
+    const c=BY_ID[id]; if(!c||c.dir!==dir) continue;
+    rows.push({id,n:counts[id]||0,susp:true});
+  }
   rows.sort((a,b)=>b.n-a.n||a.id.localeCompare(b.id));
   return rows;
 }
@@ -4170,7 +4235,7 @@ function renderBulkBar(){
 // choice instead of always drilling the whole pile in one sitting. See
 // beginDrillSession() for what each choice actually builds.
 function openDrillChooser(){
-  drillDeck=[]; drillPos=0; drillRight=0; drillSeen=0;
+  drillDeck=[]; drillPos=0; drillRight=0; drillSeen=0; drillRequeued=new Set();
   drillView='choose'; drillMode=null; drillLogged=false;
   renderDrill();
 }
@@ -4181,7 +4246,7 @@ function beginDrillSession(mode){
   drillMode=mode;
   const n = mode==='focus' ? Math.min(Math.max(S.settings.drillFocusN||15,10),25) : null;
   drillDeck=buildDrillDeck(S.dir,n);          // also (re)populates drillGroups
-  drillPos=0; drillRight=0; drillSeen=0; drillView='practice'; drillLogged=false;
+  drillPos=0; drillRight=0; drillSeen=0; drillRequeued=new Set(); drillView='practice'; drillLogged=false;
   renderDrill();
 }
 // One compact row per finished-or-abandoned session, for the Drill stats
@@ -4294,12 +4359,29 @@ function renderTypedRound(c){
   box.appendChild(input); box.appendChild(btn); box.appendChild(fb);
   input.focus();
 }
+// A word (or, for the contrastive round, every member of the block) missed
+// this round gets one more look before the session ends, appended to the
+// end of drillDeck rather than repeated right away -- an immediate repeat
+// tests recognition ("I just saw this"), not retrieval, so the gap is the
+// point. drillRequeued caps it to one requeue per id per session, same
+// reasoning DRILL_CAP applies to the real scheduler's own same-day hold: a
+// word that's wrong every time shouldn't grow the deck forever, it should
+// just keep counting against the round like it always has. Nothing else
+// needed here -- renderDrill()/nextDrillCard() already derive the round
+// type fresh from drillDeck[drillPos] and drillGroups every time, so a
+// repeated id just plays through its round again with no extra state.
+function requeueDrillItem(ids){
+  if(ids.some(id=>drillRequeued.has(id))) return;
+  ids.forEach(id=>drillRequeued.add(id));
+  drillDeck.push(...ids);
+}
 function submitTypedRound(){
   if(drillSubmitted) return;
-  const c=BY_ID[drillDeck[drillPos]], input=$('drillInput');
+  const id=drillDeck[drillPos], c=BY_ID[id], input=$('drillInput');
   const ok=answersMatch(input.value,c);
   drillSubmitted=true; drillSeen++;
   if(ok) drillRight++;
+  else requeueDrillItem([id]);
   input.disabled=true; input.classList.add(ok?'right':'wrong');
   $('drillCheckBtn').disabled=true;
   const fb=$('drillFeedback');
@@ -4346,8 +4428,10 @@ function revealHonorRound(){
 }
 function gradeHonorRound(ok){
   if(drillSubmitted) return;
+  const id=drillDeck[drillPos];
   drillSubmitted=true; drillSeen++;
   if(ok) drillRight++;
+  else requeueDrillItem([id]);
   $('drillHonorRight').disabled=true; $('drillHonorWrong').disabled=true;
   $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
   $('drillNextRow').classList.remove('hidden');
@@ -4410,6 +4494,7 @@ function finishContrastRound(){
   const total=drillContrastIds.length;
   const firstTry=drillContrastIds.filter(id=>!drillContrastMissed.has(id)).length;
   drillSeen+=total; drillRight+=firstTry;
+  if(drillContrastMissed.size) requeueDrillItem(drillContrastIds.slice());
   $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
   $('drillNextRow').classList.remove('hidden');
 }
@@ -4428,8 +4513,12 @@ function renderDrillList(){
   $('drillArea').classList.add('hidden'); $('drillNextRow').classList.add('hidden');
   $('drillDone').classList.add('hidden'); $('drillListView').classList.remove('hidden');
   $('drillProgress').textContent='Study list';
-  $('drillListView').innerHTML = drillDeck.length
-    ? drillDeck.map(id=>{ const c=BY_ID[id], cs=S.cards[id], hasNote=!!(cs&&cs.note);
+  // A word requeueDrillItem gave a second look appears twice in drillDeck --
+  // this is a plain read-over of what's in the deck, not a pass count, so
+  // it de-dupes rather than showing the same word's row twice.
+  const listIds=[...new Set(drillDeck)];
+  $('drillListView').innerHTML = listIds.length
+    ? listIds.map(id=>{ const c=BY_ID[id], cs=S.cards[id], hasNote=!!(cs&&cs.note);
         return '<div class="drillListRow"><div class="drillListTop"><span class="term">'+escHtml(c.q)+'</span>'+
           '<button class="noteBtn'+(hasNote?' on':'')+'" data-id="'+escHtml(id)+'" aria-label="'+(hasNote?'Edit note':'Add a note')+'">'+(hasNote?'\u{1F4DD}':'+ note')+'</button></div>'+
           '<span class="gloss">'+escHtml(answerText(c))+'</span>'+
@@ -4463,8 +4552,12 @@ function renderDrillDone(){
   $('drillNextRow').classList.add('hidden');
   $('drillDone').classList.remove('hidden');
   $('drillProgress').textContent='';
+  // Distinct words, not drillDeck.length -- a word requeueDrillItem gave a
+  // second look sits in drillDeck twice but is still one word; drillRight/
+  // drillSeen are correctly attempt counts already and need no such fix.
+  const n=new Set(drillDeck).size;
   $('drillDoneText').textContent = drillSeen
-    ? ((drillMode==='focus'?'Focus session—':'Syllabus check—')+drillDeck.length+' word'+(drillDeck.length===1?'':'s')+'—'+drillRight+' of '+drillSeen+' right.')
+    ? ((drillMode==='focus'?'Focus session—':'Syllabus check—')+n+' word'+(n===1?'':'s')+'—'+drillRight+' of '+drillSeen+' right.')
     : 'Nothing set aside right now—words show up here once you flag one, or "Again" lands on one '+S.settings.flagAuto+' times in a day.';
 }
 function renderChips(){
@@ -4979,15 +5072,12 @@ function flagRow(r){
     '<button class="flagBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="Flag">&#9873;</button></div>';
 }
 function renderStruggling(){
-  const rows=strugglingWords(S.dir), aside=rows.filter(r=>r.susp);
-  $('againCount').textContent=rows.length;
+  const aside=strugglingWords(S.dir);
   $('asideCount').textContent=aside.length;
-  $('againList').innerHTML = rows.length
-    ? rows.map(flagRow).join('')
-    : '<div class="note">None yet—a word shows up here once "Again" has landed on it '+FLAG_MANUAL+' times in one day.</div>';
   $('asideList').innerHTML = aside.length
     ? aside.map(flagRow).join('')
-    : '<div class="note">Nothing set aside.</div>';
+    : '<div class="note">Nothing set aside. A word lands here once "Again" has hit it '+
+      S.settings.flagAuto+' times in one day, or when you flag it yourself.</div>';
 }
 // New words introduced on one day in one direction. rate() keeps three
 // counters: rec.intro (either direction) and the rec.introL/introE pair. Same
@@ -5714,6 +5804,17 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.16.2',[
+    'Changed: Kanagawa and Everforest are retired from the theme picker. Measured rather than guessed: both sat inside the same nine-degree, pale-yellow-gold hue band as Vellum and Gruvbox, and Gruvbox and Everforest\'s green rating colour were near-identical hexes. Gruvbox stays as that family\'s one theme -- the best-known name of the three, the most saturated, and the only fully colourless dark mode among all of them.',
+    'New: five themes. Rubric, a regal cousin to Vellum built from real illuminated-manuscript history -- true rubrication red and gold leaf on a warmer parchment, instead of Vellum\'s muted terracotta. Steel and Glass, taking their material cues from two of Chess.com\'s actual board skins (sampled from the real files, not guessed): brushed gunmetal with an oxide-copper accent, and cool slate with the same bevel-highlight trick the real glass board uses in place of true transparency. Neon, glow-on-black -- knowingly built after the popular neon convention rather than Chess.com\'s own Neon set, which turned out to be a soft pastel with no glow in it at all. 8-Bit, whose light mode is the real four-shade Game Boy screen, down to the exact original hardware hex values.',
+    'Changed: the theme picker cards are smaller. Each one dropped the three-colour again/good/easy strip from both halves -- it mostly repeated itself, since the same three colours light both halves of one card -- and kept the word sample and the accent bar. Three themes fit per row now instead of two (four on wider screens), which matters more with thirteen themes on the list than it did with ten.',
+  ]],
+  ['2026.08.16.1',[
+    'Removed: the front screen\'s \u201cHit \u2018Again\u2019 5+ times today\u201d list. It was built to catch a sitting going wrong in real time, which is a problem you have while taking on a lot of new words; it stops earning its place once study is mostly review. Removing it also fixed a real fault, since the count beside that heading was never counting what the heading said: it was the number of words on the list, and the list also held every word already set aside, so it could read "5+ times today (15)" above fifteen words that had not been answered wrong once that day. The section is now simply "Set aside", and says what it holds. Nothing about how a word gets set aside has changed \u2014 neither the threshold that does it automatically nor the much lower one that lets you flag a word by hand \u2014 and the Drill still works from exactly the same pile.',
+    'Changed: Settings is roughly a third of its old length. Twelve scheduler settings \u2014 the learning-at-once cap, longest interval, when a study day begins, the reverse-direction gate, hesitation adjustment, the two drill-hold settings, consecutive good days, weekly review day, the head start for known words, unseen-before-shaky, and the automatic set-aside threshold \u2014 now sit behind one control at the bottom of the page. Everything is still there and still does exactly what it did; the page just no longer opens with all of it at once. The two per-direction new-word limits share one field, the device name moved in beside the gist it labels, and several of the longer explanations have been cut to a line.',
+    'Changed: the three separate "study screen, wide layout" switches are now one. Review history, keyboard hints and animation are all on by default, and a single Simplified setting turns all three off together. The last card you rated is now always shown, whichever you pick \u2014 it was previously tied to the review-history switch.',
+    'Changed: four defaults, for a fresh install only \u2014 nothing on a device already in use moves. A study day now begins at 6am rather than 4am; the reverse direction is unlocked from the start rather than after fourteen days; the experimental learning-at-once cap starts off; and the three study-screen extras start on.',
+  ]],
   ['2026.08.15.6',[
     'Changed: the calendar no longer prints three small figures inside each day. They were unreadable by construction -- the cell is filled with a colour scaled to that day, and the three numbers kept fixed colours chosen to sit on the page background instead. Measured across every theme and both light and dark, between 48 and 63 of the 86 figures on screen fell below a legible contrast, and every single theme had at least one number the exact same brightness as the square behind it -- invisible, not merely faint. The colour of the square already says how busy the day was, and tapping any day still gives all four figures at a readable size. The day numbers themselves are now measured against whatever colour the square actually ended up, so they stay legible in every theme: nothing on the calendar now falls below a 3.7:1 contrast, against a previous worst of 1.0:1.',
     'Changed: the calendar\'s colours are blended in a different colour space, which matters most for the Retention view. Mixing green into red the old way passed through a muddy brown, so two days at genuinely different recall could read as "murky green" and "lush green" with no way to tell which was better; it now runs red through orange and yellow into green, the way a traffic light does, which reads as an order at a glance.',
@@ -6019,7 +6120,6 @@ function renderPalGrid(){
   const half=(pal,mode)=>
     '<span class="palHalf" data-palette="'+pal+'" data-theme="'+mode+'">'+
       '<span class="palMini">'+escHtml(PAL_SAMPLE)+'</span>'+
-      '<span class="palRates"><i class="a"></i><i class="g"></i><i class="e"></i></span>'+
       '<span class="palAccent"></span>'+
     '</span>';
   $('palGrid').innerHTML=PAL_KEYS.map(k=>
@@ -6056,9 +6156,11 @@ function renderSet(){
   $('fGate').value=s.gateDays|0;
   $('fTheme').value=S.theme||'light';
   renderPalGrid();
-  $('fStudyStats').value=s.studyStats?'1':'0';
-  $('fStudyHints').value=s.studyHints?'1':'0';
-  $('fStudyMotion').value=s.studyMotion?'1':'0';
+  // One switch over three independent flags (2026.08.16.1). "Simplified"
+   // means all three off; anything else reads as Full, so a state carrying an
+   // old mixed combination lands on Full rather than silently losing whichever
+   // extras it had turned on.
+  $('fSimple').value=(s.studyStats||s.studyHints||s.studyMotion)?'0':'1';
   $('fQuickRate').value=s.quickRate||'off';
   commitPendingRollover();
   $('fRoll').value=String(s.rolloverPending!=null?s.rolloverPending:(s.rollover!=null?s.rollover:4));
@@ -6087,14 +6189,12 @@ function renderSet(){
         ? '  Gist: '+(S.lastSync?'synced '+new Date(S.lastSync).toLocaleString():'not yet synced')+
           (S.lastDevice?' (last pushed by '+S.lastDevice+')':'')+'.'
         : '');
-  const badCounts=againTodayCounts(S.log,today());
+  // The "N more at 5+ Again presses today, not yet flagged" half of this note
+  // went with the watch list it described (see strugglingWords()).
   const flagged=CARDS.filter(c=>S.cards[c.id]&&S.cards[c.id].susp).length;
-  const watch=CARDS.filter(c=>(badCounts[c.id]||0)>=FLAG_MANUAL&&!(S.cards[c.id]&&S.cards[c.id].susp)).length;
-  $('leechNote').textContent = (flagged||watch)
-    ? (flagged?flagged+' word'+(flagged===1?'':'s')+' set aside. ':'')+
-      (watch?watch+' more at '+FLAG_MANUAL+'+ "Again" presses today, not yet flagged.':'')+
-      ' Words you set aside stop appearing until you bring them back.'
-    : 'Nothing flagged yet. "Again" '+FLAG_KEY+' times in one day lets you flag a word by hand; '+s.flagAuto+' does it on its own.';
+  $('leechNote').textContent = flagged
+    ? flagged+' word'+(flagged===1?'':'s')+' set aside. Words you set aside stop appearing until you bring them back.'
+    : 'Nothing set aside yet. "Again" '+FLAG_KEY+' times in one day lets you flag a word by hand; '+s.flagAuto+' does it on its own.';
   balanceColumns(document.querySelector('#scSet .setCols'));
 }
 
@@ -6249,8 +6349,13 @@ $('drillChoices').addEventListener('input',e=>{
 });
 // Enter submits the typed round same as tapping Check -- delegated (the
 // input itself is rebuilt fresh every round) rather than bound per-render.
+// stopPropagation matters here: submitTypedRound() disables (and so blurs)
+// the input synchronously, and this same Enter keydown is still bubbling --
+// without this, the document-level handler below would then see a graded
+// round with nothing focused and treat the very same keypress as ALSO
+// "advance to next word", skipping the answer feedback in one keystroke.
 $('drillChoices').addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&e.target.id==='drillInput'){ e.preventDefault(); submitTypedRound(); }
+  if(e.key==='Enter'&&e.target.id==='drillInput'){ e.preventDefault(); e.stopPropagation(); submitTypedRound(); }
 });
 // Drill's List view: the note button only (the rows themselves are
 // otherwise inert here, unlike Browse's reveal-on-tap -- everything is
@@ -6340,7 +6445,7 @@ function toggleFlagFromList(id){
   renderStruggling();
   toast(cs.susp?'Set aside':'Brought back',1400);
 }
-['againList','asideList'].forEach(id=>{
+['asideList'].forEach(id=>{
   $(id).addEventListener('click',e=>{
     const noteBtn=e.target.closest('.noteBtn');
     if(noteBtn){ e.preventDefault(); e.stopPropagation(); openWordNote(noteBtn.dataset.id); return; }
@@ -6417,9 +6522,24 @@ $('fRet').addEventListener('input',e=>{S.settings.retention=e.target.value/100;$
 $('fRet').addEventListener('change',()=>save());
 $('fMax').addEventListener('change',e=>{S.settings.maxIvl=Math.max(30,e.target.value|0);save();});
 $('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyTheme();renderSet();});
-$('fStudyStats').addEventListener('change',e=>{S.settings.studyStats=e.target.value==='1';save();applyLayout();});
-$('fStudyHints').addEventListener('change',e=>{S.settings.studyHints=e.target.value==='1';save();applyLayout();});
-$('fStudyMotion').addEventListener('change',e=>{S.settings.studyMotion=e.target.value==='1';save();applyLayout();});
+// The three flags are still three flags in the schema (Ground rule 3: never
+// remove a settings field) -- only the UI collapsed. Simplified clears all
+// three at once; Full sets all three.
+$('fSimple').addEventListener('change',e=>{
+  const full=e.target.value!=='1';
+  S.settings.studyStats=full; S.settings.studyHints=full; S.settings.studyMotion=full;
+  save(); applyLayout();
+});
+// Advanced group: a plain show/hide on sibling .field elements rather than a
+// <details>, so balanceColumns() still sees each field as its own child and
+// can distribute them across the two landscape columns. Hidden fields measure
+// zero, so the balance stays right in both states.
+$('advToggle').addEventListener('click',()=>{
+  const on=!$('scSet').hasAttribute('data-adv');
+  $('scSet').toggleAttribute('data-adv',on);
+  $('advToggle').setAttribute('aria-expanded',on?'true':'false');
+  balanceColumns(document.querySelector('#scSet .setCols'));
+});
 $('fQuickRate').addEventListener('change',e=>{S.settings.quickRate=e.target.value;save();});
 // a native <details> open/close changes its .sect/.field's height without
 // going through renderHome()/renderSet() or applyLayout() at all -- nothing
@@ -6570,6 +6690,37 @@ document.addEventListener('keydown',e=>{
     // whether the glyph is on screen at all, so the key can never fire while
     // nothing is showing and the two can never disagree about when it applies.
     if(e.key==='k'||e.key==='K') toggleKeepIn();
+  }
+  else if($('scDrill').classList.contains('on') && drillView==='practice' &&
+          !(document.activeElement && document.activeElement.id==='drillInput')){
+    // The typed round's own input is excluded above -- while it's focused,
+    // every key (including f: plenty of Latin/Greek answers contain one,
+    // e.g. "fero") has to reach the field untouched. Enter-to-submit there
+    // is handled by its own delegated #drillChoices listener, not this one.
+    if(!$('drillNextRow').classList.contains('hidden')){
+      // graded, any round type, waiting on "Next word" -- Space/Enter is
+      // the fast path, same as tapping the button.
+      if(e.key===' '||e.key==='Enter'){ e.preventDefault(); nextDrillCard(); }
+    }
+    else if($('drillRevealBtn')){
+      // honor round (solo L-direction word), not yet revealed
+      if(e.key===' '||e.key==='Enter'){ e.preventDefault(); revealHonorRound(); }
+    }
+    else if($('drillHonorRight')){
+      // honor round, revealed, waiting on a self-report -- 1/I on the left
+      // for "Didn't know it" mirrors Study's own AGAIN placement; Space/
+      // Enter doubles as "Knew it", the same way Space doubles as Easy there.
+      if(e.key==='1'||e.key==='i'||e.key==='I') gradeHonorRound(false);
+      else if(e.key==='2'||e.key==='o'||e.key==='O'||e.key===' '||e.key==='Enter'){ e.preventDefault(); gradeHonorRound(true); }
+    }
+    // The contrastive round itself is left mouse/tap-only -- matching
+    // tiles is a spatial action a key mapping wouldn't make any faster.
+    // f brings the word (or, mid-contrastive-round, the whole block) on
+    // screen right now back to normal review -- same key, same underlying
+    // field as Study's own flag toggle above, just one-directional here
+    // (bringBackFromDrill only ever clears susp). Harmless once the deck
+    // is exhausted: bringBackFromDrill's own id==null guard no-ops.
+    if(e.key==='f'||e.key==='F') bringBackFromDrill();
   }
 });
 document.addEventListener('gesturestart',e=>e.preventDefault());

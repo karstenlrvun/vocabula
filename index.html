@@ -17,11 +17,13 @@
   --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
   /* vellum, the launcher's own chrome colour -- fixed here, not switchable.
-     The ten-palette machinery below (2026-08-15 preview) is NOT for this:
-     it exists only so each deck's own progress card (.deckProg) can show
-     that deck's own real palette, scoped to its own subtree. The page
-     chrome around it -- h1, cards, backup/sync form -- stays fixed vellum
-     regardless of what any deck is set to. */
+     The ten-palette machinery below exists for exactly one thing: reading
+     each deck's own --coral off a throwaway scoped probe element (see
+     paletteAccent() in the script), so that deck's nav card can wear its
+     own accent as a border. Nothing else on this page uses it -- the mini
+     study bar renders in the launcher's own fixed vellum, deliberately not
+     re-themed per deck (2026-08-16, scaled back from the original per-deck
+     -themed card after it read as cluttered). */
   --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
   --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6;
   --good:#5a6b32; --good-bg:#e6e5d4; --good-br:#c7cab0;
@@ -34,13 +36,15 @@
   }
 }
 /* ============================================================
-   PREVIEW (2026-08-15): the decks' own ten-palette system, copied verbatim
-   from latin.html/greek.html (identical in both). Deliberately not scoped
-   to `html` -- see latin.html's own comment above this same block for why:
-   any element carrying data-palette+data-theme re-declares the whole
-   palette for its own subtree. Used below only by .deckProg, one per deck,
-   each reading that deck's own real S.palette/S.theme. The launcher's own
-   :root above is untouched by this -- nothing here redefines bare :root.
+   The decks' own ten-palette system, copied verbatim from latin.html/
+   greek.html (identical in both). Deliberately not scoped to `html` -- see
+   latin.html's own comment above this same block for why: any element
+   carrying data-palette+data-theme re-declares the whole palette for its
+   own subtree. Not used to theme anything on this page directly -- see
+   paletteAccent() in the script below, which reads one colour (--coral)
+   off a throwaway scoped probe element per deck, for that deck's own nav
+   card border. The launcher's own :root above is untouched by this --
+   nothing here redefines bare :root.
    ============================================================ */
 [data-palette="vellum"][data-theme="light"]{
   --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
@@ -203,26 +207,17 @@
   --toast:#1c140d;
 }
 
-/* Home strip (last 35 study days) + stat chips -- copied verbatim from
-   latin.html/greek.html's own .strip/.dot/.hmStats rules, since .deckProg
-   below reuses the identical markup shape those rules were written for. */
-.strip{display:flex;flex-wrap:wrap;gap:5px}
-.dot{width:15px;height:15px;border-radius:4px;background:var(--panel);border:1px solid var(--line)}
-.dot.today{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--coral)}
-.hmStats{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.hmStat{padding:8px 12px;border:1px solid var(--line);border-radius:13px;background:var(--raise);
-  font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:1px;min-width:80px}
-.hmStat b{font-size:15.5px;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
-.hmStat select{margin-top:2px;font:inherit;font-size:10.5px;color:var(--faint);background:none;
-  border:none;padding:0}
-
-/* One card per deck, scoped to that deck's own real palette+theme via
-   data-palette/data-theme set in JS (renderDeckProgress). Sits right under
-   that deck's nav card, same visual language (a.card's own values). */
-.deckProg{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-  padding:15px 18px 4px;margin:-2px 0 14px}
-.deckProg .sect{margin-top:0}
-.deckProg .empty{color:var(--faint);font-size:13.5px;padding:2px 0 12px}
+/* One line, 35 cells, inside that deck's own nav card -- no separate box,
+   no numbers. A single rounded strip (grid, not flex+wrap: always exactly
+   one row regardless of card width, each cell an even 1fr share) reading
+   as one bar rather than 35 little squares. Colour intensity per cell comes
+   from heatCellBg() below, in the launcher's own fixed vellum -- this does
+   NOT re-theme per deck (see the :root comment above); only the card's own
+   border does that, via paletteAccent(). */
+.miniStrip{display:grid;grid-template-columns:repeat(35,1fr);gap:2px;height:9px;
+  margin-top:12px;border-radius:3px;overflow:hidden}
+.miniStrip .dot{background:var(--line)}
+.miniStrip .dot.today{box-shadow:inset 0 -2px 0 var(--coral)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg)}
 body{
@@ -284,16 +279,16 @@ a.card .d{color:var(--muted);font-size:13.5px}
 <h1>Vocabula</h1>
 <p class="sub">Freshers' vocabulary, spaced out</p>
 
-<a class="card" href="latin.html">
+<a class="card" href="latin.html" id="cardLatin">
   <div class="t">Latin</div>
   <div class="d">3,034 words, Parts I–VIII, both directions</div>
+  <div class="miniStrip" id="progLatin"></div>
 </a>
-<div class="deckProg" id="progLatin"></div>
-<a class="card" href="greek.html">
-  <div class="t">Λέξεις</div>
+<a class="card" href="greek.html" id="cardGreek">
+  <div class="t">Greek</div>
   <div class="d">983 words, both directions</div>
+  <div class="miniStrip" id="progGreek"></div>
 </a>
-<div class="deckProg" id="progGreek"></div>
 <div class="sect">
   <h2>Backup &amp; sync</h2>
   <div class="field">
@@ -534,23 +529,28 @@ fetch('latin.html',{cache:'no-store'}).then(r=>r.text()).then(text=>{
 }).catch(()=>{ /* offline or blocked -- the hardcoded fallback above stands */ });
 
 // ============================================================
-// PREVIEW (2026-08-15): per-deck coloured study strip, proving out
-// PLATFORM_PLAN.md §6b before any of Phase 1 is built. READ-ONLY throughout
-// -- everything below only ever calls localStorage.getItem on a deck's own
-// key, never .setItem. This page cannot alter either deck's real state.
-// The maths (dayKey/heatCellBg/streak/average) is copied verbatim from
-// latin.html (identical in greek.html), with S.settings.* turned into
-// explicit parameters since this page holds two decks' state at once, not
-// one global S. One known gap: a deck on daily palette rotation shows
-// whichever palette it last actually rendered, not today's rotated pick --
-// rollTheme() mutates and saves S, which a read-only preview must not do.
-// Superseded once Phase 1's shared engine exists (PLATFORM_PLAN.md §5.3a).
+// Per-deck mini study strip, one line, inside that deck's own nav card.
+// READ-ONLY throughout -- everything below only ever calls
+// localStorage.getItem on a deck's own key, never .setItem. This page
+// cannot alter either deck's real state. The maths (dayKey/heatCellBg) is
+// copied verbatim from latin.html (identical in greek.html), with
+// S.settings.* turned into explicit parameters since this page holds two
+// decks' state at once, not one global S.
+//
+// 2026-08-16: scaled back from the original two-line card (35-day strip +
+// four stat chips, all re-themed to that deck's own saved palette) after
+// it read as cluttered -- see PLATFORM_PLAN.md §6b, superseded note added
+// there too. Now: one line, no numbers, launcher's own fixed vellum for
+// the strip's own colours. The deck's saved palette still shows up, just
+// nowhere near as loud -- paletteAccent() below pulls one colour (--coral)
+// off a throwaway scoped probe element (reusing the palette blocks in
+// <style> as the single source of truth, rather than hand-copying any of
+// those hex values here) and that becomes the nav card's own border.
 // ============================================================
-const MIN=60000, HOUR=3600000, DAY=86400000;
+const HOUR=3600000, DAY=86400000;
 const dayKey=(ts,roll)=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-roll*HOUR)/DAY);
 const HEAT_SPACE='oklch';
 const PALETTE_KEYS=['vellum','catppuccin','rosepine','kanagawa','gruvbox','everforest','legacy','dracula','monokai','amphora'];
-const AVG_WINDOW_DAYS={week:7,month:30,year:365};
 
 function heatRec(days,dk){
   const r=days[dk];
@@ -579,105 +579,59 @@ function heatCellBg(rec,avg,mode,accent){
   const p=volumePct(rec.ratings,avg);
   return 'background:color-mix(in '+HEAT_SPACE+', var(--'+accent+') '+p+'%, var(--panel))';
 }
-function currentStreak(days,todayKey,since){
-  let streak=0;
-  for(let k=todayKey;;k--){
-    if(since!=null&&k<since) break;
-    if(days[k]&&days[k].n) streak++;
-    else { if(k!==todayKey) break; }
-    if(todayKey-k>3650) break;
-  }
-  return streak;
-}
-function longestStreak(days,todayKey,since){
-  let best=0,run=0;
-  const floor=(since!=null)?Math.max(since,todayKey-3650):todayKey-3650;
-  for(let k=floor;k<=todayKey;k++){
-    if(days[k]&&days[k].n){ run++; best=Math.max(best,run); } else run=0;
-  }
-  return best;
-}
-function daysLearnedPct(days,todayKey,since,createdKey){
-  const floor=(since!=null)?since:createdKey;
-  const span=Math.max(todayKey-floor+1,1);
-  let studied=0;
-  for(let k=floor;k<=todayKey;k++) if(days[k]&&days[k].n) studied++;
-  return Math.round(100*studied/span);
-}
-function windowedDailyAverage(days,todayKey,window){
-  if(window==='all'){
-    let sum=0,n=0;
-    for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
-    return n?Math.round(sum/n):0;
-  }
-  const span=AVG_WINDOW_DAYS[window]||AVG_WINDOW_DAYS.month;
-  let sum=0,n=0;
-  for(let k=todayKey;k>todayKey-span;k--){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
-  return n?Math.round(sum/n):0;
+
+// One colour, read off the shared palette blocks in <style> via a
+// throwaway scoped element rather than a hand-copied hex table -- keeps
+// the CSS the only place these values are ever written down. display:none
+// would risk an unresolved computed style in some engines since it drops
+// the box entirely; visibility:hidden keeps the box (zero-sized, off-flow)
+// so the custom property still resolves.
+function paletteAccent(palette,theme){
+  const probe=document.createElement('div');
+  probe.style.cssText='position:absolute;visibility:hidden;width:0;height:0;overflow:hidden';
+  probe.dataset.palette=palette; probe.dataset.theme=theme;
+  document.body.appendChild(probe);
+  const c=getComputedStyle(probe).getPropertyValue('--coral').trim();
+  probe.remove();
+  return c;
 }
 
-// Renders one deck's strip+stats into #<id> from its own real localStorage
-// state -- storageKey matches that deck's own `const KEY` exactly
-// (latin.html:1843 'vocabula.latin.v2', greek.html:1842 'vocabula.greek.v1').
-// Never throws on a device that's never opened this deck: falls back to a
-// quiet empty state instead.
-function renderDeckProgress(id,storageKey){
-  const el=$(id);
+// Renders one deck's 35-day strip into #<stripId>, inside that deck's own
+// nav card (#<cardId>), from its own real localStorage state -- storageKey
+// matches that deck's own `const KEY` exactly (latin.html:1843
+// 'vocabula.latin.v2', greek.html:1842 'vocabula.greek.v1'). Never throws
+// on a device that's never opened this deck: the strip just renders empty
+// (all cells the plain unlit --line) and the card's border stays default.
+function renderDeckProgress(cardId,stripId,storageKey){
+  const card=$(cardId), strip=$(stripId);
   let data=null;
   try{ data=JSON.parse(localStorage.getItem(storageKey)); }catch(e){}
-  if(!data||!data.days){
-    el.innerHTML='<div class="sect"><h2>Study days</h2>'+
-      '<div class="empty">No study data on this device yet.</div></div>';
-    return;
-  }
-  let theme=data.theme||'light';
-  if(theme==='auto') theme=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
-  const palette=PALETTE_KEYS.includes(data.palette)?data.palette:'vellum';
-  el.dataset.palette=palette; el.dataset.theme=theme;
-
-  const settings=data.settings||{};
+  const settings=(data&&data.settings)||{};
   const rollover=(settings.rollover!=null)?settings.rollover:4;
   const d=dayKey(Date.now(),rollover);
-  const days=data.days||{};
+  const days=(data&&data.days)||{};
   const avgR=heatmapAvgRatings(days);
   const mode=settings.heatmapColourMode||'volume';
   const accent=settings.heatmapAccent||'coral';
 
-  let stripHtml='';
+  let html='';
   for(let i=34;i>=0;i--){
     const k=d-i;
     const bg=heatCellBg(heatRec(days,k),avgR,mode,accent);
-    stripHtml+='<div class="dot'+(i===0?' today':'')+'"'+(bg?' style="'+bg+'"':'')+'></div>';
+    html+='<div class="dot'+(i===0?' today':'')+'"'+(bg?' style="'+bg+'"':'')+'></div>';
   }
+  strip.innerHTML=html;
 
-  const since=(settings.streakStart!=null)?settings.streakStart:null;
-  const createdKey=data.created?dayKey(data.created,rollover):d;
-  const cur=currentStreak(days,d,since);
-  const longest=longestStreak(days,d,since);
-  const pct=daysLearnedPct(days,d,since,createdKey);
-  const win=settings.heatmapAvgWindow||'month';
-  const avg=windowedDailyAverage(days,d,win);
-  const winOpt=w=>'<option value="'+w+'"'+(win===w?' selected':'')+'>'+(w==='all'?'all-time':'per '+w)+'</option>';
-
-  el.innerHTML=
-    '<div class="sect"><h2>Study days</h2>'+
-    '<div class="strip">'+stripHtml+'</div>'+
-    '<div class="hmStats">'+
-      '<div class="hmStat">Current streak<b>'+cur+' day'+(cur===1?'':'s')+'</b></div>'+
-      '<div class="hmStat">Longest streak<b>'+longest+' day'+(longest===1?'':'s')+'</b></div>'+
-      '<div class="hmStat">Days learned<b>'+pct+'%</b></div>'+
-      '<div class="hmStat">Daily average<b id="'+id+'_avg">'+avg+'</b><select id="'+id+'_sel">'+
-        ['week','month','year','all'].map(winOpt).join('')+'</select></div>'+
-    '</div></div>';
-
-  // The window picker only recomputes the one figure it owns, locally -- it
-  // never writes back to the deck's own S.settings.heatmapAvgWindow.
-  $(id+'_sel').addEventListener('change',e=>{
-    $(id+'_avg').textContent=windowedDailyAverage(days,d,e.target.value);
-  });
+  if(data){
+    let theme=data.theme||'light';
+    if(theme==='auto') theme=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+    const palette=PALETTE_KEYS.includes(data.palette)?data.palette:'vellum';
+    const accentColor=paletteAccent(palette,theme);
+    if(accentColor) card.style.borderColor=accentColor;
+  }
 }
-renderDeckProgress('progLatin','vocabula.latin.v2');
-renderDeckProgress('progGreek','vocabula.greek.v1');
+renderDeckProgress('cardLatin','progLatin','vocabula.latin.v2');
+renderDeckProgress('cardGreek','progGreek','vocabula.greek.v1');
 </script>
 </body>
 </html>
