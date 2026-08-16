@@ -11,7 +11,7 @@
    palette for its own subtree (see the note below on why these are not
    scoped to `html`) -- the launcher's paletteAccent() probe and the decks'
    theme previews both rely on that. */
-/* Thirteen palettes, each with a light and a dark variant. The mode is chosen
+/* Twelve palettes, each with a light and a dark variant. The mode is chosen
    separately from the palette, so any palette can be read either way.
    Vellum is the default; Legacy reproduces the original colours exactly.
 
@@ -20,7 +20,7 @@
    carried those two attributes was the root element. Dropping the `html`
    means any element can carry them and re-declare the whole palette for its
    own subtree -- which is the entire mechanism behind the theme previews in
-   Settings: thirteen themes, each shown in both light and dark at once, on
+   Settings: twelve themes, each shown in both light and dark at once, on
    one screen, with no duplicated colour values anywhere. A preview is a real
    `<div data-palette="steel" data-theme="dark">` reading these exact
    tokens, so it cannot drift from the real thing the way a hand-built swatch
@@ -32,8 +32,31 @@
    eyeballed), and Gruvbox/Everforest's "good" accents were near-identical
    (#7a7405 vs #798906). Gruvbox stays as the family's one representative:
    most recognised name of the three, most saturated, and the only fully
-   achromatic dark mode in the whole roster. Five new palettes replace them
-   and fill the room freed for a target of sixteen -- see the block below. */
+   achromatic dark mode in the whole roster. Five new palettes replaced them
+   that same day -- Rubric, Steel, Glass, Neon, 8-Bit.
+
+   2026-08-16, later the same day: a second pass on that five-palette batch,
+   this time on fit rather than hue-collision. Monokai was cut -- it sits
+   one file above, vivid-on-near-black just like Dracula, and next to it the
+   two read as the same idea twice rather than two themes. 8-Bit was cut
+   outright: its light mode was already an open, unresolved legibility
+   finding (FINALISATION_PLAN.md 2a) -- the authentic Game Boy ground is
+   bright enough that `--amber` measured 1.18:1 against it, text the same
+   brightness as its own background -- and fixing that meant trading away
+   the exact hardware-accurate hex values that were 8-Bit's only reason to
+   exist, so retiring it resolves the finding instead of patching around it.
+   Rubric's laid-paper texture read as an odd fit for what the palette
+   actually wanted to be, so it was redesigned in place, gold leaf on white
+   (and, in dark mode, black) marble instead of parchment, and renamed
+   Marble to match. Neon's dark mode was retuned lighter -- a true near-black
+   canvas (`--bg` at 4% lightness) read as oppressive rather than moody, so
+   it now sits closer to a deep indigo, with the glow reach trimmed slightly
+   to match a canvas that no longer needs quite as much room to bloom into.
+   Wood is new: honey oak and brushed brass in light mode, dark walnut and
+   the same brass in dark, the material register (grain, warmth) neither
+   Marble's stone nor Steel's metal covers. Thirteen minus two (Monokai,
+   8-Bit) plus one (Wood), with Rubric and Neon reworked in place rather
+   than replaced, lands the roster at exactly twelve. */
 [data-palette="vellum"][data-theme="light"]{
   --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
   --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6; --again:#a3342a;
@@ -114,14 +137,17 @@
   --warn-br:#66523b; --warn-ink:#e1b362; --bad-bg:#432a3f; --bad-br:#73414d; --bad-ink:#fc9087;
   --toast:#181d47;
 }
-/* Three bold, high-contrast additions (2026-08-15, his request: "contrast
-   well / are different from the existing seven... be bold"). Dracula and
-   Monokai are real, well-known vivid-on-near-black developer themes -- a
-   deliberately different register from the seven calm/muted palettes above.
-   Amphora is original to this app (like Vellum/Legacy), not a borrowed
-   theme: black-figure/red-figure Attic pottery's stark black + terracotta,
-   a bold high-contrast look with no vivid-neon precedent among the other
-   nine, and thematically apt for a classical-language app either deck. */
+/* Two bold, high-contrast additions (2026-08-15, his request: "contrast
+   well / are different from the existing seven... be bold"). Dracula is a
+   real, well-known vivid-on-near-black developer theme -- a deliberately
+   different register from the seven calm/muted palettes above. (Monokai
+   shipped alongside it that same day, then was cut 2026-08-16 -- one file
+   up, vivid-on-near-black just like Dracula, and next to it the two read
+   as the same idea twice.) Amphora is original to this app (like
+   Vellum/Legacy), not a borrowed theme: black-figure/red-figure Attic
+   pottery's stark black + terracotta, a bold high-contrast look with no
+   vivid-neon precedent among the others, and thematically apt for a
+   classical-language app either deck. */
 [data-palette="dracula"][data-theme="light"]{
   --bg:#f8f8f2; --panel:#eeeef7; --ink:#282a36; --muted:#4d4f66; --faint:#6272a4;
   --line:#dcdce8; --coral:#d6266f; --accent-soft:#f9dceb; --raise:#ffffff; --again:#d1274a;
@@ -137,22 +163,6 @@
   --easy:#bd93f9; --easy-bg:#33294f; --easy-br:#4a3d72; --amber:#ffb86c; --warn-bg:#453421;
   --warn-br:#6b5030; --warn-ink:#f0c78a; --bad-bg:#4a2530; --bad-br:#6b3542; --bad-ink:#ff6e6e;
   --toast:#343746;
-}
-[data-palette="monokai"][data-theme="light"]{
-  --bg:#fafaf0; --panel:#f0f0e2; --ink:#272822; --muted:#5a5b4e; --faint:#83816d;
-  --line:#e0e0cf; --coral:#c4720a; --accent-soft:#f7e6cc; --raise:#ffffff; --again:#d31160;
-  --again-bg:#f9dbe6; --again-br:#edb3c9; --good:#5f8a0f; --good-bg:#e3edc9; --good-br:#c5d99a;
-  --easy:#7c4fd6; --easy-bg:#ece0fb; --easy-br:#d3c0f2; --amber:#8a7a0e; --warn-bg:#f0ecc9;
-  --warn-br:#ddd196; --warn-ink:#6b5e0c; --bad-bg:#f9dbe6; --bad-br:#edb3c9; --bad-ink:#b30d4d;
-  --toast:#272822;
-}
-[data-palette="monokai"][data-theme="dark"]{
-  --bg:#272822; --panel:#33342c; --ink:#f8f8f2; --muted:#c8c6bd; --faint:#75715e;
-  --line:#49483e; --coral:#fd971f; --accent-soft:#4a3820; --raise:#3a3b32; --again:#f92672;
-  --again-bg:#4a2438; --again-br:#6e3552; --good:#a6e22e; --good-bg:#38401f; --good-br:#535c2c;
-  --easy:#ae81ff; --easy-bg:#362c52; --easy-br:#514176; --amber:#e6db74; --warn-bg:#463f24;
-  --warn-br:#6b6035; --warn-ink:#e8dd8a; --bad-bg:#4a2438; --bad-br:#6e3552; --bad-ink:#ff5f96;
-  --toast:#33342c;
 }
 [data-palette="amphora"][data-theme="light"]{
   --bg:#f0dcc3; --panel:#e6cca8; --ink:#241a10; --muted:#5c4530; --faint:#8a6f4f;
@@ -171,10 +181,19 @@
   --toast:#1c140d;
 }
 /* Five new palettes (2026-08-16), replacing Kanagawa/Everforest -- see the
-   comment above PALETTES. Each is grounded in real research (written up in
-   full for him as an artifact), not guessed:
-     Rubric -- illuminated-manuscript rubrication (red ink chapter headings,
-       Latin rubrica) and gold leaf, on a warmer parchment than Vellum's.
+   comment above PALETTES. Each was grounded in real research (written up in
+   full for him as an artifact), not guessed. Two of the five were reworked
+   or replaced later the same day -- see the roster-history comment above
+   PALETTES for why -- so this is the roster as it stands now, not as it
+   first shipped:
+     Marble -- was Rubric (illuminated-manuscript rubrication, red ink and
+       gold leaf on parchment); redesigned in place the same day it shipped,
+       laid-paper fibres traded for real quarried stone -- gold leaf veining
+       on white Carrara marble in light mode, the same gold on black Portoro
+       marble in dark. A Roman register instead of a mediaeval one: apt for
+       a classical-language app the way Amphora's Attic pottery already is,
+       and distinct from Amphora's terracotta and Vellum's parchment --
+       neither is stone.
      Steel  -- chess.com's "Metal" board: brushed gunmetal with an
        oxide-copper accent, deliberately low-contrast (his call).
      Glass  -- chess.com's "Glass" board: cool slate with a bevel-highlight
@@ -182,21 +201,34 @@
      Neon   -- chess.com's actual "Neon" set is a muted pastel, not a glow;
        this one intentionally follows the popular glow-on-black convention
        instead, which is what "neon" means to everyone who isn't looking at
-       that specific board skin.
-     8-Bit  -- the real, hardware-documented original Game Boy DMG screen
-       (#9bbc0f/#8bac0f/#306230/#0f380f) for light mode; a dark arcade
-       cabinet for dark mode. */
+       that specific board skin. Dark mode's canvas was retuned lighter the
+       same day it shipped -- see the roster-history comment above -- but
+       the glow-on-near-dark idea itself is unchanged.
+     8-Bit  -- retired 2026-08-16, the same day it shipped; see the
+       roster-history comment above PALETTES for why.
+   Wood -- new the same day Rubric/Neon were reworked and 8-Bit retired
+   (2026-08-16): honey oak and brushed brass in light mode, dark walnut and
+   the same brass in dark. Covers a material register (grain, warmth) none
+   of the other eleven do -- Marble and Steel are both hard and cool,
+   Amphora's terracotta is fired clay, not timber. */
 /* --texture: an optional background-image layered under --bg (consumed by
    body and .palHalf via var(--texture,none), so any palette that never sets
    it just gets `none` -- no per-palette opt-out needed). Added 2026-08-16,
    same session as the five palettes above, first only on the three whose own
    brief is literally about a textured material: Rubric's laid-paper fibers
    (a fine 3px grain crossed by sparse 34px "chain lines," the real two-scale
-   structure of laid paper, not just noise), Steel's brushed-metal streaks
-   (its own description above says "brushed"), and 8-Bit's LCD pixel grid
-   (the real Game Boy screen has visible pixel boundaries at this scale).
-   Every value stays under 6% alpha -- meant to be felt more than seen,
-   behind small dense study-card text.
+   structure of laid paper, not just noise) and Steel's brushed-metal streaks
+   (its own description above says "brushed"). 8-Bit's LCD pixel grid
+   (the real Game Boy screen has visible pixel boundaries at this scale) was
+   the third, retired along with the palette itself. Marble replaces Rubric's
+   laid-paper grain with soft, non-repeating diagonal veins (three overlapping
+   bands at different angles, mimicking how real stone veining never
+   repeats) instead of a regular fibre grid -- a repeating pattern reads as
+   fabric or paper, not stone. Wood's grain is two overlapping repeating
+   horizontal bands at different periods (5px and 11px), the same
+   two-scale-structure idea Rubric's fibres used, oriented along the grain
+   instead of across it. Every value stays under 6% alpha -- meant to be
+   felt more than seen, behind small dense study-card text.
 
    Glass and Neon got their own, differently-shaped treatment the same day,
    once asked for directly, because a repeating grain isn't what either of
@@ -234,25 +266,27 @@
    their own text is white-on-fill, not the accent -- those get an explicit
    `color-mix(in srgb, var(--x) N%, transparent)` box-shadow instead, same
    `color-mix()` this file's heatmap accent already uses elsewhere. */
-[data-palette="rubric"][data-theme="light"]{
-  --bg:#f6ecd4; --panel:#efe0bc; --ink:#241610; --muted:#6b4a30; --faint:#9c7a54;
-  --line:#ddc38f; --coral:#a3161f; --accent-soft:#f3ddb0; --raise:#fdf6e2; --again:#8f1018;
-  --again-bg:#f0dcc0; --again-br:#dcb583; --good:#3c6b2e; --good-bg:#e3e6c4; --good-br:#c7cd94;
-  --easy:#5b3a8e; --easy-bg:#e6ddf0; --easy-br:#cbb8e2; --amber:#a67c0e; --warn-bg:#f0e0ad;
-  --warn-br:#dcbf6c; --warn-ink:#7a5a08; --bad-bg:#f0dcc0; --bad-br:#dcb583; --bad-ink:#6b0d12;
-  --toast:#241610;
-  --texture:repeating-linear-gradient(90deg,rgba(36,22,16,.05) 0,rgba(36,22,16,.05) .5px,transparent .5px,transparent 3px),
-    repeating-linear-gradient(0deg,rgba(36,22,16,.07) 0,rgba(36,22,16,.07) 1px,transparent 1px,transparent 34px);
+[data-palette="marble"][data-theme="light"]{
+  --bg:#f4f0e6; --panel:#ece4d2; --ink:#2b241c; --muted:#6b6152; --faint:#8c7d64;
+  --line:#ddd2b8; --coral:#a97a1f; --accent-soft:#f0e3bf; --raise:#fbf8f0; --again:#9c2c1e;
+  --again-bg:#f0dcd2; --again-br:#ddb6a4; --good:#3f6b46; --good-bg:#dde6dc; --good-br:#b9cdb9;
+  --easy:#6b3f8a; --easy-bg:#e6ddf0; --easy-br:#cbb4e0; --amber:#96690f; --warn-bg:#eee0bc;
+  --warn-br:#dcc281; --warn-ink:#7a5810; --bad-bg:#f0dcd2; --bad-br:#ddb6a4; --bad-ink:#6b1d14;
+  --toast:#2b241c;
+  --texture:linear-gradient(103deg,transparent 41%,rgba(169,122,31,.10) 42%,rgba(169,122,31,.04) 43%,transparent 45%),
+    linear-gradient(66deg,transparent 58%,rgba(43,36,28,.05) 59%,transparent 61%),
+    linear-gradient(18deg,transparent 27%,rgba(169,122,31,.07) 28%,transparent 30%);
 }
-[data-palette="rubric"][data-theme="dark"]{
-  --bg:#1c0f0c; --panel:#2a1712; --ink:#f0dfc0; --muted:#c4a06e; --faint:#8a6a48;
-  --line:#4a2e20; --coral:#e0483f; --accent-soft:#3f2313; --raise:#331c14; --again:#e2564a;
-  --again-bg:#3f221c; --again-br:#63362a; --good:#8fae5c; --good-bg:#2c3320; --good-br:#455035;
-  --easy:#b399e0; --easy-bg:#332a4a; --easy-br:#4f4270; --amber:#e0b23e; --warn-bg:#40300f;
-  --warn-br:#634a1a; --warn-ink:#e8bd5c; --bad-bg:#3f221c; --bad-br:#63362a; --bad-ink:#ef8b7f;
-  --toast:#2a1712;
-  --texture:repeating-linear-gradient(90deg,rgba(240,223,192,.05) 0,rgba(240,223,192,.05) .5px,transparent .5px,transparent 3px),
-    repeating-linear-gradient(0deg,rgba(240,223,192,.06) 0,rgba(240,223,192,.06) 1px,transparent 1px,transparent 34px);
+[data-palette="marble"][data-theme="dark"]{
+  --bg:#151109; --panel:#211a10; --ink:#ede3c8; --muted:#b8a67a; --faint:#7d6f4c;
+  --line:#392c1a; --coral:#d9a53f; --accent-soft:#3a2c15; --raise:#251d12; --again:#d9614a;
+  --again-bg:#3f241a; --again-br:#613326; --good:#7fae7a; --good-bg:#243322; --good-br:#3f5540;
+  --easy:#b090d9; --easy-bg:#2e2640; --easy-br:#493a63; --amber:#e0b355; --warn-bg:#3a2c10;
+  --warn-br:#5c451a; --warn-ink:#e8bd66; --bad-bg:#3f241a; --bad-br:#613326; --bad-ink:#e6836f;
+  --toast:#211a10;
+  --texture:linear-gradient(103deg,transparent 41%,rgba(217,165,63,.09) 42%,rgba(217,165,63,.03) 43%,transparent 45%),
+    linear-gradient(66deg,transparent 58%,rgba(237,227,200,.04) 59%,transparent 61%),
+    linear-gradient(18deg,transparent 27%,rgba(217,165,63,.06) 28%,transparent 30%);
 }
 [data-palette="steel"][data-theme="light"]{
   --bg:#eef0f1; --panel:#e2e5e7; --ink:#23282b; --muted:#5c6569; --faint:#8b9296;
@@ -337,16 +371,22 @@
   --glow-alpha-strong:55%; --glow-alpha-soft:32%;
 }
 [data-palette="neon"][data-theme="dark"]{
-  --bg:#0a0a12; --panel:#131320; --ink:#eef0ff; --muted:#9a9bc4; --faint:#5c5d82;
-  --line:#262640; --coral:#ff3ea5; --accent-soft:#2a1830; --raise:#181828; --again:#ff3b5c;
-  --again-bg:#2c121c; --again-br:#5c1f34; --good:#39ffb0; --good-bg:#0e2b22; --good-br:#1c4e3c;
-  --easy:#7c5cff; --easy-bg:#201238; --easy-br:#3a2266; --amber:#ffcc33; --warn-bg:#332508;
-  --warn-br:#5c440f; --warn-ink:#ffd766; --bad-bg:#2c121c; --bad-br:#5c1f34; --bad-ink:#ff6f8f;
-  --toast:#131320;
-  /* the real neon-sign look: glow against near-black has room to bloom, so
-     this gets a third, wider layer light mode deliberately skips. */
-  --glow-text:0 0 5px currentColor,0 0 14px currentColor,0 0 28px currentColor;
-  --glow-alpha-strong:70%; --glow-alpha-soft:48%;
+  /* Retuned 2026-08-16 (his call: "neon is too dark") -- `--bg` was #0a0a12,
+     4% lightness, close enough to true black that the whole theme read as
+     oppressive rather than moody. Every neutral below moved up together
+     (bg/panel/line/raise/accent-soft) so the relative steps between them are
+     unchanged; the accent hues themselves (coral/again/good/easy/amber)
+     are untouched -- they were never the complaint. Glow trimmed to match:
+     a canvas this much lighter has less room to bloom into, so the widest
+     layer is a little tighter and both alphas came down a few points. */
+  --bg:#181430; --panel:#221c3d; --ink:#f0eeff; --muted:#aca9d4; --faint:#6f6b96;
+  --line:#372e5c; --coral:#ff4aa8; --accent-soft:#33203f; --raise:#251e42; --again:#ff4568;
+  --again-bg:#3a1c2c; --again-br:#602942; --good:#33f5a8; --good-bg:#123329; --good-br:#1f5240;
+  --easy:#8f6bff; --easy-bg:#2a2050; --easy-br:#453268; --amber:#ffce3d; --warn-bg:#3a2c10;
+  --warn-br:#5c451a; --warn-ink:#ffd766; --bad-bg:#3a1c2c; --bad-br:#602942; --bad-ink:#ff7590;
+  --toast:#221c3d;
+  --glow-text:0 0 4px currentColor,0 0 11px currentColor,0 0 20px currentColor;
+  --glow-alpha-strong:65%; --glow-alpha-soft:42%;
 }
 /* Neon glow, text tier: every element below already sets `color` to one of
    the accent vars via its own existing rule -- this just adds
@@ -391,23 +431,32 @@
   0 0 16px color-mix(in srgb, var(--easy) var(--glow-alpha-soft), transparent)}
 [data-palette="neon"] .drillTile.right{box-shadow:0 0 14px color-mix(in srgb, var(--good) var(--glow-alpha-soft), transparent)}
 [data-palette="neon"] .drillTile.wrong{box-shadow:0 0 14px color-mix(in srgb, var(--again) var(--glow-alpha-soft), transparent)}
-[data-palette="8bit"][data-theme="light"]{
-  --bg:#9bbc0f; --panel:#8bac0f; --ink:#0f380f; --muted:#306230; --faint:#4f7a3a;
-  --line:#729c2a; --coral:#c23a2b; --accent-soft:#7a9f22; --raise:#a8c93a; --again:#b8321f;
-  --again-bg:#a8c93a; --again-br:#5f7d1c; --good:#0b6e35; --good-bg:#87a531; --good-br:#4f6a18;
-  --easy:#3a2f96; --easy-bg:#a8c93a; --easy-br:#5f7d1c; --amber:#c99a10; --warn-bg:#87a531;
-  --warn-br:#5f7d1c; --warn-ink:#7a5c00; --bad-bg:#a8c93a; --bad-br:#5f7d1c; --bad-ink:#8f2415;
-  --toast:#0f380f;
-  --texture:repeating-linear-gradient(0deg,rgba(15,56,15,.09) 0,rgba(15,56,15,.09) 1px,transparent 1px,transparent 4px),
-    repeating-linear-gradient(90deg,rgba(15,56,15,.09) 0,rgba(15,56,15,.09) 1px,transparent 1px,transparent 4px);
+/* Wood -- new 2026-08-16, the honey-oak-and-brass counterpart to Marble's
+   stone and Steel's gunmetal: the one material register (grain, warmth)
+   nothing else in the roster covers. Light mode is a light oak plank with
+   a burnished-brass accent; dark mode is the same plank stained walnut,
+   same brass. `--again`/`--good`/`--easy` lean on materials a real wooden
+   object plausibly carries rather than borrowed developer-theme hues --
+   mahogany-red inlay, mossy-verdigris inlay, plum/amethyst inlay -- so the
+   rating trio reads as "this piece of furniture" rather than generic
+   red/green/purple. */
+[data-palette="wood"][data-theme="light"]{
+  --bg:#e8d1a0; --panel:#dcc088; --ink:#2e2013; --muted:#6b4f2e; --faint:#886d43;
+  --line:#c7a76e; --coral:#8f4e18; --accent-soft:#ecd9ad; --raise:#f2e3bd; --again:#8a3220;
+  --again-bg:#e8c8ab; --again-br:#d1a17c; --good:#4c6b2e; --good-bg:#dde0b8; --good-br:#c0c68f;
+  --easy:#5a3f8a; --easy-bg:#ded6ef; --easy-br:#c2b3e0; --amber:#7c5510; --warn-bg:#ecd8a0;
+  --warn-br:#d6bb70; --warn-ink:#6e4c0c; --bad-bg:#e8c8ab; --bad-br:#d1a17c; --bad-ink:#6b2517;
+  --toast:#2e2013;
+  --texture:repeating-linear-gradient(0deg,rgba(46,32,19,.055) 0,rgba(46,32,19,.055) 1px,transparent 1px,transparent 5px),
+    repeating-linear-gradient(0deg,rgba(46,32,19,.03) 2px,rgba(46,32,19,.03) 3px,transparent 3px,transparent 11px);
 }
-[data-palette="8bit"][data-theme="dark"]{
-  --bg:#0c0e10; --panel:#17191c; --ink:#e7ecd8; --muted:#9aa08c; --faint:#585c4e;
-  --line:#2a2d24; --coral:#ff4b3e; --accent-soft:#241a14; --raise:#1e211a; --again:#ff5b4a;
-  --again-bg:#2c1712; --again-br:#4a251c; --good:#3ddc6f; --good-bg:#132318; --good-br:#20402c;
-  --easy:#7a6bff; --easy-bg:#1c1830; --easy-br:#332a54; --amber:#ffcb2e; --warn-bg:#332608;
-  --warn-br:#544011; --warn-ink:#ffd25c; --bad-bg:#2c1712; --bad-br:#4a251c; --bad-ink:#ff8a7a;
-  --toast:#17191c;
-  --texture:repeating-linear-gradient(0deg,rgba(231,236,216,.05) 0,rgba(231,236,216,.05) 1px,transparent 1px,transparent 4px),
-    repeating-linear-gradient(90deg,rgba(231,236,216,.05) 0,rgba(231,236,216,.05) 1px,transparent 1px,transparent 4px);
+[data-palette="wood"][data-theme="dark"]{
+  --bg:#1c130a; --panel:#291c10; --ink:#e8d2a0; --muted:#b89361; --faint:#7d6440;
+  --line:#3f2c18; --coral:#c4813a; --accent-soft:#3a2712; --raise:#241a0e; --again:#d4693f;
+  --again-bg:#3f2419; --again-br:#623527; --good:#8fae5c; --good-bg:#2f3a1f; --good-br:#4a5c30;
+  --easy:#a98ce0; --easy-bg:#332a52; --easy-br:#4c3f78; --amber:#d9a43e; --warn-bg:#3a2c10;
+  --warn-br:#5c451a; --warn-ink:#e0b355; --bad-bg:#3f2419; --bad-br:#623527; --bad-ink:#e07f5c;
+  --toast:#291c10;
+  --texture:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0,rgba(0,0,0,.10) 1px,transparent 1px,transparent 5px),
+    repeating-linear-gradient(0deg,rgba(232,210,160,.035) 2px,rgba(232,210,160,.035) 3px,transparent 3px,transparent 11px);
 }

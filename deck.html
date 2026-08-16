@@ -16,20 +16,38 @@
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
-  else runs -- content is fetched from decks/<id>.js (DATA/CHANGES/DECK/
-  KEY/DECK_TITLE), synchronously, via a classic document.write
-  script-src include, so every reference to those identifiers further down
-  in the shared engine script sees them as already-defined globals, exactly
-  as when they were inline consts. No silent default deck: an invalid or
-  missing ?deck= is a hard stop, not a guess, since guessing wrong here
-  means silently loading the wrong deck's data under an ambiguous URL.
+  else runs. No silent default deck: an invalid or missing ?deck= is a hard
+  stop, not a guess, since guessing wrong here means silently loading the
+  wrong deck's data under an ambiguous URL.
+
+  Phase 2 (PHASE2_PLAN.md §2.1): the allowlist below reads decks/registry.js
+  rather than a hardcoded array, so a deck added to the registry doesn't
+  also need an edit here.
+
+  Phase 2 (PHASE2_PLAN.md §2.5): content (DATA/CHANGES/DECK/KEY/DECK_TITLE)
+  no longer arrives here in <head> via a synchronous document.write of a
+  script tag. That pattern required content to be a same-origin file, which
+  no deck created on the device (Phase 4: content in IndexedDB) could ever
+  satisfy. The boot script below now only validates ?deck= and publishes the
+  matched registry entry (window.DECK_ENTRY); the engine's own boot chain at
+  the bottom of this file resolves content asynchronously per the entry's
+  `source` and hands it to bootContent(). The hard stop for a bad ?deck=
+  stays HERE, synchronous, so it still halts the parser before the app
+  skeleton can flash -- it never depended on content at all.
 -->
+<script src="decks/registry.js"></script>
+<script src="shared.js"></script>
 <script data-boot>
 (function(){
-  var DECKS = ['latin','greek'];          // the only content files that exist -- see decks/
+  // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
+  // parser-blocking script include -- its filename never depends on the URL,
+  // so plain script order is enough. An archived deck (D3) is still a valid
+  // direct boot target here -- archived only hides it from the launcher's
+  // own list, it does not revoke a pinned icon or a typed URL.
   var v = new URLSearchParams(location.search).get('deck');
-  var id = DECKS.indexOf(v)!==-1 ? v : null;
-  if (!id) {
+  var entry = null;
+  for (var i=0; i<REGISTRY.length; i++) { if (REGISTRY[i].id===v) { entry=REGISTRY[i]; break; } }
+  if (!entry) {
     // Hard stop, styled in the launcher's own vellum (the real palette CSS
     // sits further down and never gets a chance to apply -- see window.stop()
     // below). Everything else in the document is hidden, and the parser is
@@ -50,8 +68,13 @@
     try { window.stop(); } catch (e) {}
     return;
   }
-  window.DECK_ID = id;
-  document.write('<scr' + 'ipt src="decks/' + id + '.js"><\/scr' + 'ipt>');
+  // Published for the async boot chain at the bottom of the engine script
+  // (bootDeck): DECK_ENTRY carries the whole registry row (id, key, source),
+  // DECK_ID stays the per-deck short name a few places still read on their
+  // own (doExport's filename). Content itself is no longer loaded here --
+  // see resolveContent() at the bottom of this file.
+  window.DECK_ID = entry.id;
+  window.DECK_ENTRY = entry;
 })();
 </script>
 <style>
@@ -387,10 +410,16 @@ html:not([data-layout="landscape"]) .quickFlash{
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
 .statRow b{font-weight:500;font-variant-numeric:tabular-nums}
-.flagRow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.flagRow{padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .flagRow:last-child{border-bottom:none}
+/* .flagTop carries the row's controls (term/count/note/flag); .gloss, when
+   present, sits below full-width -- same split as .drillListRow/.drillListTop
+   just above, so a bare wordLine (stats' Fastest/Slowest, no .gloss ever
+   emitted there) still lays out identically to before this split existed. */
+.flagRow .flagTop{display:flex;align-items:center;gap:10px}
 .flagRow .term{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .flagRow .cnt{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.flagRow .gloss{display:block;margin-top:3px;color:var(--muted);font-size:13.5px;line-height:1.4}
 .searchInput{width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 12px;
   font-size:16px;background:var(--panel);color:var(--ink);font-family:inherit;margin:12px 0}
 /* Search box + the Greek-keyboard toggle beside it (Greek deck only -- see
@@ -496,7 +525,8 @@ html:not([data-layout="landscape"]) .quickFlash{
 #scSet:not([data-adv]) .advOnly{display:none}
 .swatch{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;
   margin-right:7px;border:1px solid var(--line)}
-/* ---- theme previews (2026.08.15.6, shrunk 2026-08-16) ------------------
+/* ---- theme previews (2026.08.15.6, shrunk 2026-08-16, ratings dots and the
+   big card preview below both added later the same day) -----------------
    Every theme, both modes, on one screen -- replacing a plain <select> that
    named eleven themes and showed none of them, and could only ever be
    evaluated by picking one, leaving Settings, disliking it, and going back.
@@ -506,18 +536,27 @@ html:not([data-layout="landscape"]) .quickFlash{
    itself does (see the palette block's own note) -- no swatch list to keep in
    step, and a palette edit shows up here for free.
 
-   2026-08-16: dropped the three-chip again/good/easy rate strip from each
-   half -- his call, and correct: those three colours are lit by the SAME
-   accent logic in both halves of one card, so the strip mostly just repeated
-   itself twice at thumbnail size, and the row count for what is about to
-   become thirteen (heading toward sixteen) palettes was the real cost.
-   Kept -- shrunk, not removed -- the serif word sample (panel + --ink),
-   because "does the actual body text stay legible" is a different question
-   from "are these six colours pleasant," and a flat colour swatch can't
-   answer it; and one --coral accent bar, since it's the app's one CTA colour
-   and the single most identity-carrying thing a theme has. Went 2/3 columns
-   -> 3/4, since shorter cards had headroom for it: 4 columns is an exact
-   4 rows at the sixteen-palette target this is scaling toward. */
+   2026-08-16 morning: dropped the three-chip again/good/easy rate strip from
+   each half -- those three colours are lit by the SAME accent logic in both
+   halves of one card, so the strip mostly just repeated itself twice at
+   thumbnail size, and the row count for what was about to become thirteen
+   palettes was the real cost. Kept -- shrunk, not removed -- the serif word
+   sample (panel + --ink), because "does the actual body text stay legible"
+   is a different question from "are these six colours pleasant," and a flat
+   colour swatch can't answer it; and one --coral accent bar, since it's the
+   app's one CTA colour and the single most identity-carrying thing a theme
+   has. Went 2/3 columns -> 3/4, since shorter cards had headroom for it.
+
+   2026-08-16 evening: his ask this time was narrower than the morning's --
+   "see the set of colours used for again/easy/hard" -- so `.palRatings`
+   comes back, but not as the same strip that was cut that morning. That one
+   was a full duplicate ROW per half (two rows of three chips, one per mode);
+   this is three plain dots, ONCE per card, not per half -- the actual
+   complaint that got it cut ("repeats itself... same three colours light
+   both halves") only applies to showing it twice, and dots at 7px cost a
+   fraction of a chip row's height. Sits in its own row below `.palPrev`
+   rather than inside either half, since it isn't a light-mode or dark-mode
+   fact -- it's the palette's, full stop. */
 .palGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:2px}
 @media(min-width:700px){.palGrid{grid-template-columns:repeat(4,1fr)}}
 .palCard{padding:0;border:1.5px solid var(--line);border-radius:10px;background:none;
@@ -532,9 +571,41 @@ html:not([data-layout="landscape"]) .quickFlash{
   color:var(--ink);font-family:var(--serif);font-size:11px;line-height:1.5;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .palAccent{height:6px;border-radius:3px;background:var(--coral)}
+.palRatings{display:flex;justify-content:center;align-items:center;gap:5px;padding:4px 3px}
+.palDot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.palDot.again{background:var(--again)}
+.palDot.good{background:var(--good)}
+.palDot.easy{background:var(--easy)}
 .palName{display:block;padding:5px 3px;font-size:11px;font-weight:500;color:var(--ink);
   border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .palCard.on .palName{color:var(--coral)}
+/* ---- the big split-card preview (2026-08-16) ---------------------------
+   His ask: "have the flashcard screen itself be split down the middle, one
+   side light one side dark, of the same flashcard" -- distinct from the
+   thumbnail grid above (which exists to be scanned and picked from), this
+   is one large mock of what #scStudy's own card looks like, so a theme can
+   be judged at real study size before committing rather than only at
+   thumbnail size. Sits above the grid, always showing whichever palette is
+   CURRENTLY selected -- renderCardPreview() is called from the same place
+   in renderPalGrid() that already recomputes `cur`, so it can never fall
+   out of step with the grid's own "on" card. Same word+gloss sample as the
+   thumbnails (PAL_SAMPLE/PAL_SAMPLE_GLOSS), same .rate-button colour recipe
+   (bg/border from the -bg/-br pair, label in the bare accent) as the real
+   #bAgain/#bGood/#bEasy on the actual study screen -- just smaller and
+   inert, this is a picture of a card, not one you can tap. */
+.cardPreview{display:flex;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-bottom:10px}
+.cardPreviewHalf{flex:1;min-width:0;background-color:var(--bg);background-image:var(--texture,none);
+  display:flex;flex-direction:column;align-items:center;gap:7px;padding:18px 10px 14px}
+.cardPreviewHalf:first-child{box-shadow:inset -1px 0 0 rgba(128,128,128,.35)}
+.cardPreviewWord{font-family:var(--serif);color:var(--ink);font-size:19px;line-height:1.25;text-align:center;word-break:break-word}
+.cardPreviewRule{width:34px;height:1px;background:var(--line)}
+.cardPreviewGloss{font-size:12px;color:var(--muted);text-align:center}
+.cardPreviewRates{display:flex;gap:4px;margin-top:3px}
+.cpRate{font-size:9.5px;font-weight:600;padding:4px 7px;border-radius:8px;border:1px solid;white-space:nowrap}
+.cpRate.again{color:var(--again);background:var(--again-bg);border-color:var(--again-br)}
+.cpRate.good{color:var(--good);background:var(--good-bg);border-color:var(--good-br)}
+.cpRate.easy{color:var(--easy);background:var(--easy-bg);border-color:var(--easy-br)}
+.cardPreviewLbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-top:auto;padding-top:4px}
 .fold{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .fold summary{font-size:13px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;
   list-style:none;cursor:pointer;padding:6px 0}
@@ -1164,6 +1235,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       </div>
       <div class="field">
         <label>Theme</label>
+        <div class="cardPreview" id="cardPreview"></div>
         <div class="palGrid" id="palGrid"></div>
         <select id="fTheme" class="sel" style="margin-top:9px">
           <option value="light">Light</option>
@@ -1251,22 +1323,6 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         Advanced — how the scheduler behaves
       </button>
       <div class="field advOnly" id="advBody">
-        <label for="fLearnBufOn">Learning at once</label>
-        <select id="fLearnBufOn" class="sel">
-          <option value="1">On — throttle new words while other work is pending</option>
-          <option value="0">Off — new words are capped only by the daily limit</option>
-        </select>
-        <div class="fh">Off goes back to exactly how new words were introduced before this existed — the two sliders below have no effect while it's off, but keep whatever they're set to for whenever it's back on. Off by default.</div>
-      </div>
-      <div class="field advOnly" id="fLearnBufWrap">
-        <label for="fLearnBufL">Learning at once — <span id="fLearnBufLblL"> — </span> — <b id="fLearnBufLVal">10</b></label>
-        <input type="range" id="fLearnBufL" min="3" max="15" step="1">
-        <div class="fh" id="fLearnBufSuggestL" hidden></div>
-        <label for="fLearnBufE" style="margin-top:12px">Learning at once — <span id="fLearnBufLblE"> — </span> — <b id="fLearnBufEVal">10</b></label>
-        <input type="range" id="fLearnBufE" min="3" max="15" step="1">
-        <div class="fh">Caps how many brand-new words can be mid-acquisition — not yet graduated out of learning — at once in a single sitting, independent per direction. New words trickle in only as earlier ones graduate, instead of arriving as a cluster that all comes due together and starts looking the same. Never stalls a sitting — only holds back new intros while there's other due or learning work to fall back on.</div>
-        <div class="fh" id="fLearnBufSuggestE" hidden></div>
-      </div>
       <div class="field advOnly">
         <label for="fMax">Longest interval (days)</label>
         <input type="number" id="fMax" min="30" max="36500" step="30" inputmode="numeric">
@@ -1286,11 +1342,6 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           scheduled — it takes effect from the <em>next</em> time today's current hour comes around,
           not immediately, so nothing already due (or not) changes because of the switch itself.</div>
         <div class="fh" id="fRollPending" hidden></div>
-      </div>
-      <div class="field advOnly">
-        <label for="fGate">Unlock the reverse direction after</label>
-        <input type="number" id="fGate" min="0" max="180" step="7" inputmode="numeric">
-        <div class="fh">Days a forward card must be holding before its reverse card can appear. 0 — the default — removes the gate and opens everything at once. Production is harder than recognition, so a higher number stops you meeting a word backwards before it has settled.</div>
       </div>
       <div class="field advOnly">
         <label for="fTiming">Let hesitation adjust the grade</label>
@@ -1590,10 +1641,13 @@ function schedule(card,rating,now,st){
   // 05:30 the next morning is one day apart, not zero
   const daysSince=(c.last!=null)?(dayKey(now)-dayKey(c.last)):null;
   let ivl=0;
-  // holdSince (added alongside the concurrent-learning cap, see buildQueue()'s
-  // inFlight below) is cleared on every real graduation -- true toReview()
-  // here, not the requireEasy hold's fake one -- since a graduated word can
-  // no longer be "mid-acquisition" by any definition.
+  // holdSince records when the requireEasy hold below first fired. It is
+  // cleared on every real graduation -- true toReview() here, not the hold's
+  // own fake one -- since a graduated word can no longer be mid-acquisition
+  // by any definition. It was added for the concurrent-learning cap, which
+  // was retired 2026-08-17; nothing reads it for a decision now, so it is
+  // write-only state kept because removing it would change the persisted card
+  // shape and wants its own migration + replay pass, not a drive-by edit.
   const toReview=()=>{c.st='R';c.step=null;ivl=nextInterval(c.s,st)*DAY;c.holdSince=null;};
   const steps=(c.st==='L')?LEARN_STEPS:RELEARN_STEPS;
 
@@ -1754,8 +1808,35 @@ const norm=s=>s.trim().toLowerCase().replace(/\s+/g,' ');
 // parked under S.orphans, never discarded, and re-adopted the moment a
 // content file resolves it again.
 const rowId=i=>DATA[i][4];    // entry index -> that row's stable id
-const CARDS=[];               // {id, dir, idx:[entry indices], q, a, sec}
-(function build(){
+const BUCKET_NAME={2:'known',1:'shaky',0:'unseen'};
+// Everything below that used to run at parse time now runs inside
+// bootContent() (Phase 2, PHASE2_PLAN.md §2.5): the content globals no
+// longer exist when this script is parsed -- content arrives asynchronously
+// (a fetched decks/<id>.js today; an IndexedDB record for Phase 4's
+// on-device decks, see resolveContent() at the bottom of the file) and
+// lands here exactly once, before load(). Deliberately synchronous and
+// DOM-free: tests/run.sh and tools/replay_migration.js call it directly
+// with a content object, which is also why the derived names stay bare
+// globals -- the ~6,000 lines of functions below keep reading CARDS/
+// SECTIONS/BY_ID/defaults (and DATA/DECK/KEY themselves) under exactly the
+// names they always have.
+let CARDS=null;               // {id, dir, idx:[entry indices], q, a, sec}
+let SECTIONS=null, HAS_BUCKETS=false, BY_ID=null, SIBLINGS=null, defaults=null;
+function bootContent(content){
+  if(!content||!Array.isArray(content.DATA)) throw new Error('bootContent: unusable content');
+  // Publish the five content names as the very globals every function in
+  // this file already reads. For a file-sourced deck the fetched script has
+  // already declared them as global consts, and these property writes sit
+  // shadowed underneath them (same values -- the content object was built
+  // FROM those consts); for an IndexedDB-sourced deck these writes ARE the
+  // globals. Either way nothing downstream can tell the difference. NB the
+  // engine itself must never declare these five names lexically: a
+  // file-sourced deck's own top-level consts would then be a redeclaration
+  // error the moment its script tag executed.
+  globalThis.DATA=content.DATA; globalThis.CHANGES=content.CHANGES;
+  globalThis.DECK=content.DECK; globalThis.KEY=content.KEY;
+  globalThis.DECK_TITLE=content.DECK_TITLE;
+  CARDS=[];
   DATA.forEach((row,i)=>{
     CARDS.push({id:'L'+rowId(i), dir:'L', idx:[i], q:row[0], a:row[1], sec:row[2], seed:row[3]});
   });
@@ -1767,25 +1848,30 @@ const CARDS=[];               // {id, dir, idx:[entry indices], q, a, sec}
     CARDS.push({id:'E'+eid, dir:'E', idx:g, q:DATA[g[0]][1],
                 a:g.map(i=>DATA[i][0]), sec:DATA[g[0]][2], seed:-1});
   });
-})();
-const SECTIONS=[...new Set(DATA.map(r=>r[2]))];
-// audit bucket per card; a merged reverse card takes its weakest member
-const BUCKET_NAME={2:'known',1:'shaky',0:'unseen'};
-CARDS.forEach(c=>{
-  const seeds=c.idx.map(i=>{const v=DATA[i][3]; return (v===2||v===1)?v:0;});
-  c.bucket=BUCKET_NAME[Math.min.apply(null,seeds)];
-});
-const HAS_BUCKETS=CARDS.some(c=>c.bucket!=='unseen');
-const BY_ID={}; CARDS.forEach(c=>BY_ID[c.id]=c);
-const SIBLINGS={};            // entry index -> [card ids]
-CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
-
-const defaults={
+  SECTIONS=[...new Set(DATA.map(r=>r[2]))];
+  // audit bucket per card; a merged reverse card takes its weakest member
+  CARDS.forEach(c=>{
+    const seeds=c.idx.map(i=>{const v=DATA[i][3]; return (v===2||v===1)?v:0;});
+    c.bucket=BUCKET_NAME[Math.min.apply(null,seeds)];
+  });
+  HAS_BUCKETS=CARDS.some(c=>c.bucket!=='unseen');
+  BY_ID={}; CARDS.forEach(c=>BY_ID[c.id]=c);
+  SIBLINGS={};                // entry index -> [card ids]
+  CARDS.forEach(c=>c.idx.forEach(i=>(SIBLINGS[i] ||= []).push(c.id)));
+  defaults=makeDefaults();
+  // Content-derived one-offs whose declarations live (with their own
+  // comments) beside the code that reads them, further down this file:
+  BOOT_KEY=KEY+'.boot';               // storage section
+  MOTTOS=DECK.mottos;                 // renderPace()
+  PAL_SAMPLE_ROW=pickPalSample();     // palette grid, Settings
+  PAL_SAMPLE=PAL_SAMPLE_ROW[0]; PAL_SAMPLE_GLOSS=PAL_SAMPLE_ROW[1]||'';
+}
+function makeDefaults(){ return {
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:0, studyStats:true, studyHints:true, studyMotion:true, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferOn:false, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, studyStats:true, studyHints:true, studyMotion:true, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, drillLog:[], sinceExport:0, lastExport:null, lastPushBytes:0,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null, confuseGroups:{}
-};
+};}
 let S=null;
 
 function freshCard(c){
@@ -1980,7 +2066,10 @@ let storagePersisted=null;   // navigator.storage.persisted() result, once known
 // on every cold start. Deliberately NOT a copy of the state: cards/log/days live
 // in IndexedDB now, and a half-sized duplicate of them in localStorage is exactly
 // the thing that used to hit the quota.
-const BOOT_KEY=KEY+'.boot';
+// Assigned by bootContent() (KEY only exists once content lands) -- and
+// pre-seeded from the registry row's own `key` by bootDeck() at the bottom
+// of the file, so paintBootTheme() can still run before the content fetch.
+let BOOT_KEY=null;
 function saveBoot(){
   try{
     localStorage.setItem(BOOT_KEY, JSON.stringify({
@@ -1993,8 +2082,28 @@ function saveBoot(){
 function loadBoot(){
   try{ return JSON.parse(localStorage.getItem(BOOT_KEY))||null; }catch(e){ return null; }
 }
+// Phase 2 (PHASE2_PLAN.md §2.3): a small summary of this deck's current
+// state, cheap enough to recompute on every save() and small enough to ride
+// inside state[KEY] for free -- writeStores() below already does
+// Object.assign({},S), so any field added to S is persisted (and synced)
+// automatically, no separate store or payload needed. This is what lets the
+// launcher (index.html) show "what to do now" for a deck without loading
+// that deck's 250KB+ of content just to ask it. Built fresh from
+// buildQueue(S.dir) rather than reading the global Q, deliberately: Q may be
+// stale or hold a different direction's queue depending on where save() was
+// called from (many call sites throughout this file, not just rate()), and
+// buildQueue() is cheap enough (renderHome() already calls it twice, for
+// both directions, on every render) that recomputing it here is not a real cost.
+function buildSummary(){
+  const q=buildQueue(S.dir), d=today();
+  return {at:Date.now(), day:d, dir:S.dir,
+          due:q.due.length, learn:q.learn.length, intro:q.intro.length,
+          doneToday:(S.days[d]||{}).n|0,
+          streak:currentStreak(S.days,d,S.settings.streakStart)};
+}
 function save(){
   S.lastSave=Date.now();
+  S.summary=buildSummary();
   saveBoot();
   idbOK=writeStores();
   storageOK=idbOK;
@@ -2071,8 +2180,7 @@ function normalise(o){
   const SETTINGS_BOUNDS={
     retention:[0.01,0.99], maxIvl:[1,36500], drillCap:[1,50],
     newPerDayL:[0,4000], newPerDayE:[0,4000], knownDays:[1,3650],
-    gateDays:[0,3650], drillDays:[0,14], reviewDay:[-1,6], flagAuto:[5,15],
-    learnBufferL:[3,15], learnBufferE:[3,15], drillFocusN:[10,25]
+    drillDays:[0,14], reviewDay:[-1,6], flagAuto:[5,15], drillFocusN:[10,25]
   };
   for(const k in SETTINGS_BOUNDS){
     const [lo,hi]=SETTINGS_BOUNDS[k];
@@ -2081,6 +2189,20 @@ function normalise(o){
     if(!Number.isFinite(v)||v<lo||v>hi) v=defaults.settings[k];
     s.settings[k]=v;
   }
+  // Settings whose feature has been removed. Deleted rather than left to sit,
+  // because nothing else ever will: normalise() only ever fills in or repairs
+  // keys it knows about, so a retired one would otherwise survive in every
+  // save, and ride along in every sync payload, indefinitely. Retired
+  // 2026-08-17: the concurrent-learning cap ("Learning at once") and the
+  // reverse-direction gate, both of which had been off by default and are
+  // proven to have had no effect on scheduling (replay: 0 differences across
+  // 9,586 real ratings). Keep appending here rather than repurposing a name --
+  // an old device that still writes one of these will simply have it dropped
+  // again on the next load.
+  for(const k of ['gateDays','learnBufferOn','learnBufferL','learnBufferE',
+                  'learnBufferSinceL','learnBufferSinceE',
+                  'learnBufferDismissedL','learnBufferDismissedE'])
+    delete s.settings[k];
   // flagAutoBaseline isn't a bounded number, so SETTINGS_BOUNDS above can't
   // cover it -- a hand-edited or crafted backup could still hand it a
   // non-object, a day that isn't a real dayKey, or a value outside flagAuto's
@@ -2090,23 +2212,6 @@ function normalise(o){
   { const bl=s.settings.flagAutoBaseline;
     if(!bl||typeof bl!=='object'||!Number.isFinite(bl.day)||!Number.isFinite(bl.value)||bl.value<5||bl.value>15)
       s.settings.flagAutoBaseline=null; }
-  // learnBufferSinceL/E anchor Feature A's suggest-a-cap data window (see
-  // learnBufferSuggestion, further down) -- stamped to this load's "today"
-  // the first time either is ever missing, which in practice is also the
-  // moment the concurrent-learning cap itself first goes live on a device,
-  // exactly when its ~2-week data-sufficiency clock should start. A junk
-  // value (hand-edited/crafted) is treated the same as missing, not repaired.
-  for(const k of ['learnBufferSinceL','learnBufferSinceE']){
-    if(!Number.isFinite(s.settings[k])) s.settings[k]=today();
-  }
-  // learnBufferDismissedL/E remembers a suggested value he already waved
-  // off, so the same number doesn't nag him again -- but a *different*
-  // freshly-computed suggestion still surfaces. Any value outside the
-  // slider's own 3-15 range is just cleared rather than repaired.
-  for(const k of ['learnBufferDismissedL','learnBufferDismissedE']){
-    const v=s.settings[k];
-    if(!(Number.isInteger(v)&&v>=3&&v<=15)) s.settings[k]=null;
-  }
   // applyTheme() already falls back for an unknown palette, but it does that
   // without writing the fallback down, so a junk value survives in S and
   // renderSet() prints it back out. Settled here instead, once, where every
@@ -2228,11 +2333,11 @@ function normalise(o){
       if(!pairSet&&!pairUnset){ c.s=null; c.d=null; c.st='L'; c.step=0; }
       if(c.last!=null&&!Number.isFinite(c.last)) c.last=null;   // dayKey(c.last) otherwise
       if(c.step!=null&&!Number.isFinite(c.step)) c.step=0;      // indexes LEARN_STEPS
-      // holdSince is a dayKey int or null (see schedule()'s requireEasy hold
-      // and buildQueue()'s inFlight) -- junk is cleared, not repaired, same
-      // as flagAutoBaseline/learnBufferDismissed* below: worst case a stale
-      // hold briefly over-counts toward the concurrency cap again, same as
-      // before this field existed, never under-counts into a wrong exclusion.
+      // holdSince is a dayKey int or null, stamped by schedule()'s requireEasy
+      // hold -- junk is cleared, not repaired, same as flagAutoBaseline below.
+      // It was also read by buildQueue()'s concurrency cap until that was
+      // retired (2026-08-17); the hold itself still uses it, so the field and
+      // this repair both stay.
       if(c.holdSince!=null&&!Number.isFinite(c.holdSince)) c.holdSince=null;
       // setAsideAt/lastDrilled: plain metadata timestamps, never fed to
       // schedule() -- junk is cleared, not repaired, same "worst case it
@@ -2397,16 +2502,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-// a reverse card unlocks only once every forward sibling is holding
-function gateOpen(c){
-  const g=S.settings.gateDays|0;
-  if(c.dir!=='E'||g<=0) return true;
-  return c.idx.every(i=>{
-    const fs=S.cards['L'+rowId(i)];
-    return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
-  });
-}
-const BUILD='2026.08.16.7';
+const BUILD='2026.08.17.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -2422,7 +2518,6 @@ function available(cs,c,now,d){
   if(cs.buryUntil>d) return false;   // manual "bury for today" -- see buryToday()
   if(!activeParts().includes(c.sec)) return false;
   if(cs.reps===0&&!activeBuckets().includes(c.bucket)) return false;   // filter applies to new words only
-  if(cs.reps===0&&!gateOpen(c)) return false;
   return true;
 }
 // randomizes review order while still favouring whatever is most overdue:
@@ -2444,16 +2539,6 @@ function jitteredDueOrder(ids){
 function dailyCap(d,dir){
   const rec=S.days[d], ov=rec&&(dir==='L'?rec.capL:rec.capE);
   return ov!=null?ov:S.settings['newPerDay'+dir];
-}
-// Concurrent-learning cap: separate from dailyCap above, this throttles how
-// many words can be mid-acquisition (not yet graduated out of learning) at
-// once within a single sitting -- see LEARNING_LOAD_PLAN.md sec1 for the
-// interference research and his real-backup validation (1,407/1,407 replay
-// match). S.settings.learnBufferL/E, range 3-15, default 10, split per
-// direction like newPerDayL/E above.
-function learnBufferFor(dir){
-  const v=S.settings['learnBuffer'+dir];
-  return v>0?v:10;
 }
 function buildQueue(dir){
   const now=Date.now(), d=today();
@@ -2490,127 +2575,12 @@ function buildQueue(dir){
   // idea flagged a real risk -- a hard concurrency cap can stall a sitting,
   // new intros blocked while nothing else is due yet either, even though
   // real work still exists just gated behind the cap. So this only clamps
-  // room while learn/due already has other work to fall back on; once those
-  // genuinely run dry, new words keep coming rather than ending the sitting
-  // early. Counts every same-direction word already mid-acquisition
-  // (reps>0, st 'L'/'X') -- not just the ones already surfaced into learn/due
-  // above, since a word still waiting out its own step is just as much "in
-  // flight" as one that's ready right now.
-  // Bug fixed here (reported 2026-08-14: one new word introduces, then the
-  // cap acts as if it were 1 forever after): a word held by requireEasy's
-  // same-day drill loop (schedule(), sec above) never leaves 'L'/'X' just
-  // because it's only served once a day -- it can sit "mid-acquisition" for
-  // real days or weeks, not the "few minutes at most" this cap's own design
-  // assumed (LEARNING_LOAD_PLAN.md sec1). On a deck with any real backlog of
-  // such words (confirmed against a real backup: 139 concurrently for one
-  // direction alone), those stale holds saturate learnBufferL/E by
-  // themselves and never clear, permanently blocking Q.intro even though
-  // none of them are this sitting's fresh burst -- the exact thing this
-  // throttle exists to protect against, not the thing it's supposed to
-  // throttle. cs.holdSince (stamped the first time a word's requireEasy hold
-  // fires, cleared on real graduation or a fresh relapse) tells the two
-  // apart: still within the day it was first held counts same as always,
-  // spilling into a later day means it's backlog, not a new-word burst.
-  // Whole cap is still experimental (his call, Settings' "Learning at once"
-  // toggle) -- off means exactly the pre-2026.08.14.1 behaviour, room
-  // governed by the daily cap alone, and skips the CARDS scan below entirely
-  // rather than computing an inFlight nothing will read.
-  const learnBufOn=S.settings.learnBufferOn!==false;
-  const inFlight=learnBufOn?CARDS.reduce((n,c)=>{
-    if(c.dir!==dir) return n;
-    const cs=peek(c.id);
-    const staleHold=cs.holdSince!=null&&(d-cs.holdSince)>=1;
-    // A manually-buried word (buryToday(), Browse) is excluded the same way
-    // a stale hold is: it's not part of the sitting in front of you today,
-    // so it shouldn't spend the budget meant for that sitting either. This
-    // is the whole point of bury-for-today freeing its slot -- burying a
-    // word stuck mid-acquisition is usually reached for exactly because the
-    // cap feels full; if it stayed counted here that reason to bury it
-    // would never actually relieve anything.
-    const manuallyBuried=cs.buryUntil>d;
-    return n+((cs.reps>0&&(cs.st==='L'||cs.st==='X')&&!staleHold&&!manuallyBuried)?1:0);
-  },0):0;
-  const otherWorkPending=learn.length>0||due.length>0;
-  const concurrencyRoom=(learnBufOn&&otherWorkPending)?Math.max(learnBufferFor(dir)-inFlight,0):Infinity;
-  const room=Math.max(Math.min(capToday-introducedToday,concurrencyRoom),0);
+  const room=Math.max(capToday-introducedToday,0);
   const order=S.settings.weakFirst ? fresh.concat(seeded) : seeded.concat(fresh);
   const intro=order.slice(0,room);
   return {learn,due,intro,seededTotal:seeded.length,freshTotal:fresh.length};
 }
 
-// ---- learnBuffer suggestion (Feature A, "suggest-and-confirm" -- see
-// LEARNING_LOAD_PLAN.md sec1's Adaptive mode and DEVELOPMENT_IDEAS.md sec A).
-// Replays S.log through the REAL schedule() above -- not a duplicate copy,
-// so unlike tools/replay_concurrency.js this can never quietly drift out of
-// sync with it -- to reconstruct, for every same-direction word's first-ever
-// acquisition (first exposure to its first real graduation to 'R'; a later
-// relapse into 'X' is a different phenomenon and is not re-counted, same
-// distinction the original research drew), how many OTHER words were
-// concurrently also mid-acquisition at that instant, bucketed against
-// whether that rating was "Again". Both LB_SUGGEST thresholds below are
-// judgement calls, same as ACTIVE_CAP/looksSimilar's cutoff elsewhere in
-// this file -- not tuned against his real post-cap data, because none exists
-// yet; worth revisiting once it does.
-const LB_SUGGEST_MIN_DAYS=14;   // matches the two-week noise-averaging finding, sec1
-const LB_SUGGEST_MIN_N=20;      // events a candidate bucket needs before its rate is trusted
-let learnBufSugCache={L:null,E:null};
-function learnBufferSuggestion(dir){
-  const since=S.settings['learnBufferSince'+dir];
-  if(!Number.isFinite(since)) return {ready:false};
-  const daysActive=today()-since;
-  if(daysActive<LB_SUGGEST_MIN_DAYS) return {ready:false, daysActive};
-  const cache=learnBufSugCache[dir];
-  if(cache && cache.atLog===S.log.length && cache.atDay===today() && cache.since===since) return cache.result;
-
-  const sinceTs=dayStart(since);
-  const log=S.log.filter(e=>BY_ID[e[0]]&&BY_ID[e[0]].dir===dir).slice().sort((a,b)=>a[2]-b[2]);
-  const sim={}, graduated={}, stat={};   // stat: concurrency bucket(int) -> [again,total]
-  for(const row of log){
-    const id=row[0], rating=row[1], ts=row[2];
-    if(!sim[id]){ sim[id]=freshCard(BY_ID[id]); graduated[id]=(sim[id].st==='R'); }
-    const pre=sim[id];
-    if(!graduated[id] && ts>=sinceTs){
-      // Mirrors buildQueue()'s own inFlight exactly (down to the stale-hold
-      // exclusion, see its comment) -- this replay drives the real schedule()
-      // above, so `o.holdSince` is the same field, just replayed history
-      // instead of live state. dayKey(ts), not today(): "stale" is judged
-      // against the moment being replayed, not the moment this function runs.
-      let conc=0;
-      for(const oid in sim){
-        if(oid===id||graduated[oid]) continue;
-        const o=sim[oid];
-        const staleHold=o.holdSince!=null&&(dayKey(ts)-o.holdSince)>=1;
-        if(o.reps>0&&(o.st==='L'||o.st==='X')&&!staleHold) conc++;
-      }
-      const b=Math.min(conc,15);
-      const s=stat[b]||(stat[b]=[0,0]);
-      s[1]++; if(rating===AGAIN) s[0]++;
-    }
-    const res=schedule(pre,rating,ts,S.settings);
-    sim[id]=res.card;
-    if(res.card.st==='R') graduated[id]=true;
-  }
-
-  const rates={};
-  for(let b=3;b<=15;b++){
-    const s=stat[b];
-    if(s && s[1]>=LB_SUGGEST_MIN_N) rates[b]=s[0]/s[1];
-  }
-  const reliable=Object.keys(rates).map(Number).sort((a,b)=>a-b);
-  let result;
-  if(reliable.length<2) result={ready:false, daysActive, table:stat};
-  else{
-    const best=Math.min(...reliable.map(b=>rates[b]));
-    // the smallest cap within 3 points of the best observed rate -- the
-    // cheapest concurrency that doesn't cost accuracy, not just whichever
-    // single bucket happens to show the lowest (possibly noisy) number
-    let suggested=reliable[0];
-    for(const b of reliable){ if(rates[b]<=best+0.03){ suggested=b; break; } }
-    result={ready:true, suggested, rates, daysActive, table:stat};
-  }
-  learnBufSugCache[dir]={atLog:S.log.length, atDay:today(), since, result};
-  return result;
-}
 let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], donePoll=null, cardDirty=false;
 let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by renderCard()'s recap card, cleared by undo() and by anything that wipes undoStack alongside it
 let calY=null, calM=null, calSelectedDay=null;   // calendar fold's own state -- not persisted, not S.dir-linked
@@ -2742,14 +2712,17 @@ const PALETTES={
   gruvbox:    'Gruvbox',
   legacy:     'Legacy',
   dracula:    'Dracula',
-  monokai:    'Monokai',
   amphora:    'Amphora',
-  rubric:     'Rubric',
+  marble:     'Marble',
   steel:      'Steel',
   glass:      'Glass',
   neon:       'Neon',
-  '8bit':     '8-Bit'
+  wood:       'Wood'
 };
+// 2026-08-16: Monokai and 8-Bit cut (too close to Dracula; an open, now-moot
+// legibility finding -- see palettes.css's roster-history comment above
+// PALETTES there for the full reasoning). Rubric reworked in place as
+// Marble, Neon's dark mode retuned lighter, Wood added. Twelve total.
 const PAL_KEYS=Object.keys(PALETTES);
 /* Daily rotation walks a shuffled cycle: every theme appears once before any
    repeats, and the cycle reshuffles when it runs out. */
@@ -4194,8 +4167,8 @@ function renderStatsTiming(){
   if(!statsInclAll) entries=entries.filter(e=>e.stage==='young'||e.stage==='mature');
   const sum=timeToLearnSummary(entries,5);
   if(sum.n){
-    const wordLine=e=>'<div class="flagRow"><span class="term">'+escHtml(BY_ID[e.id].q)+'</span>'+
-      '<span class="cnt">'+fmtActiveTime(e.activeMs)+'</span></div>';
+    const wordLine=e=>'<div class="flagRow"><div class="flagTop"><span class="term">'+escHtml(BY_ID[e.id].q)+'</span>'+
+      '<span class="cnt">'+fmtActiveTime(e.activeMs)+'</span></div></div>';
     $('learnRankBody').innerHTML=
       row('Median active time to learn', fmtActiveTime(sum.medianMs))+
       row('Mean', fmtActiveTime(sum.meanMs))+
@@ -4780,28 +4753,6 @@ function dayStatsFor(days,dk){
   if(!rec||!rec.n) return {studied:false,intro:0,words:0,ratings:0};
   return {studied:true,intro:rec.intro||0,words:(rec.words!=null?rec.words:null),ratings:rec.n||0};
 }
-// since (optional, 3rd arg): a custom day-key floor -- config-gear "streak
-// start date" (S.settings.streakStart). Omitted, both functions behave
-// exactly as before (existing callers untouched); passed, neither counts
-// anything earlier than it, same as if history before that day didn't exist.
-function currentStreak(days,todayKey,since){
-  let streak=0;
-  for(let k=todayKey;;k--){
-    if(since!=null&&k<since) break;
-    if(days[k]&&days[k].n) streak++;
-    else { if(k!==todayKey) break; }
-    if(todayKey-k>3650) break;
-  }
-  return streak;
-}
-function longestStreak(days,todayKey,since){
-  let best=0,run=0;
-  const floor=(since!=null)?Math.max(since,todayKey-3650):todayKey-3650;
-  for(let k=floor;k<=todayKey;k++){
-    if(days[k]&&days[k].n){ run++; best=Math.max(best,run); } else run=0;
-  }
-  return best;
-}
 // % of days with any study, from `since` (or, with none given, this
 // device's own S.created -- "since I started using this app", not an
 // arbitrary window) through today inclusive. A brand-new device with no
@@ -4813,79 +4764,6 @@ function daysLearnedPct(days,todayKey,since){
   let studied=0;
   for(let k=floor;k<=todayKey;k++) if(days[k]&&days[k].n) studied++;
   return Math.round(100*studied/span);
-}
-// Daily average of ratings made, over a configurable trailing window
-// (heatmap stat chip's own inline picker, S.settings.heatmapAvgWindow).
-// 'week'/'month'/'year' are fixed spans ending today, same windowing shape
-// recentPace() already uses; 'all' walks every recorded day rather than a
-// fixed count -- no invented cutoff, same honesty recentPace()'s hasData
-// flag already applies elsewhere.
-const AVG_WINDOW_DAYS={week:7,month:30,year:365};
-function windowedDailyAverage(days,todayKey,window){
-  if(window==='all'){
-    let sum=0,n=0;
-    for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
-    return n?Math.round(sum/n):0;
-  }
-  const span=AVG_WINDOW_DAYS[window]||AVG_WINDOW_DAYS.month;
-  let sum=0,n=0;
-  for(let k=todayKey;k>todayKey-span;k--){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
-  return n?Math.round(sum/n):0;
-}
-// Average ratings-per-studied-day across the whole collection -- the
-// baseline the heatmap's Volume colour scales against (Review Heatmap's own
-// approach: colour relative to *your* average, not a fixed number, so a
-// light or heavy user both get a readable spread rather than one all-coral
-// wall or one that never leaves the palest tint).
-function heatmapAvgRatings(days){
-  let sum=0,n=0;
-  for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
-  return n?sum/n:0;
-}
-function volumePct(ratings,avg){
-  if(!avg) return 0;
-  return Math.max(0,Math.min(1,ratings/(avg*1.6)))*100;
-}
-// Stretched so the readable band sits over 60-100% recall (below 60% is
-// rare enough in practice, and this app's own retention target lives at
-// 90-95%, that spending colour resolution below 60 would waste it) --
-// same "compress the scale where the data actually lives" reasoning as
-// BRACKETS/CALENDAR_BUCKETS elsewhere in this file.
-function retentionPct(ok,tot){
-  if(!tot) return 0;
-  const r=100*ok/tot;
-  return Math.max(0,Math.min(1,(r-60)/40))*100;
-}
-function heatRec(dk){
-  const r=S.days[dk];
-  return {ratings:(r&&r.n)||0, ok:(r&&r.ok)||0, tot:(r&&r.tot)||0};
-}
-// A CSS background string for one day cell/dot, or '' for a day with no
-// data (left to the plain --panel base). color-mix() with a `var(--x)`
-// reference is resolved by the browser at paint time, not here -- this
-// never reads an actual colour, so the exact same string is correct across
-// every palette and both light/dark modes automatically, with nothing new
-// for applyTheme() to know about.
-// Retention's ramp is mixed in OKLCH, not sRGB (2026.08.15.6). Blending
-// --good into --again through sRGB walks a straight line in a space where
-// that line passes through desaturated mud: the midpoint of a green and a
-// red is a murky brown, and two adjacent days at genuinely different recall
-// could read as "murky green" and "lush green" with no way to tell which was
-// the better one. OKLCH takes the shorter hue path instead, which for
-// green -> red descends through yellow and orange -- the familiar
-// traffic-light ramp, monotonic to the eye at every step, and the reason the
-// legend gradient below can be read as a scale at all. Volume keeps its
-// single-hue accent-into-panel ramp, which was already monotonic; it is
-// mixed in OKLCH too purely so the legend and the cells agree exactly.
-const HEAT_SPACE='oklch';
-function heatCellBg(rec,avg){
-  if(!rec||!rec.ratings) return '';
-  if(S.settings.heatmapColourMode==='retention'&&rec.tot){
-    const p=retentionPct(rec.ok,rec.tot);
-    return 'background:color-mix(in '+HEAT_SPACE+', var(--good) '+p+'%, var(--again) '+(100-p)+'%)';
-  }
-  const p=volumePct(rec.ratings,avg);
-  return 'background:color-mix(in '+HEAT_SPACE+', var(--'+S.settings.heatmapAccent+') '+p+'%, var(--panel))';
 }
 /* ---- day-number legibility on a coloured cell (2026.08.15.6) -------------
    Measure, don't guess. A first attempt flipped --ink to --raise past a fixed
@@ -4950,12 +4828,12 @@ function renderHome(){
 
   // study-day strip, last 35 days -- colour-graded (heatCellBg), same
   // Volume/Retention mode and accent Settings' calendar config gear controls
-  const avgR=heatmapAvgRatings(S.days);
+  const avgR=heatmapBaseline(S.days,today(),S.settings.heatmapAvgWindow);
   const strip=$('strip'); strip.innerHTML='';
   for(let i=34;i>=0;i--){
     const k=d-i, el=document.createElement('div');
     el.className='dot'+(i===0?' today':'');
-    const bg=heatCellBg(heatRec(k),avgR);
+    const bg=heatCellBg(heatRec(S.days,k),avgR,S.settings.heatmapColourMode,S.settings.heatmapAccent);
     if(bg) el.style.cssText=bg;
     strip.appendChild(el);
   }
@@ -5011,7 +4889,7 @@ function renderHeatmapStats(){
   const d=today(), since=S.settings.streakStart;
   const cur=currentStreak(S.days,d,since), longest=longestStreak(S.days,d,since);
   const pct=daysLearnedPct(S.days,d,since);
-  const avg=windowedDailyAverage(S.days,d,S.settings.heatmapAvgWindow);
+  const avg=heatmapBaseline(S.days,d,S.settings.heatmapAvgWindow);
   const winOpt=w=>'<option value="'+w+'"'+(S.settings.heatmapAvgWindow===w?' selected':'')+'>'+
     (w==='all'?'all-time':'per '+w)+'</option>';
   $('hmStats').innerHTML=
@@ -5092,7 +4970,7 @@ function renderCalendarMonth(){
   $('calDow').innerHTML=[0,1,2,3,4,5,6].map(i=>
     '<div>'+new Date(sun.getFullYear(),sun.getMonth(),sun.getDate()+i).toLocaleDateString(undefined,{weekday:'narrow'})+'</div>'
   ).join('');
-  const d0=today(), avgR=heatmapAvgRatings(S.days), fc=forecast(S.dir,HEATMAP_FORECAST_DAYS);
+  const d0=today(), avgR=heatmapBaseline(S.days,d0,S.settings.heatmapAvgWindow), fc=forecast(S.dir,HEATMAP_FORECAST_DAYS);
   let gh='';
   monthMatrix(calY,calM).forEach(week=>week.forEach(cell=>{
     if(!cell.inMonth){ gh+='<div class="calCell out">'+cell.d+'</div>'; return; }
@@ -5110,7 +4988,7 @@ function renderCalendarMonth(){
     } else {
       const st=dayStatsFor(S.days,dk);
       if(st.studied){
-        const bg=heatCellBg(heatRec(dk),avgR);
+        const bg=heatCellBg(heatRec(S.days,dk),avgR,S.settings.heatmapColourMode,S.settings.heatmapAccent);
         if(bg) style=' style="'+bg+'"';
         // The three per-day figures (new / words touched / ratings) used to be
         // printed here in --good/--amber/--faint. They were illegible by
@@ -5138,7 +5016,7 @@ function renderCalendarMonth(){
 // through the forecast horizon. Auto-scrolled to today on every render so
 // recent activity is always the first thing visible.
 function renderCalendarAll(){
-  const d0=today(), avgR=heatmapAvgRatings(S.days), fc=forecast(S.dir,HEATMAP_FORECAST_DAYS);
+  const d0=today(), avgR=heatmapBaseline(S.days,d0,S.settings.heatmapAvgWindow), fc=forecast(S.dir,HEATMAP_FORECAST_DAYS);
   let startKey=S.created?dayKey(S.created):d0;
   for(const k in S.days) startKey=Math.min(startKey,+k);
   const endKey=d0+HEATMAP_FORECAST_DAYS;
@@ -5159,7 +5037,7 @@ function renderCalendarAll(){
       const off=k-d0, due=(off<fc.length)?fc[off]:null;
       if(due!=null) style=' style="'+heatFutureBg(due,fc)+'"';
     } else {
-      const bg=heatCellBg(heatRec(k),avgR);
+      const bg=heatCellBg(heatRec(S.days,k),avgR,S.settings.heatmapColourMode,S.settings.heatmapAccent);
       if(bg) style=' style="'+bg+'"';
     }
     col+='<div class="'+cls.join(' ')+'"'+style+' data-dk="'+k+'" title="'+escHtml(new Date(dayStart(k)).toLocaleDateString())+'"></div>';
@@ -5185,7 +5063,7 @@ function openDay(dk){
     const due=(off<fc.length)?fc[off]:null;
     out+=row('Forecast', due!=null ? (due+' card'+(due===1?'':'s')+' due') : ('Beyond the '+HEATMAP_FORECAST_DAYS+'-day forecast horizon'));
   } else {
-    const st=dayStatsFor(S.days,dk), rc=heatRec(dk);
+    const st=dayStatsFor(S.days,dk), rc=heatRec(S.days,dk);
     out+=row('New words',st.intro)+
       row('Distinct words touched',st.words!=null?st.words:'–')+
       row('Ratings made',st.ratings)+
@@ -5296,9 +5174,10 @@ function flagRow(r){
   const noteBtn=r.susp
     ? '<button class="noteBtn'+(hasNote?' on':'')+'" data-id="'+r.id+'" aria-label="'+(hasNote?'Edit note':'Add a note')+'">'+(hasNote?'\u{1F4DD}':'+ note')+'</button>'
     : '';
-  return '<div class="flagRow"><span class="term">'+escHtml(c.q)+'</span><span class="cnt">'+r.n+'</span>'+
+  return '<div class="flagRow"><div class="flagTop"><span class="term">'+escHtml(c.q)+'</span><span class="cnt">'+r.n+'</span>'+
     noteBtn+
-    '<button class="flagBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="Flag">&#9873;</button></div>';
+    '<button class="flagBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="Flag">&#9873;</button></div>'+
+    '<div class="gloss">'+escHtml(answerText(c))+'</div></div>';
 }
 function renderStruggling(){
   const aside=strugglingWords(S.dir);
@@ -5324,6 +5203,17 @@ function introOn(rec,dir){
 // Shared by renderPace() and renderSyllabus(), which used to each run this
 // exact loop themselves.
 //
+// The rate is NOT floored at 1 (FINALISATION_PLAN.md §1.1, fixed 2026-08-17).
+// It used to return Math.max(sum/n,1), which meant a fortnight of reviews
+// with no new words -- exactly what pausing one direction looks like --
+// reported a pace of "1 a day" that nobody was running, and every caller
+// built on it: the front screen promised an arrival date off it, and the
+// syllabus screen projected words-met-by-term off it. A true zero now
+// reports as zero, and `hasData` is what separates "no history to average"
+// from "a measured rate that happens to be zero" -- the floor conflated
+// those two, and made renderPace()'s own no-arrival-date branch unreachable
+// in the ordinary case.
+//
 // `dir` matters: both callers put this rate underneath a count of words left
 // in ONE direction, so summing rec.intro -- which counts a first-ever rep in
 // either direction -- divided one direction's remaining words by both
@@ -5333,8 +5223,17 @@ function introOn(rec,dir){
 function recentPace(d,capToday,dir){
   let sum=0,n=0;
   for(let k=d;k>d-14;k--){ const r=S.days[k]; if(r&&r.n){ sum+=introOn(r,dir); n++; } }
-  return {rate:n?Math.max(sum/n,1):capToday, hasData:n>0};
+  return {rate:n?sum/n:capToday, hasData:n>0};
 }
+// One pace, printed the same way everywhere it is shown (renderPace's front
+// sentence, renderSyllabus's projection note). Whole words a day once the
+// rate reaches 1; one decimal below that. Rounding a real but slow pace --
+// say 4 words over the last fortnight, 0.3/day -- to a whole number prints
+// "0 a day" directly beside an arrival date computed from 0.3, which reads
+// as a contradiction and re-tells the very lie the Math.max(...,1) floor
+// used to tell, just in the other direction. Only reachable since that
+// floor came off, which is why this didn't exist before.
+function fmtPace(r){ return r>=1?String(Math.round(r)):r.toFixed(1); }
 // Total real study time over the trailing `days`-day window ending on day d
 // inclusive, same windowing convention as recentPace() -- raw ms, callers
 // format with fmtActiveTime/fmtStopwatch as fits the context.
@@ -5384,7 +5283,8 @@ function reviewVsNewWindow(d,days){
   }
   return {newMs,reviewMs,hasData:any};
 }
-const MOTTOS=DECK.mottos; function renderPace(){
+let MOTTOS=null;   // DECK.mottos -- assigned by bootContent()
+function renderPace(){
   const ap=activeParts(); const dir=S.dir, all=CARDS.filter(c=>c.dir===dir&&ap.includes(c.sec));
   const met=all.filter(c=>S.cards[c.id]&&S.cards[c.id].reps>0).length;
   const left=all.length-met, d=today();
@@ -5394,26 +5294,41 @@ const MOTTOS=DECK.mottos; function renderPace(){
   const finish=new Date(Date.now()+daysNeeded*DAY);
   const term=new Date(S.settings.term+'T00:00:00');
   const toTerm=Math.ceil((term-Date.now())/DAY);
-  const fmt=dt=>dt.toLocaleDateString(undefined,{day:'numeric',month:'long'});
+  // The year is included only when the finish date isn't in the current year.
+  // Without that, a slow pace against a long list printed "February 4" for a
+  // date in 2031, which reads as next February (FINALISATION_PLAN.md \u00a71.1).
+  // Read off Date.now(), not the system clock, so it stays consistent with
+  // `finish` above -- which is built from Date.now() -- under a mocked clock.
+  const thisYear=new Date(Date.now()).getFullYear();
+  const fmt=dt=>dt.toLocaleDateString(undefined, dt.getFullYear()===thisYear
+    ? {day:'numeric',month:'long'} : {day:'numeric',month:'long',year:'numeric'});
   const dirName=dir==='L'?DECK.fwd:DECK.rev;
   let h='';
   if(!left){
     h='<span class="n">'+all.length+'</span> of '+all.length+' met in '+dirName+
       '. Everything now is upkeep.';
   } else if(!(rate>0)){
-    // The allowance is zero (the field's own min, and where the front screen's
-    // minus button clamps) and nothing has been introduced in a fortnight, so
-    // recentPace falls back to it. left/0 is Infinity, which used to reach
-    // new Date() and print the literal string "Invalid Date" as the finish
-    // date, with "Infinity days after term begins" beside it. There is no date
-    // to give, so say that rather than invent one.
+    // A true rate of zero. Since recentPace() stopped flooring at 1 this is
+    // reachable in the ordinary case, not only when the app hasn't been
+    // opened for a fortnight -- a paused direction lands here every time.
+    // left/0 is Infinity, which used to reach new Date() and print the
+    // literal string "Invalid Date" as the finish date, with "Infinity days
+    // after term begins" beside it. There is no date to give, so say that
+    // rather than invent one -- but say WHICH zero it is, because the two
+    // want opposite advice. A zero allowance needs raising; a paused
+    // direction has an allowance sitting there unused and needs nothing but
+    // resuming, so telling that reader to raise the allowance is a wrong
+    // instruction, not merely a vague one.
     h='<span class="n">'+met+'</span> of '+all.length+' met in '+dirName+
       ', <span class="n">'+left+'</span> to go.'+
-      ' At none a day there is no arrival date \u2014 raise the daily allowance to put one on it.';
+      (capToday>0
+        ? ' No new words in a fortnight, so there is no arrival date \u2014 the allowance of '+
+          capToday+' a day is there when you want it.'
+        : ' At none a day there is no arrival date \u2014 raise the daily allowance to put one on it.');
   } else {
     h='<span class="n">'+met+'</span> of '+all.length+' met in '+dirName+
       ', <span class="n">'+left+'</span> to go.'+
-      ' At '+(hasData?'your recent pace of '+Math.round(rate):capToday)+' a day the last one arrives <b>'+fmt(finish)+'</b>'+
+      ' At '+(hasData?'your recent pace of '+fmtPace(rate):capToday)+' a day the last one arrives <b>'+fmt(finish)+'</b>'+
       (toTerm>0?(daysNeeded<=toTerm?' — '+(toTerm-daysNeeded)+' days before term.':' — '+(daysNeeded-toTerm)+' days after term begins.'):'.');
     const skip=new Date(Date.now()+(daysNeeded+1)*DAY);
     if(fmt(skip)!==fmt(finish)) h+='<span class="cost">A day off moves that to '+fmt(skip)+'.</span>';
@@ -5448,18 +5363,35 @@ const row=(a,b)=>'<div class="statRow"><span>'+escHtml(a)+'</span><b>'+escHtml(b
 /* ================= syllabus stats =================
    Everything here ignores the part chips on purpose: the question is what you
    know of the whole list, not of the slice currently switched on.            */
+// `met` and `scoring` are deliberately two different counts, because the two
+// callers in renderSyllabus want two different questions answered and used to
+// share one number that answered neither properly (fixed 2026-08-17):
+//
+//   met     -- words ever rated, set aside or not. "Words met so far" is a
+//              plain statement about your history, and a word you have met
+//              and then parked is still a word you have met. This is exactly
+//              the test partTable() and statusOf()/dirStats() already apply,
+//              so the headline now agrees with the By-part table below it and
+//              with the four-way status split on the Stats screen. It did not:
+//              met stopped counting set-aside words while the other two kept
+//              counting them, so the headline understated itself by precisely
+//              the size of the set-aside pile (measured: 272 against 300).
+//   scoring -- words actually contributing to `sum`. A set-aside card is out
+//              of rotation and scores zero, so projecting future score off a
+//              base that includes it would overstate the result.
 function expectedAt(dir,when){
-  let sum=0,total=0,met=0;
+  let sum=0,total=0,met=0,scoring=0;
   for(const c of CARDS){
     if(c.dir!==dir) continue;
     total++;
     const cs=S.cards[c.id];
-    if(!cs||cs.reps===0||cs.s==null||cs.last==null) continue;   // never met scores zero
-    if(cs.susp) continue;                                       // set aside: not counted either way
+    if(!cs||cs.reps===0) continue;                              // never met scores zero
     met++;
+    if(cs.susp||cs.s==null||cs.last==null) continue;            // set aside: not counted either way
+    scoring++;
     sum+=retrievability(cs,when);
   }
-  return {sum:sum,total:total,met:met};
+  return {sum:sum,total:total,met:met,scoring:scoring};
 }
 function partTable(dir,when){
   const acc={};
@@ -5515,7 +5447,10 @@ function renderSyllabus(){
   const d=today();
   const capToday=dailyCap(d,dir);
   const {rate:pace}=recentPace(d,capToday,dir);
-  const willMeet=Math.min(nowS.total, nowS.met+Math.round(pace*toTerm));
+  // built off `scoring`, not `met`: set-aside words contribute nothing to the
+  // sum this projects forward, so basing it on the inclusive count would
+  // promise score from words that are out of rotation. See expectedAt().
+  const willMeet=Math.min(nowS.total, nowS.scoring+Math.round(pace*toTerm));
   const keep=willMeet*R;
 
   let h='';
@@ -5532,8 +5467,11 @@ function renderSyllabus(){
   h+=row((other==='L'?DECK.fwd:DECK.rev)+' — expected now', Math.round(oS.sum)+' of '+oS.total);
   h+='<div class="note">The first figure is a model estimate, not a measurement: it is FSRS\'s own '+
      'recall probability for every card, summed. Words never met count as zero. The second projection '+
-     'assumes you clear reviews daily and keep introducing about '+Math.round(pace)+' a day — it is an '+
-     'assumption, not a forecast.</div>';
+     (pace>0
+       ? 'assumes you clear reviews daily and keep introducing about '+fmtPace(pace)+' a day — it is an '+
+         'assumption, not a forecast.'
+       : 'assumes you clear reviews daily and introduce nothing new, which is your measured pace over '+
+         'the last fortnight — it is an assumption, not a forecast.')+'</div>';
   $('syllabus').innerHTML=h;
 
   // by part
@@ -5595,14 +5533,6 @@ function renderSync(){
 }
 function renderWarn(qE){
   const w=$('homeWarn'); if(!w||!S) return; let h='';
-  if(S.dir==='E'&&S.settings.gateDays>0){
-    const q=qE||buildQueue('E');
-    if(!(q.due.length+q.learn.length+q.intro.length)){
-      const locked=CARDS.filter(c=>c.dir==='E'&&!gateOpen(c)).length;
-      if(locked) h+='<div class="warn">'+locked+' reverse cards are waiting for their forward side to hold for '+
-                    S.settings.gateDays+' days. Settings can lower or remove that gate.</div>';
-    }
-  }
   if(!storageOK)
     h+='<div class="warn bad">This device is refusing to save. Export a backup now and check that Safari is not in Private Browsing.</div>';
   const since=S.sinceExport||0, syncing=!!loadSyncCode();
@@ -6123,41 +6053,25 @@ function renderLog(){
 }
 
 /* ======================= settings screen ======================= */
-// A note next to the slider, not a toast: this only becomes relevant after
-// ~2 weeks (learnBufferSuggestion's own gate), so it needs to sit somewhere
-// he'll see it exactly when it's ready, not something transient he could
-// easily miss. Suggest-and-confirm, never silent -- Apply and Dismiss are
-// both explicit clicks, wired on #scSet's delegated click handler below.
-function renderLearnBufferSuggest(dir){
-  const el=$('fLearnBufSuggest'+dir);
-  // Suggesting a tuned value for a cap that's currently switched off would
-  // be confusing -- goes quiet the moment it's off, same as if it were never
-  // ready, and comes back on its own once the toggle is back on.
-  if(S.settings.learnBufferOn===false){ el.hidden=true; el.innerHTML=''; return; }
-  const sug=learnBufferSuggestion(dir);
-  const current=S.settings['learnBuffer'+dir]>0?S.settings['learnBuffer'+dir]:10;
-  const dismissed=S.settings['learnBufferDismissed'+dir];
-  if(!sug.ready || sug.suggested==null || sug.suggested===current || dismissed===sug.suggested){
-    el.hidden=true; el.innerHTML=''; return;
-  }
-  el.hidden=false;
-  el.innerHTML='Your last '+sug.daysActive+' days under this cap suggest <b>'+sug.suggested+'</b> (currently '+current+
-    ') keeps the same-day "Again" rate about as low as any higher setting does. '+
-    '<button type="button" class="act lbApply" data-dir="'+dir+'" data-val="'+sug.suggested+'" style="margin-top:8px">Use '+sug.suggested+'</button> '+
-    '<button type="button" class="act lbDismiss" data-dir="'+dir+'" style="margin-top:8px">Not now</button>';
-}
 // A real word off this deck's own list rather than "Aa" or a lorem string --
 // the point of the miniature is to show the serif carrying the actual script
 // (which matters rather more in the Greek deck than the Latin one) at the size
 // and weight the study screen uses. First short, unadorned headword wins, so
 // it is deterministic and never a parenthetical or a principal-parts string.
-const PAL_SAMPLE=(function(){
+// PAL_SAMPLE_GLOSS rides along from that same row (2026-08-16, added for the
+// big card preview below) rather than being picked independently, so the
+// word and its gloss are always a real, matched pair off this deck's list.
+function pickPalSample(){
   const r=DATA.find(x=>x[0].length>=4&&x[0].length<=9&&!/[ (,-]/.test(x[0]));
-  return r?r[0]:(DATA[0]?DATA[0][0]:'Aa');
-})();
+  return r||DATA[0]||['Aa',''];
+}
+let PAL_SAMPLE_ROW=null, PAL_SAMPLE=null, PAL_SAMPLE_GLOSS=null;   // assigned by bootContent()
 // One card per palette, each showing that palette's light and dark side by
 // side. Built from PAL_KEYS/PALETTES, so a new theme appears here the moment
 // it is registered -- there is no second list to remember to update.
+// `.palRatings` (2026-08-16) is deliberately once per card, not once per
+// half -- see the big comment above `.palRatings` in the CSS for why a
+// per-half version was rejected before, the first time this was tried.
 function renderPalGrid(){
   const cur=PALETTES[S.palette]?S.palette:'vellum';
   const half=(pal,mode)=>
@@ -6165,12 +6079,33 @@ function renderPalGrid(){
       '<span class="palMini">'+escHtml(PAL_SAMPLE)+'</span>'+
       '<span class="palAccent"></span>'+
     '</span>';
+  const ratings=pal=>
+    '<span class="palRatings" data-palette="'+pal+'" data-theme="dark">'+
+      '<span class="palDot again"></span><span class="palDot good"></span><span class="palDot easy"></span>'+
+    '</span>';
   $('palGrid').innerHTML=PAL_KEYS.map(k=>
     '<button type="button" class="palCard'+(k===cur?' on':'')+'" data-pal="'+k+'" '+
       'aria-pressed="'+(k===cur?'true':'false')+'">'+
       '<span class="palPrev">'+half(k,'light')+half(k,'dark')+'</span>'+
+      ratings(k)+
       '<span class="palName">'+escHtml(PALETTES[k])+'</span>'+
     '</button>').join('');
+  renderCardPreview(cur);
+}
+// The big study-card mock above the grid (see its own CSS comment for why
+// it exists) -- always the CURRENTLY selected palette, both modes at once.
+function renderCardPreview(pal){
+  const half=mode=>
+    '<div class="cardPreviewHalf" data-palette="'+pal+'" data-theme="'+mode+'">'+
+      '<span class="cardPreviewWord">'+escHtml(PAL_SAMPLE)+'</span>'+
+      '<span class="cardPreviewRule"></span>'+
+      '<span class="cardPreviewGloss">'+escHtml(PAL_SAMPLE_GLOSS)+'</span>'+
+      '<span class="cardPreviewRates">'+
+        '<span class="cpRate again">Again</span><span class="cpRate good">Good</span><span class="cpRate easy">Easy</span>'+
+      '</span>'+
+      '<span class="cardPreviewLbl">'+(mode==='light'?'Light':'Dark')+'</span>'+
+    '</div>';
+  $('cardPreview').innerHTML=half('light')+half('dark');
 }
 function pickPalette(k){
   if(!PALETTES[k]) return;
@@ -6182,12 +6117,6 @@ function renderSet(){
   const s=S.settings;
   $('fNewLblL').textContent=DECK.fwd; $('fNewLblE').textContent=DECK.rev;
   $('fNewL').value=s.newPerDayL; $('fNewE').value=s.newPerDayE; $('fRet').value=Math.round(s.retention*100);
-  $('fLearnBufOn').value=(s.learnBufferOn===false)?'0':'1';
-  $('fLearnBufWrap').hidden=(s.learnBufferOn===false);
-  $('fLearnBufLblL').textContent=DECK.fwd; $('fLearnBufLblE').textContent=DECK.rev;
-  $('fLearnBufL').value=s.learnBufferL>0?s.learnBufferL:10; $('fLearnBufLVal').textContent=$('fLearnBufL').value;
-  $('fLearnBufE').value=s.learnBufferE>0?s.learnBufferE:10; $('fLearnBufEVal').textContent=$('fLearnBufE').value;
-  renderLearnBufferSuggest('L'); renderLearnBufferSuggest('E');
   $('fRetVal').textContent=Math.round(s.retention*100)+'%';
   $('fMax').value=s.maxIvl;
   $('fDevice').value=s.deviceName||'';
@@ -6202,7 +6131,6 @@ function renderSet(){
   $('fKnown').value=s.knownDays||21;
   $('fEasy').value=s.requireEasy?'1':'0';
   $('fTiming').value=s.useTiming?'1':'0';
-  $('fGate').value=s.gateDays|0;
   $('fTheme').value=S.theme||'light';
   renderPalGrid();
   // One switch over three independent flags (2026.08.16.1). "Simplified"
@@ -6251,16 +6179,11 @@ function renderSet(){
 function tapZone(el,fn){
   el.addEventListener('click',e=>{e.preventDefault();fn();});
 }
-// DECK_TITLE comes from decks/<id>.js, loaded synchronously in <head>. The
-// static <title>/apple-mobile-web-app-title there are just placeholders --
-// real per-deck text lands here. apple-mobile-web-app-title specifically is
-// only ever read by iOS at the moment of "Add to Home Screen", always well
-// after this has run, so doing it down here in the wiring is safe. (Below
-// `function tapZone`, deliberately -- tests/run.sh's extraction boundary is
-// the string "function tapZone", so anything meant to run only at real
-// page-load, never during the test harness, has to sit after it.)
-document.title=DECK_TITLE;
-{const _t=document.querySelector('meta[name="apple-mobile-web-app-title"]'); if(_t)_t.setAttribute('content',DECK_TITLE);}
+// The per-deck chrome that used to sit right here at the wiring's own top
+// level (document.title / the apple-mobile-web-app-title meta / the Browse
+// search placeholder / the initial renderKbdToggle) now runs inside
+// bootDeck() at the bottom of the file: it reads DECK/DECK_TITLE, which no
+// longer exist at parse time (Phase 2 §2.5, async content).
 tapZone($('cardArea'),()=>{ if($('rateRow').classList.contains('hidden')) reveal(); });
 tapZone($('revealBtn'),reveal);
 tapZone($('bAgain'),()=>rate(AGAIN));
@@ -6442,8 +6365,8 @@ tapZone($('browseDirL'),()=>{ browseDir='L'; browseSelected.clear(); renderBrows
 tapZone($('browseDirE'),()=>{ browseDir='E'; browseSelected.clear(); renderBrowse(); });
 $('browseSearch').addEventListener('input',e=>{ browseQuery=e.target.value; browseSelected.clear(); renderBrowse(); });
 $('browseSearch').addEventListener('keydown',hopliteKeydown);
-$('browseSearch').placeholder='Search '+(DECK&&DECK.script==='greek'?'Greek':'Latin')+' or English\u2026';
-renderKbdToggle($('browseKbd'));
+// (the placeholder text and the initial renderKbdToggle for #browseKbd read
+// DECK, so they now run in bootDeck() once content has landed -- see below)
 tapZone($('browseKbd'),()=>{ greekKbdOn=!greekKbdOn; renderKbdToggle($('browseKbd')); renderKbdToggle($('drillKbd')); $('browseSearch').focus(); });
 $('browseResults').addEventListener('click',e=>{
   // checkbox toggling is handled by the 'change' listener just below --
@@ -6685,7 +6608,6 @@ $('fRoll').addEventListener('change',e=>{
 $('surpriseBtn').addEventListener('click',surprise);
 $('bgBackupBtn').addEventListener('click',()=>{doExport(false);renderBg();});
 $('buildTag').addEventListener('click',()=>{renderLog();show('scLog');});
-$('fGate').addEventListener('change',e=>{S.settings.gateDays=Math.max(0,e.target.value|0);save();});
 $('fTiming').addEventListener('change',e=>{S.settings.useTiming=(e.target.value==='1');save();});
 $('fEasy').addEventListener('change',e=>{S.settings.requireEasy=(e.target.value==='1');save();});
 $('fDrillCap').addEventListener('input',e=>{S.settings.drillCap=e.target.value|0;$('fDrillCapVal').textContent=e.target.value;});
@@ -6695,38 +6617,10 @@ $('fDrillCap').addEventListener('change',()=>save());
 // holds a same-day lowering back, via flagAutoBaseline, not this listener.
 $('fFlagAuto').addEventListener('input',e=>{S.settings.flagAuto=e.target.value|0;$('fFlagAutoVal').textContent=e.target.value;});
 $('fFlagAuto').addEventListener('change',()=>save());
-$('fLearnBufOn').addEventListener('change',e=>{S.settings.learnBufferOn=(e.target.value==='1');save();renderSet();});
-// A hand-adjusted value restarts learnBufferSince's ~2-week data-sufficiency
-// clock (see learnBufferSuggestion) -- the data before this change reflects
 // a different enforced ceiling, so it shouldn't feed a suggestion computed
 // under the new one. Clearing the dismissed-suggestion memory too: a value
 // he waved off under the old setting shouldn't silently suppress a fresh
 // suggestion once real data exists again.
-$('fLearnBufL').addEventListener('input',e=>{S.settings.learnBufferL=e.target.value|0;$('fLearnBufLVal').textContent=e.target.value;});
-$('fLearnBufL').addEventListener('change',()=>{S.settings.learnBufferSinceL=today();S.settings.learnBufferDismissedL=null;save();renderSet();});
-$('fLearnBufE').addEventListener('input',e=>{S.settings.learnBufferE=e.target.value|0;$('fLearnBufEVal').textContent=e.target.value;});
-$('fLearnBufE').addEventListener('change',()=>{S.settings.learnBufferSinceE=today();S.settings.learnBufferDismissedE=null;save();renderSet();});
-// Apply/Dismiss on the dormant suggest-a-cap note (renderLearnBufferSuggest)
-// -- delegated, same shape as browseResults' own click handler above, since
-// the buttons only exist once a suggestion is actually rendered in.
-$('scSet').addEventListener('click',e=>{
-  const ap=e.target.closest('.lbApply');
-  if(ap){
-    const dir=ap.dataset.dir, val=ap.dataset.val|0;
-    S.settings['learnBuffer'+dir]=val;
-    S.settings['learnBufferSince'+dir]=today();
-    S.settings['learnBufferDismissed'+dir]=null;
-    save(); renderSet();
-    return;
-  }
-  const ds=e.target.closest('.lbDismiss');
-  if(ds){
-    const dir=ds.dataset.dir;
-    const sug=learnBufferSuggestion(dir);
-    if(sug.ready) S.settings['learnBufferDismissed'+dir]=sug.suggested;
-    save(); renderSet();
-  }
-});
 $('fDrill').addEventListener('change',e=>{S.settings.drillDays=Math.min(Math.max(e.target.value|0,0),14);save();});
 $('fRevDay').addEventListener('change',e=>{S.settings.reviewDay=parseInt(e.target.value,10);save();});
 $('fKnown').addEventListener('change',e=>{S.settings.knownDays=Math.max(1,e.target.value|0);save();});
@@ -6906,8 +6800,12 @@ window.addEventListener('pagehide',()=>{ pauseStudyTimer(); flushPendingPush(); 
 // it almost immediately, visible now that the real state lives in IndexedDB.
 // Reads only the tiny BOOT_KEY record; applyTheme() below re-runs off the real
 // state and wins, so this can only ever be an early approximation, never the
-// final word.
-(function paintBootTheme(){
+// final word. A named function now, called from bootDeck() BEFORE the content
+// fetch: the fetch is the first point the browser gets a chance to paint at
+// all (the old synchronous document.write include kept the parser blocked
+// until content had arrived), so the theme has to be on <html> before it
+// starts, or a dark-theme device flashes vellum-light on every cold start.
+function paintBootTheme(){
   const b=loadBoot(); if(!b) return;
   const el=document.documentElement;
   let t=b.theme||'light';
@@ -6918,21 +6816,131 @@ window.addEventListener('pagehide',()=>{ pauseStudyTimer(); flushPendingPush(); 
   el.toggleAttribute('data-study-stats', !!b.studyStats);
   el.toggleAttribute('data-study-hints', !!b.studyHints);
   el.toggleAttribute('data-study-motion', !!b.studyMotion);
-})();
+}
 
-load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome');
-  // opened as e.g. deck.html?deck=greek#changelog (the launcher's version link does this) --
-  // jump straight to the changelog instead of making a fresh visitor land on the
-  // front screen and hunt for the build line themselves.
-  if(location.hash==='#changelog'){ renderLog(); show('scLog'); }
-  syncOnLaunch();
-  // a second pass shortly after boot: re-reads the media query in case the
-  // very first read (above) landed before the viewport had settled right
-  // after a standalone/"Add to Dock" launch -- applyLayout() re-balances
-  // the columns itself now, using renderHome()'s already-current content,
-  // so this alone covers that lag with no separate multicol kick needed.
-  setTimeout(applyLayout,300);
-});   // renderHome() already calls renderWarn()
+/* Phase 2 (PHASE2_PLAN.md §2.5): the async boot. The head boot script has
+   already validated ?deck= against REGISTRY (hard stop unchanged, still
+   synchronous) and published the matched row as window.DECK_ENTRY; from
+   here content resolves per that row's `source`, bootContent() builds the
+   card universe from it, and the old load() chain then proceeds exactly as
+   before -- the same steps, one fetch later than they used to run. */
+
+// One promise per registry entry: the content object bootContent() consumes,
+// shaped {DATA,CHANGES,DECK,KEY,DECK_TITLE}. `source` says where a deck's
+// content lives: 'file' = decks/<id>.js (every deck that exists today; a row
+// with no source field at all means the same, which is why the two shipped
+// registry rows needed no edit), 'idb' = an IndexedDB `content` record
+// (Phase 4's on-device decks -- the branch exists so the shape is settled,
+// but nothing writes that store yet, IDB_VERSION 2 doesn't even create it,
+// so today it can only ever reject).
+// The file branch injects a classic script tag rather than import():
+// decks/<id>.js is a plain script declaring globals, and as an ES module
+// those consts would be module-scoped and invisible out here. No
+// document.write needed any more -- nothing downstream runs at parse time,
+// bootContent() is called explicitly once the load event says the globals
+// exist.
+function resolveContent(entry){
+  const src=entry.source||'file';
+  if(src==='file') return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='decks/'+entry.id+'.js';
+    // The try/catch covers a file that loaded but did not define the five
+    // globals (a server that answers 404s with an HTML page, a truncated
+    // deploy): reading them then throws, and that must surface as this
+    // promise's rejection, not as a silent hang with an orphan console error.
+    s.onload=()=>{ try{ resolve({DATA:DATA,CHANGES:CHANGES,DECK:DECK,KEY:KEY,DECK_TITLE:DECK_TITLE}); }
+                   catch(e){ reject(new Error('decks/'+entry.id+'.js loaded but its content globals are unusable: '+e)); } };
+    s.onerror=()=>reject(new Error('decks/'+entry.id+'.js failed to load'));
+    document.head.appendChild(s);
+  });
+  if(src==='idb') return openIDB().then(db=>new Promise((resolve,reject)=>{
+    if(!db){ reject(new Error('IndexedDB unavailable; an idb-sourced deck cannot boot without it')); return; }
+    if(!db.objectStoreNames.contains('content')){ reject(new Error('registry entry "'+entry.id+'" says source:idb, but this build has no `content` store yet (Phase 4)')); return; }
+    const rq=db.transaction('content','readonly').objectStore('content').get(entry.id);
+    rq.onsuccess=()=>{ if(rq.result) resolve(rq.result); else reject(new Error('content['+entry.id+'] is empty')); };
+    rq.onerror=()=>reject(rq.error||new Error('content['+entry.id+'] read failed'));
+  }));
+  return Promise.reject(new Error('unknown content source "'+src+'" on registry entry "'+entry.id+'"'));
+}
+
+// The async path can fail in ways the old parser-blocking include never
+// surfaced as anything but a dead skeleton with a console ReferenceError (a
+// flaky fetch on a phone, a registry row whose file is missing). Say what
+// happened instead, in the same vellum card the head script's hard stop
+// uses -- via DOM, not document.write (which would replace the whole
+// document this late), and in the palette's own variables, since unlike the
+// head hard stop the real stylesheet HAS loaded by now.
+function bootFail(err){
+  try{ console.error(err); }catch(e){}
+  const st=document.createElement('style');
+  st.textContent='body>*:not(#deckErr){display:none!important}'
+    +'#deckErr{font:16px/1.6 var(--sans);color:var(--ink);max-width:30rem;margin:0 auto;'
+    +'padding:calc(52px + env(safe-area-inset-top)) 20px 40px}'
+    +'#deckErr h1{font-family:var(--serif);font-weight:400;font-size:2.05rem;margin:0 0 4px}'
+    +'#deckErr p{color:var(--muted);margin:0 0 14px}'
+    +'#deckErr a{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 18px;margin-top:22px}';
+  document.head.appendChild(st);
+  const d=document.createElement('div'); d.id='deckErr';
+  const h=document.createElement('h1'); h.textContent='Vocabula';
+  const p=document.createElement('p');
+  p.textContent='This deck’s content could not be loaded. Nothing is changed or lost — your reviews live in this device’s own storage, not in the file that failed — and reloading usually fixes a one-off network hiccup.';
+  const a=document.createElement('a'); a.href='index.html'; a.textContent='Back to the launcher →';
+  d.appendChild(h); d.appendChild(p); d.appendChild(a);
+  document.body.appendChild(d);
+}
+
+(function bootDeck(){
+  // window.DECK_ENTRY was published by the head boot script. Absent means the
+  // ?deck= hard stop already fired up there -- window.stop() halts the parser
+  // so this script normally never even runs, but stop() is best-effort (see
+  // the try/catch around it), and this guard keeps a browser that ignored it
+  // from booting an engine with no content.
+  const entry=window.DECK_ENTRY;
+  if(!entry) return;
+  // Pre-seed BOOT_KEY from the registry row so paintBootTheme() can run
+  // before the content fetch (see its comment). The registry's `key` IS the
+  // deck file's own KEY -- decks/registry.js documents that contract -- and
+  // bootContent() re-derives BOOT_KEY from the real KEY the moment content
+  // lands, so a mismatch could only ever mis-paint one frame, never touch
+  // storage under a wrong key.
+  BOOT_KEY=entry.key+'.boot';
+  paintBootTheme();
+  resolveContent(entry).then(content=>{
+    bootContent(content);
+    // Per-deck chrome that used to run at the wiring's own top level, right
+    // after the synchronous content include. The static <title>/
+    // apple-mobile-web-app-title in <head> are just placeholders; the meta
+    // specifically is only read by iOS at the moment of "Add to Home
+    // Screen", always far later than this.
+    document.title=DECK_TITLE;
+    const mt=document.querySelector('meta[name="apple-mobile-web-app-title"]'); if(mt)mt.setAttribute('content',DECK_TITLE);
+    $('browseSearch').placeholder='Search '+(DECK&&DECK.script==='greek'?'Greek':'Latin')+' or English…';
+    renderKbdToggle($('browseKbd'));
+    return load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome');
+      // Phase 2 (PHASE2_PLAN.md §2.3): refresh the summary record once at boot
+      // even if nothing gets rated this sitting, so the launcher isn't showing
+      // yesterday's numbers just because this device only ever opens the deck
+      // to look, not to study. persistNow() (not save()) -- a plain open must
+      // not arm a sync push or look like a rating.
+      S.summary=buildSummary(); persistNow();
+      // opened as e.g. deck.html?deck=greek#changelog (the launcher's version link does this) --
+      // jump straight to the changelog instead of making a fresh visitor land on the
+      // front screen and hunt for the build line themselves.
+      if(location.hash==='#changelog'){ renderLog(); show('scLog'); }
+      syncOnLaunch();
+      // a second pass shortly after boot: re-reads the media query in case the
+      // very first read (above) landed before the viewport had settled right
+      // after a standalone/"Add to Dock" launch -- applyLayout() re-balances
+      // the columns itself now, using renderHome()'s already-current content,
+      // so this alone covers that lag with no separate multicol kick needed.
+      setTimeout(applyLayout,300);
+    });   // renderHome() already calls renderWarn()
+  }, bootFail);
+  // ^ bootFail is the rejection handler for CONTENT RESOLUTION only (the
+  //   two-argument then): a failure inside bootContent()/load()/the renders
+  //   stays an unhandled rejection in the console, exactly as it always was
+  //   -- bootFail's "could not be loaded" page would mislabel those.
+})();
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(S&&S.theme==='auto') applyTheme(); });
 </script>
 </body>

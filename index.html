@@ -2,7 +2,7 @@
 <html lang="en" data-palette="vellum" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' 'self'; img-src 'self'; connect-src https://vocabula-sync.karsten-vun.workers.dev; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'self'; style-src 'unsafe-inline' 'self'; img-src 'self' data:; connect-src 'self' https://vocabula-sync.karsten-vun.workers.dev; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -13,6 +13,25 @@
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
 <link rel="stylesheet" href="palettes.css">
+<!-- Phase 2 (PHASE2_PLAN.md §2.1): the deck list itself, read by the script
+     below instead of a hand-written DECKS array. 'self' added to script-src
+     above for this -- the old 'unsafe-inline'-only policy blocks a real
+     src= script load, same class of gap as the connect-src CSP bug found
+     2026-08-16 (that one silently killed fetch(), this one would have
+     silently killed the entire page: REGISTRY undefined, every script below
+     throwing on first reference).
+
+     Two more pre-existing CSP gaps found live while testing this change,
+     fixed in the same line since both were sitting right here: `img-src
+     'self'` (no `data:`) was silently blocking the <select> arrow's inline
+     SVG background-image everywhere on this page, and `connect-src` never
+     included `'self'`, so the version-link self-correction fetch() a few
+     screens down (`fetch('deck.html')`) has likely never actually run --
+     the version text you see has only ever been the hardcoded fallback,
+     manually kept in step. Neither is new; both were just never caught
+     because nothing before this session read this page's own console. -->
+<script src="decks/registry.js"></script>
+<script src="shared.js"></script>
 <script>
 // The launcher's own chrome is always Vellum (fixed, not switchable -- see the
 // :root comment below); only light/dark follows the system. Stamped on <html>
@@ -41,17 +60,11 @@
      strip's own colours stay the launcher's vellum, deliberately (2026-08-16,
      scaled back from a per-deck-themed card after it read as cluttered). */
 }
-/* One line, 35 cells, inside that deck's own nav card -- no separate box,
-   no numbers. A single rounded strip (grid, not flex+wrap: always exactly
-   one row regardless of card width, each cell an even 1fr share) reading
-   as one bar rather than 35 little squares. Colour intensity per cell comes
-   from heatCellBg() below, in the launcher's own fixed vellum -- this does
-   NOT re-theme per deck (see the :root comment above); only the card's own
-   border does that, via paletteAccent(). */
-.miniStrip{display:grid;grid-template-columns:repeat(35,1fr);gap:2px;height:9px;
-  margin-top:12px;border-radius:3px;overflow:hidden}
-.miniStrip .dot{background:var(--line)}
-.miniStrip .dot.today{box-shadow:inset 0 -2px 0 var(--coral)}
+/* Today's numbers, inside that deck's own nav card -- replaces the 35-day
+   dot-strip that used to live here (2026-08-16, his direct ask: the history
+   view is secondary, per-day stats for the deck in front of him matter more).
+   One line, no box of its own, same muted small-text idiom as .d above. */
+.todayStats{margin-top:8px;font-size:12.5px;color:var(--muted);min-height:1.3em}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg)}
 body{
@@ -119,25 +132,42 @@ a.card .d{color:var(--muted);font-size:13.5px}
 .refreshBtn:disabled{opacity:.5;cursor:default}
 .refreshStatus{font-size:12.5px;color:var(--muted)}
 .refreshStatus.bad{color:var(--coral)}
+
+/* ---------- Phase 2 (PHASE2_PLAN.md §2.2): cross-deck dashboard. Read-only
+   throughout, same guarantee as the per-card strips above -- everything here
+   only ever reads state[KEY], nothing is written back to any deck. ---------- */
+.streakLine{font-size:13.5px;color:var(--muted);margin-bottom:10px;min-height:1.4em}
+.calToggleRow{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.calToggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);
+  -webkit-user-select:none;user-select:none}
+.calToggle input{margin:0;accent-color:var(--coral)}
+/* One shared horizontal scroll for every visible deck's row, so scrolling is
+   a single action across all of them at once (PLATFORM_PLAN.md §6a) rather
+   than N independently-scrolling strips that drift out of alignment. */
+.calAllScroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 2px 10px}
+.calDeckRow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.calDeckRow:last-child{margin-bottom:0}
+.calDeckRow .lbl{flex:0 0 auto;width:38px;font-size:10.5px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;text-align:right}
+.calDeckRow .dots{display:flex;gap:2px}
+.calDot{width:9px;height:9px;border-radius:2px;background:var(--line);flex:0 0 auto}
+.calDot.today{box-shadow:inset 0 -2px 0 var(--coral)}
 </style>
 </head>
 <body>
 <h1>Vocabula</h1>
 <p class="sub">Freshers' vocabulary, spaced out</p>
 
-<a class="card" href="deck.html?deck=latin" id="cardLatin">
-  <div class="t">Latin</div>
-  <div class="d">3,034 words, Parts I–VIII, both directions</div>
-  <div class="miniStrip" id="progLatin"></div>
-</a>
-<a class="card" href="deck.html?deck=greek" id="cardGreek">
-  <div class="t">Greek</div>
-  <div class="d">983 words, both directions</div>
-  <div class="miniStrip" id="progGreek"></div>
-</a>
+<div id="deckCards"></div>
 <div class="refreshRow">
   <button type="button" id="btnRefreshCards" class="refreshBtn">Refresh</button>
   <span class="refreshStatus" id="refreshStatus"></span>
+</div>
+<div class="sect">
+  <h2>Activity</h2>
+  <div class="streakLine" id="streakLine"></div>
+  <div class="calToggleRow" id="calToggleRow"></div>
+  <div class="calAllScroll" id="calAllScroll"></div>
 </div>
 <div class="sect">
   <h2>Sync</h2>
@@ -170,7 +200,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
   </div>
 </div>
 
-<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.16.7</a>
+<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.17.1</a>
 
 <script>
 // ---------- shared sync settings: the ONE place the sync code and this device's
@@ -316,63 +346,69 @@ fetch('deck.html',{cache:'no-store'}).then(r=>r.text()).then(text=>{
 }).catch(()=>{ /* offline or blocked -- the hardcoded fallback above stands */ });
 
 // ============================================================
-// Per-deck mini study strip, one line, inside that deck's own nav card.
-// READ-ONLY throughout -- everything below only ever reads a deck's stores,
-// never writes them. This page cannot alter either deck's real state. The
-// maths (dayKey/heatCellBg) is copied verbatim from deck.html, with
-// S.settings.* turned into explicit parameters since this page holds two
-// decks' state at once, not one global S.
+// Per-deck card content: today's stats, one line, inside that deck's own
+// nav card. READ-ONLY throughout -- everything below only ever reads a
+// deck's stores, never writes them. This page cannot alter either deck's
+// real state. The maths (dayKey/heatCellBg/etc.) is copied verbatim from
+// deck.html, with S.settings.* turned into explicit parameters since this
+// page holds two decks' state at once, not one global S.
 //
 // Where a deck's state lives (Phase 1 step 3, 2026-08-16): IndexedDB
 // `vocabula`, store `state`, key = the deck's KEY -- everything but the review
-// log, which is all this page needs (days + settings + palette/theme). The
-// pre-cutover copies (IndexedDB `kv` blob, localStorage full blob) are read as
-// fallbacks so a device that has not opened a deck since the cutover still
-// shows its strip. Palette/theme for the card border come from the tiny boot
-// record in localStorage (KEY.boot) synchronously, so the border is right on
-// the very first frame; the strip fills in as soon as IndexedDB answers.
+// log, which is all this page needs (days + settings + palette/theme/summary).
+// The pre-cutover copies (IndexedDB `kv` blob, localStorage full blob) are
+// read as fallbacks so a device that has not opened a deck since the cutover
+// still shows something. Palette/theme for the card border come from the
+// tiny boot record in localStorage (KEY.boot) synchronously, so the border
+// is right on the very first frame; everything else fills in as soon as
+// IndexedDB answers.
 //
-// 2026-08-16: scaled back from the original two-line card (35-day strip +
-// four stat chips, all re-themed to that deck's own saved palette) after it
-// read as cluttered -- see PLATFORM_PLAN.md §6b. Now: one line, no numbers,
-// launcher's own fixed vellum for the strip's own colours. The deck's saved
-// palette still shows up, just nowhere near as loud -- paletteAccent() below
-// pulls one colour (--coral) off a throwaway scoped probe element (palettes.css
-// being the single source of truth) and that becomes the nav card's border.
+// This card's own content has been redesigned twice on the same day
+// (2026-08-16) and both times the record of what was tried and rejected is
+// worth keeping so a future session doesn't re-walk the same ground:
+//   1. Original: a two-line card (35-day dot-strip + four stat chips, all
+//      re-themed to that deck's own saved palette) -- cut for reading as
+//      cluttered (PLATFORM_PLAN.md §6b).
+//   2. Scaled back to one line, a plain 35-day dot-strip, no numbers, in the
+//      launcher's own fixed vellum.
+//   3. **This version**: even the dot-strip is gone from the card. His own
+//      direct ask -- history-over-time is secondary, what matters on this
+//      page is today's numbers for the deck in front of him. The 35-day (and
+//      full-history) view didn't disappear, it moved to its own "Activity"
+//      section below the cards, shared across both decks on one axis -- see
+//      that section's own comment further down. The card itself now shows
+//      only: the existing "what to do now" line (summaryLine(), unchanged)
+//      and a new one-line today readout (renderTodayStats(), below).
+// The deck's saved palette still shows up on the card, just as its border
+// only -- paletteAccent() below pulls one colour (--coral) off a throwaway
+// scoped probe element (palettes.css being the single source of truth).
 // ============================================================
 const HOUR=3600000, DAY=86400000;
 const dayKey=(ts,roll)=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-roll*HOUR)/DAY);
-const HEAT_SPACE='oklch';
-const DECKS=[{id:'latin',key:'vocabula.latin.v2',card:'cardLatin',strip:'progLatin'},
-             {id:'greek',key:'vocabula.greek.v1',card:'cardGreek',strip:'progGreek'}];
+// Phase 2 (PHASE2_PLAN.md §2.1): DECKS now derives from REGISTRY (decks/
+// registry.js) instead of being hand-written here -- a deck added to the
+// registry shows up on the launcher with no index.html edit. Archived decks
+// (D3) are filtered out: hidden from the launcher, not deleted -- their
+// storage/sync slot is untouched and they stay reachable by a direct
+// deck.html?deck=<id> URL or a pinned icon.
+const DECKS=REGISTRY.filter(d=>!d.archived).map(d=>({
+  id:d.id, key:d.key, title:d.title, blurb:d.blurb,
+  card:'card'+d.id, today:'today'+d.id
+}));
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Renders the deck nav cards from DECKS -- replaces two hand-written
+// <a class="card"> blocks. Must run before renderAll(), which looks up
+// each card/today/sub element by id.
+function renderDeckCards(){
+  $('deckCards').innerHTML=DECKS.map(d=>
+    '<a class="card" href="deck.html?deck='+esc(d.id)+'" id="'+d.card+'">'+
+      '<div class="t">'+esc(d.title)+'</div>'+
+      '<div class="d" id="'+d.card+'Sub">'+esc(d.blurb)+'</div>'+
+      '<div class="todayStats" id="'+d.today+'"></div>'+
+    '</a>'
+  ).join('');
+}
 
-function heatRec(days,dk){
-  const r=days[dk];
-  return {ratings:(r&&r.n)||0, ok:(r&&r.ok)||0, tot:(r&&r.tot)||0};
-}
-function volumePct(ratings,avg){
-  if(!avg) return 0;
-  return Math.max(0,Math.min(1,ratings/(avg*1.6)))*100;
-}
-function retentionPct(ok,tot){
-  if(!tot) return 0;
-  const r=100*ok/tot;
-  return Math.max(0,Math.min(1,(r-60)/40))*100;
-}
-function heatmapAvgRatings(days){
-  let sum=0,n=0;
-  for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
-  return n?sum/n:0;
-}
-function heatCellBg(rec,avg,mode,accent){
-  if(!rec||!rec.ratings) return '';
-  if(mode==='retention'&&rec.tot){
-    const p=retentionPct(rec.ok,rec.tot);
-    return 'background:color-mix(in '+HEAT_SPACE+', var(--good) '+p+'%, var(--again) '+(100-p)+'%)';
-  }
-  const p=volumePct(rec.ratings,avg);
-  return 'background:color-mix(in '+HEAT_SPACE+', var(--'+accent+') '+p+'%, var(--panel))';
-}
 
 // One colour, read off palettes.css via a throwaway scoped element rather
 // than a hand-copied hex table -- keeps the CSS the only place these values
@@ -397,29 +433,190 @@ function paintBorder(cardId,palette,theme){
   const c=paletteAccent(palette||'vellum',resolveTheme(theme));
   if(c) $(cardId).style.borderColor=c;
 }
-// Renders one deck's 35-day strip into #<stripId>, inside that deck's own
-// nav card (#<cardId>), from a state object shaped like that deck's own S
-// (minus the log). Never throws on a device that's never opened this deck:
-// the strip just renders empty (all cells the plain unlit --line) and the
-// card's border stays default.
-function renderDeckProgress(cardId,stripId,data){
-  const strip=$(stripId);
+// "What to do now" (PHASE2_PLAN.md §2.3/§2.2): reads a deck's own
+// S.summary, written by that deck on every save() and once at boot. A
+// device that has never opened this deck since the build carrying §2.3
+// shipped has no summary yet -- renderDeckCards()'s static blurb stands
+// until it does, same "never blank, degrade to the fallback" idiom as the
+// version link at the foot of this page.
+function relDay(day,todayKey){
+  const diff=todayKey-day;
+  if(diff<=0) return null;                 // today, or (clock skew) the future -- say nothing extra
+  return diff===1?'yesterday':(diff+' days ago');
+}
+function summaryLine(data,rollover){
+  if(!data||!data.summary) return null;
+  const sum=data.summary;
+  const d=dayKey(Date.now(),rollover);
+  const n=(sum.due|0)+(sum.learn|0)+(sum.intro|0);
+  const base=n?(n+' word'+(n===1?'':'s')+' ready'):'Nothing due right now';
+  const rel=relDay(sum.day,d);
+  return rel?(base+' · as of '+rel):base;
+}
+// Compact duration text -- "0m" / "<1m" / "6m" / "1h 12m". Rounds to the
+// minute; nothing on a launcher card needs second-level precision. Exact zero
+// is its own case: "<1m" for a day with no study at all claims a few seconds
+// that never happened, and it read especially oddly next to a done-count of
+// nothing. "<1m" now means what it says -- some study, under a minute of it.
+function fmtDuration(ms){
+  if(!(ms>0)) return '0m';
+  const mins=Math.round(ms/60000);
+  if(mins<1) return '<1m';
+  if(mins<60) return mins+'m';
+  return Math.floor(mins/60)+'h '+(mins%60)+'m';
+}
+// Trailing-window average ms/rating, for the rough "~Nm to go" projection
+// below. Gated the same way deck.html's own Stats screen gates its own
+// seconds/review readout (STATS_TIME_PLAN.md's hasData convention) -- a
+// couple of data points is noise, not a real pace, so this returns null
+// rather than guess off too little, and the caller must degrade gracefully.
+function avgMsPerRating(days,todayKey,windowDays){
+  let sumMs=0,sumN=0,daysWithData=0;
+  for(let k=todayKey-windowDays;k<todayKey;k++){
+    const r=days[k];
+    if(r&&r.n&&r.studyMs){ sumMs+=r.studyMs; sumN+=r.n; daysWithData++; }
+  }
+  return (daysWithData>=3&&sumN>=10)?(sumMs/sumN):null;
+}
+// Today's numbers for one deck (his 2026-08-16 ask, replacing the 35-day
+// dot-strip that used to render here -- see the section comment above).
+// "Due" is deliberately the narrow FSRS sense (S.summary.due alone,
+// genuinely-scheduled reviews) rather than the broader due+learn+intro
+// "ready" total the .d line above already shows -- a distinct, useful
+// number, not a restatement. Time spent comes straight from today's day
+// record; the "~Nm to go" projection (spent + avg-ms/rating × words still
+// ready) only appears once there's enough trailing data to make it more
+// than a guess, and only when there's anything left to project.
+// `done` is read from today's own day record, NOT from summary.doneToday
+// (2026-08-17). The summary is a snapshot stamped when that deck last saved,
+// which is why summaryLine() above discloses "as of yesterday" when it is
+// stale -- but this line took doneToday from that same stale snapshot while
+// taking the time beside it from today's live day record. A deck last opened
+// yesterday therefore read "12 due · 143 done · 0m": yesterday's review count
+// presented as today's, next to today's true zero minutes, the two halves of
+// one sentence disagreeing about which day they meant. days[] is keyed by
+// day, so reading it directly cannot misattribute: on a stale snapshot
+// there is simply no record for today yet and it correctly says 0.
+// `due` genuinely cannot be recomputed here (it needs the scheduler this
+// page never loads), so it stays snapshot-derived -- with the staleness
+// already disclosed one line up.
+function renderTodayStats(el,data,rollover){
+  if(!data||!data.summary){ el.textContent=''; return; }
+  const sum=data.summary, days=data.days||{};
+  const d=dayKey(Date.now(),rollover);
+  const todayRec=days[d]||{};
+  const spentMs=todayRec.studyMs||0;
+  const done=todayRec.n|0;
+  const left=(sum.due|0)+(sum.learn|0)+(sum.intro|0);
+  const avg=avgMsPerRating(days,d,14);
+  const timePart=(avg&&left>0) ? (fmtDuration(spentMs)+' / ~'+fmtDuration(spentMs+avg*left)) : fmtDuration(spentMs);
+  el.textContent=(sum.due|0)+' due · '+done+' done · '+timePart;
+}
+// Paints the card border and both text lines for one deck, from a state
+// object shaped like that deck's own S (minus the log). Never throws on a
+// device that's never opened this deck: summaryLine()/renderTodayStats()
+// both degrade to their fallback (the static blurb; an empty stats line)
+// rather than showing stale or fabricated numbers.
+function renderDeckProgress(cardId,todayId,data){
   const settings=(data&&data.settings)||{};
   const rollover=(settings.rollover!=null)?settings.rollover:4;
-  const d=dayKey(Date.now(),rollover);
-  const days=(data&&data.days)||{};
-  const avgR=heatmapAvgRatings(days);
-  const mode=settings.heatmapColourMode||'volume';
-  const accent=settings.heatmapAccent||'coral';
-
-  let html='';
-  for(let i=34;i>=0;i--){
-    const k=d-i;
-    const bg=heatCellBg(heatRec(days,k),avgR,mode,accent);
-    html+='<div class="dot'+(i===0?' today':'')+'"'+(bg?' style="'+bg+'"':'')+'></div>';
-  }
-  strip.innerHTML=html;
   if(data) paintBorder(cardId,data.palette,data.theme);
+  const line=summaryLine(data,rollover), subEl=document.getElementById(cardId+'Sub');
+  if(subEl&&line) subEl.textContent=line;
+  renderTodayStats($(todayId),data,rollover);
+}
+// Merges N decks' day maps into one: a day counts toward the COMBINED streak
+// if any visible deck studied that day. Each deck's days map is already
+// keyed by that deck's own dayKey (which depends on that deck's own
+// rollover hour) -- summing the integer keys directly assumes decks'
+// rollover hours are close enough that a study session lands in the same
+// calendar-day bucket either way. True for any realistic rollover gap; a
+// combined streak is a glance-level number, not a scheduling input, so this
+// approximation is deliberate, not an oversight.
+//
+// Each deck is passed as {days, since}: `since` is that deck's own
+// streakStart, the "count my streak from here" reset in its calendar gear.
+// Honouring it here is what keeps the headline consistent with the per-deck
+// figures printed right beside it (2026-08-17). Before, the merge ignored
+// streakStart entirely while the breakdown applied it, so a reset deck
+// produced a line that contradicted itself -- "247-day streak (Latin 12 ·
+// Greek 12)" -- the one number a reader trusts least being the biggest one.
+function mergeDayMaps(entries){
+  const merged={};
+  for(const e of entries){
+    const days=e.days||{}, since=e.since;
+    for(const k in days){
+      const n=(days[k]&&days[k].n)||0;
+      if(!n) continue;
+      if(since!=null&&+k<since) continue;   // before that deck's own streak reset
+      (merged[k]||(merged[k]={n:0})).n+=n;
+    }
+  }
+  return merged;
+}
+const CAL_REF_ROLL=4;   // shared reference rollover for the combined streak and the calendar's own date axis -- see mergeDayMaps' comment
+function renderStreakLine(datasById){
+  const merged=mergeDayMaps(DECKS.map(d=>{
+    const data=datasById[d.id];
+    return {days:(data&&data.days)||{}, since:(data&&data.settings&&data.settings.streakStart)};
+  }));
+  const combined=currentStreak(merged,dayKey(Date.now(),CAL_REF_ROLL),null);
+  const parts=DECKS.map(d=>{
+    const data=datasById[d.id]; if(!data) return null;
+    const settings=data.settings||{}, rollover=(settings.rollover!=null)?settings.rollover:CAL_REF_ROLL;
+    const s=currentStreak(data.days||{},dayKey(Date.now(),rollover),settings.streakStart);
+    return d.title+' '+s;
+  }).filter(Boolean);
+  $('streakLine').textContent=(combined?combined+'-day streak':'No streak yet — study something today to start one')+
+    (parts.length?' ('+parts.join(' · ')+')':'');
+}
+// One shared-scroll container, one row per visible deck, all sharing the
+// same day columns (PLATFORM_PLAN.md §6a) so scrolling is a single action
+// across every deck at once rather than N independently-scrolling strips.
+// Deliberately past-only (no forecast -- that needs the scheduling engine,
+// which this page never loads) and read-only with no click-through detail,
+// unlike deck.html's own per-deck calendar -- "the launcher stays a reader"
+// (§2.2).
+let calHiddenIds=new Set();
+function renderCalStack(datasById){
+  const toggleRow=$('calToggleRow');
+  toggleRow.innerHTML=DECKS.map(d=>
+    '<label class="calToggle"><input type="checkbox" data-deck-id="'+esc(d.id)+'"'+
+    (calHiddenIds.has(d.id)?'':' checked')+'> '+esc(d.title)+'</label>'
+  ).join('');
+  toggleRow.querySelectorAll('input[data-deck-id]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      if(cb.checked) calHiddenIds.delete(cb.dataset.deckId); else calHiddenIds.add(cb.dataset.deckId);
+      renderCalStack(datasById);
+    });
+  });
+  const visible=DECKS.filter(d=>!calHiddenIds.has(d.id));
+  if(!visible.length){ $('calAllScroll').innerHTML=''; return; }
+  const d0=dayKey(Date.now(),CAL_REF_ROLL);
+  let startKey=d0;
+  for(const d of visible){
+    const data=datasById[d.id];
+    if(data&&data.created) startKey=Math.min(startKey,dayKey(data.created,CAL_REF_ROLL));
+    for(const k in ((data&&data.days)||{})) startKey=Math.min(startKey,+k);
+  }
+  let rowsHtml='';
+  for(const d of visible){
+    const data=datasById[d.id]||{};
+    const days=data.days||{}, settings=data.settings||{};
+    // Same baseline the deck's own heatmap chip displays -- read from that
+    // deck's saved heatmapAvgWindow, so a row here and that deck's own
+    // calendar colour identically instead of against two different averages.
+    const avgR=heatmapBaseline(days,d0,settings.heatmapAvgWindow||'month');
+    const mode=settings.heatmapColourMode||'volume', accent=settings.heatmapAccent||'coral';
+    let dots='';
+    for(let k=startKey;k<=d0;k++){
+      const bg=heatCellBg(heatRec(days,k),avgR,mode,accent);
+      dots+='<div class="calDot'+(k===d0?' today':'')+'"'+(bg?' style="'+bg+'"':'')+'></div>';
+    }
+    rowsHtml+='<div class="calDeckRow"><div class="lbl">'+esc(d.title)+'</div><div class="dots">'+dots+'</div></div>';
+  }
+  $('calAllScroll').innerHTML=rowsHtml;
+  const sc=$('calAllScroll'); sc.scrollLeft=sc.scrollWidth;
 }
 // The deck's tiny boot record (theme/palette) -- synchronous, so the border
 // is right before IndexedDB has answered.
@@ -485,11 +682,21 @@ async function renderAll(fetched){
   }
   if(!dbPromise) dbPromise=openDeckDb();
   const db=await dbPromise;
+  const datasById={};
   for(const d of DECKS){
     const local=await localData(db,d.key);
-    renderDeckProgress(d.card,d.strip,fresherData(local,fetched[d.id]||null));
+    const data=fresherData(local,fetched[d.id]||null);
+    datasById[d.id]=data;
+    renderDeckProgress(d.card,d.today,data);
   }
+  // Phase 2 (PHASE2_PLAN.md §2.2): combined/per-deck streaks and the stacked
+  // calendar need every deck's data at once (a combined streak can't be
+  // computed one deck at a time), unlike the per-card strip/summary line
+  // just above, which update as each deck's own data resolves.
+  renderStreakLine(datasById);
+  renderCalStack(datasById);
 }
+renderDeckCards();  // must exist before renderAll() looks up any card/strip/sub element by id
 renderAll(); // straight from this device's stores -- the page is correct
              // immediately, never blank while the sync check below is in flight
 
