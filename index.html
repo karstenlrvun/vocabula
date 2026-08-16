@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; connect-src https://api.github.com https://*.githubusercontent.com; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -273,6 +273,18 @@ a.card .d{color:var(--muted);font-size:13.5px}
   background:var(--panel);resize:vertical;word-break:break-all}
 .pairStatus{font-size:13px;color:var(--good);margin-top:10px;min-height:1em}
 .pairStatus.bad{color:var(--coral)}
+
+/* ---------- manual force-refresh of the two cards above, straight off the
+   gist -- see the big comment block near renderDeckProgress() below for why
+   this exists at all. Small and secondary by design: the automatic check
+   already runs on every load, this is only for "no, right now". ---------- */
+.refreshRow{display:flex;align-items:center;gap:12px;margin:2px 0 26px}
+.refreshBtn{height:34px;padding:0 16px;border:1px solid var(--line);border-radius:9px;
+  background:var(--raise);color:var(--ink);font-size:13.5px;font-family:inherit;cursor:pointer}
+.refreshBtn:active{border-color:var(--coral);background:var(--accent-soft)}
+.refreshBtn:disabled{opacity:.5;cursor:default}
+.refreshStatus{font-size:12.5px;color:var(--muted)}
+.refreshStatus.bad{color:var(--coral)}
 </style>
 </head>
 <body>
@@ -289,6 +301,10 @@ a.card .d{color:var(--muted);font-size:13.5px}
   <div class="d">983 words, both directions</div>
   <div class="miniStrip" id="progGreek"></div>
 </a>
+<div class="refreshRow">
+  <button type="button" id="btnRefreshCards" class="refreshBtn">Refresh</button>
+  <span class="refreshStatus" id="refreshStatus"></span>
+</div>
 <div class="sect">
   <h2>Backup &amp; sync</h2>
   <div class="field">
@@ -327,7 +343,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
   </div>
 </div>
 
-<a class="verlink" id="verLink" href="latin.html#changelog">Version 2026.08.15.6</a>
+<a class="verlink" id="verLink" href="latin.html#changelog">Version 2026.08.16.6</a>
 
 <script>
 const GIST_SHARED_KEY='vocabula.gist.v1';
@@ -597,15 +613,15 @@ function paletteAccent(palette,theme){
 }
 
 // Renders one deck's 35-day strip into #<stripId>, inside that deck's own
-// nav card (#<cardId>), from its own real localStorage state -- storageKey
-// matches that deck's own `const KEY` exactly (latin.html:1843
-// 'vocabula.latin.v2', greek.html:1842 'vocabula.greek.v1'). Never throws
-// on a device that's never opened this deck: the strip just renders empty
-// (all cells the plain unlit --line) and the card's border stays default.
-function renderDeckProgress(cardId,stripId,storageKey){
+// nav card (#<cardId>), from a state object shaped exactly like that deck's
+// own real localStorage entry (latin.html:1843 'vocabula.latin.v2',
+// greek.html:1842 'vocabula.greek.v1') -- either that entry itself, read
+// straight off localStorage, or a same-shaped object pulled fresh from the
+// gist by checkGist() below. Never throws on a device that's never opened
+// this deck: the strip just renders empty (all cells the plain unlit --line)
+// and the card's border stays default.
+function renderDeckProgress(cardId,stripId,data){
   const card=$(cardId), strip=$(stripId);
-  let data=null;
-  try{ data=JSON.parse(localStorage.getItem(storageKey)); }catch(e){}
   const settings=(data&&data.settings)||{};
   const rollover=(settings.rollover!=null)?settings.rollover:4;
   const d=dayKey(Date.now(),rollover);
@@ -630,8 +646,124 @@ function renderDeckProgress(cardId,stripId,storageKey){
     if(accentColor) card.style.borderColor=accentColor;
   }
 }
-renderDeckProgress('cardLatin','progLatin','vocabula.latin.v2');
-renderDeckProgress('cardGreek','progGreek','vocabula.greek.v1');
+function localData(storageKey){
+  try{ return JSON.parse(localStorage.getItem(storageKey)); }catch(e){ return null; }
+}
+// Pure: which of a deck's own localStorage copy and a freshly-fetched gist
+// copy is the one worth rendering from. Same reasoning as the decks' own
+// syncDecision() (latin.html), reduced to a display-only question with no
+// merge and nothing to write anywhere -- log length is already how the rest
+// of this app measures "has seen more", so reused rather than inventing a
+// second yardstick. A missing/unparseable fetch (network down, bad token,
+// truncated content that wouldn't parse) always falls back to local: no
+// news is exactly the case where the old snapshot is all there is.
+function fresherData(local,fetched){
+  if(!fetched) return local;
+  if(!local) return fetched;
+  const localLen=(local.log&&local.log.length)||0;
+  const fetchedLen=(fetched.log&&fetched.log.length)||0;
+  return fetchedLen>=localLen ? fetched : local;
+}
+function renderAll(fetchedLatin,fetchedGreek){
+  renderDeckProgress('cardLatin','progLatin',fresherData(localData('vocabula.latin.v2'),fetchedLatin));
+  renderDeckProgress('cardGreek','progGreek',fresherData(localData('vocabula.greek.v1'),fetchedGreek));
+}
+renderAll(); // straight from localStorage -- the page is correct immediately,
+             // never blank while the gist check below is still in flight
+
+// ============================================================
+// Force-refresh: this page used to be read-only in a stronger sense than it
+// needs to be -- never writing to a deck's real localStorage key (still
+// true, see below) got conflated with never talking to the gist at all. But
+// this page can only ever show whatever a deck last wrote to *this*
+// browser's storage, which is only ever current if that deck was actually
+// opened on this device since whatever changed (a palette switch, a study
+// session) elsewhere. Reported as the launcher "lagging behind" the real
+// palette/study data -- true, and there was no way to force it short of
+// opening a deck first just to let its own syncOnLaunch() pull, then coming
+// back here.
+//
+// Fetching the gist straight from this page closes that gap without giving
+// up the read-only guarantee: fetchGist()/parseGistFile() below only ever
+// GET, and the result is handed to renderAll() as data to render *from*,
+// never written into vocabula.latin.v2/vocabula.greek.v1. A deck's own
+// localStorage entry is exactly as untouched as it always was.
+//
+// Throttled the same way the decks throttle their own launch-time gist
+// check (latin.html's syncOnLaunch(), 1-request-per-minute) -- one GET to
+// /gists/{id} returns every file in the gist at once, so this is one
+// request per check either way, not one per deck. The throttle clock is
+// stamped into localStorage (not a module-level variable) because this
+// page's whole script re-runs on every fresh load; an in-memory clock would
+// reset to zero -- and pass the throttle -- every single time.
+// ============================================================
+const IDX_SYNC_MIN=60000;                       // 60s -- same order as the decks' own MIN
+const IDX_LAST_CHECK_KEY='vocabula.indexLastCheck.v1';
+async function fetchGistFiles(gistId,gistTok){
+  const r=await fetch('https://api.github.com/gists/'+gistId,
+    {headers:{'Authorization':'Bearer '+gistTok,'Accept':'application/vnd.github+json'}});
+  if(!r.ok) throw new Error(String(r.status));
+  return (await r.json()).files||{};
+}
+// Same truncated-content fallback as the decks' own fetchGist(): the list
+// endpoint truncates a large file's `content`, `raw_url` doesn't need the
+// Authorization header (a secret gist's raw content is unlisted, not
+// access-controlled), and adding one anyway forces a CORS preflight this
+// host doesn't answer -- see latin.html's fetchGist() for the fuller story.
+async function parseGistFile(f){
+  if(!f) return null;
+  if(!f.truncated){ try{ return JSON.parse(f.content); }catch(e){} }
+  const rr=await fetch(f.raw_url);
+  if(!rr.ok) throw new Error('raw '+rr.status);
+  return JSON.parse(await rr.text());
+}
+function setRefreshStatus(msg,bad){
+  const el=$('refreshStatus');
+  el.textContent=msg||'';
+  el.classList.toggle('bad',!!bad);
+}
+// force=true (the button) always checks, throttle or not, and always says
+// something. force=false (page load) is silent whenever the throttle skips
+// it or there's nothing configured yet -- a device that's never set up gist
+// backup shouldn't see a sync error it never asked for.
+async function checkGist(force){
+  const {gistId,gistTok}=loadShared();
+  if(!gistId||!gistTok){
+    if(force) setRefreshStatus('Fill in the gist id and token first',true);
+    return;
+  }
+  if(!force){
+    const last=Number(localStorage.getItem(IDX_LAST_CHECK_KEY))||0;
+    if(Date.now()-last<IDX_SYNC_MIN) return;
+  }
+  localStorage.setItem(IDX_LAST_CHECK_KEY,String(Date.now()));
+  if(force) setRefreshStatus('Checking…');
+  try{
+    const files=await fetchGistFiles(gistId,gistTok);
+    // allSettled, not all: the two decks' files are fetched and parsed
+    // independently, and one failing to parse (a truncated file whose
+    // raw_url follow-up 404s, say) shouldn't throw away a perfectly good
+    // result already in hand for the other.
+    const [latinR,greekR]=await Promise.allSettled([
+      parseGistFile(files['vocabula.json']),
+      parseGistFile(files['vocabula-greek.json'])
+    ]);
+    renderAll(
+      latinR.status==='fulfilled'?latinR.value:null,
+      greekR.status==='fulfilled'?greekR.value:null
+    );
+    if(force) setRefreshStatus('Checked just now');
+  }catch(e){
+    if(force) setRefreshStatus('Gist check failed ('+e.message+') — showing what\'s on this device',true);
+  }
+}
+$('btnRefreshCards').addEventListener('click',async()=>{
+  const btn=$('btnRefreshCards');
+  btn.disabled=true;
+  await checkGist(true);
+  btn.disabled=false;
+});
+checkGist(false);
 </script>
 </body>
 </html>

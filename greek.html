@@ -192,6 +192,54 @@
      8-Bit  -- the real, hardware-documented original Game Boy DMG screen
        (#9bbc0f/#8bac0f/#306230/#0f380f) for light mode; a dark arcade
        cabinet for dark mode. */
+/* --texture: an optional background-image layered under --bg (consumed by
+   body and .palHalf via var(--texture,none), so any palette that never sets
+   it just gets `none` -- no per-palette opt-out needed). Added 2026-08-16,
+   same session as the five palettes above, first only on the three whose own
+   brief is literally about a textured material: Rubric's laid-paper fibers
+   (a fine 3px grain crossed by sparse 34px "chain lines," the real two-scale
+   structure of laid paper, not just noise), Steel's brushed-metal streaks
+   (its own description above says "brushed"), and 8-Bit's LCD pixel grid
+   (the real Game Boy screen has visible pixel boundaries at this scale).
+   Every value stays under 6% alpha -- meant to be felt more than seen,
+   behind small dense study-card text.
+
+   Glass and Neon got their own, differently-shaped treatment the same day,
+   once asked for directly, because a repeating grain isn't what either of
+   them is actually about:
+
+   Glass (his ask: "emulate Apple's Liquid Glass aesthetic") gets real
+   translucency and blur, not a texture -- --panel/--raise are now
+   semi-transparent (rgba, not solid hex) so every one of their ~25 existing
+   consumers (`.dir`, `.rate`, `.chip`, form fields, etc. -- see the big
+   selector list right after the dark block below) picks up the see-through
+   quality for free, with no per-selector change. Two new palette-only vars,
+   --glass-blur and --glass-shadow, are consumed by that one shared rule to
+   add backdrop-filter (frosted blur + saturation boost, Apple's actual
+   "material" recipe) and a bright inset rim on the same surfaces -- kept as
+   variables rather than baked into the rule so light/dark can tune them
+   independently without duplicating a 25-selector list twice. Deliberately
+   NOT applied to `.dot`/`.calDayDot`: the all-time calendar strip can put
+   hundreds of these on screen at once, and backdrop-filter is expensive per
+   element -- translucent colour is free at that count, blur isn't. --texture
+   is still a soft, non-repeating pair of radial-gradient light patches
+   (an actual tile pattern here would fight the smooth-surface read the
+   same way it would have before).
+
+   Neon (his ask: "the saturation that makes colours glow, if that's
+   possible") gets an actual glow, via text-shadow/box-shadow, not a
+   texture either -- a texture sits behind the text, a glow has to come from
+   the coloured text/fill itself. --glow-text (two or three stacked
+   `currentColor` shadows, more layers and reach in dark mode where glow
+   against near-black is the real neon-sign look, fewer/softer in light mode
+   where the same blur mostly just looks muddy) is applied via one shared
+   rule to every element that already sets `color` to one of the accent
+   vars -- `currentColor` means that rule doesn't need to know which colour
+   each one is, they all glow in their own. Filled elements (`.startBtn`,
+   the rating pills, `.chip.on`) can't use `currentColor` the same way since
+   their own text is white-on-fill, not the accent -- those get an explicit
+   `color-mix(in srgb, var(--x) N%, transparent)` box-shadow instead, same
+   `color-mix()` this file's heatmap accent already uses elsewhere. */
 [data-palette="rubric"][data-theme="light"]{
   --bg:#f6ecd4; --panel:#efe0bc; --ink:#241610; --muted:#6b4a30; --faint:#9c7a54;
   --line:#ddc38f; --coral:#a3161f; --accent-soft:#f3ddb0; --raise:#fdf6e2; --again:#8f1018;
@@ -199,6 +247,8 @@
   --easy:#5b3a8e; --easy-bg:#e6ddf0; --easy-br:#cbb8e2; --amber:#a67c0e; --warn-bg:#f0e0ad;
   --warn-br:#dcbf6c; --warn-ink:#7a5a08; --bad-bg:#f0dcc0; --bad-br:#dcb583; --bad-ink:#6b0d12;
   --toast:#241610;
+  --texture:repeating-linear-gradient(90deg,rgba(36,22,16,.05) 0,rgba(36,22,16,.05) .5px,transparent .5px,transparent 3px),
+    repeating-linear-gradient(0deg,rgba(36,22,16,.07) 0,rgba(36,22,16,.07) 1px,transparent 1px,transparent 34px);
 }
 [data-palette="rubric"][data-theme="dark"]{
   --bg:#1c0f0c; --panel:#2a1712; --ink:#f0dfc0; --muted:#c4a06e; --faint:#8a6a48;
@@ -207,6 +257,8 @@
   --easy:#b399e0; --easy-bg:#332a4a; --easy-br:#4f4270; --amber:#e0b23e; --warn-bg:#40300f;
   --warn-br:#634a1a; --warn-ink:#e8bd5c; --bad-bg:#3f221c; --bad-br:#63362a; --bad-ink:#ef8b7f;
   --toast:#2a1712;
+  --texture:repeating-linear-gradient(90deg,rgba(240,223,192,.05) 0,rgba(240,223,192,.05) .5px,transparent .5px,transparent 3px),
+    repeating-linear-gradient(0deg,rgba(240,223,192,.06) 0,rgba(240,223,192,.06) 1px,transparent 1px,transparent 34px);
 }
 [data-palette="steel"][data-theme="light"]{
   --bg:#eef0f1; --panel:#e2e5e7; --ink:#23282b; --muted:#5c6569; --faint:#8b9296;
@@ -215,6 +267,8 @@
   --easy:#4a5a7a; --easy-bg:#dde2ea; --easy-br:#b9c4d6; --amber:#96731e; --warn-bg:#ece3cc;
   --warn-br:#d8c496; --warn-ink:#6e5314; --bad-bg:#ecdfd9; --bad-br:#d9bcae; --bad-ink:#7a2a1e;
   --toast:#23282b;
+  --texture:repeating-linear-gradient(95deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.05) 1px,
+    rgba(35,40,43,.035) 1px,rgba(35,40,43,.035) 2px,transparent 2px,transparent 3px);
 }
 [data-palette="steel"][data-theme="dark"]{
   --bg:#16191b; --panel:#202426; --ink:#dfe3e5; --muted:#a7aeb2; --faint:#6c7377;
@@ -223,22 +277,57 @@
   --easy:#8fa3c9; --easy-bg:#262e3d; --easy-br:#3c4a63; --amber:#cda54c; --warn-bg:#3a301b;
   --warn-br:#5c4828; --warn-ink:#d4ac5c; --bad-bg:#3f2c24; --bad-br:#634033; --bad-ink:#e3927a;
   --toast:#202426;
+  --texture:repeating-linear-gradient(95deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 1px,
+    rgba(0,0,0,.05) 1px,rgba(0,0,0,.05) 2px,transparent 2px,transparent 3px);
 }
 [data-palette="glass"][data-theme="light"]{
-  --bg:#eef2f6; --panel:#e1e8f0; --ink:#1d2733; --muted:#54626f; --faint:#8996a3;
-  --line:#c9d5e0; --coral:#1f7fa3; --accent-soft:#dcebf2; --raise:#fbfdff; --again:#c23b4e;
+  --bg:#eef2f6; --panel:rgba(225,232,240,.62); --ink:#1d2733; --muted:#54626f; --faint:#8996a3;
+  --line:#c9d5e0; --coral:#1f7fa3; --accent-soft:#dcebf2; --raise:rgba(251,253,255,.72); --again:#c23b4e;
   --again-bg:#f7dfe1; --again-br:#eab9bd; --good:#2f8f6e; --good-bg:#dcefe6; --good-br:#b7dbc9;
   --easy:#6a5ecf; --easy-bg:#e6e2f8; --easy-br:#cbc3ef; --amber:#b3860f; --warn-bg:#f2e6c4;
   --warn-br:#e2cb8e; --warn-ink:#7d5c0c; --bad-bg:#f7dfe1; --bad-br:#eab9bd; --bad-ink:#94202f;
   --toast:#1d2733;
+  --texture:radial-gradient(55% 40% at 12% -5%,rgba(255,255,255,.55),transparent 60%),
+    radial-gradient(45% 35% at 100% 100%,rgba(31,127,163,.14),transparent 65%);
+  --glass-blur:blur(16px) saturate(170%);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 0 0 1px rgba(255,255,255,.25),
+    0 3px 14px rgba(20,40,60,.12);
 }
 [data-palette="glass"][data-theme="dark"]{
-  --bg:#12181f; --panel:#1b232c; --ink:#e6edf3; --muted:#a7b4bf; --faint:#66727d;
-  --line:#2c3844; --coral:#5ec2e8; --accent-soft:#1c2e38; --raise:#212b35; --again:#e2687a;
+  --bg:#12181f; --panel:rgba(27,35,44,.55); --ink:#e6edf3; --muted:#a7b4bf; --faint:#66727d;
+  --line:#2c3844; --coral:#5ec2e8; --accent-soft:#1c2e38; --raise:rgba(33,43,53,.62); --again:#e2687a;
   --again-bg:#3a2229; --again-br:#5c333e; --good:#6fcba8; --good-bg:#193226; --good-br:#2b4d3c;
   --easy:#a79af0; --easy-bg:#241f3e; --easy-br:#392f5c; --amber:#e8c168; --warn-bg:#392c14;
   --warn-br:#5c4720; --warn-ink:#eec478; --bad-bg:#3a2229; --bad-br:#5c333e; --bad-ink:#ef8797;
   --toast:#1b232c;
+  --texture:radial-gradient(55% 40% at 12% -5%,rgba(94,194,232,.16),transparent 60%),
+    radial-gradient(45% 35% at 100% 100%,rgba(94,194,232,.10),transparent 65%);
+  --glass-blur:blur(16px) saturate(170%);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 0 0 1px rgba(255,255,255,.06),
+    0 3px 16px rgba(0,0,0,.4);
+}
+/* Glass's ~25 existing panel/raise-tier surfaces, listed once so
+   --glass-blur/--glass-shadow (above) don't need duplicating per element.
+   Deliberately excludes .dot/.calDayDot -- see the big comment above the
+   Rubric block for why. Split into two tiers on purpose, not because it
+   reads better: .stepper contains `.stepper button:active`, .calGearPanel
+   contains its own selects/buttons, .dayDetail contains its own
+   textarea/buttons -- backdrop-filter compounds on nested elements (each
+   one blurs what its ancestor already blurred), so only the OUTER tier
+   (the --panel consumers) gets blur; the inner (--raise) tier just inherits
+   plain translucency from --raise itself above, no second blur pass. */
+[data-palette="glass"] .bar .icon:active, [data-palette="glass"] .rate, [data-palette="glass"] .revealBtn,
+[data-palette="glass"] .drillInput, [data-palette="glass"] .drillTile, [data-palette="glass"] .chip,
+[data-palette="glass"] .dir, [data-palette="glass"] .startBtn:disabled, [data-palette="glass"] .stepper,
+[data-palette="glass"] .calNav:active, [data-palette="glass"] .calCell, [data-palette="glass"] .calGearBtn:active,
+[data-palette="glass"] .calGearPanel, [data-palette="glass"] .dayDetail, [data-palette="glass"] .searchInput,
+[data-palette="glass"] .stackbar, [data-palette="glass"] .histBarWrap, [data-palette="glass"] .palMini,
+[data-palette="glass"] .field input[type=number], [data-palette="glass"] .field input[type=text],
+[data-palette="glass"] .field input[type=password], [data-palette="glass"] .field .sel, [data-palette="glass"] .act,
+[data-palette="glass"][data-layout="landscape"] #prompt, [data-palette="glass"][data-layout="landscape"] .recapCard.on,
+[data-palette="glass"][data-layout="landscape"] #drillPrompt, [data-palette="glass"][data-layout="landscape"] #scHome .sect{
+  backdrop-filter:var(--glass-blur,none); -webkit-backdrop-filter:var(--glass-blur,none);
+  box-shadow:var(--glass-shadow,none);
 }
 [data-palette="neon"][data-theme="light"]{
   --bg:#f5f4fb; --panel:#ebe9f7; --ink:#16142b; --muted:#514f72; --faint:#85839f;
@@ -247,6 +336,11 @@
   --easy:#6427e0; --easy-bg:#e7ddfb; --easy-br:#cbb5f4; --amber:#c98d00; --warn-bg:#f7e7bf;
   --warn-br:#ecce85; --warn-ink:#93650a; --bad-bg:#fbdde4; --bad-br:#f0b6c3; --bad-ink:#b60d34;
   --toast:#16142b;
+  /* lighter touch than dark's: the same blur against a pale background reads
+     as a muddy halo rather than a glow past a certain radius/opacity, so
+     this stays two thin layers instead of three reaching further out. */
+  --glow-text:0 0 4px currentColor,0 0 10px currentColor;
+  --glow-alpha-strong:55%; --glow-alpha-soft:32%;
 }
 [data-palette="neon"][data-theme="dark"]{
   --bg:#0a0a12; --panel:#131320; --ink:#eef0ff; --muted:#9a9bc4; --faint:#5c5d82;
@@ -255,7 +349,54 @@
   --easy:#7c5cff; --easy-bg:#201238; --easy-br:#3a2266; --amber:#ffcc33; --warn-bg:#332508;
   --warn-br:#5c440f; --warn-ink:#ffd766; --bad-bg:#2c121c; --bad-br:#5c1f34; --bad-ink:#ff6f8f;
   --toast:#131320;
+  /* the real neon-sign look: glow against near-black has room to bloom, so
+     this gets a third, wider layer light mode deliberately skips. */
+  --glow-text:0 0 5px currentColor,0 0 14px currentColor,0 0 28px currentColor;
+  --glow-alpha-strong:70%; --glow-alpha-soft:48%;
 }
+/* Neon glow, text tier: every element below already sets `color` to one of
+   the accent vars via its own existing rule -- this just adds
+   var(--glow-text)'s stacked `currentColor` shadows on top, so each one
+   glows in whatever colour it already is without this rule needing to know
+   which. Doesn't touch .startBtn/.act.primary/the rating pills themselves:
+   those set colour to white-on-fill, not the accent, so currentColor here
+   would glow white -- they get an explicit fill-coloured box-shadow below
+   instead. */
+[data-palette="neon"] .c-new, [data-palette="neon"] .c-lrn, [data-palette="neon"] .c-due,
+[data-palette="neon"] #bAgain .lbl, [data-palette="neon"] #bGood .lbl, [data-palette="neon"] #bEasy .lbl,
+[data-palette="neon"] .chip.on, [data-palette="neon"] .stepper button,
+[data-palette="neon"] .drillFeedback.right, [data-palette="neon"] .drillFeedback.wrong,
+[data-palette="neon"] .drillInput.right, [data-palette="neon"] .drillInput.wrong,
+[data-palette="neon"] .recapCard .rc-rating{
+  text-shadow:var(--glow-text,none);
+}
+/* Neon glow, fill tier: solid-colour buttons/badges/dots, glowing in their
+   own fill colour via color-mix() (same technique this file's heatmap
+   accent already uses in renderCalGear()) rather than a fixed rgba, so the
+   glow always matches the var exactly with no separate colour to keep in
+   sync. Two stacked shadows per element -- a tight, more opaque core and a
+   wider, softer bloom -- is the standard two-layer neon-glow shape; a
+   single wide shadow alone just looks like a blurry drop shadow. */
+[data-palette="neon"] .startBtn:not(:disabled), [data-palette="neon"] .act.primary{
+  box-shadow:0 0 4px color-mix(in srgb, var(--coral) var(--glow-alpha-strong), transparent),
+    0 0 22px color-mix(in srgb, var(--coral) var(--glow-alpha-soft), transparent);
+}
+[data-palette="neon"] .dot.did{
+  box-shadow:0 0 3px color-mix(in srgb, var(--coral) var(--glow-alpha-strong), transparent),
+    0 0 10px color-mix(in srgb, var(--coral) var(--glow-alpha-soft), transparent);
+}
+[data-palette="neon"] .chip.on{
+  box-shadow:0 0 3px color-mix(in srgb, var(--coral) var(--glow-alpha-strong), transparent),
+    0 0 14px color-mix(in srgb, var(--coral) var(--glow-alpha-soft), transparent);
+}
+[data-palette="neon"] #bAgain{box-shadow:0 0 3px color-mix(in srgb, var(--again) var(--glow-alpha-strong), transparent),
+  0 0 16px color-mix(in srgb, var(--again) var(--glow-alpha-soft), transparent)}
+[data-palette="neon"] #bGood{box-shadow:0 0 3px color-mix(in srgb, var(--good) var(--glow-alpha-strong), transparent),
+  0 0 16px color-mix(in srgb, var(--good) var(--glow-alpha-soft), transparent)}
+[data-palette="neon"] #bEasy{box-shadow:0 0 3px color-mix(in srgb, var(--easy) var(--glow-alpha-strong), transparent),
+  0 0 16px color-mix(in srgb, var(--easy) var(--glow-alpha-soft), transparent)}
+[data-palette="neon"] .drillTile.right{box-shadow:0 0 14px color-mix(in srgb, var(--good) var(--glow-alpha-soft), transparent)}
+[data-palette="neon"] .drillTile.wrong{box-shadow:0 0 14px color-mix(in srgb, var(--again) var(--glow-alpha-soft), transparent)}
 [data-palette="8bit"][data-theme="light"]{
   --bg:#9bbc0f; --panel:#8bac0f; --ink:#0f380f; --muted:#306230; --faint:#4f7a3a;
   --line:#729c2a; --coral:#c23a2b; --accent-soft:#7a9f22; --raise:#a8c93a; --again:#b8321f;
@@ -263,6 +404,8 @@
   --easy:#3a2f96; --easy-bg:#a8c93a; --easy-br:#5f7d1c; --amber:#c99a10; --warn-bg:#87a531;
   --warn-br:#5f7d1c; --warn-ink:#7a5c00; --bad-bg:#a8c93a; --bad-br:#5f7d1c; --bad-ink:#8f2415;
   --toast:#0f380f;
+  --texture:repeating-linear-gradient(0deg,rgba(15,56,15,.09) 0,rgba(15,56,15,.09) 1px,transparent 1px,transparent 4px),
+    repeating-linear-gradient(90deg,rgba(15,56,15,.09) 0,rgba(15,56,15,.09) 1px,transparent 1px,transparent 4px);
 }
 [data-palette="8bit"][data-theme="dark"]{
   --bg:#0c0e10; --panel:#17191c; --ink:#e7ecd8; --muted:#9aa08c; --faint:#585c4e;
@@ -271,11 +414,13 @@
   --easy:#7a6bff; --easy-bg:#1c1830; --easy-br:#332a54; --amber:#ffcb2e; --warn-bg:#332608;
   --warn-br:#544011; --warn-ink:#ffd25c; --bad-bg:#2c1712; --bad-br:#4a251c; --bad-ink:#ff8a7a;
   --toast:#17191c;
+  --texture:repeating-linear-gradient(0deg,rgba(231,236,216,.05) 0,rgba(231,236,216,.05) 1px,transparent 1px,transparent 4px),
+    repeating-linear-gradient(90deg,rgba(231,236,216,.05) 0,rgba(231,236,216,.05) 1px,transparent 1px,transparent 4px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
 body{
-  background:var(--bg); color:var(--ink); font-family:var(--sans);
+  background-color:var(--bg); background-image:var(--texture,none); color:var(--ink); font-family:var(--sans);
   font-size:16px; -webkit-font-smoothing:antialiased;
   -webkit-user-select:none; user-select:none;
   touch-action:manipulation;
@@ -430,6 +575,11 @@ html:not([data-layout="landscape"]) .quickFlash{
    same small, low-emphasis tap target either place a note can be opened from */
 .noteBtn{flex:0 0 auto;background:none;border:none;padding:2px 6px;font-size:12.5px;color:var(--muted);white-space:nowrap}
 .noteBtn.on{font-size:15px;padding:2px 4px}
+/* Browse-row-only confusable-group badge (openGroupManager) -- same small,
+   low-emphasis shape as .noteBtn right above, own class since it opens a
+   different overlay and only ever appears on a set-aside (susp) row. */
+.groupBtn{flex:0 0 auto;background:none;border:none;padding:2px 6px;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.groupBtn.on{font-size:15px;padding:2px 4px;color:var(--coral)}
 /* honor-round (L direction) reveal-then-self-report buttons */
 .drillHonorRow{display:flex;gap:10px;width:100%}
 .drillHonorRow .act{flex:1}
@@ -575,6 +725,22 @@ html:not([data-layout="landscape"]) .quickFlash{
   align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
 .wordNoteOverlay.on{display:flex}
 .wordNoteOverlay .dayDetail{margin-top:0;max-width:380px;width:100%;box-shadow:0 10px 34px rgba(0,0,0,.3)}
+.dayDetail input[type=text]{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:9px;
+  background:var(--raise);color:var(--ink);font-family:inherit;font-size:13px;padding:9px 11px;
+  box-sizing:border-box}
+/* manual confusable-group modal (openConfirmGroup/openGroupManager, both
+   sharing #confuseGroupOverlay -- same .wordNoteOverlay/.dayDetail skin as
+   the word-note modal just above, reused rather than styled a second time). */
+.cgWordList{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.cgWordList span{background:var(--raise);border:1px solid var(--line);border-radius:7px;
+  padding:4px 9px;font-size:13px;color:var(--ink)}
+.cgGroupRow{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 0;border-bottom:1px solid var(--line)}
+.cgGroupRow:last-of-type{border-bottom:none}
+.cgGroupWith{font-size:12px;color:var(--faint);margin-top:2px}
+.cgAddRow{display:flex;gap:8px;margin-top:10px}
+.cgAddRow select{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;
+  background:var(--raise);color:var(--ink);font:inherit;font-size:13px;padding:8px 9px}
 .statRow{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
@@ -611,6 +777,7 @@ html:not([data-layout="landscape"]) .quickFlash{
   padding:7px 12px;font-size:12px;color:var(--muted);white-space:nowrap}
 #bulkFlag{color:var(--bad-ink);border-color:var(--bad-br)}
 #bulkBury{color:var(--warn-ink);border-color:var(--warn-br)}
+#bulkGroup{color:var(--coral);border-color:var(--coral)}
 .browseDateBar{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:9px 13px;border:1px solid var(--coral);border-radius:11px;background:var(--accent-soft);
   color:var(--coral);font-size:13px;margin-bottom:12px}
@@ -654,7 +821,10 @@ html:not([data-layout="landscape"]) .quickFlash{
    only difference was which way round the arrow pointed. */
 .pairRow{display:flex;align-items:center;gap:10px;margin-top:8px}
 .pairRow .pairLbl{flex:1;min-width:0;font-size:13.5px;color:var(--muted)}
-.pairRow input{width:104px;margin-top:0}
+/* Specificity must beat .field input[type=number]{width:100%} above, or the
+   input reclaims the row and squeezes .pairLbl to 0 width -- its text then
+   wraps and bleeds out behind the input instead of sitting beside it. */
+.field .pairRow input[type=number]{width:104px;margin-top:0}
 
 /* Advanced group (2026.08.16.1). Amber, not the red .danger uses -- that red
    marks the single irreversible action in the app and is worth keeping rare.
@@ -703,7 +873,7 @@ html:not([data-layout="landscape"]) .quickFlash{
 .palCard.on{border-color:var(--coral);box-shadow:0 0 0 1.5px var(--coral)}
 .palCard:active{transform:scale(.985)}
 .palPrev{display:flex;height:46px}
-.palHalf{flex:1;min-width:0;background:var(--bg);display:flex;flex-direction:column;
+.palHalf{flex:1;min-width:0;background-color:var(--bg);background-image:var(--texture,none);display:flex;flex-direction:column;
   justify-content:center;gap:3px;padding:5px}
 .palMini{background:var(--panel);border:1px solid var(--line);border-radius:4px;
   color:var(--ink);font-family:var(--serif);font-size:11px;line-height:1.5;
@@ -1203,6 +1373,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="bulkBtns">
           <button id="bulkFlag">&#9873; Flag</button>
           <button id="bulkBury">&#8986; Bury today</button>
+          <button id="bulkGroup">&#128279; Group</button>
           <button id="bulkClear">Clear</button>
         </div>
       </div>
@@ -1532,6 +1703,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
 </div>
 <div class="toast" id="toast"></div>
 <div class="wordNoteOverlay" id="wordNoteOverlay"><div class="dayDetail on" id="wordNoteDetail"></div></div>
+<div class="wordNoteOverlay" id="confuseGroupOverlay"><div class="dayDetail on" id="confuseGroupDetail"></div></div>
 
 <script>
 const DATA=[["ἀγαθός -ή -όν","good","All",-1],["ἄγαλμα -ατος, τό","glory","All",-1],["ἄγαν","too much","All",-1],["ἀγανακτέω","be annoyed at","All",-1],["ἄγγελος -ου, ὁ","messenger","All",-1],["ἀγγέλλω","announce","All",-1],["ἀγείρω","collect","All",-1],["ἀγνοέω","not to know","All",-1],["ἁγνός -ή -όν","holy","All",-1],["ἀγορά -ᾶς, ἡ","market-place","All",-1],["ἀγορεύω","say","All",-1],["ἄγριος -α -ον","wild","All",-1],["ἄγω","lead","All",-1],["ἀγών -ῶνος, ὁ","contest","All",-1],["ἀγωνίζομαι","contend","All",-1],["ἀδελφός -οῦ, ὁ","brother","All",-1],["ἀδελφή -ῆς, ἡ","sister","All",-1],["ἀδικία -ας, ἡ","injustice","All",-1],["ἄδικος -ον","unjust","All",-1],["ἀδικέω","(do) wrong","All",-1],["ἀδύνατος -ον","impossible","All",-1],["ᾄδω","sing","All",-1],["ἀεί, αἰεί","always","All",-1],["ἄθλιος -α -ον","wretched","All",-1],["ἆθλον -ου, τό","prize","All",-1],["ἀθυμέω","be disheartened","All",-1],["ἀθυμία -ας, ἡ","despondency","All",-1],["ἀθροίζω","collect","All",-1],["αἰδῶς -οῦς, ἡ","sense of shame, reverence","All",-1],["αἰδέομαι","reverence","All",-1],["αἰθήρ -έρος, ὁ/ἡ","(upper) air","All",-1],["αἷμα -ατος, τό","blood","All",-1],["αἰνέω","praise","All",-1],["αἱρέω","take; mid. choose","All",-1],["αἴρω","raise, set out","All",-1],["αἰσθάνομαι","perceive (+ gen.)","All",-1],["αἰσχρός -ά -όν","disgraceful","All",-1],["αἰσχύνη -ης, ἡ","shame","All",-1],["αἰσχύνομαι","be ashamed at","All",-1],["αἰτέω","ask, beg","All",-1],["αἰτία -ας, ἡ","cause, blame","All",-1],["αἴτιος -α -ον","responsible, guilty","All",-1],["αἰτιάομαι","blame, accuse (+ acc. of person, gen. of thing)","All",-1],["αἰχμάλωτος -ον","prisoner","All",-1],["ἀκμή -ῆς, ἡ","point","All",-1],["ἀκολουθέω","follow (+ dat.)","All",-1],["ἀκοντιστής -οῦ, ὁ","javelin-thrower","All",-1],["ἀκοντίζω","hurl javelins (at)","All",-1],["ἀκούω","hear (+ gen. of person)","All",-1],["ἀκριβής -ές","accurate","All",-1],["ἄκρος -α -ον","top","All",-1],["ἀκτή -ῆς, ἡ","shore","All",-1],["ἄκων -ουσα -ον","unwilling","All",-1],["ἄλγος -ους, τό","pain","All",-1],["ἀλήθεια -ας, ἡ","truth","All",-1],["ἀληθής -ές","true","All",-1],["ἁλίσκομαι","be captured, be taken","All",-1],["ἀλλήλους -ας -α","one another","All",-1],["ἄλλος -η -ον","other","All",-1],["ἄλλως","in vain, otherwise","All",-1],["ἅμα","at the same time, together","All",-1],["ἅμαξα -ης, ἡ","wagon","All",-1],["ἁμαρτάνω","make a mistake, err","All",-1],["ἀμείνων -ον","better","All",-1],["ἅμιλλα -ης","contest","All",-1],["ἀμύνω","ward off; mid. resist","All",-1],["ἄμφω","both","All",-1],["ἀμφότερος -α -ον","both","All",-1],["ἀναβαίνω","board, go on board (ship)","All",-1],["ἀναγιγνώσκω","read, recognise","All",-1],["ἀνάγκη -ης, ἡ","necessity","All",-1],["ἀναγκαῖος -α -ον","necessary","All",-1],["ἀναγκάζω","compel","All",-1],["ἀναιδής -ές","shameless","All",-1],["ἀναλίσκω","spend","All",-1],["ἄναξ -κτος, ὁ","lord, master","All",-1],["ἀνάσσω","rule","All",-1],["ἀναχωρέω","retreat, go back","All",-1],["ἀνδραποδίζω","enslave","All",-1],["ἄνεμος -ου, ὁ","wind","All",-1],["ἀνέχομαι","endure, hold out","All",-1],["ἀνήρ ἀνδρός, ὁ","man (as opposed a woman)","All",-1],["ἀνδρεῖος -α -ον","brave","All",-1],["ἄνθος -ους, τό","flower","All",-1],["ἄνθρωπος -ου, ὁ","human, person","All",-1],["ἀνίημι","let go, relax","All",-1],["ἀνοίγνυμι","open","All",-1],["ἀνόσιος -ον","unholy","All",-1],["ἀξία -ας, ἡ","worth, worthiness","All",-1],["ἄξιος -α -ον","worthy","All",-1],["ἀξιόω","deem worthy","All",-1],["ἀπαλλάττω","set free, escape","All",-1],["ἀπαντάω","meet (+ dat.)","All",-1],["ἅπας -ασα -αν","all together","All",-1],["ἅπαξ","once","All",-1],["ἄπειρος -ον","inexperienced, ignorant of (+gen.)","All",-1],["ἀπεχθάνομαι","be hated","All",-1],["ἀπέχω","be distant","All",-1],["ἁπλῶς","simply","All",-1],["ἀποδίδομαι","sell","All",-1],["ἀποθνῄσκω","die, be killed","All",-1],["ἀποκρίνομαι","reply","All",-1],["ἀποκτείνω","kill","All",-1],["ἀπόλλυμι","destroy; mid. die","All",-1],["ἀπολογέομαι","defend oneself","All",-1],["ἀπορία -ας, ἡ","difficulty, lack","All",-1],["ἀπορέω","be at a loss","All",-1],["ἀποστέλλω","send away","All",-1],["ἀποστερέω","deprive (+ acc. of person, gen. of thing)","All",-1],["ἀπροσδόκητος -ον","unexpected","All",-1],["ἅπτομαι","lay hold of, touch (+ gen.)","All",-1],["ἄργυρος -ου, ὁ","silver","All",-1],["ἀργυροῦς -ᾶ, -οῦν","(made of) silver","All",-1],["ἀρέσκω","please (+ dat.)","All",-1],["ἀρετή -ῆς, ἡ","virtue","All",-1],["ἀριθμός -οῦ, ὁ","number","All",-1],["ἄριστος -η -ον","best","All",-1],["ἀρκέω","suffice","All",-1],["ἅρμα -ατος, τό","chariot","All",-1],["ἁρπάζω","seize","All",-1],["ἄρτι, ἀρτίως","lately, recently","All",-1],["ἀρχή -ῆς, ἡ","beginning; rule","All",-1],["ἀρχαῖος -α -ον","ancient","All",-1],["ἄρχω","rule; mid. begin (+ gen.)","All",-1],["ἀσθενής -ές","weak","All",-1],["ἀσκέω","adorn, exercise","All",-1],["ἄσμενος -η -ον","glad","All",-1],["ἀσπίς -ίδος, ἡ","shield","All",-1],["ἄστυ -εως, τό","city","All",-1],["ἀσφαλής -ές","safe","All",-1],["ἄτη -ης, ἡ","madness","All",-1],["αὖ, αὖθις","again","All",-1],["αὐλίζομαι","encamp","All",-1],["αὐξάνω","increase","All",-1],["αὐτίκα","immediately","All",-1],["ἄφθονος -ον","bounteous, ungrudging","All",-1],["ἀφίημι","let go","All",-1],["ἀφικνέομαι","arrive","All",-1],["ἀφίσταμαι","revolt","All",-1],["ἄφνω","suddenly","All",-1],["βαίνω","go","All",-1],["βάλλω","throw","All",-1],["βάρβαρος -ον","foreign, barbarous","All",-1],["βαρύς -εῖα -ύ","heavy","All",-1],["βασιλεύς -έως, ὁ","king","All",-1],["βέβαιος -α -ον","firm, sure","All",-1],["βέλος -ους, τό","weapon","All",-1],["βία -ας, ἡ","force","All",-1],["βιάζω","compel","All",-1],["βίβλος -ου, ἡ","book","All",-1],["βίος -ου, ὁ","life","All",-1],["βίοτος -ου, ὁ","life","All",-1],["βλάβη -ης, ἡ","hurt","All",-1],["βλάπτω","harm, injure","All",-1],["βλέπω","see","All",-1],["βοή -ῆς, ἡ","shout","All",-1],["βοηθέω","help (+ dat.)","All",-1],["βοήθεια -ας, ἡ","help, aid, reinforcements","All",-1],["βουλεύω","take counsel","All",-1],["βούλομαι","wish, want","All",-1],["βοῦς βοός, ὁ/ἡ","ox/cow","All",-1],["βραχύς -εῖα -ύ","short","All",-1],["βροτός -οῦ, ὁ","mortal","All",-1],["βωμός -οῦ, ὁ","altar","All",-1],["γαμέω","marry","All",-1],["γελάω","laugh","All",-1],["γενναῖος -α -ον","noble","All",-1],["γένος -ους, τό","race","All",-1],["γέρας -ως, τό","privilege","All",-1],["γῆρας -ως, τό","old age","All",-1],["γεραιός -ή -όν","elderly, old","All",-1],["γέρων -οντος, ὁ","old man","All",-1],["γέφυρα -ας, ἡ","bridge","All",-1],["γῆ -ῆς, ἡ","earth","All",-1],["γαῖα -ας, ἡ","earth","All",-1],["γίγνομαι","become, happen","All",-1],["γιγνώσκω","ascertain, get to know","All",-1],["γνώμη -ης, ἡ","mind, judgment","All",-1],["γλυκύς -εῖα, -ύ","sweet","All",-1],["γλῶττα -ης, ἡ","tongue, language","All",-1],["γράφω","write","All",-1],["γράμμα -ατος, τό","letter (of alphabet); (in pl.) writings","All",-1],["γυμνός -ή -όν","naked, unarmed, defenceless","All",-1],["γυνή γυναικός, ἡ","woman","All",-1],["δαίμων -ονος, ὁ","god, spirit","All",-1],["δακρύ -ύος, τό","tear","All",-1],["δακρύω","cry","All",-1],["δάμαρ -αρτος, ἡ","wife","All",-1],["δαπάνη -ης, ἡ","expense","All",-1],["δέδοικα","fear","All",-1],["δεῖ","it is necessary","All",-1],["δείκνυμι","show","All",-1],["δειλός -ή -όν","cowardly","All",-1],["δεῖμα -ατος, τό","fear","All",-1],["δεινός -ή -όν","terrible, clever (at)","All",-1],["δεῖπνον -ου, τό","meal","All",-1],["δέμας, τό","body, bodily frame","All",-1],["δένδρον, -ου, τό","tree","All",-1],["δεξιός -ά -όν","right","All",-1],["δεσμός -οῦ, ὁ","bonds","All",-1],["δεσμώτης, -ου, ὁ","prisoner","All",-1],["δεσμωτήριον -ου, τό","prison","All",-1],["δέσποινα -ης, ἡ","mistress","All",-1],["δεσπότης -ου, ὁ","master","All",-1],["δέχομαι","receive","All",-1],["δέω","bind","All",-1],["δέω","want, need (+ gen.)","All",-1],["δῆλος -η -ον","clear","All",-1],["δηλόω","show","All",-1],["δῆμος -ου, ὁ","people","All",-1],["δίαιτα -ης, ἡ","way of life","All",-1],["διάνοια -ας, ἡ","mind, intention","All",-1],["διαφθείρω","destroy","All",-1],["διδάσκω","teach","All",-1],["δίδωμι","give","All",-1],["δῶρον -ου, τό","gift","All",-1],["δίκη -ης, ἡ","justice","All",-1],["δίκην διδόναι","be punished, pay the penalty","All",-1],["δίκαιος -α -ον","just","All",-1],["διπλοῦς -ῆ -οῦν","two-fold","All",-1],["δίχα (adv.)","apart","All",-1],["διώκω","pursue","All",-1],["δίωξις -εως, ἡ","pursuit","All",-1],["δοκέω","think; impers. it seems good (+ dat.)","All",-1],["δόξα -ας, ἡ","glory, opinion, renown","All",-1],["δόλος -ου, ὁ","cunning, trickery","All",-1],["δόμος, ὁ","house","All",-1],["δόρυ δόρατος or δορός, τό","spear","All",-1],["δοῦλος -η -ον","slave","All",-1],["δράω","do","All",-1],["δρόμος -ου, ὁ","course, running","All",-1],["δύναμις -εως, ἡ","power","All",-1],["δύναμαι","be able","All",-1],["δυνατός -ή -όν","able","All",-1],["δύστηνος -ον","wretched","All",-1],["δυστυχής -ές","unfortunate","All",-1],["δῶμα -ατος, τό","house","All",-1],["ἔαρ ἦρος, τό","spring","All",-1],["ἐάω","allow","All",-1],["ἐγγύς (adv. and prep. + gen.)","near","All",-1],["ἐγείρω","rouse, stir up","All",-1],["ἐγκαλέω","accuse (+ dat.)","All",-1],["ἔγχος -ους, τό","sword","All",-1],["ἐθέλω, θέλω","wish, want","All",-1],["ἔθνος -ους, τό","race (of people)","All",-1],["εἶδος -ους, τό","form","All",-1],["εἰκός, τό","reasonable","All",-1],["εἰκότως","naturally, probably","All",-1],["εἴκω","yield","All",-1],["εἰμί","be","All",-1],["εἶμι","shall go","All",-1],["εἴργω","prevent, hinder, shut out","All",-1],["εἰρήνη -ης, ἡ","peace","All",-1],["εἴωθα","be accustomed","All",-1],["ἕκαστος -η -ον","each","All",-1],["ἑκάτερος -α -ον","each of two","All",-1],["ἐκκλησία -ας, ἡ","assembly","All",-1],["ἐκπλήττω","strike with panic","All",-1],["ἔκπληξις -εως, ἡ","panic","All",-1],["ἐκτός (adv. and prep. + gen.)","outside","All",-1],["ἑκών -οῦσα –όν","willing","All",-1],["ἐλάττων -ον","smaller, fewer","All",-1],["ἐλαύνω","drive","All",-1],["ἐλάχιστος -η -ον","smallest, least, fewest","All",-1],["ἐλέγχω","examine, refute","All",-1],["ἐλευθερία -ας, ἡ","freedom","All",-1],["ἐλεύθερος -α -ον","free","All",-1],["ἐλπίς, ίδος, ἡ","hope","All",-1],["ἐλπίζω","hope","All",-1],["ἔμπειρος -ον","experienced in (+gen.)","All",-1],["ἐμποδών","in the way, in one’s path","All",-1],["ἐναντίος -α -ον","opposite, hostile","All",-1],["ἐνδεής -ές","lacking, in want","All",-1],["ἔνδον","within","All",-1],["ἐνιαυτός -οῦ, ὁ","year","All",-1],["ἔνιοι -αι -α","some","All",-1],["ἐνίοτε","sometimes","All",-1],["ἐντός (adv. and prep. + gen.)","inside","All",-1],["ἐξαίφνης","suddenly","All",-1],["ἐξαπατάω","deceive","All",-1],["ἔξεστι","it is lawful (+ dat.)","All",-1],["ἐξετάζω","examine, review (an army)","All",-1],["ἐξέτασις -εως, ἡ","review","All",-1],["ἔξω","outside","All",-1],["ἔοικα","seem, be like","All",-1],["ἑορτή -ῆς, ἡ","feast","All",-1],["ἐπαινέω","praise","All",-1],["ἐπανέρχομαι","return","All",-1],["ἐπείγω","urge on, hasten","All",-1],["ἔπειτα, εἶτα","then, next","All",-1],["ἐπιεικής -ές","fair, reasonable, equitable","All",-1],["ἐπιθυμία -ας, ἡ","desire","All",-1],["ἐπιθυμέω","desire (+ gen.)","All",-1],["ἐπιλανθάνομαι","forget (+ gen.)","All",-1],["ἐπιστήμη -ης, ἡ","knowledge, understanding","All",-1],["ἐπίσταμαι","understand","All",-1],["ἐπιστολή -ῆς, ἡ","letter","All",-1],["ἐπιτήδειος -α -ον","convenient, useful","All",-1],["ἐπιτήδεια, τά","provisions","All",-1],["ἐπιτρέπω","entrust","All",-1],["ἕπομαι","follow","All",-1],["ἔπος -ους, τό","word","All",-1],["ἔργον -ου, τό","work","All",-1],["ἐργάζομαι","work","All",-1],["ἔρημος -η -ον","deserted","All",-1],["ἔρις -ιδος, ἡ","strife","All",-1],["ἔρχομαι","come, go","All",-1],["ἔρως -ωτος, ὁ","love","All",-1],["ἐρωτάω","ask (a question)","All",-1],["ἐσθής -ῆτος, ἡ","clothing","All",-1],["ἐσθίω","eat","All",-1],["ἐσθλός -ή -όν","noble, good","All",-1],["ἑσπέρα -ας, ἡ","evening","All",-1],["ἑστία -ας, ἡ","hearth","All",-1],["ἐσχάρα -ας, ἡ","hearth","All",-1],["ἔσχατος -η -ον","last","All",-1],["ἑταῖρος -ου, ὁ","companion","All",-1],["ἕτερος -α -ον","one or other of two","All",-1],["ἔτι","still","All",-1],["ἕτοιμος -η -ον","ready","All",-1],["ἔτος -ους, τό","year","All",-1],["εὖ","well","All",-1],["εὐγενής -ές","noble, well-born","All",-1],["εὐδαίμων -ον","fortunate","All",-1],["εὐεργέτης -ου, ὁ","benefactor","All",-1],["εὐθύς","immediately, straightaway","All",-1],["εὐκλεής -ές","glorious, well-renowned","All",-1],["εὐμενής -ές","favourable","All",-1],["εὔνους -ουν","loyal","All",-1],["εὐπρεπής -ές","seemly, glorious","All",-1],["εὑρίσκω","find, invent","All",-1],["εὐρύς -εῖα -ύ","broad, wide","All",-1],["εὐτυχής -ές","fortunate","All",-1],["εὔχομαι","pray","All",-1],["εὐχή -ῆς, ἡ","prayer","All",-1],["ἐχθρός -ά -όν","hostile; a private enemy","All",-1],["ἔχω","have","All",-1],["ἕως ἕω, ἡ","dawn","All",-1],["ζάω","live","All",-1],["ζεύγνυμι","yoke","All",-1],["ζύγον -ου, τό","yoke","All",-1],["ζηλόω","envy","All",-1],["ζημία -ας, ἡ","penalty","All",-1],["ζητέω","seek","All",-1],["ἥβη -ης, ἡ","youth","All",-1],["ἡγεμών -όνος, ὁ","leader","All",-1],["ἡγέομαι","lead (+ dat.), consider","All",-1],["ἤδη","already","All",-1],["ἥδομαι","enjoy, take pleasure, rejoice","All",-1],["ἡδονή -ῆς, ἡ","pleasure","All",-1],["ἡδῦς -εῖα -ύ","sweet","All",-1],["ἦθος -ους, τό","custom","All",-1],["ἥκιστα","least","All",-1],["ἥκω","have come","All",-1],["ἥλιος -ου, ὁ","sun","All",-1],["ἡμέρα -ας, ἡ","day","All",-1],["ἦμαρ -ατος, τό","day","All",-1],["ἥμισυς -εια -υ","half","All",-1],["ἤπειρος -ου, ἡ","mainland","All",-1],["ἡσυχαῖος -α -ον","quiet","All",-1],["ἥσυχος -ον","quiet","All",-1],["ἡσυχία -ας, ἡ","quiet","All",-1],["ἡσυχάζω","be quiet","All",-1],["ἡττάομαι","be defeated","All",-1],["ἥττων -ον","less","All",-1],["θάλαμος -ου, ὁ","(bed)room","All",-1],["θάλαττα -ης, ἡ","sea","All",-1],["θάνατος -ου, ὁ","death","All",-1],["θάπτω","bury","All",-1],["θάρσος -εος, τό (θράσος -εος, τό)","courage","All",-1],["θαρσέω (θαρρέω)","be encouraged","All",-1],["θρασύς -εῖα -ύ","bold","All",-1],["θάττων -ον","quicker","All",-1],["θαῦμα -ατος, τό","wonder, marvel","All",-1],["θαυμάζω","wonder (at)","All",-1],["θεάομαι","look at","All",-1],["θεός -οῦ, ὁ","god","All",-1],["θεά -ᾶς, ἡ","goddess","All",-1],["θεῖος -α -ον","divine, godlike","All",-1],["θεράπων -οντος, ὁ","servant","All",-1],["θεραπεύω","attend (as servant)","All",-1],["θερμός -ή -όν","hot","All",-1],["θέρος -ους, τό","summer","All",-1],["θεωρέω","look at","All",-1],["θηράω","hunt","All",-1],["θηρεύω","hunt","All",-1],["θήρ θηρός, ὁ","wild beast","All",-1],["θηρίον -ου, τό","wild beast","All",-1],["θνητός -ή -όν","mortal","All",-1],["θόρυβος -ου, ὁ","uproar, clamour","All",-1],["θρηνέω","lament, mourn","All",-1],["θρόνος -ου, ὁ","seat","All",-1],["θυγάτηρ θυγατρός, ἡ","daughter","All",-1],["θυμός -οῦ, ὁ","spirit, heart","All",-1],["θύρα -ας, ἡ","door","All",-1],["θύω","sacrifice","All",-1],["θώραξ -ακος, ὁ","breastplate","All",-1],["ἰατρός -οῦ, ὁ","doctor","All",-1],["ἴδιος -α -ον","one’s own","All",-1],["ἰδοῦ","behold!","All",-1],["ἱερός -ά -όν","holy, sacred","All",-1],["ἵημι","send forth","All",-1],["ἱκανός -ή -όν","sufficient","All",-1],["ἱκέτης -ου, ὁ","suppliant","All",-1],["ἱκετεύω","beseech","All",-1],["ἵππος -ου, ὁ","horse","All",-1],["ἵππος, ἡ","cavalry","All",-1],["ἱππεύς -έως, ὁ","horseman","All",-1],["ἴσος -η -ον","equal","All",-1],["ἵστημι","make to stand; (intransitive and mid.) stand","All",-1],["ἰσχύς -ύος, ἡ","strength","All",-1],["ἰσχυρός -ά -όν","strong","All",-1],["ἴσως","perhaps","All",-1],["καθαίρω","cleanse, purify","All",-1],["καθαρός -ά -όν","pure","All",-1],["καθεύδω","sleep","All",-1],["κάθημαι","sit","All",-1],["καθέζομαι","sit","All",-1],["καινός -ή -όν","new","All",-1],["καιρός -οῦ ὁ","right time","All",-1],["καίω","burn","All",-1],["κακός -ή -όν","bad","All",-1],["καλέω","call","All",-1],["καλός -ή -όν","beautiful","All",-1],["κάμνω","toil","All",-1],["κάρα, τό","head","All",-1],["καρδία -ας, ἡ","heart","All",-1],["καρπός -οῦ, ὁ","fruit","All",-1],["κάρτα","very much","All",-1],["καρτερός -ά -όν","strong","All",-1],["καρτερέω","endure","All",-1],["καταγιγνώκω","accuse, condemn (+ gen. of pers., acc. of thing)","All",-1],["κατακρίνομαι","condemn (+ acc. of pers.)","All",-1],["κατάσκοπος -ου, ὁ","spy","All",-1],["καταστρέφομαι","subdue","All",-1],["καταφρονέω","despise (+ gen.)","All",-1],["κατέχω","restrain, hold back","All",-1],["κατηγορέω","accuse (+ gen. of pers., acc. of thing)","All",-1],["κεῖμαι","lie","All",-1],["κελεύω","order","All",-1],["κενός -ή -όν","empty","All",-1],["κέρας -ατος (or -ως), τό","horn; wing (of an army)","All",-1],["κεραυνός -οῦ, ὁ","thunderbolt","All",-1],["κέρδος -ους, τό","profit, gain","All",-1],["κεφαλή -ῆς, ἡ","head","All",-1],["κῆρυξ -υκος, ὁ","herald","All",-1],["κηρύττω","announce","All",-1],["κίνδυνος -ου, ὁ","danger","All",-1],["κινέω","move","All",-1],["κλαίω","weep, cry","All",-1],["κλείω","shut, close","All",-1],["κλεός, τό (nom., acc. only)","glory","All",-1],["κλέπτω","steal","All",-1],["κλίνω","bend, incline, make to lean","All",-1],["κλύω","hear","All",-1],["κοινός -ή -όν","common, shared","All",-1],["κοίρανος -ου, ὁ","master","All",-1],["κολάζω","punish","All",-1],["κομίζω","convey, carry, bring","All",-1],["κόπτω","cut","All",-1],["κόρη -ης, ἡ","maiden","All",-1],["κόρυς -υθος, ἡ","helmet","All",-1],["κοσμέω","adorn, arrange","All",-1],["κόσμος -ου, ὁ","order, adornment","All",-1],["κρατέω","rule, conquer (+ gen.)","All",-1],["κράτος -ους, τό","strength, might","All",-1],["κρείττων -ον","better, stronger","All",-1],["κρήνη -ης, ἡ","spring, fount","All",-1],["κρίνω","judge","All",-1],["κριτής -οῦ, ὁ","judge","All",-1],["κρύπτω","hide","All",-1],["κρυφαῖος -α -ον","secret, hidden","All",-1],["κτάομαι","obtain","All",-1],["κτείνω","kill","All",-1],["κυβερνήτης -ου, ὁ","steersman","All",-1],["κῦδος -ους, τό","glory","All",-1],["κύκλος -ου, ὁ","circle","All",-1],["κῦμα -ατος, τό","wave","All",-1],["κυρέω","meet with (+ gen.), happen","All",-1],["κύριος -ου, ὁ","lord","All",-1],["κύων κυνός, ὁ","dog","All",-1],["κωλύω","hinder","All",-1],["κώμη -ης, ἡ","village","All",-1],["κώπη -ης, ἡ","oar","All",-1],["λαγχάνω","obtain by lot","All",-1],["λαμβάνω","take","All",-1],["λαμπρός -ά -όν","bright","All",-1],["λανθάνω","lie hid, escape notice (of)","All",-1],["λάθρᾳ","secretly","All",-1],["λέγω","say","All",-1],["λειμών -ῶνος, ὁ","meadow","All",-1],["λείπω","leave","All",-1],["λευκός -ή -όν","white","All",-1],["λεύσσω","behold","All",-1],["λέχος -ους, τό","bed","All",-1],["λέων -οντος, ὁ","lion","All",-1],["λήγω","cease, desist","All",-1],["λῃστής -οῦ, ὁ","pirate","All",-1],["λίαν","too much","All",-1],["λίθος -ου, ὁ","stone","All",-1],["λιμήν -ένος, ὁ","harbour","All",-1],["λίμνη -ης, ἡ","marsh","All",-1],["λίττομαι","beg","All",-1],["λόγος -ου, ὁ","word","All",-1],["λογίζομαι","consider","All",-1],["λοιδορέω","abuse","All",-1],["τὸ λοιπόν","the future","All",-1],["λύπη -ης, ἡ","grief","All",-1],["λύω","loose","All",-1],["μάκαρ -αρος, ὁ (μάκαιρα, ἡ)","blessed","All",-1],["μακάριος -α -ον","blessed","All",-1],["μακρός -ά -όν","large, long","All",-1],["μάλα, μάλιστα","especially, very much","All",-1],["μᾶλλον","rather, more","All",-1],["μανθάνω","learn","All",-1],["μανία -ας, ἡ","madness","All",-1],["μαίνομαι","be mad","All",-1],["μάντις -εως, ἡ","prophet","All",-1],["μαρτύρομαι","(bear) witness","All",-1],["μάταιος -α -ον","foolish, vain","All",-1],["μάτην","in vain","All",-1],["μάχη -ης, ἡ","battle","All",-1],["μάχομαι","fight (+ dat.)","All",-1],["μέγας μεγάλη μέγα","big, great","All",-1],["μέγεθος -ους, τό","size","All",-1],["μεθίημι","let go, release","All",-1],["μείζων -ον","greater","All",-1],["μέλαθρα, τά","house","All",-1],["μέλας μέλαινα μέλαν","black","All",-1],["μέλει","it is a care for (+ dat.)","All",-1],["μέλλω","intend","All",-1],["μέμνημαι","remember (+ gen.)","All",-1],["μνήμη -ης, ἡ","memory","All",-1],["μέμφομαι","blame","All",-1],["μένω","remain","All",-1],["μίμνω","remain","All",-1],["μέρος -ους, τό","part","All",-1],["μέσος -η -ον","middle","All",-1],["μεστός -ή -όν","full","All",-1],["μεταβάλλω","change","All",-1],["μεταξύ","between","All",-1],["μεταπέμπομαι","send for","All",-1],["μετέχω","have a share in (+ gen.)","All",-1],["μέτριος -α -ον","moderate","All",-1],["μῆκος -ους, τό","length","All",-1],["μήτηρ μητρός, ἡ","mother","All",-1],["μηχανή -ῆς, ἡ","device, contrivance","All",-1],["μηχανάομαι","contrive","All",-1],["μικρός -ά -όν (= σμικρός)","small","All",-1],["μισέω","hate","All",-1],["μισθός -οῦ, ὁ","hire, reward","All",-1],["μοῖρα -ας, ἡ","fate, part","All",-1],["μόλις, μόγις","scarcely","All",-1],["μολεῖν (strong aorist)","go","All",-1],["μόνος -η -ον (= μοῦνος)","alone","All",-1],["μόχθος -ου, ὁ","toil","All",-1],["μῦθος -ου, ὁ","word","All",-1],["μυρίος -α -ον","countless","All",-1],["μωρός -ά -όν","foolish, stupid","All",-1],["ναί","yes","All",-1],["ναίω","dwell","All",-1],["ναός, ὁ (= νεώς)","temple","All",-1],["ναῦς νεώς, ἡ","ship","All",-1],["ναύτης -ου, ὁ","sailor","All",-1],["ναύτικον, -ου, τό","fleet","All",-1],["ναυμαχέω","fight a sea-battle","All",-1],["νεανίας -ου, ὁ","young man","All",-1],["νεκρός -οῦ, ὁ","corpse","All",-1],["νέμω","distribute, manage","All",-1],["νέος -α -ον","new, fresh, young","All",-1],["νεωστί","recently, lately","All",-1],["νῆσος -ου, ἡ","island","All",-1],["νικάω","conquer","All",-1],["νίκη -ης, ἡ","victory","All",-1],["νομίζω","consider, think","All",-1],["νόμος -ου, ὁ","law","All",-1],["νόσος -ου, ἡ","illness, disease","All",-1],["νοσέω","be ill","All",-1],["νοῦς νοῦ, ὁ","mind","All",-1],["νοέω","have in mind, recognise","All",-1],["νύμφη -ης, ἡ","bride, maiden","All",-1],["νύξ νυκτός, ἡ","night","All",-1],["ξανθός -ή -όν","yellow, fair (of hair)","All",-1],["ξένος -ου, ὁ","stranger","All",-1],["ξίφος -ους, τό","sword","All",-1],["ξύλον -ου, τό","wood, timber","All",-1],["ὁδός -οῦ, ἡ","road","All",-1],["ὀδούς ὀδόντος, ὁ","tooth","All",-1],["ὀδύνη -ης, ἡ","pain","All",-1],["ὀδύρομαι","lament","All",-1],["οἶδα","know","All",-1],["οἰκέω","dwell, inhabit","All",-1],["οἶκος -ου, ὁ, οἰκία -ας, ἡ","house","All",-1],["οἰκεῖος -α -ον","belonging to home","All",-1],["οἰκέτης -ου, ὁ","servant","All",-1],["οἰκτείρω","pity","All",-1],["οἶκτος -ου, ὁ","pity","All",-1],["οἶμαι, οἴομαι","think","All",-1],["οἴμοι","alas","All",-1],["οἶνος -ου, ὁ","wine","All",-1],["οἷος τ’ εἰμί","am able","All",-1],["οἴχομαι","am gone","All",-1],["ὀκνέω","shrink from","All",-1],["ὄκνος -ου, ὁ","hesitation","All",-1],["ὄλβος -ου, ὁ","wealth, happiness","All",-1],["ὄλβιος -α -ον","happy","All",-1],["ὀλίγος -η -ον","small; (in pl.) few","All",-1],["ὀλιγωρέω","despise, disdain","All",-1],["ὄλλυμι","destroy","All",-1],["ὄλεθρος -ου, ὁ","destruction","All",-1],["ὅλος -η -ον","whole","All",-1],["ὀλοφύρομαι","lament","All",-1],["ὁμιλέω","associate with","All",-1],["ὁμιλία -ας, ἡ","intercourse, interaction","All",-1],["ὄμμα -ατος, τό","eye","All",-1],["ὄμνυμι","swear","All",-1],["ὅμοιος -α -ον","like","All",-1],["ὁμολογέω","agree","All",-1],["ὅμως","nevertheless","All",-1],["ὄναρ, τό (nom., acc. only), ὄνειρος -ου, ὁ","dream","All",-1],["ὄνειδος -ους, τό","reproach","All",-1],["ὀνειδίζω","revile (+ dat.)","All",-1],["ὄνομα -ατος, τό","name","All",-1],["ὀνομάζω","name","All",-1],["ὀξύς -εῖα, ύ","sharp","All",-1],["ὄπισθε","behind","All",-1],["ὅπλα, τά","weapons, arms","All",-1],["ὁπλίζω","arm","All",-1],["ὁπλίτης -ου, ὁ","heavily-armed soldier, hoplite","All",-1],["ὁράω","see","All",-1],["ὀργή -ῆς, ἡ","anger","All",-1],["ὀργίζομαι","be angry","All",-1],["ὀρθός -ή -όν","right, just","All",-1],["ὁρμάω","rush; mid. set out","All",-1],["ὄρνις -ιθος, ὁ","bird","All",-1],["ὄρος -ους, τό","mountain","All",-1],["ὅρος -ου, ὁ","boundary, marker","All",-1],["ὅσιος -α -ον","holy","All",-1],["ὀσμή -ῆς, ἡ","smell, scent","All",-1],["οὐδαμοῦ, μηδαμοῦ","nowhere","All",-1],["οὐδαμῶς, μηδαμῶς","in no way","All",-1],["οὐδέ, μηδέ","not even, nor","All",-1],["οὐδείς οὐδεμία οὐδέν, μηδείς κτλ.","no one","All",-1],["οὐδέποτε (οὔποτε), μηδέποτε (μήποτε)","never","All",-1],["οὐκέτι, μηκέτι","no longer","All",-1],["οὔπω, μήπω","not yet","All",-1],["οὐρανός -οῦ, ὁ","heaven","All",-1],["οὕτως","so, thus","All",-1],["ὀφείλω","owe","All",-1],["ὀφθαλμός -οῦ, ὁ","eye","All",-1],["ὄχλος -ου, ὁ","crowd","All",-1],["ὀψέ","late","All",-1],["ὄψις -εως, ἡ","sight","All",-1],["παῖς παιδός, ὁ/ἡ","child","All",-1],["παιδεύω","educate","All",-1],["πάλαι","formerly","All",-1],["παλαιός -ά -όν","old","All",-1],["πάλιν","back, again","All",-1],["πανταχοῦ","everywhere","All",-1],["πάνυ","altogether, very","All",-1],["παραινέω","advise","All",-1],["παρακελεύομαι","exhort, encourage (+ dat.)","All",-1],["παρασκευάζω","prepare","All",-1],["παρασκευή -ῆς, ἡ","preparation","All",-1],["παραυτίκα","immediately","All",-1],["πάρειμι","am present","All",-1],["πάρεστι","it is possible (+ dat.)","All",-1],["παρέχω","provide","All",-1],["παρθένος -ου, ἡ","maiden","All",-1],["παρίημι","let slip, let go","All",-1],["πάρος","formerly","All",-1],["πᾶς πᾶσα πᾶν","all","All",-1],["πάσχω","suffer","All",-1],["πάθος -ους, τό","suffering","All",-1],["πατήρ πατρός, ὁ","father","All",-1],["πατρῷος -α -ον","of a father","All",-1],["πατρίς -ίδος, ἡ","fatherland","All",-1],["παύω","stop","All",-1],["πεδίον -ου, τό","plain","All",-1],["πεζός -ή -όν","on foot; (w. art.) infantry","All",-1],["πείθω","persuade; mid. obey (+ dat.)","All",-1],["πειράομαι","try","All",-1],["πεῖρα -ας, ἡ","attempt","All",-1],["πέλαγος -ους, τό","sea","All",-1],["πέλας, πλησίον","near","All",-1],["πελταστής -οῦ, ὁ","targeteer, peltast","All",-1],["πέμπω","send","All",-1],["πένης -ητος","poor","All",-1],["πένθος -ους, τό","grief","All",-1],["πέπλος -ου, ὁ","robe","All",-1],["πεπρωμένος -η -ον","fated","All",-1],["περαίνω","accomplish","All",-1],["περιγίγνομαι","survive","All",-1],["πέτρα -ας, ἡ","rock","All",-1],["πηγή -ῆς, ἡ","spring, fount","All",-1],["πῆμα -ατος, τό","suffering","All",-1],["πημονή -ῆς, ἡ","suffering","All",-1],["πιέζω","oppress","All",-1],["πικρός -ά -όν","bitter","All",-1],["πίμπλημι","fill","All",-1],["πίνω","drink","All",-1],["πίπτω","fall","All",-1],["πιστεύω","believe, trust (+ dat.)","All",-1],["πιστός -ή -όν","faithful","All",-1],["πλείων -ον","more","All",-1],["πλεῖστος -η -ον","most","All",-1],["πλέω","sail","All",-1],["πλοῖον -ου, τό","ship","All",-1],["πλοῦς -οῦ, ὁ","voyage","All",-1],["πλῆθος -ους, τό","crowd","All",-1],["πλήρης -ες","full","All",-1],["πληρόω","fill","All",-1],["πλούσιος -α -ον","wealthy, rich","All",-1],["πλοῦτος -ου, ὁ","wealth","All",-1],["πνέω","breathe, blow","All",-1],["πνεῦμα -ατος, τό","breath, wind, spirit","All",-1],["πόθος -ου, ὁ","desire","All",-1],["ποθέω","desire","All",-1],["ποιέω","do","All",-1],["περὶ πολλοῦ ποιεῖσθαι","reckon at great value","All",-1],["ποιμήν -ένος, ὁ","shepherd","All",-1],["πολέμιοι, οἱ","enemy","All",-1],["πόλεμος -ου, ὁ","war","All",-1],["πολιορκέω","besiege","All",-1],["πόλις -εως, ἡ","city","All",-1],["πολίτης, -ου, ὁ","citizen","All",-1],["πολλάκις","often","All",-1],["πολύς πολλή πολύ","much","All",-1],["πονηρός -ά -όν","evil, baneful","All",-1],["πόνος -ου, ὁ","toil","All",-1],["πορεύομαι","march, journey","All",-1],["πορίζω","provide","All",-1],["πόρρω","far","All",-1],["πόσις, ὁ","husband","All",-1],["ποταμός -οῦ, ὁ","river","All",-1],["πότμος -ου, ὁ","fate","All",-1],["πούς ποδός, ὁ","foot","All",-1],["πράττω","do","All",-1],["πρᾶγμα -ατος, τό","thing, deed","All",-1],["πρέπει","it is fitting (+ dat.)","All",-1],["πρέσβυς -εως, ὁ","old man, ambassador","All",-1],["πρίν","before","All",-1],["πρόγονος -ου, ὁ","ancestor","All",-1],["προδίδωμι","betray","All",-1],["προθυμία -ας, ἡ","eagerness","All",-1],["πρόθυμος -ον","eager","All",-1],["προσβάλλω","attack (+ dat.)","All",-1],["προσβολή -ῆς, ἡ","attack","All",-1],["προσήκει","it is fitting (+ dat.)","All",-1],["πρόσθεν","before","All",-1],["πρότερον","formerly","All",-1],["πρόφασις -εως, ἡ","excuse","All",-1],["προχωρέω","advance","All",-1],["πρῷ (adv.)","early","All",-1],["πρῶτος -η -ον","first","All",-1],["πτερόν, -οῦ, τό","wing","All",-1],["πυκνός -ή -όν","frequent, thick","All",-1],["πύλη -ης, ἡ","gate","All",-1],["πυνθάνομαι","perceive, ascertain","All",-1],["πῦρ πυρός, τό","fire","All",-1],["πωλέω","sell","All",-1],["ῥᾴδιος -α -ον","easy","All",-1],["ῥᾴθυμος -ον","lazy","All",-1],["ῥέω","flow","All",-1],["ῥήγνυμι","break","All",-1],["ῥήτωρ -ορος, ὁ","orator","All",-1],["ῥίπτω","throw","All",-1],["ῥώμη -ης, ἡ","strength","All",-1],["σάλπιγξ -ιγγος, ἡ","trumpet","All",-1],["σαφής -ές","clear","All",-1],["σέβας, τό (nom., acc. only)","honour, respect","All",-1],["σέβομαι","worship, honour, venerate","All",-1],["σελήνη -ης, ἡ","moon","All",-1],["σεμνός -ή -όν","holy, sacred","All",-1],["σημεῖον -ου, τό","sign","All",-1],["σημαίνω","show","All",-1],["σθένος -ους, τό","strength","All",-1],["σθένω","be strong","All",-1],["σιγή -ῆς, ἡ","silence","All",-1],["σιγάομαι","be silent","All",-1],["σίδηρος -ου, ὁ","iron","All",-1],["σῖτος -ου, ὁ","corn, provisions","All",-1],["σιωπή -ῆς, ἡ","silence","All",-1],["σκεύη, τὰ","baggage","All",-1],["σκηνή -ῆς, ἡ","tent","All",-1],["σκληρός -ά -όν","harsh","All",-1],["σκοπέω","look at","All",-1],["σκότος -ου, ὁ","darkness","All",-1],["σοφός -ή -όν","wise","All",-1],["σοφία -ας, ἡ","wisdom","All",-1],["σπεύδω","hasten","All",-1],["σπουδή -ῆς, ἡ","eagerness, zeal","All",-1],["σπονδαί, αἱ","truce","All",-1],["σπένδω","make a libation; mid. make peace or a truce","All",-1],["στάσις -εως, ἡ","revolt","All",-1],["στέγος -ους, τό, στέγη -ης, ἡ","house","All",-1],["στείχω","go","All",-1],["στενάζω","mourn","All",-1],["στένω","mourn","All",-1],["στενός -ή -όν","narrow","All",-1],["στερίσκω","deprive of","All",-1],["στέρνον -ου, τό","breast","All",-1],["στέφανος -ου, ὁ","garland","All",-1],["στόλος -ου, ὁ","expedition","All",-1],["στέλλω","equip, dispatch","All",-1],["στόμα -ατος, τό","mouth","All",-1],["στρατός -οῦ, ὁ","army","All",-1],["στρατία -ας, ἡ","army","All",-1],["στράτευμα -ατος, τό","army","All",-1],["στρατηγός -οῦ, ὁ","general","All",-1],["στρατιώτης -οῦ, ὁ","soldier","All",-1],["στρατοπεδεύομαι","encamp","All",-1],["στρατόπεδον -ου, τό","camp","All",-1],["στρέφω","turn","All",-1],["στύγος -ους, τό","hatred","All",-1],["στυγέω","hate","All",-1],["συγγενής -ές","related, kindred","All",-1],["συγγιγνώσκω","pardon (+ dat.)","All",-1],["συγγνώμη -ης, ἡ","pardon","All",-1],["συγχωρέω","agree","All",-1],["συλλέγω","collect, gather","All",-1],["συμβαίνω","happen, agree","All",-1],["συμβουλεύω","counsel","All",-1],["σύμμαχος -ον","ally","All",-1],["συμφέρει","it is expedient (+ dat.)","All",-1],["σύμφορος -ον","expedient","All",-1],["συμφορά -ᾶς, ἡ","disaster, calamity; chance","All",-1],["συνεχῶς","continually","All",-1],["σφαγή -ῆς, ἡ","slaughter","All",-1],["σφάζω","kill","All",-1],["σφάλλω","overthrow, trip up, baffle","All",-1],["σφόδρα","exceedingly","All",-1],["σχεδόν","almost","All",-1],["σχῆμα -ατος, τό","form, shape, figure","All",-1],["σχολή -ῆς, ἡ","leisure","All",-1],["σῴζω","save","All",-1],["σωτηρία -ας, ἡ","safety, salvation","All",-1],["σῶμα -ατος, τό","body","All",-1],["σώφρων -ον","prudent","All",-1],["σωφροσύνη -ης, ἡ","prudence","All",-1],["τάλας τάλαινα τάλαν","wretched","All",-1],["ταπεινός -ή -όν","humble","All",-1],["ταράττω","confuse, confound, throw into disarray","All",-1],["ταραχή -ῆς, ἡ","confusion, disarray","All",-1],["τάττω","arrange, order","All",-1],["τάξις -εως, ἡ","array, rank","All",-1],["ταῦρος -ου, ὁ","bull","All",-1],["τάφος -ου, ὁ","tomb","All",-1],["τάφρος -ου, ἡ","ditch","All",-1],["ταχῦς -εῖα -ύ","swift, quick","All",-1],["τεῖχος -ους, τό","wall","All",-1],["τειχίζω","fortify","All",-1],["τεκμήριον -ου, τό","proof","All",-1],["τέκνον -ου, τό","child","All",-1],["τελευτάω","accomplish, end, die","All",-1],["τέλος -ους, τό","end","All",-1],["τέμνω","cut","All",-1],["τερπνός -ή -όν","pleasant, enjoyable","All",-1],["τέχνη -ης, ἡ","skill, art","All",-1],["τηρέω","watch (for)","All",-1],["τίθημι","place, put","All",-1],["τίκτω","beget","All",-1],["τιμάω","honour","All",-1],["τιμή -ῆς, ἡ","honour","All",-1],["τιμωρέω","avenge, punish","All",-1],["τιμωρία -ας, ἡ","revenge, punishment","All",-1],["τιτρώσκω","wound","All",-1],["τραῦμα -ατος, τό","wound","All",-1],["τλήμων -ον","wretched","All",-1],["τοιοῦτος τοιαύτη τοιοῦτο","such, of such a kind","All",-1],["τοῖος τοία τοῖον","such, of such a kind","All",-1],["τολμάω","dare","All",-1],["τόλμα -ης, ἡ","dare","All",-1],["τόξον -ου, τό","bow","All",-1],["τοξότης -ου, ὁ","bowman, archer","All",-1],["τόπος -ου, ὁ","place","All",-1],["τοσοῦτος τοσαύτη τοσοῦτο","so great, so big","All",-1],["τόσος -η -ον","so great, so big","All",-1],["τραχύς -εῖα -ύ","rough, harsh","All",-1],["τρέπω","turn","All",-1],["τρέφω","nourish","All",-1],["τρέχω","run","All",-1],["τριήρης -ους, ἡ","trireme","All",-1],["τρόπαιον -ου, τό","trophy","All",-1],["τρόπος -ου, ὁ","manner, way","All",-1],["τυγχάνω","happen, meet with (+ gen.)","All",-1],["τύχη -ης, ἡ","chance","All",-1],["τύπτω","strike","All",-1],["τύραννος -ου, ὁ","king","All",-1],["ὕβρις -εως, ἡ","insolence","All",-1],["ὑβρίζω","insult","All",-1],["ὑγιής -ές","healthy","All",-1],["ὕδωρ -ατος, τό","water","All",-1],["υἱός -οῦ, ὁ","son","All",-1],["ὕλη -ης, ἡ","wood","All",-1],["ὑπάρχω","be at hand, suffice","All",-1],["ὑπερβάλλω","excel","All",-1],["ὑπήκοος -ον","subject to, obeying (+ gen.)","All",-1],["ὑπηρετέω","serve","All",-1],["ὑπηρέτης -ου, ὁ","servant","All",-1],["ὑπισχνέομαι","promise","All",-1],["ὕπνος -ου, ὁ","sleep","All",-1],["ὑποψία -ας, ἡ","suspicion","All",-1],["ὑποπτεύω","suspect","All",-1],["ὕστερος -α -ον (= ὑστεραῖος -α -ον)","following, later","All",-1],["ὑψηλός -ή -όν","high","All",-1],["ὕψος -ους, τό","height","All",-1],["φαίνω","show; pass. appear","All",-1],["φανερός -ά -όν","clear","All",-1],["φάρμακον -ου, τό","drug, poison","All",-1],["φαῦλος -η -ον","mean, worthless","All",-1],["φέγγος -ους, τό","the light","All",-1],["φείδομαι","spare (+ gen.)","All",-1],["φέρω","bear, carry","All",-1],["φεῦ","alas","All",-1],["φεύγω","flee","All",-1],["φυγή -ῆς, ἡ","flight","All",-1],["φυγάς -άδος, ὁ","(one in) exile","All",-1],["φημί","say","All",-1],["φήμη -ης, ἡ","utterance, saying, report","All",-1],["φθάνω","anticipate","All",-1],["φθέγγομαι","utter","All",-1],["φθίνω","waste, destroy","All",-1],["φθόνος -ου, ὁ","envy, jealousy","All",-1],["φθονέω","envy, grudge","All",-1],["φιλέω","love","All",-1],["φίλιος -α -ον","friendly","All",-1],["φίλος -η -ον","dear; (with art.) friend","All",-1],["φλόξ φλόγος, ἡ","flame","All",-1],["φόβος -ου, ὁ","fear","All",-1],["φοβέομαι","be afraid","All",-1],["φονεύω","slaughter","All",-1],["φόνος -ου, ὁ","slaughter","All",-1],["φράζω","tell","All",-1],["φρήν φρενός, ἡ","mind","All",-1],["φρονέω","think, intend","All",-1],["φροντίς -ίδος, ἡ","thought, attention","All",-1],["φρόνιμος -ον","prudent","All",-1],["φρουρέω","guard","All",-1],["φυλάττω","guard","All",-1],["φύλαξ -ακος, ὁ","guard","All",-1],["φύσις -εως, ἡ","nature","All",-1],["φύω","beget","All",-1],["φωνή -ῆς, ἡ","voice","All",-1],["φῶς φάους, τό","the light","All",-1],["χαίρω","rejoice","All",-1],["χαλεπός -ή -όν","difficult","All",-1],["χαλκός -οῦ, ὁ","bronze","All",-1],["χάρις -ιτος, ἡ","favour, thanks","All",-1],["χειμών -ῶνος, ὁ","winter, storm","All",-1],["χείρ χειρός, ἡ","hand","All",-1],["χθών χθονός, ἡ","land","All",-1],["χράομαι","use (+ dat.)","All",-1],["χρήσιμος -η -ον","useful","All",-1],["χρή","it is necessary","All",-1],["χρεία -ας, ἡ","use, need","All",-1],["χρῄζω","long for","All",-1],["χρῆμα -ατος, τό","thing; (pl.) money","All",-1],["χρηστός -ή -όν","useful, good","All",-1],["χρόνος -ου, ὁ","time","All",-1],["χρυσός -οῦ, ὁ","gold","All",-1],["χρώς χρωτός, ὁ","flesh","All",-1],["χώρα -ας, ἡ","place, land","All",-1],["χῶρος -ου, ὁ","place, land","All",-1],["χωρίον -ου, τό","place, land","All",-1],["χωρέω","go","All",-1],["χωρίς","apart","All",-1],["ψευδής -ές","lying, false","All",-1],["ψεύδω","deceive; pass. lie","All",-1],["ψῆφος -ου, ἡ","vote","All",-1],["ψηφίζω","vote","All",-1],["ψιλός -ή -όν","bare, lightly armed","All",-1],["ψυχή -ῆς, ἡ","soul","All",-1],["ὧδε","thus, in this way","All",-1],["ὠθέω","push","All",-1],["ὠκεανός -οῦ, ὁ","ocean","All",-1],["ὠμός -ή -όν","savage","All",-1],["ὠνέομαι","buy","All",-1],["ὥρα -ας, ἡ","season","All",-1],["ὥσπερ","just as, as if","All",-1],["ὠφελέω","benefit, help","All",-1],["ὠφελία -ας, ἡ","help","All",-1],["ὠφέλιμος -ον","helping","All",-1]];
@@ -1925,7 +2097,7 @@ const defaults={
   version:2, created:Date.now(),
   settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, gistId:'', gistTok:'', deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, gateDays:0, studyStats:true, studyHints:true, studyMotion:true, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, learnBufferOn:false, learnBufferL:10, learnBufferE:10, learnBufferSinceL:null, learnBufferSinceE:null, learnBufferDismissedL:null, learnBufferDismissedE:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, log:[], days:{}, dayNotes:{}, drillLog:[], sinceExport:0, lastExport:null, lastPushBytes:0,
-  deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null
+  deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null, confuseGroups:{}
 };
 let S=null;
 
@@ -1933,7 +2105,7 @@ function freshCard(c){
   const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
             reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null,
             unflagDay:null, holdSince:null, buryUntil:0,
-            note:null, setAsideAt:null, lastDrilled:null};
+            note:null, setAsideAt:null, lastDrilled:null, confuseGroups:[]};
   if(c.dir==='L'&&(c.seed===1||c.seed===2)){
     st.st='R'; st.step=null;
     st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
@@ -2261,6 +2433,24 @@ function normalise(o){
     }
     s.dayNotes=dn;
   }
+  // Manual confusable groups (DEVELOPMENT_IDEAS.md sec E) -- a small registry
+  // of {label,created} keyed by an opaque group id. Membership is deliberately
+  // NOT stored here: it lives on each card (cs.confuseGroups, sanitized in the
+  // per-card loop below against this now-sanitized registry), so there is
+  // exactly one source of truth for who's in a group rather than two that
+  // could drift apart. Same dict-sanitize shape as dayNotes just above --
+  // garbage keys/values are dropped, not repaired. Groups with fewer than two
+  // real members (nothing left to contrast) are swept out further down, once
+  // every card's own membership has been sanitized and can be counted.
+  { const cg={}, raw=(o.confuseGroups&&typeof o.confuseGroups==='object')?o.confuseGroups:{};
+    for(const k in raw){
+      const v=raw[k];
+      if(!v||typeof v!=='object') continue;
+      cg[k]={label:(typeof v.label==='string'&&v.label.trim())?v.label.trim().slice(0,50):null,
+             created:Number.isFinite(v.created)?v.created:Date.now()};
+    }
+    s.confuseGroups=cg;
+  }
   // Drill session-summary log (Tier-3 drill stats) -- one compact entry per
   // finished/abandoned drill session, never per card, so it stays tiny
   // regardless of how many words a session touches. Bounded the same
@@ -2316,6 +2506,15 @@ function normalise(o){
       if(c.lastDrilled!=null&&!Number.isFinite(c.lastDrilled)) c.lastDrilled=null;
       if(typeof c.note==='string'&&c.note.trim()) c.note=c.note.slice(0,200);
       else c.note=null;
+      // confuseGroups: which manual groups (registry sanitized just above)
+      // this card belongs to. A dangling id (pointing at a group that didn't
+      // survive the registry sanitize) or a duplicate is dropped, not
+      // repaired -- same "worst case a word silently drops out" reasoning as
+      // note/setAsideAt above. Capped at 5: generous headroom over the "2-4
+      // words at a time" this is actually built for, purely defensive.
+      c.confuseGroups=Array.isArray(c.confuseGroups)
+        ? [...new Set(c.confuseGroups.filter(g=>typeof g==='string'&&s.confuseGroups[g]))].slice(0,5)
+        : [];
       // Backfill for a card that was ALREADY stuck in 'L'/'X' before this
       // field existed -- without this, a pre-existing backlog (a live report
       // had 54 words simultaneously "in steps" under the old code) only
@@ -2351,6 +2550,22 @@ function normalise(o){
       // property the deferred-rollover work was after. It also used to wreck a
       // review card held on a 10-minute drill step, whose due is deliberately
       // not on a boundary and which this dragged back to the day's start.
+    }
+    // A confuseGroup down to 0-1 real members (every card's own membership is
+    // sanitized by now, so this count is trustworthy) has nothing left to
+    // contrast against -- dissolve it outright, same reasoning as un-flagging
+    // dropping a word from its groups (setAside()). Runs on every load, not
+    // once, so a group left dangling by an out-of-band edit (a hand-merged
+    // backup, a card brought back to review on a different device before this
+    // sync caught up) is swept the moment this device sees it, not left as
+    // inert metadata a future manual add could confusingly reattach to.
+    { const counts={};
+      for(const k in s.cards){ const g=s.cards[k].confuseGroups; if(g) g.forEach(gid=>counts[gid]=(counts[gid]|0)+1); }
+      for(const gid in s.confuseGroups) if(!(counts[gid]>=2)) delete s.confuseGroups[gid];
+      for(const k in s.cards){
+        const c=s.cards[k];
+        if(c.confuseGroups.length) c.confuseGroups=c.confuseGroups.filter(gid=>s.confuseGroups[gid]);
+      }
     }
     // defensive: catch a state whose log already shows FLAG_AUTO same-day
     // Agains for "today" (this device's today, via ROLL_OVR/dayKey below)
@@ -2447,7 +2662,7 @@ function gateOpen(c){
     return fs && !fs.susp && fs.reps>0 && fs.st==='R' && fs.s>=g;
   });
 }
-const BUILD='2026.08.16.2';
+const BUILD='2026.08.16.6';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -2656,6 +2871,11 @@ let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], don
 let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by renderCard()'s recap card, cleared by undo() and by anything that wipes undoStack alongside it
 let calY=null, calM=null, calSelectedDay=null;   // calendar fold's own state -- not persisted, not S.dir-linked
 let noteEditId=null;   // which word's note panel is open (openWordNote/#wordNoteOverlay) -- not persisted, same shape as calSelectedDay above
+// #confuseGroupOverlay's own two flows, mutually exclusive, same shape as
+// noteEditId above -- groupCreateIds while confirming a brand-new group from
+// a bulk selection, groupManageId while viewing/editing one word's existing
+// groups. Neither persisted.
+let groupCreateIds=null, groupManageId=null;
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseDate=null, browseSelected=new Set();   // browse screen's own state
 let drillDeck=[], drillGroups={}, drillPos=0, drillRight=0, drillSeen=0, drillView='choose', drillMode=null, drillLogged=false, drillRequeued=new Set();   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags. drillGroups: id -> its similarity block (populated by buildDrillDeck). drillView starts on the chooser so a stray render before openDrillChooser() runs never shows a stale practice round. drillRequeued: ids (or, for a block, every member) already given a second look this session via requeueDrillItem -- caps a miss to exactly one requeue so a word that's wrong every time can't grow the deck forever.
 let drillSubmitted=false;   // typed round: has this round already been graded
@@ -3585,11 +3805,87 @@ function againTodayFor(id,log,dk){
 // nor rate()'s live one can undo the decision straight afterwards off the same
 // day's log (see normalise()). Setting a word aside clears the stamp again, so
 // a later bring-back on the same day is still honoured.
+/* ---- manual confusable groups (DEVELOPMENT_IDEAS.md sec E) -- his
+   replacement for the auto-detected version: from the Set-aside list, pick
+   several already-set-aside words that are personally confusable for
+   reasons that don't show in spelling, and feed that grouping into the same
+   contrastive-round engine similarityBlocks()/looksSimilar() already runs
+   (see shareConfuseGroup, above). A group is just a shared gid string on
+   each member's cs.confuseGroups array (overlap allowed, his call) plus a
+   {label} entry in the S.confuseGroups registry -- membership lives only on
+   the cards, so there is one source of truth, not two that could drift.
+   These are the only functions that ever mutate either side; the Browse
+   bulk bar (createConfuseGroup) and the per-word group manager
+   (addToConfuseGroup/removeFromConfuseGroup) are both thin UI over this. ---- */
+// First runtime-generated id in this codebase -- every other id (card,
+// day-key) is either positional or a plain integer. Needed here because a
+// group is created fresh by the user, not derived from anything that
+// already has a stable id of its own.
+function newConfuseGroupId(){
+  return 'cg'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+}
+function wordsInConfuseGroup(gid){
+  return CARDS.filter(c=>{ const cc=S.cards[c.id]; return cc&&cc.confuseGroups&&cc.confuseGroups.includes(gid); }).map(c=>c.id);
+}
+// A group with fewer than two real members left has nothing to contrast
+// against -- drop it from the registry and strip the dangling reference from
+// whichever single card (if any) still points at it. Called after every
+// removal, live, so a thinned-out group doesn't visibly linger for the rest
+// of the session -- normalise() re-runs the same check on every load as a
+// backstop for state that arrived from elsewhere (an import, a gist pull).
+function dissolveConfuseGroupIfThin(gid){
+  if(!S.confuseGroups[gid]) return;
+  const members=wordsInConfuseGroup(gid);
+  if(members.length>=2) return;
+  delete S.confuseGroups[gid];
+  members.forEach(id=>{ const cc=S.cards[id]; cc.confuseGroups=cc.confuseGroups.filter(g=>g!==gid); });
+}
+// Creates a brand-new group from a set of already-selected ids (Browse's
+// bulk bar) -- always a fresh gid, even if a selected word already belongs
+// to another group, since overlap is allowed. label is optional.
+function createConfuseGroup(ids,label){
+  const gid=newConfuseGroupId();
+  S.confuseGroups[gid]={label:(label&&label.trim())?label.trim().slice(0,50):null, created:Date.now()};
+  ids.forEach(id=>addToConfuseGroup(id,gid));
+  return gid;
+}
+// Adds one word to an existing group (the group manager's "add to another
+// group" action). Silently no-ops past the same 5-group cap normalise()
+// enforces, and on an already-a-member id, rather than erroring -- neither
+// should ever happen from the UI, but this is the one place both are cheap
+// to just make impossible rather than trust the caller.
+function addToConfuseGroup(id,gid){
+  if(!S.confuseGroups[gid]) return;
+  const cs=cardState(id);
+  if(!cs.confuseGroups) cs.confuseGroups=[];
+  if(cs.confuseGroups.length>=5||cs.confuseGroups.includes(gid)) return;
+  cs.confuseGroups=cs.confuseGroups.concat(gid);
+}
+// Removes one word from one specific group (the group manager's per-group
+// "remove" action) -- leaves any of the word's other groups untouched, then
+// dissolves this group if that removal left it too thin.
+function removeFromConfuseGroup(id,gid){
+  const cs=cardState(id);
+  if(!cs.confuseGroups||!cs.confuseGroups.includes(gid)) return;
+  cs.confuseGroups=cs.confuseGroups.filter(g=>g!==gid);
+  dissolveConfuseGroupIfThin(gid);
+}
+// Removes one word from EVERY group it's in -- setAside()'s bring-back path,
+// below: grouping only makes sense among still-set-aside words (matches
+// buildDrillDeck's own susp-only scope), so a word graduating back to normal
+// review can't keep dragging its old groupmates into a contrastive round.
+function leaveConfuseGroups(id){
+  const cs=cardState(id), gids=cs.confuseGroups;
+  if(!gids||!gids.length) return;
+  cs.confuseGroups=[];
+  gids.forEach(gid=>dissolveConfuseGroupIfThin(gid));
+}
 function setAside(id,on,now){
   const cs=cardState(id), t=(now!=null)?now:Date.now(), wasSusp=!!cs.susp;
   if(on && !wasSusp) cs.setAsideAt=t;   // first moment it joined the pile, for the Drill stats' "days set aside" figure -- an already-susp word re-flagged (never happens today, but harmless) doesn't overwrite it
   cs.susp=!!on;
   cs.unflagDay = on ? null : dayKey(t);
+  if(!on && wasSusp) leaveConfuseGroups(id);   // see leaveConfuseGroups' own comment, just above
   // Drill-stats turnover rollup (renderStatsDrill) -- same S.days record
   // every other daily counter (rec.n, rec.intro, ...) already lives on, and
   // the same "count a genuine transition only" guard rate()'s own counters
@@ -3795,14 +4091,31 @@ function answersMatch(input,c){
   const got=normLenient(input);
   return !!got && answerVariants(c).some(v=>normLenient(v)===got);
 }
+// true if a and b have been manually put in the same confuseGroup at least
+// once (DEVELOPMENT_IDEAS.md sec E) -- overlapping membership is allowed (a
+// word can sit in more than one group, his call), so this is a set
+// intersection, not an equality check. Cheap either way: confuseGroups is
+// capped at 5 entries per card (normalise()).
+function shareConfuseGroup(a,b){
+  const ga=(S.cards[a]&&S.cards[a].confuseGroups)||[], gb=(S.cards[b]&&S.cards[b].confuseGroups)||[];
+  return ga.length>0 && gb.length>0 && ga.some(g=>gb.includes(g));
+}
 // union-find so a chain of pairwise-similar terms groups as one block even
-// without every member looking like every other member directly
+// without every member looking like every other member directly. Two
+// sources feed the same union, both merging transitively the same way: an
+// edit-distance match (looksSimilar) and a manually-created confuseGroup
+// (shareConfuseGroup, just above) -- a word bridging two different manual
+// groups just becomes the connector in one merged block for the contrastive
+// round, same as a word that happens to look like two unrelated others
+// already does today. Nothing downstream (buildDrillDeck, renderContrastRound)
+// needs to know which of the two reasons put any given pair together.
 function similarityBlocks(ids){
   const parent={}; ids.forEach(id=>parent[id]=id);
   const find=id=>{ while(parent[id]!==id) id=parent[id]=parent[parent[id]]; return id; };
   const union=(a,b)=>{ const ra=find(a),rb=find(b); if(ra!==rb) parent[ra]=rb; };
   for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
-    if(looksSimilar(BY_ID[ids[i]].q,BY_ID[ids[j]].q)) union(ids[i],ids[j]);
+    const a=ids[i], b=ids[j];
+    if(looksSimilar(BY_ID[a].q,BY_ID[b].q) || shareConfuseGroup(a,b)) union(a,b);
   }
   const groups={};
   ids.forEach(id=>{ const r=find(id); (groups[r] ||= []).push(id); });
@@ -4140,6 +4453,16 @@ function wordRowHtml(c){
   const buried=isBuriedToday(cs);
   const checked=browseSelected.has(c.id)?' checked':'';
   const note=buried?'<div class="wrNote">Buried — back to normal review tomorrow</div>':'';
+  // Manual confusable-group badge (openGroupManager) -- only ever meaningful
+  // for a set-aside word, same "susp-only" scope the grouping engine itself
+  // uses (see leaveConfuseGroups). Empty-state "+ group" mirrors the note
+  // button's own "+ note" convention (flagRow, Drill's List view); a
+  // non-empty group shows the link glyph plus a count past one.
+  const gcount=(cs&&cs.confuseGroups&&cs.confuseGroups.length)||0;
+  const groupBtn=flagged
+    ? '<button class="groupBtn'+(gcount?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(gcount?'Manage confusable group':'Add to a confusable group')+'">'+
+      (gcount?'\u{1F517}'+(gcount>1?' '+gcount:''):'+ group')+'</button>'
+    : '';
   // c.id and st are both built by this file, never read back from stored
   // state -- escaped anyway because this is the one place a value lands
   // inside an attribute, which is precisely the case escHtml() now covers.
@@ -4147,6 +4470,7 @@ function wordRowHtml(c){
     '<input type="checkbox" class="wrCheck" data-id="'+escHtml(c.id)+'"'+checked+'>'+
     '<i class="stDot s-'+st+'"></i>'+
     '<span class="term">'+escHtml(c.q)+'</span>'+
+    groupBtn+
     '<button class="flagBtn'+(flagged?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(flagged?'Bring back to normal review':'Set aside')+'">&#9873;</button>'+
     '<button class="buryBtn'+(buried?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(buried?'Bring back today':'Bury for today')+'">&#8986;</button>'+
     '</div>'+
@@ -5056,6 +5380,68 @@ function closeWordNote(){
   if(drillView==='list') renderDrillList();
   renderStruggling();
 }
+/* ---- manual confusable-group modal (createConfuseGroup/addToConfuseGroup/
+   removeFromConfuseGroup above are the actual data mutations; everything
+   here is thin UI over them). Two flows share one overlay/dayDetail pair,
+   same "single shared modal, not N inline editors" shape as the word-note
+   modal just above -- see groupCreateIds/groupManageId's own comment. ---- */
+// Confirm-and-create, opened by Browse's bulk bar ("Group" button) once 2+
+// set-aside rows are checked. Re-filters to susp-only defensively -- the
+// bulk button's own click handler already does this, but a group only ever
+// makes sense among still-set-aside words (see leaveConfuseGroups), so this
+// is the one place that invariant is actually enforced.
+function openConfirmGroup(ids){
+  ids=ids.filter(id=>{ const cs=S.cards[id]; return cs&&cs.susp; });
+  if(ids.length<2){ toast('Select 2 or more set-aside words to group',1800); return; }
+  groupCreateIds=ids; groupManageId=null;
+  $('confuseGroupOverlay').classList.add('on');
+  $('confuseGroupDetail').innerHTML='<div class="ddTitle">Group '+ids.length+' words</div>'+
+    '<div class="cgWordList">'+ids.map(id=>'<span>'+escHtml(BY_ID[id].q)+'</span>').join('')+'</div>'+
+    '<input type="text" id="cgLabel" maxlength="50" placeholder="Label (optional) — why these are confusable">'+
+    '<div class="ddBtns"><button class="small primary" id="cgCreate">Create group</button><button class="small" id="cgCancel">Cancel</button></div>';
+}
+// View/edit one word's existing groups -- opened from wordRowHtml's own
+// groupBtn badge, on any set-aside row (empty or not: this is also how a
+// word already set aside gets added to a group made earlier, without
+// re-selecting everyone from scratch via the bulk flow above).
+function openGroupManager(id){
+  groupManageId=id; groupCreateIds=null;
+  $('confuseGroupOverlay').classList.add('on');
+  renderGroupManager();
+}
+function renderGroupManager(){
+  const id=groupManageId; if(!id) return;
+  const c=BY_ID[id], cs=S.cards[id], gids=(cs&&cs.confuseGroups)||[];
+  let html='<div class="ddTitle">'+escHtml(c.q)+'</div>';
+  html += gids.length ? gids.map(gid=>{
+    const g=S.confuseGroups[gid]; if(!g) return '';
+    const others=wordsInConfuseGroup(gid).filter(x=>x!==id).map(x=>BY_ID[x].q).join(', ');
+    return '<div class="cgGroupRow"><div><b>'+escHtml(g.label||'Unlabeled group')+'</b>'+
+      '<div class="cgGroupWith">with '+escHtml(others||'—')+'</div></div>'+
+      '<button class="small" data-remove="'+escHtml(gid)+'">Remove</button></div>';
+  }).join('') : '<div class="note">Not in any group yet.</div>';
+  // Groups this word could still join: any existing group it isn't already
+  // in, restricted to the same direction (a cross-direction pairing could
+  // never actually surface in a contrastive round -- buildDrillDeck only
+  // ever hands similarityBlocks() one direction's ids at a time).
+  const addable=Object.keys(S.confuseGroups).filter(gid=>{
+    if(gids.includes(gid)) return false;
+    const members=wordsInConfuseGroup(gid);
+    return members.length>0 && BY_ID[members[0]].dir===c.dir;
+  });
+  if(addable.length){
+    html+='<div class="cgAddRow"><select id="cgAddSelect">'+addable.map(gid=>{
+      const g=S.confuseGroups[gid], label=g.label||('with '+BY_ID[wordsInConfuseGroup(gid)[0]].q);
+      return '<option value="'+escHtml(gid)+'">'+escHtml(label)+'</option>';
+    }).join('')+'</select><button class="small" id="cgAddBtn">Add</button></div>';
+  }
+  html+='<div class="ddBtns"><button class="small" id="cgManagerClose">Close</button></div>';
+  $('confuseGroupDetail').innerHTML=html;
+}
+function closeConfuseGroupOverlay(){
+  groupCreateIds=null; groupManageId=null;
+  $('confuseGroupOverlay').classList.remove('on');
+}
 function flagRow(r){
   const c=BY_ID[r.id], cs=S.cards[r.id], hasNote=!!(cs&&cs.note);
   // Notes are about words already committed to the set-aside pile, not the
@@ -5802,6 +6188,19 @@ function renderBg(){
 
 /* ======================= changelog ======================= */
 const CHANGES=[
+  ['2026.08.16.6',[
+    'New: Glass and Neon get their own material now, instead of no texture at all. Glass leans into an actual "Liquid Glass" look -- its cards are genuinely translucent and frosted (a real background blur, not a flat tint), with a thin bright edge catching the light along their top like glass would. Neon leans into an actual glow -- rating labels, the front screen\'s counts, the main Study button and a few others now radiate softly in their own colour, brighter and further-reaching in dark mode where a glow has somewhere dark to bloom into, softer in light mode where the same glow would otherwise look like a smudge.',
+  ]],
+  ['2026.08.16.5',[
+    'New: manual confusable groups. The Word list\'s Set-aside filter now lets you pick several set-aside words yourself and group them as confusable, for whatever reason actually confuses you -- spelling, meaning, meeting them on the same page -- not just the two-words-that-happen-to-look-alike pairing Drill\'s contrastive round could otherwise ever find on its own. Select two or more, tap Group, and give it an optional label; the same contrastive round then quizzes the whole group against each other. Add one more word to an existing group later from its own row, or remove one -- a group left with fewer than two words is dissolved on its own, nothing to tidy up by hand.',
+  ]],
+  ['2026.08.16.4',[
+    'Changed: the app icon. The coral border now reaches every edge of the icon -- it used to leave a thin gap of the cream background between itself and the true edge on three of its four corners (hidden next to the digit badge in the fourth, visible everywhere else). That badge -- a small number in the corner counting the build -- is gone entirely, and the V itself is now a plain brushed silver rather than ink with gold serifs.',
+    'New: three of yesterday\'s five new themes get a faint background texture. Rubric gets laid-paper fibres, Steel gets brushed-metal streaks, and 8-Bit gets the Game Boy\'s own visible pixel grid. Glass and Neon don\'t -- both are built around a smooth surface (translucency, glow), and a texture would work against exactly that.',
+  ]],
+  ['2026.08.16.3',[
+    'New: the launcher page can now check the gist directly for the latest palette and study-day data, instead of only ever showing whatever this device last saved. Previously the two cards there (each one\'s border colour, its 35-day strip) only ever reflected this browser\'s own last-known copy of that deck -- correct once the deck had actually been opened here, but stuck at whatever it showed before that if a palette change or a study session happened on another device. It now checks the gist itself once a minute at most (one request covers both decks at once), and a "Refresh" button beside the two cards forces an immediate check regardless of that limit. Still never writes anything back to either deck\'s own saved data -- exactly as read-only as before, just no longer blind to what hasn\'t been opened on this device yet.',
+  ]],
   ['2026.08.16.2',[
     'Changed: Kanagawa and Everforest are retired from the theme picker. Measured rather than guessed: both sat inside the same nine-degree, pale-yellow-gold hue band as Vellum and Gruvbox, and Gruvbox and Everforest\'s green rating colour were near-identical hexes. Gruvbox stays as that family\'s one theme -- the best-known name of the three, the most saturated, and the only fully colourless dark mode among all of them.',
     'New: five themes. Rubric, a regal cousin to Vellum built from real illuminated-manuscript history -- true rubrication red and gold leaf on a warmer parchment, instead of Vellum\'s muted terracotta. Steel and Glass, taking their material cues from two of Chess.com\'s actual board skins (sampled from the real files, not guessed): brushed gunmetal with an oxide-copper accent, and cool slate with the same bevel-highlight trick the real glass board uses in place of true transparency. Neon, glow-on-black -- knowingly built after the popular neon convention rather than Chess.com\'s own Neon set, which turned out to be a soft pastel with no glow in it at all. 8-Bit, whose light mode is the real four-shade Game Boy screen, down to the exact original hardware hex values.',
@@ -6390,10 +6789,36 @@ $('browseResults').addEventListener('click',e=>{
   const flagBtn=e.target.closest('.flagBtn');
   if(flagBtn){
     e.preventDefault(); e.stopPropagation();
-    const id=flagBtn.dataset.id, cs=setAside(id,!cardState(id).susp);
+    const id=flagBtn.dataset.id, wasSusp=cardState(id).susp;
+    // Captured before setAside() runs leaveConfuseGroups and clears it --
+    // a bring-back that dissolves a group can leave OTHER, currently-visible
+    // rows (this word's ex-groupmates) with a stale badge too, which no
+    // per-row patch below can reach. Only worth the full re-render on that
+    // specific path; the ordinary flag/unflag-with-no-groups case (the vast
+    // majority of taps) stays the cheap in-place patch it always was.
+    const hadGroups=!!(S.cards[id]&&S.cards[id].confuseGroups&&S.cards[id].confuseGroups.length);
+    const cs=setAside(id,!wasSusp);
     save();
+    if(wasSusp && hadGroups){
+      renderBrowse();
+      toast('Brought back',1400);
+      return;
+    }
     flagBtn.classList.toggle('on',cs.susp);
     flagBtn.setAttribute('aria-label',cs.susp?'Bring back to normal review':'Set aside');
+    // groupBtn only ever exists on a susp row (wordRowHtml) -- this handler
+    // patches the row in place rather than re-rendering it wholesale, so the
+    // badge has to be inserted/removed here too, not just the flag's own
+    // class. Missing this meant a word flagged live had no way to group it
+    // until the next full Browse render, and a word just brought back (which
+    // leaveConfuseGroups has already dropped from every group) kept showing
+    // a stale badge. Caught live, not by any unit test -- see HANDOFF.
+    const wrTop=flagBtn.closest('.wrTop'); let gb=wrTop.querySelector('.groupBtn');
+    if(cs.susp && !gb){
+      gb=document.createElement('button'); gb.className='groupBtn';
+      gb.dataset.id=id; gb.setAttribute('aria-label','Add to a confusable group'); gb.textContent='+ group';
+      wrTop.insertBefore(gb,flagBtn);
+    } else if(!cs.susp && gb){ gb.remove(); }
     toast(cs.susp?'Set aside':'Brought back',1400);
     return;
   }
@@ -6407,6 +6832,12 @@ $('browseResults').addEventListener('click',e=>{
     buryBtn.setAttribute('aria-label',!wasBuried?'Bring back today':'Bury for today');
     buryBtn.closest('.wordRow').classList.toggle('buried',!wasBuried);
     toast(!wasBuried?'Buried — back tomorrow':'Brought back',1400);
+    return;
+  }
+  const groupBtn=e.target.closest('.groupBtn');
+  if(groupBtn){
+    e.preventDefault(); e.stopPropagation();
+    openGroupManager(groupBtn.dataset.id);
     return;
   }
   const row=e.target.closest('.wordRow'); if(!row) return;
@@ -6436,7 +6867,30 @@ tapZone($('bulkBury'),()=>{
   save(); const n=browseSelected.size; browseSelected.clear(); renderBrowse();
   toast(n+' word'+(n===1?'':'s')+' buried for today',1400);
 });
+tapZone($('bulkGroup'),()=>{ openConfirmGroup(Array.from(browseSelected)); });
 tapZone($('bulkClear'),()=>{ browseSelected.clear(); renderBrowse(); });
+$('confuseGroupOverlay').addEventListener('click',e=>{
+  if(e.target.id==='confuseGroupOverlay'||e.target.id==='cgCancel'||e.target.id==='cgManagerClose'){
+    closeConfuseGroupOverlay(); return;
+  }
+  if(e.target.id==='cgCreate'){
+    const label=$('cgLabel')?$('cgLabel').value:'';
+    createConfuseGroup(groupCreateIds,label);
+    save(); toast('Group created',1400);
+    closeConfuseGroupOverlay(); browseSelected.clear(); renderBrowse();
+    return;
+  }
+  const rmBtn=e.target.closest('[data-remove]');
+  if(rmBtn){
+    removeFromConfuseGroup(groupManageId,rmBtn.dataset.remove);
+    save(); renderGroupManager(); renderBrowse();
+    return;
+  }
+  if(e.target.id==='cgAddBtn'){
+    const sel=$('cgAddSelect');
+    if(sel&&sel.value){ addToConfuseGroup(groupManageId,sel.value); save(); renderGroupManager(); renderBrowse(); }
+  }
+});
 function toggleFlagFromList(id){
   const cs=setAside(id,!cardState(id).susp);
   save();
