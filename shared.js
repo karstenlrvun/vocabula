@@ -37,6 +37,35 @@
 // mixed in OKLCH too purely so the legend and the cells agree exactly.
 const HEAT_SPACE='oklch';
 
+// ---- device-created decks (Phase 4, PHASE3_4_HANDOFF.md §2) ----
+// decks/registry.js stays the static seed list (its own header comment: "an
+// IndexedDB-backed registry only earns its keep once a deck can be *created*
+// on the device, at which point this file becomes the seed for that store
+// rather than something to rewrite" -- that point is now). A deck created by
+// the triage screen adds a row here instead: same shape as a REGISTRY row
+// (id/key/title/script/words/blurb/archived), source:'idb' always set, kept
+// in localStorage rather than IndexedDB because deck.html's own ?deck=
+// lookup runs synchronously in the head, before any IndexedDB open is even
+// possible (see that boot script's own comment on why it must stay
+// synchronous) -- same "small localStorage mirror of something IndexedDB-
+// backed" shape BOOT_KEY already uses for the theme. Device-local only:
+// discovering that a deck EXISTS does not sync between devices in this
+// build (the deck's own state/log, once created, syncs like any other deck
+// once a code is entered for it -- only the "here is a deck" fact stays
+// local). Read via a tiny JSON.parse(localStorage...) directly in each page
+// rather than a shared loader function, on purpose -- see this file's own
+// purity rule above; only the merge logic (where a real bug could hide) is
+// pure enough to live here.
+const USER_DECKS_KEY='vocabula.userDecks';
+// A user deck can never share an id with a built-in one (minted ids are
+// 'd'+base36, disjoint from the short static ids in decks/registry.js) but
+// this de-dupes by id anyway, first-wins -- purely defensive, never expected
+// to matter, cheaper to have than to explain away later if it ever does.
+function mergeRegistry(reg,userDecks){
+  const seen=new Set(reg.map(d=>d.id));
+  return reg.concat((userDecks||[]).filter(d=>d&&d.id&&!seen.has(d.id)&&seen.add(d.id)));
+}
+
 // ---- streaks ----
 // A day counts if it has any ratings. `since` is the optional "count my
 // streak from this day" reset (S.settings.streakStart); omitted, both

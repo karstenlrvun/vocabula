@@ -200,7 +200,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
   </div>
 </div>
 
-<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.17.1</a>
+<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.17.3</a>
 
 <script>
 // ---------- shared sync settings: the ONE place the sync code and this device's
@@ -391,7 +391,15 @@ const dayKey=(ts,roll)=>Math.floor((ts-new Date(ts).getTimezoneOffset()*60000-ro
 // (D3) are filtered out: hidden from the launcher, not deleted -- their
 // storage/sync slot is untouched and they stay reachable by a direct
 // deck.html?deck=<id> URL or a pinned icon.
-const DECKS=REGISTRY.filter(d=>!d.archived).map(d=>({
+// Phase 4 (PHASE3_4_HANDOFF.md §2): mergeRegistry (shared.js) folds in any
+// device-created decks (localStorage, USER_DECKS_KEY) alongside the static
+// REGISTRY -- a triaged deck shows up on the launcher with no further
+// wiring, same as the static rows always have.
+function loadUserDecks(){
+  try{ const v=JSON.parse(localStorage.getItem(USER_DECKS_KEY)); return Array.isArray(v)?v:[]; }
+  catch(e){ return []; }
+}
+const DECKS=mergeRegistry(REGISTRY,loadUserDecks()).filter(d=>!d.archived).map(d=>({
   id:d.id, key:d.key, title:d.title, blurb:d.blurb,
   card:'card'+d.id, today:'today'+d.id
 }));

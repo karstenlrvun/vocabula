@@ -47,6 +47,19 @@
   var v = new URLSearchParams(location.search).get('deck');
   var entry = null;
   for (var i=0; i<REGISTRY.length; i++) { if (REGISTRY[i].id===v) { entry=REGISTRY[i]; break; } }
+  // Phase 4 (PHASE3_4_HANDOFF.md §2): a device-created deck lives in
+  // localStorage (USER_DECKS_KEY, shared.js), not decks/registry.js --
+  // checked second, only when the static list doesn't resolve v, so this
+  // never changes anything for a deck that already exists as a file. Still
+  // a plain synchronous read, so the hard stop just below stays exactly as
+  // synchronous as it always was -- see its own comment on why that has to
+  // hold regardless of where a deck's row actually comes from.
+  if (!entry) {
+    try {
+      var userDecks = JSON.parse(localStorage.getItem(USER_DECKS_KEY)) || [];
+      for (var j=0; j<userDecks.length; j++) { if (userDecks[j] && userDecks[j].id===v) { entry=userDecks[j]; break; } }
+    } catch (e) {}
+  }
   if (!entry) {
     // Hard stop, styled in the launcher's own vellum (the real palette CSS
     // sits further down and never gets a chance to apply -- see window.stop()
@@ -124,6 +137,16 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
   max-width:34em}
 .answer.on{opacity:1}
 .answer .alt{display:block;margin-top:7px}
+/* Phase 3 §A (PHASE3_4_HANDOFF.md): cs.note generalised from susp-only to any
+   card, shown on the answer side -- a child of .answer itself rather than a
+   sibling with its own reveal state, so it inherits the exact opacity:0->1
+   swap .answer.on already does with no separate timing mechanism to get
+   wrong (see the Safari transition-race comment above reveal()). Always
+   built by renderCard() (gated on S.settings.cardNotes and cs.note both),
+   never shown before reveal for the same reason the note text itself exists
+   -- a mnemonic visible on the prompt side would just be read instead of
+   recalled from. */
+.answer .cardNote{display:block;margin-top:14px;font-size:13px;line-height:1.4;color:var(--muted);font-style:italic}
 .answer.lat{font-family:var(--serif);font-size:clamp(25px,calc(21.2px + 0.97vw),28px)}
 /* quickFlash: never takes up layout space or eats a tap -- it floats over
    whatever's already there. Legacy/portrait: a fixed banner below the bar,
@@ -148,6 +171,8 @@ html:not([data-layout="landscape"]) .quickFlash{
    they need two independently-toggleable icons, not one repurposed. */
 .buryBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:15px;line-height:1;color:var(--faint)}
 .buryBtn.on{color:var(--warn-ink)}
+.inspectBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:15px;line-height:1;color:var(--faint)}
+.inspectBtn.on{color:var(--coral)}
 /* Just the flag icon now (2026-08-13) -- no text, no dismiss. It used to be
    a text banner ("Again N times today--tap the flag...") gated on a higher
    threshold, with its own small x dismiss button below the flag; both are
@@ -380,6 +405,7 @@ html:not([data-layout="landscape"]) .quickFlash{
 .dayDetail button.small{border:1px solid var(--line);background:var(--raise);border-radius:9px;
   padding:8px 13px;font-size:12.5px;color:var(--muted)}
 .dayDetail button.small.primary{background:var(--coral);border-color:var(--coral);color:#fff}
+.dayDetail button.small.danger{color:var(--again)}
 /* word-note modal (openWordNote/#wordNoteOverlay) -- reuses .dayDetail's own
    card styling verbatim (border/padding/textarea/buttons), just centred over
    a dim backdrop instead of sitting inline on one screen, since it needs to
@@ -393,6 +419,22 @@ html:not([data-layout="landscape"]) .quickFlash{
 .dayDetail input[type=text]{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:9px;
   background:var(--raise);color:var(--ink);font-family:inherit;font-size:13px;padding:9px 11px;
   box-sizing:border-box}
+.field .fh.bad{color:#c0392b}
+/* Phase 4 triage screen (#scExtract, PHASE3_4_HANDOFF.md §2) -- the card
+   itself reuses .dayDetail's own styling verbatim (border/padding/input/
+   textarea), same "one skin, several features" reuse as the word-note and
+   confuse-group modals above, just sized to the full column instead of a
+   centred 380px modal, since it sits inline on its own screen rather than
+   floating over one. */
+.triageWrap{flex:1;display:flex;flex-direction:column;min-height:0;padding:16px;overflow-y:auto;box-sizing:border-box}
+.triageCount{text-align:center;color:var(--muted);font-size:13px;margin-bottom:10px;font-variant-numeric:tabular-nums}
+.triageCard{max-width:34rem;width:100%;margin:0 auto}
+.triageCard textarea{min-height:60px}
+.triageBtns{flex:0 0 auto;display:flex;gap:9px;padding:16px 12px;max-width:34rem;margin:0 auto;width:100%;box-sizing:border-box}
+.triageBtn{flex:1;height:56px;border-radius:15px;border:1px solid var(--line);font-size:16px;font-weight:500}
+.triageBtn .keycap{display:block;margin-top:2px}
+.triageBtn.bin{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
+.triageBtn.keep{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
 /* manual confusable-group modal (openConfirmGroup/openGroupManager, both
    sharing #confuseGroupOverlay -- same .wordNoteOverlay/.dayDetail skin as
    the word-note modal just above, reused rather than styled a second time). */
@@ -1074,7 +1116,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
     <div class="bar">
       <button class="icon" id="browseBack" aria-label="Back">&#8249;</button>
       <div class="title">Word list</div>
-      <div class="icon" style="visibility:hidden">·</div>
+      <button class="icon" id="browseAddWordBtn" aria-label="Add a word">&#65291;</button>
     </div>
     <div class="home">
       <div class="browseSplit">
@@ -1258,6 +1300,14 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh">Only affects a screen wide enough for the two-column study card. The last card you rated is always shown either way.</div>
       </div>
       <div class="field">
+        <label for="fCardNotes">Notes on the study card</label>
+        <select id="fCardNotes" class="sel">
+          <option value="1">On — show a word's note on the answer side</option>
+          <option value="0">Off — keep notes to Browse only</option>
+        </select>
+        <div class="fh">A note used to only show for a set-aside word; now any word can carry one, from its Browse row. Always after reveal, never before — a mnemonic visible on the prompt side would just be read instead of recalled from.</div>
+      </div>
+      <div class="field">
         <label for="fQuickRate">Quick rate (1/3 before reveal)</label>
         <select id="fQuickRate" class="sel">
           <option value="off">Off</option>
@@ -1296,9 +1346,20 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           fields are shared with the other deck automatically.</div>
       </div>
       <div class="field">
+        <label for="fExtractKey">Extraction key</label>
+        <input type="text" id="fExtractKey" placeholder="extraction key" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
+        <button class="act" id="extractNewKeyBtn">Get a key</button>
+        <div class="fh">Needed once before "Create a deck from text" can call the real extraction service — until then, that screen still only accepts hand-pasted JSON. Generate one here, then paste this exact value into the Worker with <code>wrangler secret put EXTRACT_KEY</code>. Unrelated to the sync code above — this key never leaves this device either way, and changing one never affects the other.</div>
+      </div>
+      <div class="field">
         <label>Set aside</label>
         <div class="fh" id="leechNote"> — </div>
         <button class="act" id="unsuspBtn">Bring all set-aside words back</button>
+      </div>
+      <div class="field">
+        <label>New deck</label>
+        <button class="act" id="toExtract">Create a deck from text</button>
+        <div class="fh">Paste in a word list or a passage and turn it into its own deck -- app-level, not tied to this one, so it's here rather than under any single deck's own menu.</div>
       </div>
       <div class="field">
         <label>Instructions</label>
@@ -1409,10 +1470,96 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       </div>
     </div>
   </section>
+
+  <!-- ============ EXTRACT (Phase 4, PHASE3_4_HANDOFF.md §2) ============ -->
+  <section id="scExtract" class="screen">
+    <div class="bar">
+      <button class="icon" id="extractBack" aria-label="Back">&#8249;</button>
+      <div class="title">New deck</div>
+      <div class="icon" style="visibility:hidden">·</div>
+    </div>
+    <!-- Step 1: setup + candidate input. Paste-text (4a, the real /extract
+         Worker route) is the primary path; hand-pasted JSON stays available
+         underneath, collapsed -- it needs no key and no model call, mainly
+         useful now for testing the triage screen itself in isolation. Both
+         feed the exact same triageCandidates/triagePos machinery below. -->
+    <div class="set" id="extractSetup">
+      <div class="setCols">
+      <div class="field">
+        <label for="exTitle">Deck title</label>
+        <input type="text" id="exTitle" maxlength="60" placeholder="e.g. Aeneid I, or CIV 4th Edition Ch. 3">
+      </div>
+      <div class="field">
+        <label for="exScript">Keyboard</label>
+        <select id="exScript" class="sel">
+          <option value="latin">Latin alphabet (ordinary typing)</option>
+          <option value="greek">Greek (adds the on-screen Hoplite keyboard)</option>
+        </select>
+        <div class="fh">Only changes which virtual keyboard this deck offers when typing -- doesn't restrict what a word can actually contain either way.</div>
+      </div>
+      <div class="field">
+        <label for="exText">Paste text</label>
+        <textarea id="exText" style="min-height:160px" placeholder="A vocabulary list, a glossary, or a passage of prose or poetry…"></textarea>
+        <div class="fh" style="margin:8px 0 0;text-align:center">— or —</div>
+        <input type="text" id="exUrl" placeholder="…paste a URL instead" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-top:8px">
+        <div class="fh">Sent to the extraction service (fetched there too, for a URL -- this page can't fetch another site directly), then triaged one candidate at a time below. Nothing is added to any deck until every candidate has been through triage by hand. Needs an extraction key set up once in Settings first.</div>
+        <button class="act primary" id="exExtractBtn" style="margin-top:12px">Extract candidates</button>
+        <div class="fh bad" id="exExtractError"></div>
+      </div>
+      <div class="field" style="border-bottom:none">
+        <details class="fold">
+          <summary>Paste JSON candidates directly instead</summary>
+          <textarea id="exPaste" style="min-height:120px;margin-top:8px" placeholder='[{"term":"amor amoris m.","gloss":"love","section":"Ch. 1","note":""}, …]'></textarea>
+          <div class="fh">A JSON array of {term, gloss, section, note} -- section and note are optional. No key, no model call, no cost -- for testing the triage screen itself.</div>
+          <button class="act" id="exBegin" style="margin-top:12px">Begin triage</button>
+        </details>
+        <div class="fh bad" id="exSetupError"></div>
+      </div>
+      </div>
+    </div>
+    <!-- Step 2: one candidate at a time. Editable in place -- "edit" isn't a
+         separate mode, Keep just commits whatever the fields currently
+         hold. Reuses the honour-round convention already established for a
+         binary keyboard choice (Drill: 1/I = reject, Space/2/O = accept)
+         rather than inventing a third scheme -- see the keydown handler. -->
+    <div class="triageWrap hidden" id="triageArea">
+      <div class="triageCount" id="triageCount"></div>
+      <div class="dayDetail on triageCard">
+        <input type="text" id="trTerm" placeholder="Term">
+        <input type="text" id="trGloss" placeholder="Gloss" style="margin-top:8px">
+        <input type="text" id="trSection" placeholder="Section" style="margin-top:8px">
+        <textarea id="trNote" placeholder="Note (optional)"></textarea>
+      </div>
+      <div class="triageBtns">
+        <button class="triageBtn bin" id="trBin"><span class="lbl">Bin</span><span class="keycap">1 / I</span></button>
+        <button class="triageBtn keep" id="trKeep"><span class="lbl">Keep</span><span class="keycap">Space / O</span></button>
+      </div>
+    </div>
+    <!-- Step 3: nothing has touched storage until this point -- Discard
+         throws the whole in-memory session away with nothing written. -->
+    <div class="done hidden" id="triageDone">
+      <div class="big" id="triageDoneBig"></div>
+      <div class="small" id="triageDoneSmall"></div>
+      <button class="act primary" id="trCommit" style="max-width:230px;margin-top:20px">Create the deck</button>
+      <button class="act" id="trDiscard" style="max-width:230px">Discard</button>
+    </div>
+  </section>
 </div>
 <div class="toast" id="toast"></div>
 <div class="wordNoteOverlay" id="wordNoteOverlay"><div class="dayDetail on" id="wordNoteDetail"></div></div>
 <div class="wordNoteOverlay" id="confuseGroupOverlay"><div class="dayDetail on" id="confuseGroupDetail"></div></div>
+<!-- Phase 3 card inspector (PHASE3_4_HANDOFF.md §1) -- a SEPARATE overlay
+     from wordNoteOverlay/wordNoteDetail above rather than widening that one:
+     flagRow (Set-aside list) and renderDrillList's own note button are
+     dedicated note-only entry points and stay exactly that. This one is
+     Browse's own tap-to-reveal, which this now IS -- stats, note, and (L
+     cards only) a term edit and, for a user-added word, delete. Same
+     wordNoteOverlay/dayDetail skin, same single-shared-modal-keyed-by-id
+     shape (see openCardInspector's own comment). -->
+<div class="wordNoteOverlay" id="cardInspectorOverlay"><div class="dayDetail on" id="cardInspectorDetail"></div></div>
+<!-- Phase 3 §C: add a word (PHASE3_4_HANDOFF.md §1) -- same modal skin
+     again. Opened from Browse's own bar (browseAddWordBtn). -->
+<div class="wordNoteOverlay" id="addWordOverlay"><div class="dayDetail on" id="addWordDetail"></div></div>
 
 <script>
 
@@ -1808,6 +1955,32 @@ const norm=s=>s.trim().toLowerCase().replace(/\s+/g,' ');
 // parked under S.orphans, never discarded, and re-adopted the moment a
 // content file resolves it again.
 const rowId=i=>DATA[i][4];    // entry index -> that row's stable id
+// Phase 3 §C (PHASE3_4_HANDOFF.md, P3-2): a user-added word's id is
+// 'u'+<random base36>, never a counter -- two offline devices adding words
+// before syncing would otherwise collide on max(existing)+1. Collision odds
+// at this length are astronomically low for a single-user app; the 'u'
+// prefix alone already keeps it out of the built-in integer-id space.
+const mintRowId=()=>'u'+Math.random().toString(36).slice(2,11);
+// Smallest id among a group of rows sharing a gloss (E-card grouping). Plain
+// Math.min (the pre-Phase-3 form) coerces every operand to a number, so one
+// string id ('u...', a user-added row) in the group makes EVERY comparison
+// NaN and silently mints a broken 'Eundefined'-shaped card id. A built-in
+// row's integer id always predates any user-added row (ids are assigned in
+// import order, and no user row can have existed before the app did -- see
+// this file's own comment above), so a numeric id always wins over a string
+// one; between two numbers the smaller wins, as before. Between two strings
+// (two user rows sharing a gloss, no built-in row in the group) there is no
+// creation-order signal to sort by at all -- 'u' ids are random on purpose,
+// see mintRowId() above -- so this just picks deterministically rather than
+// meaningfully; which of two co-equal user rows "owns" the merged E-card id
+// is not observable from outside this function.
+function minId(ids){
+  return ids.reduce((min,id)=>{
+    const a=typeof id==='number', b=typeof min==='number';
+    if(a&&!b) return id; if(b&&!a) return min;
+    return id<min?id:min;
+  });
+}
 const BUCKET_NAME={2:'known',1:'shaky',0:'unseen'};
 // Everything below that used to run at parse time now runs inside
 // bootContent() (Phase 2, PHASE2_PLAN.md §2.5): the content globals no
@@ -1822,8 +1995,20 @@ const BUCKET_NAME={2:'known',1:'shaky',0:'unseen'};
 // names they always have.
 let CARDS=null;               // {id, dir, idx:[entry indices], q, a, sec}
 let SECTIONS=null, HAS_BUCKETS=false, BY_ID=null, SIBLINGS=null, defaults=null;
+// The deck's own file/idb content, before any S.customRows/S.overrides are
+// unioned in (Phase 3 §B/§C) -- captured once, on the FIRST bootContent()
+// call a boot ever makes (the real boot chain's own file/idb fetch; tests
+// and tools/replay_migration.js call bootContent() exactly once too, so this
+// is a no-op for them). BASE_DATA is a plain COPY of the file's own rows,
+// taken the same moment, kept forever pristine -- see rebuildCards()'s own
+// comment for why DATA itself can't play that role once Phase 3 starts
+// mutating it. rebuildCards() below always concatenates FROM BASE_DATA,
+// never from whatever DATA currently holds, so calling it twice in a
+// session -- add a word, then add another -- never compounds.
+let BASE_CONTENT=null, BASE_DATA=null;
 function bootContent(content){
   if(!content||!Array.isArray(content.DATA)) throw new Error('bootContent: unusable content');
+  if(!BASE_CONTENT){ BASE_CONTENT=content; BASE_DATA=content.DATA.slice(); }
   // Publish the five content names as the very globals every function in
   // this file already reads. For a file-sourced deck the fetched script has
   // already declared them as global consts, and these property writes sit
@@ -1844,7 +2029,7 @@ function bootContent(content){
   DATA.forEach((row,i)=>{ (groups[norm(row[1])] ||= []).push(i); });
   Object.keys(groups).forEach(k=>{
     const g=groups[k];
-    const eid=Math.min.apply(null,g.map(rowId));
+    const eid=minId(g.map(rowId));
     CARDS.push({id:'E'+eid, dir:'E', idx:g, q:DATA[g[0]][1],
                 a:g.map(i=>DATA[i][0]), sec:DATA[g[0]][2], seed:-1});
   });
@@ -1866,11 +2051,63 @@ function bootContent(content){
   PAL_SAMPLE_ROW=pickPalSample();     // palette grid, Settings
   PAL_SAMPLE=PAL_SAMPLE_ROW[0]; PAL_SAMPLE_GLOSS=PAL_SAMPLE_ROW[1]||'';
 }
+// Re-derives CARDS/BY_ID/SECTIONS/etc from the file's own rows plus this
+// device's S.customRows and S.overrides (Phase 3 §C/§B) -- always rebuilt
+// from BASE_DATA, never from the currently-published DATA, so calling this
+// again later (another word added, an override changed) never compounds.
+// Reuses bootContent() wholesale rather than hand-rolling a second copy of
+// the E-card grouping logic (see minId()'s comment for why that's delicate
+// enough once).
+//
+// DATA's own CONTENTS are mutated in place (DATA.length=0 then push) rather
+// than handing bootContent() a new array through content.DATA. This isn't
+// stylistic: for a file-sourced deck, decks/<id>.js's own script tag (a
+// plain include, opening tag with no attributes) already declared the DATA
+// array as a real top-level lexical const, and
+// bootContent()'s `globalThis.DATA=content.DATA` write -- a plain property
+// assignment on the global object -- sits SHADOWED underneath that lexical
+// const for every bare `DATA` reference from here on, including the very
+// next line inside bootContent() itself (see its own comment on shadowing,
+// written for the "same value" case where this was harmless; it stops being
+// harmless the moment the two arrays actually differ). Reassigning was
+// silently a no-op the first time this was tried live -- DATA.length stayed
+// at the file's original count no matter what was added, caught by
+// comparing DATA.length in the running app against S.customRows.length
+// after an add, not by any test (see decisions.md). Mutating the array
+// CONTENTS instead of the BINDING sidesteps the shadowing entirely -- every
+// reference to `DATA`, lexical or not, is the same object -- and works
+// identically for an idb-sourced deck, where DATA is an ordinary property
+// with no lexical binding to shadow it in the first place.
+//
+// Overrides are TERM-only (row[0]), applied to a per-row COPY before CARDS
+// get built -- never row[1] (gloss), the E-card grouping key: patching that
+// here would silently restructure which cards exist, the landmine
+// PHASE3_4_HANDOFF.md §1 explicitly bans building. A term override therefore
+// safely reaches both the L-card's own prompt and any E-card's
+// answer-alternative array built from that same row, with no special-casing
+// needed for either.
+//
+// Callers: bootDeck() once after load() resolves (S.customRows/S.overrides
+// only exist once S itself does -- see its own comment on why bootContent()
+// alone, pre-load(), can't do this), and again after any live add/edit/
+// delete of a custom row or override so Browse/Study reflect it immediately.
+function rebuildCards(){
+  const ov=S.overrides||{};
+  const rows=BASE_DATA.concat(S.customRows||[])
+    .map(r=>{ const o=ov[r[4]]; return (o&&o.term) ? [o.term,r[1],r[2],r[3],r[4]] : r; });
+  DATA.length=0; Array.prototype.push.apply(DATA,rows);
+  bootContent(BASE_CONTENT);
+}
 function makeDefaults(){ return {
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, studyStats:true, studyHints:true, studyMotion:true, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, drillLog:[], sinceExport:0, lastExport:null, lastPushBytes:0,
-  deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null, confuseGroups:{}
+  deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null, confuseGroups:{},
+  // Phase 3 §C/§B (PHASE3_4_HANDOFF.md): user-added words and term overrides.
+  // Both ride backup/sync/gist for free -- they're just more fields on S,
+  // same as everything else here -- rather than a separate store. See
+  // rebuildCards() for how they're unioned into CARDS.
+  customRows:[], overrides:{}
 };}
 let S=null;
 
@@ -1959,7 +2196,14 @@ function previewCard(id){                     // the card exactly as rate() will
    whose structured stores somehow fell behind), it is rewritten in full from
    the winner before anything else runs. */
 const LEGACY_BLOB=true;      // keep writing the whole-S `kv` blob alongside the structured stores (soak period)
-const IDB_NAME='vocabula', IDB_VERSION=2;
+// v3 (Phase 4, PHASE3_4_HANDOFF.md §2): adds the `content` store --
+// resolveContent()'s source:'idb' branch has read from it since Phase 2.5,
+// structurally complete but unable to find anything until this version
+// bump actually creates it. Keyed by registry/userDecks entry id, value
+// shaped {DATA,CHANGES,DECK,KEY,DECK_TITLE} -- the same shape bootContent()
+// already consumes from a file fetch, so a device-created deck boots
+// through the exact same path as latin/greek from here on.
+const IDB_NAME='vocabula', IDB_VERSION=3;
 let idb=null;
 function openIDB(){
   return new Promise(res=>{
@@ -1970,6 +2214,7 @@ function openIDB(){
         if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
         if(!db.objectStoreNames.contains('state')) db.createObjectStore('state');
         if(!db.objectStoreNames.contains('log')) db.createObjectStore('log');
+        if(!db.objectStoreNames.contains('content')) db.createObjectStore('content');
       };
       r.onsuccess=()=>{idb=r.result;res(idb);};
       r.onerror=()=>res(null);
@@ -2259,6 +2504,42 @@ function normalise(o){
     }
     s.dayNotes=dn;
   }
+  // User-added words (Phase 3 §C, P3-2) -- rows in the same [term,gloss,
+  // section,seed,id] shape as a content file's own DATA rows, except id is
+  // always a string ('u'+random base36, minted once by mintRowId(), never a
+  // counter -- see its own comment for why). Sanitized the same defensive
+  // way as dayNotes above: a crafted/corrupted backup gets its junk rows
+  // dropped, not repaired. Order preserved -- introduction order matters the
+  // same way a file's own row order does (see rowId's comment). Not cross-
+  // referenced against BY_ID here: BY_ID reflects only the file's own rows
+  // at the point normalise() runs during load() (S itself isn't assigned
+  // yet -- see rebuildCards()'s comment on the ordering), so a real custom
+  // row's own card state would misclassify as an orphan below if this block
+  // tried to resolve it against BY_ID this early. rebuildCards() unions
+  // these into CARDS right after load() returns, and re-runs normalise()
+  // once more so anything parked under s.orphans in the meantime is
+  // re-adopted -- exactly the same "re-adopted the moment a content file
+  // resolves it again" path a stale reference already took before Phase 3.
+  { const raw=Array.isArray(o.customRows)?o.customRows:[], seen=new Set();
+    s.customRows=raw.filter(r=>Array.isArray(r)&&r.length>=5
+      &&typeof r[0]==='string'&&r[0].trim()&&typeof r[1]==='string'&&r[1].trim()
+      &&typeof r[2]==='string'&&r[2].trim()
+      &&typeof r[4]==='string'&&/^u[0-9a-z]+$/.test(r[4])&&!seen.has(r[4])&&seen.add(r[4]))
+      .map(r=>[r[0].trim().slice(0,200),r[1].trim().slice(0,200),r[2].trim().slice(0,60),0,r[4]]);
+  }
+  // Text overrides (Phase 3 §B) -- term-only, keyed by row id (a built-in
+  // row's integer id or a user row's 'u...' string, same namespace either
+  // way). {term} only: a gloss field is deliberately never read here even if
+  // present in a crafted/legacy object -- see rebuildCards()'s own comment
+  // for why a gloss can never be overridden (it would silently restructure
+  // E-card grouping).
+  { const raw=(o.overrides&&typeof o.overrides==='object')?o.overrides:{}, ov={};
+    for(const k in raw){
+      const v=raw[k];
+      if(v&&typeof v==='object'&&typeof v.term==='string'&&v.term.trim()) ov[k]={term:v.term.trim().slice(0,200)};
+    }
+    s.overrides=ov;
+  }
   // Manual confusable groups (DEVELOPMENT_IDEAS.md sec E) -- a small registry
   // of {label,created} keyed by an opaque group id. Membership is deliberately
   // NOT stored here: it lives on each card (cs.confuseGroups, sanitized in the
@@ -2502,7 +2783,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.17.1';
+const BUILD='2026.08.17.3';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -2846,7 +3127,7 @@ const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.mat
 let almostThereWait=false;
 const show=(name,keepTiming)=>{
   const wasActive=$('scStudy').classList.contains('on')||almostThereWait;
-  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill'].forEach(s=>$(s).classList.toggle('on',s===name));
+  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill','scExtract'].forEach(s=>$(s).classList.toggle('on',s===name));
   // The quick-rate Z/0 correction is armed for exactly ONE keydown (see
   // quickRate()/quickCorrectToAgain()), and the keydown listener that clears
   // it only runs while scStudy is on -- so leaving the study screen used to
@@ -3062,7 +3343,14 @@ function renderCard(){
   if(c.dir==='E') c.a.forEach((x,i)=>{
     const el=document.createElement('span'); el.className=i?'alt':''; el.textContent=x; ans.appendChild(el);
   });
-  else ans.textContent=c.a;
+  else { const el=document.createElement('span'); el.textContent=c.a; ans.appendChild(el); }
+  // Phase 3 §A: cs.note, generalised from susp-only -- a trailing child of
+  // #answer (see the .cardNote CSS comment for why), so nothing here needs
+  // its own reveal-timing logic at all.
+  if(S.settings.cardNotes && cs.note){
+    const note=document.createElement('div'); note.className='cardNote'; note.textContent=cs.note;
+    ans.appendChild(note);
+  }
   renderLeech();
   $('hintline').textContent = cs.reps===0 ? (cs.s!=null?'carried over from the audit':'first time') : '';
   // Optional study-screen extras, each independent and each a no-op unless
@@ -4250,6 +4538,16 @@ function wordRowHtml(c){
   // browseResults click handler, which fills it in on first reveal rather
   // than every row paying for a log scan whether or not it's ever opened.
   const learn=(cs&&cs.reps>0)?'<div class="wrLearn"></div>':'';
+  // Phase 3 (PHASE3_4_HANDOFF.md §1): the card inspector (openCardInspector,
+  // stats/note/edit) gets its OWN button rather than taking over the row tap
+  // above -- the existing tap-to-reveal doesn't just show stats, it hides
+  // the WHOLE GLOSS (.wordRow .gloss{display:none} until .revealed), i.e.
+  // Browse already doubles as a term-only self-quiz view when scanning a
+  // list. Making every glance open a modal would cost exactly that use case
+  // -- see decisions.md. hasNote is just a glyph on the inspect button, not
+  // a separate control.
+  const hasNote=!!(cs&&cs.note);
+  const inspectBtn='<button class="inspectBtn'+(hasNote?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(hasNote?'Word details (has a note)':'Word details')+'">ⓘ</button>';
   // Same .flagBtn/.on language as the study screen's own flag button and the
   // Struggling-words list (flagRow) -- reused rather than inventing a second
   // flagged-state visual. Sits inside .wrTop so it shares the row's own tap
@@ -4279,6 +4577,7 @@ function wordRowHtml(c){
     '<input type="checkbox" class="wrCheck" data-id="'+escHtml(c.id)+'"'+checked+'>'+
     '<i class="stDot s-'+st+'"></i>'+
     '<span class="term">'+escHtml(c.q)+'</span>'+
+    inspectBtn+
     groupBtn+
     '<button class="flagBtn'+(flagged?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(flagged?'Bring back to normal review':'Set aside')+'">&#9873;</button>'+
     '<button class="buryBtn'+(buried?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(buried?'Bring back today':'Bury for today')+'">&#8986;</button>'+
@@ -4807,7 +5106,7 @@ const HEATMAP_FORECAST_DAYS=90;   // matches the researched Review Heatmap defau
 function renderHome(){
   refresh();                                    // Q = buildQueue(S.dir) -- reused below,
                                                  // rather than building that same direction again
-  $('wordmark').textContent=DECK.name;
+  $('wordmark').textContent=DECK_TITLE;
   $('dtL').textContent=DECK.fwd; $('dtE').textContent=DECK.rev;
   renderChips(); renderBucketChips();
   const other=buildQueue(S.dir==='L'?'E':'L');
@@ -5103,6 +5402,287 @@ function closeWordNote(){
   if(drillView==='list') renderDrillList();
   renderStruggling();
 }
+/* ---- card inspector (Phase 3 "bonus, same screens", PHASE3_4_HANDOFF.md
+   §1) -- stats, note, and (for a single row, i.e. an L-card only -- see
+   below) a term edit and, for a user-added word, delete. Opened from
+   wordRowHtml's own inspectBtn, a dedicated control rather than a takeover
+   of the row's existing tap-to-reveal -- see that button's own comment for
+   why (the reveal already hides the WHOLE gloss, not just stats, so Browse
+   doubles as a term-only self-quiz view worth keeping cheap). Same single-
+   shared-modal-keyed-by-id shape as openWordNote above, but its own overlay:
+   flagRow/renderDrillList's note buttons are dedicated note-only entry
+   points and stay exactly that.
+
+   Term-edit and delete are gated to c.dir==='L': an E-card can span rows
+   from MULTIPLE DATA entries (a user word whose gloss happens to coincide
+   with a built-in one groups with it), so "the term" and "delete this word"
+   aren't well-defined at that granularity -- see rebuildCards()'s own
+   comment on why a gloss can never be overridden, which is the same reason
+   in different clothes. Stats and note stay available on an E-card too:
+   both are keyed by the card's own id (cs.note, cs.reps/streak), independent
+   of how many rows it spans. */
+let inspectId=null;
+function openCardInspector(id){
+  inspectId=id;
+  $('cardInspectorOverlay').classList.add('on');
+  renderCardInspector();
+}
+function closeCardInspector(){
+  inspectId=null;
+  $('cardInspectorOverlay').classList.remove('on');
+  // A note/term/set-aside/delete change can all change what the row behind
+  // this shows (and delete can remove it outright), so this re-renders
+  // wholesale rather than patching one row in place -- unlike the flag/bury
+  // handlers just below, which patch precisely because they never need to.
+  // A wholesale rebuild would otherwise silently re-collapse every <details>
+  // fold the user had opened (renderBrowse() only auto-opens one when a
+  // filter/search is active), for a change that has nothing to do with
+  // which sections are expanded -- so their open state is captured by
+  // section label and restored after.
+  const openSecs=new Set([...document.querySelectorAll('#browseResults details.fold[open] summary')].map(s=>s.textContent));
+  renderBrowse();
+  document.querySelectorAll('#browseResults details.fold summary').forEach(s=>{
+    if(openSecs.has(s.textContent)) s.parentElement.open=true;
+  });
+}
+function renderCardInspector(){
+  const id=inspectId; if(!id) return;
+  const c=BY_ID[id];
+  if(!c){ closeCardInspector(); return; }   // deleted (or set aside then its group dissolved) out from under an open panel
+  const cs=S.cards[id], susp=!!(cs&&cs.susp);
+  const isRow=c.dir==='L';                  // term-edit/delete only well-defined for a single row -- see comment above
+  const rid=isRow?DATA[c.idx[0]][4]:null;
+  const isCustom=isRow&&typeof rid==='string';
+  const t=timeToLearnFor(id,S.log,Date.now());
+  const last=(cs&&cs.reps>0)?lastRatingFor(id,S.log):null;
+  const statsLine = (!cs||cs.reps===0) ? 'Not studied yet.'
+    : 'Reviewed '+cs.reps+'× · streak '+(cs.streak|0)+(last?' · '+(RATING_LABEL[last.rating]||'?')+' '+agoLabel(last.at,Date.now()):'')
+      +(t?' · '+learnStatsLine(t,Date.now()):'');
+  let html='<div class="ddTitle">'+escHtml(c.q)+'</div>'
+    +'<div class="fh">'+escHtml(c.dir==='E'?c.a.join(', '):c.a)+'</div>'
+    +'<div class="fh" style="margin-top:6px">'+escHtml(statsLine)+'</div>'
+    +'<textarea id="ciNote" maxlength="200" placeholder="Why does this one keep tripping you up? A mnemonic, the word it gets confused with…">'+escHtml((cs&&cs.note)||'')+'</textarea>'
+    +'<div class="ddBtns"><button class="small primary" id="ciSaveNote">Save note</button>'
+    +'<button class="small" id="ciFlag">'+(susp?'Bring back to normal review':'Set aside')+'</button></div>';
+  if(isRow){
+    html+='<input type="text" id="ciTerm" maxlength="200" value="'+escHtml(c.q)+'" style="margin-top:12px">'
+      +'<div class="ddBtns"><button class="small" id="ciSaveTerm">Save term</button></div>';
+    if(isCustom){
+      html+='<div class="ddBtns" style="margin-top:2px"><button class="small danger" id="ciDelete">Delete this word</button></div>';
+    }
+  } else {
+    html+='<div class="fh" style="margin-top:12px">The gloss groups several words together on this reverse card -- edit or delete each one from its own forward-direction row instead.</div>';
+  }
+  html+='<div class="ddBtns" style="margin-top:10px"><button class="small" id="ciClose">Close</button></div>';
+  $('cardInspectorDetail').innerHTML=html;
+}
+// Its own $(...).addEventListener('click',...) is wired down in the WIRING
+// section below (near wordNoteOverlay's own), not here: everything above the
+// tapZone() helper's own definition is the pure-logic slice tests/run.sh
+// extracts and runs under plain Node, which has no `document` -- a top-level
+// addEventListener call here would throw the moment the test file loads.
+// (Spelled out sideways on purpose: tests/run.sh's slice boundary is a plain
+// text search for that helper's declaration, so writing it out normally in
+// a comment ABOVE the real one would move the boundary to here instead.)
+/* ---- add a word (Phase 3 §C, PHASE3_4_HANDOFF.md §1) -- opened from
+   Browse's own top bar (browseAddWordBtn). Every row is bidirectional by
+   construction (same as a file row: an 'L' card and, if its gloss matches
+   another row's, a merged 'E' card), so there's no direction to pick here --
+   only the three DATA columns a row actually needs, plus an optional note
+   applied straight to the new card's own state once it exists. */
+function openAddWord(){
+  $('addWordOverlay').classList.add('on');
+  $('addWordDetail').innerHTML='<div class="ddTitle">Add a word</div>'
+    +'<input type="text" id="awTerm" maxlength="200" placeholder="Term — e.g. amor amoris m.">'
+    +'<input type="text" id="awGloss" maxlength="200" placeholder="Gloss — e.g. love" style="margin-top:8px">'
+    +'<input type="text" id="awSection" maxlength="60" placeholder="Section" value="'+escHtml(browsePart||'Added words')+'" style="margin-top:8px">'
+    +'<textarea id="awNote" maxlength="200" placeholder="Note (optional) — a mnemonic, why it trips you up…"></textarea>'
+    +'<div class="ddBtns"><button class="small primary" id="awSave">Add word</button><button class="small" id="awClose">Close</button></div>';
+  setTimeout(()=>{ const el=$('awTerm'); if(el) el.focus(); },0);
+}
+function closeAddWord(){ $('addWordOverlay').classList.remove('on'); }
+// Its own addEventListener is wired down in the wiring section below, same
+// reason as cardInspectorOverlay's above.
+
+/* ---- create a deck from text: the triage screen (Phase 4, §scExtract,
+   PHASE3_4_HANDOFF.md §2) -- built against hand-pasted JSON first, per that
+   doc's own order, with zero model call anywhere in this block. 4a/4b (the
+   real /extract Worker route, paste-text and paste-a-URL) land upstream of
+   parseCandidates() later: same {term,gloss,section,note} shape either way,
+   so nothing below this point needs to change when that lands.
+
+   State lives entirely in memory until commitTriage() actually runs --
+   "nothing enters a deck unapproved" extends to "nothing touches storage
+   at all" until the whole batch is reviewed and Create is pressed. Discard
+   (or Back, mid-session) just drops these variables; there is nothing to
+   undo because nothing was ever written. */
+let triageTitle=null, triageScript='latin', triageCandidates=[], triagePos=0, triageKept=[], triageBinned=0;
+
+function openExtractSetup(){
+  $('exTitle').value=''; $('exScript').value='latin';
+  $('exText').value=''; $('exUrl').value=''; $('exExtractError').textContent='';
+  $('exPaste').value=''; $('exSetupError').textContent='';
+  $('extractSetup').classList.remove('hidden');
+  $('triageArea').classList.add('hidden');
+  $('triageDone').classList.add('hidden');
+  show('scExtract');
+}
+// The {term,gloss,section,note} schema itself (4a's real constraint too,
+// PHASE3_4_HANDOFF.md §2) -- vocabulary-only, on purpose. section/note
+// default to '' rather than being required; term/gloss must be non-empty
+// strings or the whole batch is rejected with which entry failed, rather
+// than silently dropping bad rows into the triage queue.
+function parseCandidates(raw){
+  let arr;
+  try{ arr=JSON.parse(raw); }catch(e){ return {error:'Not valid JSON.'}; }
+  if(!Array.isArray(arr)) return {error:'Expected a JSON array of {term, gloss, section, note}.'};
+  const out=[];
+  for(let i=0;i<arr.length;i++){
+    const c=arr[i];
+    if(!c||typeof c!=='object'||typeof c.term!=='string'||!c.term.trim()||typeof c.gloss!=='string'||!c.gloss.trim())
+      return {error:'Entry '+(i+1)+' is missing a term or gloss.'};
+    out.push({term:c.term.trim().slice(0,200), gloss:c.gloss.trim().slice(0,200),
+               section:(typeof c.section==='string'&&c.section.trim())?c.section.trim().slice(0,60):'',
+               note:(typeof c.note==='string'&&c.note.trim())?c.note.trim().slice(0,200):''});
+  }
+  return {candidates:out};
+}
+// Shared tail end of both entry points below (hand-pasted JSON and the real
+// extraction call) -- everything up to here differs (where the candidates
+// came from, what can go wrong getting them), everything from here on is
+// identical: seed the triage state and show the first card.
+function startTriage(title,script,candidates){
+  triageTitle=title; triageScript=script; triageCandidates=candidates;
+  triagePos=0; triageKept=[]; triageBinned=0;
+  $('extractSetup').classList.add('hidden');
+  renderTriageCard();
+}
+function beginTriage(){
+  const title=$('exTitle').value.trim();
+  if(!title){ $('exSetupError').textContent='Give the deck a title first.'; return; }
+  const r=parseCandidates($('exPaste').value);
+  if(r.error){ $('exSetupError').textContent=r.error; return; }
+  if(!r.candidates.length){ $('exSetupError').textContent='No candidates to triage.'; return; }
+  $('exSetupError').textContent='';
+  startTriage(title, ($('exScript').value==='greek')?'greek':'latin', r.candidates);
+}
+// The real extraction call (4a paste-text, 4b a URL instead) -- POSTs to
+// the Worker's /extract route (schema-constrained server-side, see
+// worker.js's own careful-pass comment; a URL is fetched there too, never
+// from this page directly -- CORS blocks a static page from fetching an
+// arbitrary third-party origin itself) and feeds the result into the exact
+// same triage machinery beginTriage() above uses, so nothing downstream of
+// this needs to know or care which path a candidate list came from.
+async function extractCandidates(){
+  const title=$('exTitle').value.trim();
+  if(!title){ $('exExtractError').textContent='Give the deck a title first.'; return; }
+  const text=$('exText').value.trim(), url=$('exUrl').value.trim();
+  if(text&&url){ $('exExtractError').textContent='Paste text OR a URL, not both.'; return; }
+  if(!text&&!url){ $('exExtractError').textContent='Paste some text or a URL first.'; return; }
+  const key=loadExtractKey();
+  if(!key){ $('exExtractError').textContent='Set up an extraction key in Settings first.'; return; }
+  $('exExtractError').textContent='';
+  const btn=$('exExtractBtn'); btn.disabled=true; const label=btn.textContent; btn.textContent=url?'Fetching…':'Extracting…';
+  try{
+    const r=await fetch(SYNC_ENDPOINT+'/extract',{method:'POST',headers:{'Content-Type':'application/json','X-Extract-Key':key},body:JSON.stringify(url?{url}:{text})});
+    if(r.status===401){ $('exExtractError').textContent='That key isn’t accepted by the Worker -- check Settings and the Worker’s own EXTRACT_KEY match.'; return; }
+    if(r.status===429){ $('exExtractError').textContent='Daily extraction limit reached -- try again tomorrow.'; return; }
+    if(r.status===503){ $('exExtractError').textContent='Extraction isn’t configured on the Worker yet.'; return; }
+    if(r.status===422){ $('exExtractError').textContent=(await r.text())||'Could not use that URL.'; return; }
+    if(!r.ok){ $('exExtractError').textContent='Extraction failed (HTTP '+r.status+'). Try again in a moment.'; return; }
+    const j=await r.json();
+    if(!j||!Array.isArray(j.candidates)){ $('exExtractError').textContent='The extraction service returned something unusable.'; return; }
+    if(!j.candidates.length){ $('exExtractError').textContent='No vocabulary found there.'; return; }
+    startTriage(title, ($('exScript').value==='greek')?'greek':'latin', j.candidates);
+  }catch(e){
+    $('exExtractError').textContent='Could not reach the extraction service -- check the connection and try again.';
+  }finally{
+    btn.disabled=false; btn.textContent=label;
+  }
+}
+function renderTriageCard(){
+  if(triagePos>=triageCandidates.length){
+    $('triageArea').classList.add('hidden');
+    $('triageDone').classList.remove('hidden');
+    $('triageDoneBig').textContent=triageKept.length+' word'+(triageKept.length===1?'':'s')+' kept';
+    $('triageDoneSmall').textContent=triageBinned+' binned. Nothing has been added anywhere yet — '+
+      'Create makes "'+triageTitle+'" a real deck; Discard throws this whole session away.';
+    $('trCommit').disabled=!triageKept.length;
+    return;
+  }
+  $('triageArea').classList.remove('hidden');
+  $('triageDone').classList.add('hidden');
+  $('triageCount').textContent=(triagePos+1)+' of '+triageCandidates.length+' · '+triageKept.length+' kept · '+triageBinned+' binned';
+  const c=triageCandidates[triagePos];
+  $('trTerm').value=c.term; $('trGloss').value=c.gloss; $('trSection').value=c.section||triageTitle; $('trNote').value=c.note||'';
+}
+// kind: 'keep' commits whatever the fields currently hold (editing IS just
+// typing into them -- there is no separate edit mode), 'bin' discards the
+// candidate untouched. Either way, advance -- this is a one-way pass, same
+// as Study's own next(): no going back to reconsider a binned word, same
+// "keep it simple" reasoning that screen's own comments give for not
+// building a full undo stack around a linear queue.
+function triageDecide(kind){
+  if(triagePos>=triageCandidates.length) return;
+  if(kind==='keep'){
+    const term=$('trTerm').value.trim(), gloss=$('trGloss').value.trim();
+    if(!term||!gloss){ toast('Term and gloss can’t be empty',1800); return; }
+    triageKept.push({term:term.slice(0,200), gloss:gloss.slice(0,200),
+                       section:($('trSection').value.trim()||triageTitle).slice(0,60),
+                       note:$('trNote').value.trim().slice(0,200)});
+  } else triageBinned++;
+  triagePos++;
+  renderTriageCard();
+}
+function discardTriage(){
+  triageTitle=null; triageCandidates=[]; triagePos=0; triageKept=[]; triageBinned=0;
+  flushPendingPush(); renderHome(); show('scHome');
+}
+// Mints a new deck id ('d'+base36 -- its own namespace, disjoint from card
+// ids' 'u' prefix and from decks/registry.js's short static ids), writes
+// its content record into IndexedDB (the 'content' store IDB_VERSION 3
+// creates) and a matching row into the localStorage user-deck list
+// (shared.js's USER_DECKS_KEY, mergeRegistry()), then jumps straight into
+// the new deck -- it boots through the exact same resolveContent()/
+// bootContent() path as latin/greek from here on, just with source:'idb'
+// instead of 'file'. Row ids reuse mintRowId() (Phase 3 §C) -- the same
+// 'u'+base36 scheme, so a device-created deck's own rows are minted exactly
+// the same way a word added to an existing deck is.
+async function commitTriage(){
+  if(!triageKept.length) return;
+  const deckId='d'+Math.random().toString(36).slice(2,11);
+  const key='vocabula.custom.'+deckId+'.v1';
+  const rows=triageKept.map(c=>[c.term,c.gloss,c.section||triageTitle,0,mintRowId()]);
+  const content={
+    DATA:rows,
+    CHANGES:[['created',['Created '+new Date().toLocaleDateString()+' from '+rows.length+' triaged word'+(rows.length===1?'':'s')+'.']]],
+    DECK:{script:triageScript, fwd:triageTitle+' → English', rev:'English → '+triageTitle,
+          mottos:[['Little by little, a little becomes a lot.','—Tanzanian proverb']]},
+    KEY:key, DECK_TITLE:triageTitle
+  };
+  try{
+    const db=await openIDB();
+    if(!db) throw new Error('IndexedDB unavailable');
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction('content','readwrite');
+      tx.objectStore('content').put(content, deckId);
+      tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);
+    });
+    const row={id:deckId, key, title:triageTitle, script:triageScript, words:rows.length,
+                blurb:rows.length+' word'+(rows.length===1?'':'s')+', created '+new Date().toLocaleDateString(),
+                archived:false, source:'idb'};
+    let list=[];
+    try{ const v=JSON.parse(localStorage.getItem(USER_DECKS_KEY)); if(Array.isArray(v)) list=v; }catch(e){}
+    list.push(row);
+    localStorage.setItem(USER_DECKS_KEY, JSON.stringify(list));
+  }catch(e){
+    console.error(e);
+    toast('Could not create the deck — try again',2200);
+    return;
+  }
+  location.href='deck.html?deck='+deckId;
+}
+
 /* ---- manual confusable-group modal (createConfuseGroup/addToConfuseGroup/
    removeFromConfuseGroup above are the actual data mutations; everything
    here is thin UI over them). Two flows share one overlay/dayDetail pair,
@@ -5636,7 +6216,14 @@ function loadSyncShared(){
   let cur={};
   try{ cur=JSON.parse(localStorage.getItem(SYNC_SHARED_KEY))||{}; }catch(e){}
   if(cur&&typeof cur==='object'&&Object.prototype.hasOwnProperty.call(cur,'__proto__')) delete cur['__proto__'];
-  const out={syncCode:(typeof cur.syncCode==='string')?cur.syncCode:'', deviceName:(typeof cur.deviceName==='string')?cur.deviceName:''};
+  // extractKey (Phase 4a) rides in the same shared object as syncCode/
+  // deviceName -- one shared-across-both-decks localStorage blob, same
+  // reason deviceName already lives here, NOT because the two secrets are
+  // related. They're independent on purpose (see the Settings field's own
+  // comment): this is just where "small things every deck+the launcher
+  // agree on" already lives.
+  const out={syncCode:(typeof cur.syncCode==='string')?cur.syncCode:'', deviceName:(typeof cur.deviceName==='string')?cur.deviceName:'',
+             extractKey:(typeof cur.extractKey==='string')?cur.extractKey:''};
   try{
     const legacy=localStorage.getItem(LEGACY_GIST_SHARED_KEY);
     if(legacy){
@@ -5648,10 +6235,20 @@ function loadSyncShared(){
   return out;
 }
 function saveSyncShared(g){
-  try{ localStorage.setItem(SYNC_SHARED_KEY, JSON.stringify({syncCode:g.syncCode||'', deviceName:g.deviceName||''})); }catch(e){}
+  try{ localStorage.setItem(SYNC_SHARED_KEY, JSON.stringify({syncCode:g.syncCode||'', deviceName:g.deviceName||'', extractKey:g.extractKey||''})); }catch(e){}
 }
 function loadSyncCode(){ return loadSyncShared().syncCode||''; }
 function saveSyncCode(code){ const g=loadSyncShared(); g.syncCode=code||''; saveSyncShared(g); }
+function loadExtractKey(){ return loadSyncShared().extractKey||''; }
+function saveExtractKey(key){ const g=loadSyncShared(); g.extractKey=key||''; saveSyncShared(g); }
+// A dense random token (32 bytes, hex) rather than randomSyncCode()'s
+// readable alphabet -- this one is generated and copied by hand into a
+// `wrangler secret put` prompt, never read aloud or retyped, so entropy per
+// character matters more than "hard to transcribe wrong" does.
+function randomExtractKey(){
+  const bytes=crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 // A readable, hard-to-transcribe-wrong code: no 0/O/1/I. Same alphabet and
 // shape as riverbank's/cotidie-'s, so a code looks the same across the apps.
 function randomSyncCode(){
@@ -6121,6 +6718,7 @@ function renderSet(){
   $('fMax').value=s.maxIvl;
   $('fDevice').value=s.deviceName||'';
   $('fSyncCode').value=loadSyncCode();
+  $('fExtractKey').value=loadExtractKey();
   { const n=$('syncNote'); if(n){
       const code=loadSyncCode();
       n.textContent=!code ? 'Sync is off on this device.'
@@ -6138,6 +6736,7 @@ function renderSet(){
    // old mixed combination lands on Full rather than silently losing whichever
    // extras it had turned on.
   $('fSimple').value=(s.studyStats||s.studyHints||s.studyMotion)?'0':'1';
+  $('fCardNotes').value=s.cardNotes?'1':'0';
   $('fQuickRate').value=s.quickRate||'off';
   commitPendingRollover();
   $('fRoll').value=String(s.rolloverPending!=null?s.rolloverPending:(s.rollover!=null?s.rollover:4));
@@ -6221,6 +6820,24 @@ tapZone($('undoBtn'),undo);
 ['toHome','toHome2','toHome3','doneBack','statsBack','logBack','browseBack']
   .forEach(id=>tapZone($(id),()=>{flushPendingPush();renderHome();show('scHome');}));
 tapZone($('toSettings'),()=>{renderSet();show('scSet');});
+tapZone($('toExtract'),openExtractSetup);
+// Mid-triage, losing progress is a real cost (the whole point is a
+// keyboard-driven pass through possibly dozens of candidates) -- confirmed
+// the same way every other real-loss action in this file is (Erase all
+// progress, switching sync off). Before triage has even started, or once
+// it's finished, there is nothing to lose and this is a plain "go back".
+tapZone($('extractBack'),()=>{
+  if(triageCandidates.length && triagePos<triageCandidates.length && !$('triageArea').classList.contains('hidden')){
+    if(!confirm('Discard this triage session? Nothing has been saved yet.')) return;
+  }
+  discardTriage();
+});
+tapZone($('exBegin'),beginTriage);
+tapZone($('exExtractBtn'),extractCandidates);
+tapZone($('trBin'),()=>triageDecide('bin'));
+tapZone($('trKeep'),()=>triageDecide('keep'));
+tapZone($('trCommit'),commitTriage);
+tapZone($('trDiscard'),discardTriage);
 tapZone($('toStats'),()=>{renderStats();show('scStats');});
 tapZone($('statsDirL'),()=>{S.dir='L';save();renderStats();});
 tapZone($('statsDirE'),()=>{S.dir='E';save();renderStats();});
@@ -6291,6 +6908,7 @@ $('dayDetail').addEventListener('click',e=>{
   }
 });
 tapZone($('browseDateClear'),()=>{ browseDate=null; browseSelected.clear(); renderBrowse(); });
+tapZone($('browseAddWordBtn'),openAddWord);
 tapZone($('toBrowse'),()=>{ browseDir=S.dir; browseDate=null; browseSelected.clear(); renderBrowse(); show('scBrowse'); });
 tapZone($('toDrill'),()=>{ openDrillChooser(); show('scDrill'); });
 // Both "leave the drill screen" routes log an abandoned-mid-way session
@@ -6353,6 +6971,59 @@ $('wordNoteOverlay').addEventListener('click',e=>{
     openWordNote(noteEditId);   // re-render in place, same pattern ddSave uses -- Save keeps the panel open
   } else if(e.target.id==='wnClose' || e.target.id==='wordNoteOverlay'){
     closeWordNote();
+  }
+});
+$('cardInspectorOverlay').addEventListener('click',e=>{
+  if(e.target.id==='cardInspectorOverlay'||e.target.id==='ciClose'){ closeCardInspector(); return; }
+  if(!inspectId) return;
+  if(e.target.id==='ciSaveNote'){
+    const v=$('ciNote').value.trim();
+    cardState(inspectId).note = v ? v.slice(0,200) : null;
+    save(); toast('Note saved',1400); renderCardInspector();
+    return;
+  }
+  if(e.target.id==='ciFlag'){
+    const cs=setAside(inspectId,!cardState(inspectId).susp);
+    save(); toast(cs.susp?'Set aside':'Brought back',1400); renderCardInspector();
+    return;
+  }
+  if(e.target.id==='ciSaveTerm'){
+    const v=$('ciTerm').value.trim();
+    if(!v){ toast('Term can’t be empty',1800); return; }
+    const c=BY_ID[inspectId], rid=DATA[c.idx[0]][4];
+    // Matches the file/customRows row's own text -- nothing to override, so
+    // drop any existing one rather than storing a redundant no-op entry.
+    if(v===DATA[c.idx[0]][0]) delete S.overrides[rid]; else S.overrides[rid]={term:v};
+    rebuildCards(); save(); toast('Term saved',1400);
+    renderCardInspector();
+    return;
+  }
+  if(e.target.id==='ciDelete'){
+    const c=BY_ID[inspectId];
+    if(!confirm('Delete “'+c.q+'”? Its review history stays on this device but stops counting anywhere.')) return;
+    const rid=DATA[c.idx[0]][4];
+    S.customRows=S.customRows.filter(r=>r[4]!==rid);
+    delete S.overrides[rid];
+    rebuildCards(); save();
+    toast('Deleted',1400);
+    closeCardInspector();
+    return;
+  }
+});
+$('addWordOverlay').addEventListener('click',e=>{
+  if(e.target.id==='addWordOverlay'||e.target.id==='awClose'){ closeAddWord(); return; }
+  if(e.target.id==='awSave'){
+    const term=$('awTerm').value.trim(), gloss=$('awGloss').value.trim(),
+          sec=$('awSection').value.trim()||'Added words', note=$('awNote').value.trim();
+    if(!term||!gloss){ toast('Term and gloss are both required',1800); return; }
+    const rid=mintRowId();
+    S.customRows.push([term.slice(0,200),gloss.slice(0,200),sec.slice(0,60),0,rid]);
+    rebuildCards();
+    if(note) cardState('L'+rid).note=note.slice(0,200);
+    save();
+    toast('Added',1400);
+    closeAddWord();
+    renderBrowse();
   }
 });
 // Switching direction/part/status/search is "I'm looking at something new
@@ -6427,6 +7098,15 @@ $('browseResults').addEventListener('click',e=>{
   if(groupBtn){
     e.preventDefault(); e.stopPropagation();
     openGroupManager(groupBtn.dataset.id);
+    return;
+  }
+  // Phase 3: the card inspector (stats/note/edit/delete) -- its own button,
+  // guarded here same as flagBtn/buryBtn/groupBtn above, so it never also
+  // toggles the row's own lightweight reveal below.
+  const inspectBtn=e.target.closest('.inspectBtn');
+  if(inspectBtn){
+    e.preventDefault(); e.stopPropagation();
+    openCardInspector(inspectBtn.dataset.id);
     return;
   }
   const row=e.target.closest('.wordRow'); if(!row) return;
@@ -6515,6 +7195,19 @@ $('impFile').addEventListener('change',e=>{ if(e.target.files[0]) doImport(e.tar
 tapZone($('pushBtn'),()=>pushSync(false));
 tapZone($('pullBtn'),pullSync);
 tapZone($('syncNewCodeBtn'),()=>{ if(!loadSyncCode()||confirm(syncCodeReplaceMessage())) newSyncCode(); });
+// Extraction key (Phase 4a) -- no network call here, unlike newSyncCode():
+// there's nothing to push to yet, this only ever generates and stores a
+// value on THIS device. The matching Worker secret is set by hand
+// (wrangler secret put), outside anything this app can do -- see the
+// field's own .fh copy and worker.js's own deploy comment.
+tapZone($('extractNewKeyBtn'),()=>{
+  if(loadExtractKey()&&!confirm('This device already has an extraction key. Replace it? The Worker’s own copy (set separately, by hand) would then need updating to match, or extraction stops working until it does.')) return;
+  const key=randomExtractKey();
+  saveExtractKey(key);
+  renderSet();
+  toast('New key generated -- copy it into the Worker with wrangler secret put',3600);
+});
+$('fExtractKey').addEventListener('change',e=>{ saveExtractKey(e.target.value.trim()); });
 // Home screen's own one-tap push (§syncRow), so getting the last review or two
 // across before switching devices never requires a trip to Settings. Clears
 // any still-debounced auto-push first so an explicit tap here doesn't leave a
@@ -6582,6 +7275,7 @@ $('advToggle').addEventListener('click',()=>{
   balanceColumns(document.querySelector('#scSet .setCols'));
 });
 $('fQuickRate').addEventListener('change',e=>{S.settings.quickRate=e.target.value;save();});
+$('fCardNotes').addEventListener('change',e=>{S.settings.cardNotes=(e.target.value==='1');save();});
 // a native <details> open/close changes its .sect/.field's height without
 // going through renderHome()/renderSet() or applyLayout() at all -- nothing
 // else would ever notice the two columns need re-balancing after one of
@@ -6747,6 +7441,16 @@ document.addEventListener('keydown',e=>{
     // is exhausted: bringBackFromDrill's own id==null guard no-ops.
     if(e.key==='f'||e.key==='F') bringBackFromDrill();
   }
+  else if($('scExtract').classList.contains('on') && !$('triageArea').classList.contains('hidden') &&
+          !(document.activeElement && ['trTerm','trGloss','trSection','trNote'].includes(document.activeElement.id))){
+    // Guarded out of the four triage fields themselves -- a Latin/Greek/
+    // English term or gloss containing the letter i/o (nearly all of them)
+    // would otherwise get eaten mid-edit. Same 1/I = reject, Space/O =
+    // accept convention Drill's own honour round already established for
+    // exactly this shape of binary choice -- reused rather than invented.
+    if(e.key==='1'||e.key==='i'||e.key==='I') triageDecide('bin');
+    else if(e.key==='2'||e.key==='o'||e.key==='O'||e.key===' '){ e.preventDefault(); triageDecide('keep'); }
+  }
 });
 document.addEventListener('gesturestart',e=>e.preventDefault());
 // A rating in the last 6s can leave save()'s debounced gist push still scheduled;
@@ -6827,12 +7531,11 @@ function paintBootTheme(){
 
 // One promise per registry entry: the content object bootContent() consumes,
 // shaped {DATA,CHANGES,DECK,KEY,DECK_TITLE}. `source` says where a deck's
-// content lives: 'file' = decks/<id>.js (every deck that exists today; a row
-// with no source field at all means the same, which is why the two shipped
-// registry rows needed no edit), 'idb' = an IndexedDB `content` record
-// (Phase 4's on-device decks -- the branch exists so the shape is settled,
-// but nothing writes that store yet, IDB_VERSION 2 doesn't even create it,
-// so today it can only ever reject).
+// content lives: 'file' = decks/<id>.js (latin/greek; a row with no source
+// field at all means the same, which is why those two registry rows needed
+// no edit), 'idb' = an IndexedDB `content` record (Phase 4's on-device
+// decks -- IDB_VERSION 3 creates the store, and the triage screen's commit
+// step is what actually writes into it; see openAddDeck()/commitTriage()).
 // The file branch injects a classic script tag rather than import():
 // decks/<id>.js is a plain script declaring globals, and as an ES module
 // those consts would be module-scoped and invisible out here. No
@@ -6916,7 +7619,19 @@ function bootFail(err){
     const mt=document.querySelector('meta[name="apple-mobile-web-app-title"]'); if(mt)mt.setAttribute('content',DECK_TITLE);
     $('browseSearch').placeholder='Search '+(DECK&&DECK.script==='greek'?'Greek':'Latin')+' or English…';
     renderKbdToggle($('browseKbd'));
-    return load().then(()=>{ applyTheme(); applyLayout(); renderHome(); show('scHome');
+    return load().then(()=>{
+      // Phase 3 §C/§B: S.customRows/S.overrides only exist once S itself
+      // does, so this can't happen inside bootContent() above (which runs
+      // before load()) -- see rebuildCards()'s own comment. load()'s
+      // internal normalise() calls ran against a BY_ID that didn't know
+      // about any custom row yet, so a real custom word's own card state
+      // may have just been parked under S.orphans (normalise() can't tell
+      // "genuinely deleted" from "not unioned in yet" -- both look like an
+      // unresolvable id); re-running normalise() now, with BY_ID extended,
+      // re-adopts it via the same orphans path a stale reference always
+      // used. Must run before anything below that reads CARDS/BY_ID.
+      rebuildCards(); S=normalise(S);
+      applyTheme(); applyLayout(); renderHome(); show('scHome');
       // Phase 2 (PHASE2_PLAN.md §2.3): refresh the summary record once at boot
       // even if nothing gets rated this sitting, so the launcher isn't showing
       // yesterday's numbers just because this device only ever opens the deck
