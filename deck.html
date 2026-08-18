@@ -435,6 +435,28 @@ html:not([data-layout="landscape"]) .quickFlash{
 .triageBtn .keycap{display:block;margin-top:2px}
 .triageBtn.bin{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
 .triageBtn.keep{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
+/* import preview (IMPORT_PLAN.md §2E) -- same .dayDetail skin as the triage
+   card, widened to fit a table; flagged rows use the Again tint, skipped
+   lines sit under a fold in a small monospace block. */
+.impCard{max-width:56rem;width:100%;margin:0 auto}
+.impControls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+.impControls:empty{display:none}
+.impControls .ipCol{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.impControls .ipCol .sel{width:auto;min-width:0;padding:6px 26px 6px 8px;height:34px;font-size:13px}
+.impControls .ipCheck{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.impControls button.small.on{border-color:var(--coral);color:var(--coral)}
+.impTableWrap{overflow:auto;max-height:52vh;border:1px solid var(--line);border-radius:10px;background:var(--raise)}
+.impTable{width:100%;border-collapse:collapse;font-size:13.5px}
+.impTable th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:500;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;padding:7px 9px;border-bottom:1px solid var(--line)}
+.impTable td{padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
+.impTable td.n{color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap}
+.impTable td.more{color:var(--muted);text-align:center;padding:12px}
+.impTable tr.flag td{background:var(--again-bg)}
+.impTable .ipFlag{display:block;font-size:11.5px;color:var(--again);margin-top:2px}
+.ipSkipped{font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;color:var(--muted);max-height:30vh;overflow:auto;margin:6px 0 0}
+.impBtns{max-width:56rem;flex-wrap:wrap}
+.impBtns .act{flex:1 1 10rem;height:48px}
+.impBtns .act:disabled,#trCommit:disabled{opacity:.45}
 /* manual confusable-group modal (openConfirmGroup/openGroupManager, both
    sharing #confuseGroupOverlay -- same .wordNoteOverlay/.dayDetail skin as
    the word-note modal just above, reused rather than styled a second time). */
@@ -1349,7 +1371,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <label for="fExtractKey">Extraction key</label>
         <input type="text" id="fExtractKey" placeholder="extraction key" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
         <button class="act" id="extractNewKeyBtn">Get a key</button>
-        <div class="fh">Needed once before "Create a deck from text" can call the real extraction service — until then, that screen still only accepts hand-pasted JSON. Generate one here, then paste this exact value into the Worker with <code>wrangler secret put EXTRACT_KEY</code>. Unrelated to the sync code above — this key never leaves this device either way, and changing one never affects the other.</div>
+        <div class="fh">Only needed for the "Extract with the model" option on the import screen -- everything else there works with no key at all. Set once, then that screen can also send a passage of prose to the extraction service. Generate one here, then paste this exact value into the Worker with <code>wrangler secret put EXTRACT_KEY</code>. Unrelated to the sync code above — this key never leaves this device either way, and changing one never affects the other.</div>
       </div>
       <div class="field">
         <label>Set aside</label>
@@ -1357,9 +1379,10 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <button class="act" id="unsuspBtn">Bring all set-aside words back</button>
       </div>
       <div class="field">
-        <label>New deck</label>
-        <button class="act" id="toExtract">Create a deck from text</button>
-        <div class="fh">Paste in a word list or a passage and turn it into its own deck -- app-level, not tied to this one, so it's here rather than under any single deck's own menu.</div>
+        <label>New deck / import</label>
+        <button class="act" id="toExtract">Import a word list</button>
+        <button class="act hidden" id="expDeckBtn">Export deck file</button>
+        <div class="fh">Paste or open a word list -- a spreadsheet's columns, a Quizlet or Anki export, a "term — gloss" list, a chapter's vocabulary -- and turn it into its own deck, or add it to this one. Read on this device, no key needed; a preview shows what was found before anything is kept. "Export deck file" appears for a deck created on this device: it saves that deck's words as a file this same screen can import on another device (its review history travels in the ordinary backup, not here).</div>
       </div>
       <div class="field">
         <label>Instructions</label>
@@ -1478,16 +1501,36 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="title">New deck</div>
       <div class="icon" style="visibility:hidden">·</div>
     </div>
-    <!-- Step 1: setup + candidate input. Paste-text (4a, the real /extract
-         Worker route) is the primary path; hand-pasted JSON stays available
-         underneath, collapsed -- it needs no key and no model call, mainly
-         useful now for testing the triage screen itself in isolation. Both
-         feed the exact same triageCandidates/triagePos machinery below. -->
+    <!-- Step 1: setup + candidate input. The local, no-key parser
+         ("Find the words", IMPORT_PLAN.md) is the primary path since
+         2026.08.17.4; the model call (4a paste-text / 4b URL, the real
+         /extract Worker route) is folded underneath as the last tier, and
+         hand-pasted JSON stays under it -- it needs no key and no model
+         call, mainly useful for testing the triage screen itself. Every
+         path feeds the exact same triageCandidates/triagePos machinery. -->
     <div class="set" id="extractSetup">
       <div class="setCols">
       <div class="field">
+        <label for="exTarget">Where the words go</label>
+        <select id="exTarget" class="sel">
+          <option value="new">A new deck</option>
+          <option value="append">This deck</option>
+        </select>
+        <div class="fh">"This deck" adds them to the deck you opened this screen from, as words added by hand -- they ride its backup and sync like any other. A new deck lives on this device until you export a deck file for it (Settings).</div>
+      </div>
+      <div id="exNewFields">
+      <div class="field">
         <label for="exTitle">Deck title</label>
-        <input type="text" id="exTitle" maxlength="60" placeholder="e.g. Aeneid I, or CIV 4th Edition Ch. 3">
+        <input type="text" id="exTitle" maxlength="60" placeholder="e.g. Aeneid I, SAT list 3, or CFA Level I formulas">
+      </div>
+      <div class="field">
+        <label for="exKind">Kind</label>
+        <select id="exKind" class="sel">
+          <option value="language">Language (title → English, both ways)</option>
+          <option value="wordlist">Word list (Word ↔ Definition)</option>
+          <option value="formula">Formula sheet (Name ↔ Formula)</option>
+        </select>
+        <div class="fh">Only sets what the two directions are called on the study screen and in Browse.</div>
       </div>
       <div class="field">
         <label for="exScript">Keyboard</label>
@@ -1497,14 +1540,24 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         </select>
         <div class="fh">Only changes which virtual keyboard this deck offers when typing -- doesn't restrict what a word can actually contain either way.</div>
       </div>
+      </div>
       <div class="field">
-        <label for="exText">Paste text</label>
-        <textarea id="exText" style="min-height:160px" placeholder="A vocabulary list, a glossary, or a passage of prose or poetry…"></textarea>
-        <div class="fh" style="margin:8px 0 0;text-align:center">— or —</div>
-        <input type="text" id="exUrl" placeholder="…paste a URL instead" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-top:8px">
-        <div class="fh">Sent to the extraction service (fetched there too, for a URL -- this page can't fetch another site directly), then triaged one candidate at a time below. Nothing is added to any deck until every candidate has been through triage by hand. Needs an extraction key set up once in Settings first.</div>
-        <button class="act primary" id="exExtractBtn" style="margin-top:12px">Extract candidates</button>
-        <div class="fh bad" id="exExtractError"></div>
+        <label for="exText">Paste text — or choose a file</label>
+        <textarea id="exText" style="min-height:160px" placeholder="One entry per line — “term — gloss”, “term: gloss”, a numbered list — or columns copied from a spreadsheet, Quizlet, or Anki…"></textarea>
+        <input type="file" id="exFile" accept=".txt,.csv,.tsv,.json,.md,text/plain,text/csv,text/tab-separated-values,application/json" class="hidden">
+        <button class="act" id="exFileBtn">Choose a file…</button>
+        <div class="fh">Read right here on this device -- nothing is sent anywhere, no key needed. Tab-separated columns (a spreadsheet, a Quizlet or Anki export), "term — gloss" or "term: gloss" lines, numbered lists and chapter headings are all recognised, and a preview shows exactly what was found before anything is kept. A vocabula deck file (Settings, "Export deck file") comes back in the same way.</div>
+        <button class="act primary" id="exParseBtn" style="margin-top:12px">Find the words</button>
+        <div class="fh bad" id="exParseError"></div>
+      </div>
+      <div class="field">
+        <details class="fold">
+          <summary>Extract with the model instead</summary>
+          <input type="text" id="exUrl" placeholder="…or paste a URL" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-top:8px">
+          <div class="fh">Sends the text pasted above (or fetches the URL -- this page can't fetch another site directly) to the extraction service, which reads it and proposes candidates; each is then triaged one at a time. For a passage of prose, or a list with no shape the parser above can find. Needs an extraction key set up once in Settings first, and each call is a small paid model call.</div>
+          <button class="act" id="exExtractBtn" style="margin-top:12px">Extract candidates</button>
+          <div class="fh bad" id="exExtractError"></div>
+        </details>
       </div>
       <div class="field" style="border-bottom:none">
         <details class="fold">
@@ -1515,6 +1568,49 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         </details>
         <div class="fh bad" id="exSetupError"></div>
       </div>
+      </div>
+    </div>
+    <!-- Step 1b: the import preview (IMPORT_PLAN.md §2E) -- what the local
+         parser found, what it skipped and why, and the three ways on. -->
+    <div class="triageWrap hidden" id="importPreview">
+      <div class="triageCount" id="ipSummary"></div>
+      <div class="dayDetail on impCard">
+        <div class="impControls" id="ipControls">
+          <label class="ipCol">Split on
+            <select id="ipSep" class="sel">
+              <option value="auto">Auto</option>
+              <option value="tab">Tabs</option>
+              <option value="comma">Commas</option>
+              <option value="semicolon">Semicolons</option>
+              <option value="pipe">Pipes |</option>
+              <option value="emdash">Em dash —</option>
+              <option value="endash">En dash –</option>
+              <option value="colon">Colon :</option>
+              <option value="equals">Equals =</option>
+              <option value="hyphen">Hyphen -</option>
+              <option value="spaces">Two+ spaces</option>
+              <option value="alt">Alternating lines</option>
+            </select>
+          </label>
+          <button class="small" id="ipSwap">Swap term ↔ gloss</button>
+          <label class="ipCheck" id="ipHeaderWrap"><input type="checkbox" id="ipHeader"> First row is a header</label>
+          <label class="ipCheck" id="ipCountsWrap"><input type="checkbox" id="ipCounts"> Keep trailing counts in the note</label>
+        </div>
+        <div class="impControls" id="ipMapping"></div>
+        <div class="impTableWrap"><table class="impTable" id="ipTable"></table></div>
+        <details class="fold" id="ipSkippedFold">
+          <summary id="ipSkippedSummary">Skipped lines</summary>
+          <pre class="ipSkipped" id="ipSkipped"></pre>
+        </details>
+        <div class="fh bad" id="ipError"></div>
+        <div class="fh hidden" id="ipModel">No shape found -- an extraction key is set up, so "Extract with the model instead" on the previous screen can read this text as prose.</div>
+      </div>
+      <div class="triageBtns impBtns">
+        <button class="act" id="ipBack">Back to the text</button>
+        <button class="act" id="ipTriageAll">Triage everything</button>
+        <button class="act" id="ipReviewFlagged">Review the flagged</button>
+        <button class="act primary" id="ipAcceptAll">Accept all</button>
+        <button class="act primary hidden" id="ipDeckImport">Import this deck</button>
       </div>
     </div>
     <!-- Step 2: one candidate at a time. Editable in place -- "edit" isn't a
@@ -2110,6 +2206,14 @@ function makeDefaults(){ return {
   customRows:[], overrides:{}
 };}
 let S=null;
+// Field length caps, one place (IMPORT_PLAN.md I5). Term stays at 200 -- a
+// term is a headword or a formula's name, never long. Gloss and note went
+// 200 -> 500 with the import work: a CFA definition or an SAT example
+// sentence doesn't fit 200, and a silently truncated definition is a wrong
+// card. Applied at every entry point (add-word, the inspector, triage, the
+// import parser) AND at load in normalise() -- raising the cap in the entry
+// points alone would re-truncate on the next boot. Section is a label.
+const CAP_TERM=200, CAP_GLOSS=500, CAP_SECTION=60, CAP_NOTE=500;
 
 function freshCard(c){
   const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
@@ -2525,7 +2629,7 @@ function normalise(o){
       &&typeof r[0]==='string'&&r[0].trim()&&typeof r[1]==='string'&&r[1].trim()
       &&typeof r[2]==='string'&&r[2].trim()
       &&typeof r[4]==='string'&&/^u[0-9a-z]+$/.test(r[4])&&!seen.has(r[4])&&seen.add(r[4]))
-      .map(r=>[r[0].trim().slice(0,200),r[1].trim().slice(0,200),r[2].trim().slice(0,60),0,r[4]]);
+      .map(r=>[r[0].trim().slice(0,CAP_TERM),r[1].trim().slice(0,CAP_GLOSS),r[2].trim().slice(0,CAP_SECTION),0,r[4]]);
   }
   // Text overrides (Phase 3 §B) -- term-only, keyed by row id (a built-in
   // row's integer id or a user row's 'u...' string, same namespace either
@@ -2536,7 +2640,7 @@ function normalise(o){
   { const raw=(o.overrides&&typeof o.overrides==='object')?o.overrides:{}, ov={};
     for(const k in raw){
       const v=raw[k];
-      if(v&&typeof v==='object'&&typeof v.term==='string'&&v.term.trim()) ov[k]={term:v.term.trim().slice(0,200)};
+      if(v&&typeof v==='object'&&typeof v.term==='string'&&v.term.trim()) ov[k]={term:v.term.trim().slice(0,CAP_TERM)};
     }
     s.overrides=ov;
   }
@@ -2628,7 +2732,7 @@ function normalise(o){
       // the Set-aside list.
       if(c.setAsideAt!=null&&!Number.isFinite(c.setAsideAt)) c.setAsideAt=null;
       if(c.lastDrilled!=null&&!Number.isFinite(c.lastDrilled)) c.lastDrilled=null;
-      if(typeof c.note==='string'&&c.note.trim()) c.note=c.note.slice(0,200);
+      if(typeof c.note==='string'&&c.note.trim()) c.note=c.note.slice(0,CAP_NOTE);
       else c.note=null;
       // confuseGroups: which manual groups (registry sanitized just above)
       // this card belongs to. A dangling id (pointing at a group that didn't
@@ -2783,7 +2887,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.17.3';
+const BUILD='2026.08.18.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -5390,7 +5494,7 @@ function openWordNote(id){
   $('wordNoteOverlay').classList.add('on');
   const noteVal=(cs&&cs.note)||'';
   $('wordNoteDetail').innerHTML='<div class="ddTitle">'+escHtml(c.q)+'</div>'+
-    '<textarea id="wnInput" maxlength="200" placeholder="Why does this one keep tripping you up? A mnemonic, the word it gets confused with…">'+escHtml(noteVal)+'</textarea>'+
+    '<textarea id="wnInput" maxlength="'+CAP_NOTE+'" placeholder="Why does this one keep tripping you up? A mnemonic, the word it gets confused with…">'+escHtml(noteVal)+'</textarea>'+
     '<div class="ddBtns"><button class="small primary" id="wnSave">Save note</button><button class="small" id="wnClose">Close</button></div>';
 }
 function closeWordNote(){
@@ -5461,11 +5565,11 @@ function renderCardInspector(){
   let html='<div class="ddTitle">'+escHtml(c.q)+'</div>'
     +'<div class="fh">'+escHtml(c.dir==='E'?c.a.join(', '):c.a)+'</div>'
     +'<div class="fh" style="margin-top:6px">'+escHtml(statsLine)+'</div>'
-    +'<textarea id="ciNote" maxlength="200" placeholder="Why does this one keep tripping you up? A mnemonic, the word it gets confused with…">'+escHtml((cs&&cs.note)||'')+'</textarea>'
+    +'<textarea id="ciNote" maxlength="'+CAP_NOTE+'" placeholder="Why does this one keep tripping you up? A mnemonic, the word it gets confused with…">'+escHtml((cs&&cs.note)||'')+'</textarea>'
     +'<div class="ddBtns"><button class="small primary" id="ciSaveNote">Save note</button>'
     +'<button class="small" id="ciFlag">'+(susp?'Bring back to normal review':'Set aside')+'</button></div>';
   if(isRow){
-    html+='<input type="text" id="ciTerm" maxlength="200" value="'+escHtml(c.q)+'" style="margin-top:12px">'
+    html+='<input type="text" id="ciTerm" maxlength="'+CAP_TERM+'" value="'+escHtml(c.q)+'" style="margin-top:12px">'
       +'<div class="ddBtns"><button class="small" id="ciSaveTerm">Save term</button></div>';
     if(isCustom){
       html+='<div class="ddBtns" style="margin-top:2px"><button class="small danger" id="ciDelete">Delete this word</button></div>';
@@ -5493,10 +5597,10 @@ function renderCardInspector(){
 function openAddWord(){
   $('addWordOverlay').classList.add('on');
   $('addWordDetail').innerHTML='<div class="ddTitle">Add a word</div>'
-    +'<input type="text" id="awTerm" maxlength="200" placeholder="Term — e.g. amor amoris m.">'
-    +'<input type="text" id="awGloss" maxlength="200" placeholder="Gloss — e.g. love" style="margin-top:8px">'
-    +'<input type="text" id="awSection" maxlength="60" placeholder="Section" value="'+escHtml(browsePart||'Added words')+'" style="margin-top:8px">'
-    +'<textarea id="awNote" maxlength="200" placeholder="Note (optional) — a mnemonic, why it trips you up…"></textarea>'
+    +'<input type="text" id="awTerm" maxlength="'+CAP_TERM+'" placeholder="Term — e.g. amor amoris m.">'
+    +'<input type="text" id="awGloss" maxlength="'+CAP_GLOSS+'" placeholder="Gloss — e.g. love" style="margin-top:8px">'
+    +'<input type="text" id="awSection" maxlength="'+CAP_SECTION+'" placeholder="Section" value="'+escHtml(browsePart||'Added words')+'" style="margin-top:8px">'
+    +'<textarea id="awNote" maxlength="'+CAP_NOTE+'" placeholder="Note (optional) — a mnemonic, why it trips you up…"></textarea>'
     +'<div class="ddBtns"><button class="small primary" id="awSave">Add word</button><button class="small" id="awClose">Close</button></div>';
   setTimeout(()=>{ const el=$('awTerm'); if(el) el.focus(); },0);
 }
@@ -5505,33 +5609,48 @@ function closeAddWord(){ $('addWordOverlay').classList.remove('on'); }
 // reason as cardInspectorOverlay's above.
 
 /* ---- create a deck from text: the triage screen (Phase 4, §scExtract,
-   PHASE3_4_HANDOFF.md §2) -- built against hand-pasted JSON first, per that
-   doc's own order, with zero model call anywhere in this block. 4a/4b (the
-   real /extract Worker route, paste-text and paste-a-URL) land upstream of
-   parseCandidates() later: same {term,gloss,section,note} shape either way,
-   so nothing below this point needs to change when that lands.
+   PHASE3_4_HANDOFF.md §2) and, in front of it since 2026.08.17.4, the
+   no-key import path (IMPORT_PLAN.md) -- built against hand-pasted JSON
+   first, per that doc's own order, and everything else lands upstream of
+   the same seam: startTriage()/the preview both feed the same
+   {term,gloss,section,note} candidate shape, so nothing downstream needs
+   to know or care where a candidate list came from.
 
-   State lives entirely in memory until commitTriage() actually runs --
-   "nothing enters a deck unapproved" extends to "nothing touches storage
-   at all" until the whole batch is reviewed and Create is pressed. Discard
-   (or Back, mid-session) just drops these variables; there is nothing to
-   undo because nothing was ever written. */
-let triageTitle=null, triageScript='latin', triageCandidates=[], triagePos=0, triageKept=[], triageBinned=0;
+   State lives entirely in memory until commitTriage()/commitAppend()
+   actually runs -- "nothing enters a deck unapproved" extends to "nothing
+   touches storage at all" until the whole batch is reviewed and Create/Add
+   is pressed. Discard (or Back, mid-session) just drops these variables;
+   there is nothing to undo because nothing was ever written. */
+let triageTitle=null, triageScript='latin', triageKind='language', triageTarget='new',
+    triageCandidates=[], triagePos=0, triageKept=[], triageBinned=0;
 
 function openExtractSetup(){
-  $('exTitle').value=''; $('exScript').value='latin';
-  $('exText').value=''; $('exUrl').value=''; $('exExtractError').textContent='';
+  $('exTitle').value=''; $('exScript').value='latin'; $('exKind').value='language';
+  $('exTarget').value='new'; $('exTarget').options[1].textContent='This deck ('+DECK_TITLE+')'; syncTargetFields();
+  $('exText').value=''; $('exUrl').value=''; $('exExtractError').textContent=''; $('exParseError').textContent='';
   $('exPaste').value=''; $('exSetupError').textContent='';
+  $('exFile').value='';
+  importSource=''; importResult=null; importDeckFile=null;
   $('extractSetup').classList.remove('hidden');
+  $('importPreview').classList.add('hidden');
   $('triageArea').classList.add('hidden');
   $('triageDone').classList.add('hidden');
   show('scExtract');
+}
+// The append option names the deck this screen was opened from; the title/
+// kind/keyboard fields only mean anything for a NEW deck, so they fold away
+// when the target is "this deck" rather than sitting there looking required.
+function syncTargetFields(){
+  const append=$('exTarget').value==='append';
+  $('exNewFields').classList.toggle('hidden',append);
 }
 // The {term,gloss,section,note} schema itself (4a's real constraint too,
 // PHASE3_4_HANDOFF.md §2) -- vocabulary-only, on purpose. section/note
 // default to '' rather than being required; term/gloss must be non-empty
 // strings or the whole batch is rejected with which entry failed, rather
-// than silently dropping bad rows into the triage queue.
+// than silently dropping bad rows into the triage queue. (The import
+// parser below deliberately does NOT share this all-or-nothing rule -- see
+// its own comment: a 3,000-line paste must skip-and-flag, never reject.)
 function parseCandidates(raw){
   let arr;
   try{ arr=JSON.parse(raw); }catch(e){ return {error:'Not valid JSON.'}; }
@@ -5541,30 +5660,520 @@ function parseCandidates(raw){
     const c=arr[i];
     if(!c||typeof c!=='object'||typeof c.term!=='string'||!c.term.trim()||typeof c.gloss!=='string'||!c.gloss.trim())
       return {error:'Entry '+(i+1)+' is missing a term or gloss.'};
-    out.push({term:c.term.trim().slice(0,200), gloss:c.gloss.trim().slice(0,200),
-               section:(typeof c.section==='string'&&c.section.trim())?c.section.trim().slice(0,60):'',
-               note:(typeof c.note==='string'&&c.note.trim())?c.note.trim().slice(0,200):''});
+    out.push({term:c.term.trim().slice(0,CAP_TERM), gloss:c.gloss.trim().slice(0,CAP_GLOSS),
+               section:(typeof c.section==='string'&&c.section.trim())?c.section.trim().slice(0,CAP_SECTION):'',
+               note:(typeof c.note==='string'&&c.note.trim())?c.note.trim().slice(0,CAP_NOTE):''});
   }
   return {candidates:out};
 }
-// Shared tail end of both entry points below (hand-pasted JSON and the real
-// extraction call) -- everything up to here differs (where the candidates
-// came from, what can go wrong getting them), everything from here on is
-// identical: seed the triage state and show the first card.
-function startTriage(title,script,candidates){
+
+/* ---- import without a key: the deterministic shape parser (IMPORT_PLAN.md
+   §2B-D). Pure -- no DOM, no storage, no model -- so tests/run.sh's logic
+   slice runs it under Node against fixture text (a Quizlet export, a
+   Steadman page, DCC's CSV, an Excel paste, a numbered SAT list). Nothing
+   is inferred: a line either matches the winning rule or it is listed as
+   skipped, with the reason, for the person to see.
+
+   importAnalyse(text, opts) -> {mode, sep, columns, header, mapping, rows,
+   skipped, total, parsed, confidence, headings, countsStripped}
+     mode     'tabular' | 'lines' | 'alt' | 'none'
+     sep      which rule won ('tab','semicolon','pipe','comma' for tabular;
+              'emdash','endash','colon','equals','hyphen','spaces' for
+              lines; 'alt' for alternating term/gloss lines)
+     rows     [{term,gloss,section,note,flags:[...],line}] -- flags are
+              advisory ('overcap','longterm'); a row that can't be used at
+              all is not a row, it's in `skipped` with a reason
+     skipped  [{line, text, reason}]
+   opts: {sep:'auto'|<sep>, swap:bool, header:'auto'|true|false,
+          mapping:[role per column]|null, keepCounts:bool,
+          existingTerms:Set<norm(term)>|null}
+   The rule ORDER is the design (IMPORT_PLAN.md I4): tab first, then the
+   other delimiters only with a CONSISTENT field count and real quoting,
+   comma last of those -- `a, ab (+ abl.)` is a real Latin term, so a
+   comma alone can never win. */
+const IMPORT_HEADING_RE=/^(?:chapter|ch\.?|cap(?:itulum|ut)?\.?|unit|lesson|part|stage|reading|week|list|group|section|topic|book|liber|lib\.?)\s*(?:[0-9]{1,4}|[ivxlcIVXLC]{1,7})\b[.:)]?\s*(?:[-–—:]\s*)?(?:.{0,50})$/i;
+const IMPORT_NUM_RE=/^\(?\d{1,4}[.)]\s*(?=\S)/;          // "12. abate", "12) abate", "(12) abate"
+const IMPORT_BARE_NUM_RE=/^\d{1,4}\s+(?=\S)/;             // "12 abate" -- only honoured when nearly every line has it
+const IMPORT_LINE_SEPS=[                                  // ordered: the first to reach the coverage bar wins ties
+  {id:'emdash', re:/\s*—\s*/},
+  {id:'endash', re:/\s+–\s+|\s*–\s*/},
+  {id:'colon',  re:/:\s+/},
+  {id:'equals', re:/\s*=\s*/},
+  {id:'hyphen', re:/\s+-\s+/},                            // spaced only: "-ή, -όν" and "-orum" stay inside the term
+  {id:'spaces', re:/ {2,}/}
+];
+const IMPORT_TAB_DELIMS=[{id:'tab',ch:'\t'},{id:'semicolon',ch:';'},{id:'pipe',ch:'|'},{id:'comma',ch:','}];
+const IMPORT_HEADER_WORDS={
+  term:['term','terms','word','words','headword','lemma','front','question','latin','greek','vocab','vocabulary','name','formula name','concept','key term'],
+  gloss:['gloss','definition','definitions','meaning','meanings','back','answer','english','translation','formula','description'],
+  section:['section','chapter','unit','lesson','topic','group','semantic group','tags','tag','category','part','stage','week','list','reading','area','deck'],
+  note:['note','notes','example','examples','sentence','comment','comments','part of speech','pos','usage','hint','mnemonic']
+};
+const IMPORT_MIN_TABULAR=0.8, IMPORT_MIN_LINES=0.6, IMPORT_MIN_ALT=0.7;
+
+// RFC-4180-ish split for one line: double-quoted fields may contain the
+// delimiter and doubled quotes. Tab-separated exports (Excel, Quizlet,
+// Anki) don't quote as a rule, but a field that happens to be wrapped in
+// quotes still gets them stripped, same as any other delimiter.
+function importSplitFields(line, ch){
+  const out=[]; let cur='', q=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(q){
+      if(c==='"'){ if(line[i+1]==='"'){ cur+='"'; i++; } else q=false; }
+      else cur+=c;
+    } else if(c==='"' && cur===''){ q=true; }
+    else if(c===ch){ out.push(cur); cur=''; }
+    else cur+=c;
+  }
+  out.push(cur);
+  return out.map(s=>s.trim());
+}
+function importIsGreek(s){ return /[Ͱ-Ͽἀ-῿]/.test(s); }
+function importHasMacron(s){ return /[āēīōūĀĒĪŌŪ]/.test(s); }
+function importWords(s){ return s.split(/\s+/).filter(Boolean).length; }
+function importClean(s){ return String(s==null?'':s).normalize('NFC').replace(/\s+/g,' ').trim(); }
+// Line-level clean keeps tabs and runs of spaces intact -- both are shapes
+// the detector reads (tab rule, two-plus-spaces rule); only the fields cut
+// out of a line get fully collapsed, by importClean above.
+function importCleanLine(s){ return String(s==null?'':s).normalize('NFC').replace(/\u00a0/g,' ').replace(/^[ \t]+|[ \t]+$/g,''); }
+// Header-row detection for tabular input: enough of the first row's cells
+// have to read like column names, and none of them like content.
+function importLooksLikeHeader(cells){
+  let hits=0;
+  for(const c of cells){
+    const k=c.toLowerCase().trim();
+    if(!k) continue;
+    for(const role in IMPORT_HEADER_WORDS) if(IMPORT_HEADER_WORDS[role].indexOf(k)!==-1){ hits++; break; }
+  }
+  return hits>=2 || (cells.length===2 && hits===2) || (cells.length>=2 && hits>=1 && cells.every(c=>importWords(c)<=3 && !/[.:;—–]/.test(c)) && hits>=Math.ceil(cells.length/2));
+}
+function importAutoMapping(cells, header){
+  const n=cells.length, roles=new Array(n).fill('ignore');
+  const taken={};
+  if(header){
+    cells.forEach((c,i)=>{
+      const k=c.toLowerCase().trim();
+      for(const role of ['term','gloss','section','note']){
+        if(taken[role]) continue;
+        if(IMPORT_HEADER_WORDS[role].indexOf(k)!==-1){ roles[i]=role; taken[role]=true; break; }
+      }
+    });
+  }
+  // positional fill for whatever the header didn't name (or when there is none)
+  const order=['term','gloss','section','note'];
+  for(let i=0;i<n;i++){
+    if(roles[i]!=='ignore') continue;
+    const next=order.find(r=>!taken[r]);
+    if(!next) break;
+    roles[i]=next; taken[next]=true;
+  }
+  return roles;
+}
+function importAnalyse(text, opts){
+  opts=opts||{};
+  const forced=opts.sep&&opts.sep!=='auto'?opts.sep:null;
+  const src=String(text||'').replace(/^﻿/,'').replace(/\r\n?/g,'\n');
+  const all=src.split('\n').map((s,i)=>({line:i+1, text:importCleanLine(s)})).filter(l=>l.text);
+  const res={mode:'none', sep:null, columns:0, header:false, mapping:null, rows:[], skipped:[],
+             total:0, parsed:0, confidence:0, headings:0, countsStripped:0};
+  if(!all.length) return res;
+  // 1. headings, stripped out of the body and remembered as the running section
+  const body=[]; let section='';
+  const headingAt={};   // body index -> section label in force from there on
+  for(const l of all){
+    if(IMPORT_HEADING_RE.test(l.text) && !/\t/.test(l.text) && importWords(l.text)<=8){
+      section=l.text.slice(0,CAP_SECTION); res.headings++; continue;
+    }
+    headingAt[body.length]=section;
+    body.push(l);
+  }
+  res.total=body.length;
+  if(!body.length) return res;
+  // 2. numbering: "12." / "12)" / "(12)" prefixes are stripped per line; a bare
+  //    "12 word" prefix only when nearly every line carries one.
+  const bareNumbered=body.filter(l=>IMPORT_BARE_NUM_RE.test(l.text)).length>=Math.ceil(body.length*0.8) && body.length>=3;
+  const lines=body.map(l=>{
+    let t=l.text.replace(IMPORT_NUM_RE,'');
+    if(bareNumbered) t=t.replace(IMPORT_BARE_NUM_RE,'');
+    return {line:l.line, raw:l.text, text:t.trim()};
+  });
+  const n=lines.length;
+  // 3. which rule wins
+  let mode='none', sep=null, delim=null;
+  const tryTabular=(d)=>{
+    if(d.ch==='\t'){
+      const with_=lines.filter(l=>l.text.indexOf('\t')!==-1).length;
+      return with_>=Math.ceil(n*IMPORT_MIN_TABULAR) ? {ok:true, columns:0} : {ok:false};
+    }
+    const counts={};
+    lines.forEach(l=>{ const k=importSplitFields(l.text,d.ch).length; counts[k]=(counts[k]||0)+1; });
+    let best=0, bestK=0;
+    for(const k in counts) if(+k>=2 && counts[k]>best){ best=counts[k]; bestK=+k; }
+    return (bestK>=2 && best>=Math.ceil(n*IMPORT_MIN_TABULAR)) ? {ok:true, columns:bestK} : {ok:false};
+  };
+  if(forced){
+    const d=IMPORT_TAB_DELIMS.find(x=>x.id===forced);
+    if(d){ mode='tabular'; sep=d.id; delim=d.ch; }
+    else if(forced==='alt'){ mode='alt'; sep='alt'; }
+    else if(IMPORT_LINE_SEPS.find(x=>x.id===forced)){ mode='lines'; sep=forced; }
+  } else {
+    // Order is the design (IMPORT_PLAN.md I4): tab, then the delimiters a
+    // gloss never contains (semicolon, pipe), then the one-per-line
+    // separators, and only THEN comma -- a comma-separated gloss list
+    // ("good, brave, capable") is consistent enough, on a small sample, to
+    // masquerade as a two-column CSV, so a colon or dash on most lines has
+    // to be given the chance to win first. A real CSV (DCC's) has none of
+    // those on its lines and still gets here.
+    for(const d of IMPORT_TAB_DELIMS){
+      if(d.id==='comma') continue;
+      const r=tryTabular(d);
+      if(r.ok){ mode='tabular'; sep=d.id; delim=d.ch; break; }
+    }
+    if(mode==='none'){
+      let best=null;
+      for(const s of IMPORT_LINE_SEPS){
+        const cov=lines.filter(l=>s.re.test(l.text)).length/n;
+        if(cov>=IMPORT_MIN_LINES && (!best||cov>best.cov)){ best={id:s.id,cov}; }
+      }
+      if(best){ mode='lines'; sep=best.id; }
+    }
+    if(mode==='none'){
+      const d=IMPORT_TAB_DELIMS.find(x=>x.id==='comma');
+      const r=tryTabular(d);
+      if(r.ok){ mode='tabular'; sep=d.id; delim=d.ch; }
+    }
+    if(mode==='none' && n>=4){
+      // alternating term / gloss lines: a Greek or macron test settles it
+      // outright for Classics; English->English needs a short/long pattern
+      // on nearly every pair before it's believed.
+      let pairs=0, hits=0, strong=0;
+      for(let i=0;i+1<n;i+=2){
+        pairs++;
+        const a=lines[i].text, b=lines[i+1].text;
+        const sa=importIsGreek(a)||importHasMacron(a), sb=importIsGreek(b)||importHasMacron(b);
+        if(sa&&!sb){ hits++; strong++; continue; }
+        if(!sa&&!sb && importWords(a)<=4 && importWords(b)>=2 && b.length>a.length) hits++;
+      }
+      if(pairs && ((strong && hits/pairs>=IMPORT_MIN_ALT) || hits/pairs>=0.85)){ mode='alt'; sep='alt'; }
+    }
+  }
+  res.mode=mode; res.sep=sep;
+  if(mode==='none'){
+    lines.forEach(l=>res.skipped.push({line:l.line, text:l.raw, reason:'no consistent shape'}));
+    return res;
+  }
+  // 4. rows
+  const raw=[];   // [{term,gloss,section,note,line}] before caps/dedupe
+  const sectionFor=(idx)=>headingAt[idx]||'';
+  if(mode==='tabular'){
+    const table=lines.map(l=>importSplitFields(l.text, delim));
+    let columns=0; const cc={};
+    table.forEach(f=>{ cc[f.length]=(cc[f.length]||0)+1; });
+    for(const k in cc) if(cc[k]>(cc[columns]||0)) columns=+k;
+    if(delim==='\t' && columns<2){ columns=Math.max.apply(null, table.map(f=>f.length)); }
+    res.columns=columns;
+    const header = opts.header==='auto'||opts.header==null ? importLooksLikeHeader(table[0]) : !!opts.header;
+    res.header=header;
+    const mapping = (opts.mapping&&opts.mapping.length===columns) ? opts.mapping.slice() : importAutoMapping(table[0].length===columns?table[0]:new Array(columns).fill(''), header);
+    res.mapping=mapping;
+    const ti=mapping.indexOf('term'), gi=mapping.indexOf('gloss'), si=mapping.indexOf('section'), ni=mapping.indexOf('note');
+    table.forEach((f,idx)=>{
+      if(header&&idx===0) return;
+      if(f.length>columns){ res.skipped.push({line:lines[idx].line, text:lines[idx].raw, reason:'has '+f.length+' columns, expected '+columns}); return; }
+      if(f.length<2){ res.skipped.push({line:lines[idx].line, text:lines[idx].raw, reason:'only one column'}); return; }
+      const get=i=>(i>=0&&i<f.length)?f[i]:'';
+      let term=get(ti), gloss=get(gi);
+      if(opts.swap){ const x=term; term=gloss; gloss=x; }
+      raw.push({term, gloss, section:get(si)||sectionFor(idx), note:get(ni), line:lines[idx].line, rawText:lines[idx].raw});
+    });
+  } else if(mode==='lines'){
+    const rule=IMPORT_LINE_SEPS.find(s=>s.id===sep);
+    lines.forEach((l,idx)=>{
+      const m=rule.re.exec(l.text);
+      if(!m){ res.skipped.push({line:l.line, text:l.raw, reason:'no separator found'}); return; }
+      let term=l.text.slice(0,m.index), gloss=l.text.slice(m.index+m[0].length);
+      if(opts.swap){ const x=term; term=gloss; gloss=x; }
+      raw.push({term, gloss, section:sectionFor(idx), note:'', line:l.line, rawText:l.raw});
+    });
+  } else if(mode==='alt'){
+    for(let i=0;i<n;i+=2){
+      if(i+1>=n){ res.skipped.push({line:lines[i].line, text:lines[i].raw, reason:'odd line out -- no partner line'}); break; }
+      let term=lines[i].text, gloss=lines[i+1].text;
+      if(opts.swap){ const x=term; term=gloss; gloss=x; }
+      raw.push({term, gloss, section:sectionFor(i), note:'', line:lines[i].line, rawText:lines[i].raw+' / '+lines[i+1].raw});
+    }
+  }
+  // 5. trailing occurrence counts (Steadman's "..., 12"): only when the
+  //    pattern is consistent across the batch, never on a lone number.
+  const countRe=/[,;]?\s+(\d{1,4})$/;
+  const withCount=raw.filter(r=>countRe.test(r.gloss)).length;
+  const stripCounts=raw.length>=2 && withCount>=Math.ceil(raw.length*0.5);
+  // 6. normalise, cap, flag, dedupe
+  const seen=new Set();
+  raw.forEach(r=>{
+    let term=importClean(r.term), gloss=importClean(r.gloss), note=importClean(r.note), section=importClean(r.section);
+    if(stripCounts){
+      const m=countRe.exec(gloss);
+      if(m){ gloss=gloss.slice(0,m.index).trim(); res.countsStripped++; if(opts.keepCounts) note=(note?note+' · ':'')+m[1]; }
+    }
+    if(!term||!gloss){ res.skipped.push({line:r.line, text:r.rawText, reason:!term?'empty term':'empty gloss'}); return; }
+    const flags=[];
+    if(term.length>CAP_TERM){ term=term.slice(0,CAP_TERM); flags.push('overcap'); }
+    if(gloss.length>CAP_GLOSS){ gloss=gloss.slice(0,CAP_GLOSS); flags.push('overcap'); }
+    if(note.length>CAP_NOTE) note=note.slice(0,CAP_NOTE);
+    if(section.length>CAP_SECTION) section=section.slice(0,CAP_SECTION);
+    if(importWords(term)>8) flags.push('longterm');
+    const key=norm(term)+'|'+norm(gloss);
+    if(seen.has(key)){ res.skipped.push({line:r.line, text:r.rawText, reason:'duplicate of an earlier line'}); return; }
+    seen.add(key);
+    if(opts.existingTerms && opts.existingTerms.has(norm(term))){ res.skipped.push({line:r.line, text:r.rawText, reason:'already in this deck'}); return; }
+    res.rows.push({term, gloss, section, note, flags, line:r.line});
+  });
+  res.parsed=res.rows.length;
+  res.confidence=res.total?res.rows.length/res.total:0;
+  return res;
+}
+// An HTML <table> from the clipboard (a range copied from Google Sheets or a
+// web page) -> tab-separated text, so the same tab rule handles it. Pure
+// string work on the parsed rows; the DOMParser call lives in the paste
+// handler, not here.
+function importRowsToTsv(rows){
+  return rows.map(cells=>cells.map(c=>importClean(c).replace(/\t/g,' ')).join('\t')).filter(l=>l.replace(/\t/g,'').trim()).join('\n');
+}
+// A vocabula deck file (Settings -> "Export deck file"): the content record
+// exactly as the IndexedDB `content` store holds it, plus enough of the
+// registry row to recreate it. Row ids are PRESERVED on the way back in so a
+// state backup restored on the other device re-attaches history to the same
+// cards -- the whole point of preferring this over re-triaging the source.
+function importParseDeckFile(text){
+  let o;
+  try{ o=JSON.parse(text); }catch(e){ return null; }
+  if(!o||typeof o!=='object'||o.format!=='vocabula-deck') return null;
+  const d=o.deck, c=o.content;
+  if(!d||typeof d!=='object'||typeof d.id!=='string'||!/^d[0-9a-z]+$/.test(d.id)) return {error:'This deck file has no usable deck id.'};
+  if(!c||typeof c!=='object'||!Array.isArray(c.DATA)||typeof c.KEY!=='string'||typeof c.DECK_TITLE!=='string'||!c.DECK||typeof c.DECK!=='object') return {error:'This deck file is missing its content.'};
+  const ids=new Set(), rows=[];
+  for(const r of c.DATA){
+    if(!Array.isArray(r)||r.length<5||typeof r[0]!=='string'||!r[0].trim()||typeof r[1]!=='string'||!r[1].trim()||typeof r[4]!=='string'||!/^u[0-9a-z]+$/.test(r[4])||ids.has(r[4])) continue;
+    ids.add(r[4]);
+    rows.push([r[0].trim().slice(0,CAP_TERM), r[1].trim().slice(0,CAP_GLOSS), (typeof r[2]==='string'&&r[2].trim()?r[2].trim():c.DECK_TITLE).slice(0,CAP_SECTION), 0, r[4]]);
+  }
+  if(!rows.length) return {error:'This deck file has no usable words in it.'};
+  const script=c.DECK.script==='greek'?'greek':'latin';
+  const title=String(c.DECK_TITLE).trim().slice(0,60)||'Imported deck';
+  return {
+    id:d.id, key:'vocabula.custom.'+d.id+'.v1', title, script,
+    kind:(d.kind==='wordlist'||d.kind==='formula')?d.kind:'language',
+    content:{
+      DATA:rows,
+      CHANGES:Array.isArray(c.CHANGES)?c.CHANGES:[],
+      DECK:{script, fwd:typeof c.DECK.fwd==='string'?c.DECK.fwd:title+' → English', rev:typeof c.DECK.rev==='string'?c.DECK.rev:'English → '+title,
+            mottos:Array.isArray(c.DECK.mottos)&&c.DECK.mottos.length?c.DECK.mottos:[['Little by little, a little becomes a lot.','—Tanzanian proverb']]},
+      KEY:'vocabula.custom.'+d.id+'.v1', DECK_TITLE:title
+    }
+  };
+}
+// Direction labels per deck kind (IMPORT_PLAN.md I6) -- fixes the old
+// hard-coded "<title> → English", which was wrong for anything that isn't a
+// language deck: an SAT list is English -> English, a formula sheet is
+// name -> formula.
+function deckLabelsFor(kind, title){
+  if(kind==='wordlist') return {fwd:'Word → Definition', rev:'Definition → Word'};
+  if(kind==='formula') return {fwd:'Name → Formula', rev:'Formula → Name'};
+  return {fwd:title+' → English', rev:'English → '+title};
+}
+
+/* ---- the import preview (IMPORT_PLAN.md §2E) -- the screen in front of
+   triage: what the parser found, what it skipped and why, the controls that
+   change how it reads the text (separator, swap, header row, column roles,
+   trailing counts), and the three ways out: Accept all, Review the flagged,
+   Triage everything. Re-runs the pure parser on every control change; the
+   source text itself is never mutated. ---- */
+let importSource='', importResult=null, importDeckFile=null;
+let importOpts={sep:'auto', swap:false, header:'auto', mapping:null, keepCounts:false};
+function existingTermSet(){
+  const s=new Set();
+  try{ DATA.forEach(r=>s.add(norm(r[0]))); }catch(e){}
+  return s;
+}
+function readTargetChoice(){
+  triageTarget=$('exTarget').value==='append'?'append':'new';
+  triageKind=$('exKind').value||'language';
+  triageScript=($('exScript').value==='greek')?'greek':'latin';
+  triageTitle=triageTarget==='append'?DECK_TITLE:$('exTitle').value.trim();
+}
+function startImportPreview(text){
+  importSource=text; importDeckFile=null;
+  importOpts={sep:'auto', swap:false, header:'auto', mapping:null, keepCounts:false};
+  $('extractSetup').classList.add('hidden');
+  $('triageArea').classList.add('hidden');
+  $('triageDone').classList.add('hidden');
+  $('importPreview').classList.remove('hidden');
+  renderImportPreview();
+}
+function findWords(){
+  readTargetChoice();
+  const text=$('exText').value;
+  if(!text.trim()){ $('exParseError').textContent='Paste some text, or choose a file, first.'; return; }
+  $('exParseError').textContent='';
+  // A deck file carries its own title, kind and script -- it needs nothing
+  // from the fields above, so it's recognised before the title gate.
+  const deckFile=/^\s*\{/.test(text)?importParseDeckFile(text):null;
+  if(deckFile){ if(deckFile.error){ $('exParseError').textContent=deckFile.error; return; } startDeckFilePreview(deckFile); return; }
+  if(triageTarget==='new'&&!triageTitle){ $('exParseError').textContent='Give the deck a title first.'; return; }
+  // a pasted/chosen JSON candidate array takes the same road as the JSON fold
+  if(/^\s*\[/.test(text)){
+    const r=parseCandidates(text);
+    if(!r.error){ importCandidatesToPreview(r.candidates); return; }
+  }
+  startImportPreview(text);
+}
+// A candidate array that arrived ready-made (a .json file, or JSON pasted
+// into the main box) still goes through the preview -- so the counts,
+// duplicates and caps show, and Accept-all is available -- by rendering it
+// as tab-separated text the parser reads back exactly.
+function importCandidatesToPreview(cands){
+  const tsv=importRowsToTsv(cands.map(c=>[c.term,c.gloss,c.section||'',c.note||'']));
+  startImportPreview('term\tgloss\tsection\tnote\n'+tsv);
+}
+function importFlagLabel(f){ return f==='overcap'?'cut to length':f==='longterm'?'long term — check the split':f; }
+function renderImportPreview(){
+  const opts=Object.assign({}, importOpts, {existingTerms: triageTarget==='append'?existingTermSet():null});
+  const r=importAnalyse(importSource, opts);
+  importResult=r;
+  const flagged=r.rows.filter(x=>x.flags.length).length;
+  const sepName={tab:'tabs',semicolon:'semicolons',pipe:'pipes',comma:'commas',emdash:'em dashes',endash:'en dashes',colon:'colons',equals:'equals signs',hyphen:'hyphens',spaces:'runs of spaces',alt:'alternating lines'}[r.sep]||'';
+  $('ipSummary').textContent = r.mode==='none'
+    ? 'No consistent shape found in '+r.total+' line'+(r.total===1?'':'s')
+    : r.rows.length+' word'+(r.rows.length===1?'':'s')+' found · '+r.skipped.length+' skipped · '+flagged+' flagged'
+      +(sepName?' · split on '+sepName:'')+(r.header?' · header row':'')+(r.headings?' · '+r.headings+' heading'+(r.headings===1?'':'s'):'')
+      +(r.countsStripped?' · trailing counts '+(importOpts.keepCounts?'kept in notes':'dropped'):'');
+  // controls
+  $('ipSep').value=importOpts.sep;
+  $('ipSwap').classList.toggle('on',!!importOpts.swap);
+  $('ipHeaderWrap').classList.toggle('hidden', r.mode!=='tabular');
+  $('ipHeader').checked=!!r.header;
+  $('ipCountsWrap').classList.toggle('hidden', !r.countsStripped && !importOpts.keepCounts);
+  $('ipCounts').checked=!!importOpts.keepCounts;
+  // column roles, tabular only
+  const map=$('ipMapping'); map.innerHTML='';
+  if(r.mode==='tabular' && r.columns>=2 && r.mapping){
+    const roles=[['term','Term'],['gloss','Gloss'],['section','Section'],['note','Note'],['ignore','Ignore']];
+    r.mapping.forEach((role,i)=>{
+      const lab=document.createElement('label'); lab.className='ipCol';
+      lab.appendChild(document.createTextNode('Column '+(i+1)+' '));
+      const sel=document.createElement('select'); sel.className='sel'; sel.dataset.col=i;
+      roles.forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; if(v===role) o.selected=true; sel.appendChild(o); });
+      lab.appendChild(sel); map.appendChild(lab);
+    });
+  }
+  // the table itself -- capped for the DOM's sake; the count line above is the truth
+  const SHOW=400;
+  const rows=r.rows.slice(0,SHOW);
+  let html='<thead><tr><th>#</th><th>Term</th><th>Gloss</th><th>Section</th><th>Note</th></tr></thead><tbody>';
+  rows.forEach((x,i)=>{
+    html+='<tr'+(x.flags.length?' class="flag"':'')+'><td class="n">'+(i+1)+'</td><td>'+escHtml(x.term)+'</td><td>'+escHtml(x.gloss)+'</td><td>'+escHtml(x.section)+'</td><td>'+escHtml(x.note)
+         +(x.flags.length?'<span class="ipFlag">'+escHtml(x.flags.map(importFlagLabel).join(', '))+'</span>':'')+'</td></tr>';
+  });
+  if(r.rows.length>SHOW) html+='<tr><td colspan="5" class="more">… and '+(r.rows.length-SHOW)+' more</td></tr>';
+  if(!r.rows.length) html+='<tr><td colspan="5" class="more">'+(r.mode==='none'?'Try a separator from the list above, or check the skipped lines below.':'Nothing usable — check the skipped lines below.')+'</td></tr>';
+  html+='</tbody>';
+  $('ipTable').innerHTML=html;
+  // skipped lines
+  $('ipSkippedFold').classList.toggle('hidden', !r.skipped.length);
+  $('ipSkippedSummary').textContent=r.skipped.length+' skipped line'+(r.skipped.length===1?'':'s');
+  $('ipSkipped').textContent=r.skipped.slice(0,300).map(s=>'line '+s.line+' — '+s.reason+'\n    '+s.text).join('\n')+(r.skipped.length>300?'\n… and '+(r.skipped.length-300)+' more':'');
+  // buttons
+  $('ipAcceptAll').disabled=!r.rows.length;
+  $('ipAcceptAll').textContent=triageTarget==='append'?'Add all '+r.rows.length+' to '+DECK_TITLE:'Accept all '+r.rows.length;
+  $('ipReviewFlagged').disabled=!flagged;
+  $('ipReviewFlagged').textContent='Review the flagged'+(flagged?' ('+flagged+')':'');
+  $('ipTriageAll').disabled=!r.rows.length;
+  $('ipModel').classList.toggle('hidden', !(r.mode==='none' && loadExtractKey()));
+  $('ipDeckImport').classList.add('hidden');
+  $('ipControls').classList.remove('hidden');
+}
+// The deck-file variant of the same screen: read-only rows, one way out.
+function startDeckFilePreview(df){
+  importDeckFile=df; importSource=''; importResult=null;
+  $('extractSetup').classList.add('hidden');
+  $('triageArea').classList.add('hidden'); $('triageDone').classList.add('hidden');
+  $('importPreview').classList.remove('hidden');
+  $('ipSummary').textContent='Deck file: “'+df.title+'” · '+df.content.DATA.length+' word'+(df.content.DATA.length===1?'':'s')+' · '+(df.kind==='wordlist'?'word list':df.kind==='formula'?'formula sheet':'language deck');
+  $('ipControls').classList.add('hidden'); $('ipMapping').innerHTML='';
+  let html='<thead><tr><th>#</th><th>Term</th><th>Gloss</th><th>Section</th></tr></thead><tbody>';
+  df.content.DATA.slice(0,400).forEach((r,i)=>{ html+='<tr><td class="n">'+(i+1)+'</td><td>'+escHtml(r[0])+'</td><td>'+escHtml(r[1])+'</td><td>'+escHtml(r[2])+'</td></tr>'; });
+  if(df.content.DATA.length>400) html+='<tr><td colspan="4" class="more">… and '+(df.content.DATA.length-400)+' more</td></tr>';
+  $('ipTable').innerHTML=html+'</tbody>';
+  $('ipSkippedFold').classList.add('hidden');
+  ['ipAcceptAll','ipReviewFlagged','ipTriageAll'].forEach(id=>$(id).classList.add('hidden'));
+  $('ipModel').classList.add('hidden');
+  const already=userDeckExists(df.id);
+  $('ipDeckImport').classList.remove('hidden');
+  $('ipDeckImport').disabled=already;
+  $('ipDeckImport').textContent=already?'Already on this device':'Import this deck';
+  $('ipError').textContent=already?'A deck with this id is already on this device — open it from the launcher.':'';
+}
+function userDeckExists(id){
+  try{ const v=JSON.parse(localStorage.getItem(USER_DECKS_KEY)); return Array.isArray(v)&&v.some(d=>d&&d.id===id); }catch(e){ return false; }
+}
+function leaveImportPreview(){
+  $('importPreview').classList.add('hidden');
+  ['ipAcceptAll','ipReviewFlagged','ipTriageAll'].forEach(id=>$(id).classList.remove('hidden'));
+  $('ipError').textContent='';
+  $('extractSetup').classList.remove('hidden');
+}
+// The three ways out of the preview. Accept-all skips triage entirely for
+// what the parser found (IMPORT_PLAN.md I2 -- a parser fails by class, not
+// by row; the flagged rows are the class); Review-the-flagged pre-keeps the
+// clean rows and triages only the flagged; Triage-everything is the old
+// one-at-a-time pass for a source that isn't trusted.
+function importAcceptAll(){
+  if(!importResult||!importResult.rows.length) return;
+  finishTriageWith(importResult.rows.map(x=>({term:x.term,gloss:x.gloss,section:x.section,note:x.note})));
+}
+function importReviewFlagged(){
+  if(!importResult) return;
+  const clean=[], flagged=[];
+  importResult.rows.forEach(x=>{ (x.flags.length?flagged:clean).push({term:x.term,gloss:x.gloss,section:x.section,note:x.note}); });
+  if(!flagged.length){ importAcceptAll(); return; }
+  $('importPreview').classList.add('hidden');
+  startTriage(triageTitle, triageScript, flagged, clean);
+}
+function importTriageAll(){
+  if(!importResult||!importResult.rows.length) return;
+  $('importPreview').classList.add('hidden');
+  startTriage(triageTitle, triageScript, importResult.rows.map(x=>({term:x.term,gloss:x.gloss,section:x.section,note:x.note})));
+}
+// Everything decided, nothing written yet: land on the same done screen a
+// completed triage pass lands on, so Create/Add/Discard is one place.
+function finishTriageWith(kept){
+  triageCandidates=[]; triagePos=0; triageKept=kept; triageBinned=0;
+  $('importPreview').classList.add('hidden');
+  renderTriageCard();
+}
+
+// Shared tail end of every entry point (hand-pasted JSON, the preview's
+// triage buttons, the real extraction call) -- everything up to here differs
+// (where the candidates came from, what can go wrong getting them),
+// everything from here on is identical: seed the triage state and show the
+// first card. preKept: rows already accepted without triage (the preview's
+// "Review the flagged"), counted in the running total from the start.
+function startTriage(title,script,candidates,preKept){
   triageTitle=title; triageScript=script; triageCandidates=candidates;
-  triagePos=0; triageKept=[]; triageBinned=0;
+  triagePos=0; triageKept=preKept?preKept.slice():[]; triageBinned=0;
   $('extractSetup').classList.add('hidden');
   renderTriageCard();
 }
 function beginTriage(){
-  const title=$('exTitle').value.trim();
-  if(!title){ $('exSetupError').textContent='Give the deck a title first.'; return; }
+  readTargetChoice();
+  if(triageTarget==='new'&&!triageTitle){ $('exSetupError').textContent='Give the deck a title first.'; return; }
   const r=parseCandidates($('exPaste').value);
   if(r.error){ $('exSetupError').textContent=r.error; return; }
   if(!r.candidates.length){ $('exSetupError').textContent='No candidates to triage.'; return; }
   $('exSetupError').textContent='';
-  startTriage(title, ($('exScript').value==='greek')?'greek':'latin', r.candidates);
+  startTriage(triageTitle, triageScript, r.candidates);
 }
 // The real extraction call (4a paste-text, 4b a URL instead) -- POSTs to
 // the Worker's /extract route (schema-constrained server-side, see
@@ -5572,10 +6181,12 @@ function beginTriage(){
 // from this page directly -- CORS blocks a static page from fetching an
 // arbitrary third-party origin itself) and feeds the result into the exact
 // same triage machinery beginTriage() above uses, so nothing downstream of
-// this needs to know or care which path a candidate list came from.
+// this needs to know or care which path a candidate list came from. Since
+// the import work this is the LAST tier, reached by choice (IMPORT_PLAN.md
+// I1): the local parser is the front door and needs no key at all.
 async function extractCandidates(){
-  const title=$('exTitle').value.trim();
-  if(!title){ $('exExtractError').textContent='Give the deck a title first.'; return; }
+  readTargetChoice();
+  if(triageTarget==='new'&&!triageTitle){ $('exExtractError').textContent='Give the deck a title first.'; return; }
   const text=$('exText').value.trim(), url=$('exUrl').value.trim();
   if(text&&url){ $('exExtractError').textContent='Paste text OR a URL, not both.'; return; }
   if(!text&&!url){ $('exExtractError').textContent='Paste some text or a URL first.'; return; }
@@ -5593,7 +6204,8 @@ async function extractCandidates(){
     const j=await r.json();
     if(!j||!Array.isArray(j.candidates)){ $('exExtractError').textContent='The extraction service returned something unusable.'; return; }
     if(!j.candidates.length){ $('exExtractError').textContent='No vocabulary found there.'; return; }
-    startTriage(title, ($('exScript').value==='greek')?'greek':'latin', j.candidates);
+    $('importPreview').classList.add('hidden');
+    startTriage(triageTitle, triageScript, j.candidates);
   }catch(e){
     $('exExtractError').textContent='Could not reach the extraction service -- check the connection and try again.';
   }finally{
@@ -5606,7 +6218,10 @@ function renderTriageCard(){
     $('triageDone').classList.remove('hidden');
     $('triageDoneBig').textContent=triageKept.length+' word'+(triageKept.length===1?'':'s')+' kept';
     $('triageDoneSmall').textContent=triageBinned+' binned. Nothing has been added anywhere yet — '+
-      'Create makes "'+triageTitle+'" a real deck; Discard throws this whole session away.';
+      (triageTarget==='append'
+        ? 'Add puts them into '+DECK_TITLE+'; Discard throws this whole session away.'
+        : 'Create makes "'+triageTitle+'" a real deck; Discard throws this whole session away.');
+    $('trCommit').textContent=triageTarget==='append'?'Add to '+DECK_TITLE:'Create the deck';
     $('trCommit').disabled=!triageKept.length;
     return;
   }
@@ -5614,7 +6229,7 @@ function renderTriageCard(){
   $('triageDone').classList.add('hidden');
   $('triageCount').textContent=(triagePos+1)+' of '+triageCandidates.length+' · '+triageKept.length+' kept · '+triageBinned+' binned';
   const c=triageCandidates[triagePos];
-  $('trTerm').value=c.term; $('trGloss').value=c.gloss; $('trSection').value=c.section||triageTitle; $('trNote').value=c.note||'';
+  $('trTerm').value=c.term; $('trGloss').value=c.gloss; $('trSection').value=c.section||(triageTarget==='append'?'Added words':triageTitle); $('trNote').value=c.note||'';
 }
 // kind: 'keep' commits whatever the fields currently hold (editing IS just
 // typing into them -- there is no separate edit mode), 'bin' discards the
@@ -5627,16 +6242,45 @@ function triageDecide(kind){
   if(kind==='keep'){
     const term=$('trTerm').value.trim(), gloss=$('trGloss').value.trim();
     if(!term||!gloss){ toast('Term and gloss can’t be empty',1800); return; }
-    triageKept.push({term:term.slice(0,200), gloss:gloss.slice(0,200),
-                       section:($('trSection').value.trim()||triageTitle).slice(0,60),
-                       note:$('trNote').value.trim().slice(0,200)});
+    triageKept.push({term:term.slice(0,CAP_TERM), gloss:gloss.slice(0,CAP_GLOSS),
+                       section:($('trSection').value.trim()||(triageTarget==='append'?'Added words':triageTitle)).slice(0,CAP_SECTION),
+                       note:$('trNote').value.trim().slice(0,CAP_NOTE)});
   } else triageBinned++;
   triagePos++;
   renderTriageCard();
 }
 function discardTriage(){
   triageTitle=null; triageCandidates=[]; triagePos=0; triageKept=[]; triageBinned=0;
+  importSource=''; importResult=null; importDeckFile=null;
   flushPendingPush(); renderHome(); show('scHome');
+}
+// Notes typed during triage for a NEW deck have nowhere to live yet: S is
+// this deck's state, and the new deck's own S only exists once it boots.
+// They're parked in localStorage under the new deck's id and applied by
+// bootDeck() on that deck's first launch (applyPendingNotes), then removed.
+// Before this, a note kept in triage for a new deck was silently dropped at
+// Create -- collected in triageKept, never written anywhere.
+const PENDING_NOTES_PREFIX='vocabula.pendingNotes.';
+function parkPendingNotes(deckId, pairs){
+  const notes={};
+  pairs.forEach(p=>{ if(p.note) notes[p.id]=p.note; });
+  if(!Object.keys(notes).length) return;
+  try{ localStorage.setItem(PENDING_NOTES_PREFIX+deckId, JSON.stringify(notes)); }catch(e){}
+}
+function applyPendingNotes(){
+  let raw=null;
+  try{ raw=localStorage.getItem(PENDING_NOTES_PREFIX+DECK_ID); }catch(e){ return 0; }
+  if(!raw) return 0;
+  let n=0;
+  try{
+    const notes=JSON.parse(raw);
+    if(notes&&typeof notes==='object') for(const rid in notes){
+      const v=notes[rid];
+      if(typeof v==='string'&&v.trim()&&BY_ID['L'+rid]){ cardState('L'+rid).note=v.trim().slice(0,CAP_NOTE); n++; }
+    }
+  }catch(e){}
+  try{ localStorage.removeItem(PENDING_NOTES_PREFIX+DECK_ID); }catch(e){}
+  return n;
 }
 // Mints a new deck id ('d'+base36 -- its own namespace, disjoint from card
 // ids' 'u' prefix and from decks/registry.js's short static ids), writes
@@ -5650,16 +6294,31 @@ function discardTriage(){
 // the same way a word added to an existing deck is.
 async function commitTriage(){
   if(!triageKept.length) return;
+  if(triageTarget==='append'){ commitAppend(); return; }
   const deckId='d'+Math.random().toString(36).slice(2,11);
   const key='vocabula.custom.'+deckId+'.v1';
-  const rows=triageKept.map(c=>[c.term,c.gloss,c.section||triageTitle,0,mintRowId()]);
+  const pairs=triageKept.map(c=>({row:[c.term,c.gloss,c.section||triageTitle,0,mintRowId()], note:c.note||''}));
+  const rows=pairs.map(p=>p.row);
+  const labels=deckLabelsFor(triageKind, triageTitle);
   const content={
     DATA:rows,
     CHANGES:[['created',['Created '+new Date().toLocaleDateString()+' from '+rows.length+' triaged word'+(rows.length===1?'':'s')+'.']]],
-    DECK:{script:triageScript, fwd:triageTitle+' → English', rev:'English → '+triageTitle,
+    DECK:{script:triageScript, fwd:labels.fwd, rev:labels.rev,
           mottos:[['Little by little, a little becomes a lot.','—Tanzanian proverb']]},
     KEY:key, DECK_TITLE:triageTitle
   };
+  const row={id:deckId, key, title:triageTitle, script:triageScript, kind:triageKind, words:rows.length,
+              blurb:rows.length+' word'+(rows.length===1?'':'s')+', created '+new Date().toLocaleDateString(),
+              archived:false, source:'idb'};
+  const ok=await writeUserDeck(deckId, content, row);
+  if(!ok){ toast('Could not create the deck — try again',2200); return; }
+  parkPendingNotes(deckId, pairs.map(p=>({id:p.row[4], note:p.note})));
+  location.href='deck.html?deck='+deckId;
+}
+// The one place a device-created deck's two records get written -- the
+// content record (IndexedDB) and the registry row (localStorage) -- shared
+// by triage/import and by a deck-file import, so the two can't drift.
+async function writeUserDeck(deckId, content, row){
   try{
     const db=await openIDB();
     if(!db) throw new Error('IndexedDB unavailable');
@@ -5668,19 +6327,69 @@ async function commitTriage(){
       tx.objectStore('content').put(content, deckId);
       tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);
     });
-    const row={id:deckId, key, title:triageTitle, script:triageScript, words:rows.length,
-                blurb:rows.length+' word'+(rows.length===1?'':'s')+', created '+new Date().toLocaleDateString(),
-                archived:false, source:'idb'};
     let list=[];
     try{ const v=JSON.parse(localStorage.getItem(USER_DECKS_KEY)); if(Array.isArray(v)) list=v; }catch(e){}
+    list=list.filter(d=>!(d&&d.id===deckId));
     list.push(row);
     localStorage.setItem(USER_DECKS_KEY, JSON.stringify(list));
+    return true;
   }catch(e){
     console.error(e);
-    toast('Could not create the deck — try again',2200);
-    return;
+    return false;
   }
-  location.href='deck.html?deck='+deckId;
+}
+// Append into the OPEN deck (IMPORT_PLAN.md I7): the Phase 3 §C path, one
+// customRows push per kept row, notes onto the new cards' own state, one
+// rebuild, one save. Same as adding each word by hand from Browse, in bulk.
+function commitAppend(){
+  if(!triageKept.length) return;
+  const added=[];
+  triageKept.forEach(c=>{
+    const rid=mintRowId();
+    S.customRows.push([c.term.slice(0,CAP_TERM), c.gloss.slice(0,CAP_GLOSS), (c.section||'Added words').slice(0,CAP_SECTION), 0, rid]);
+    added.push({rid, note:c.note||''});
+  });
+  rebuildCards();
+  added.forEach(a=>{ if(a.note) cardState('L'+a.rid).note=a.note.slice(0,CAP_NOTE); });
+  save();
+  const n=added.length;
+  triageTitle=null; triageCandidates=[]; triagePos=0; triageKept=[]; triageBinned=0;
+  importSource=''; importResult=null;
+  toast(n+' word'+(n===1?'':'s')+' added to '+DECK_TITLE, 2000);
+  renderHome(); show('scHome');
+}
+// A deck file coming back in (Settings -> Export deck file, on the other
+// device): same two records, same ids, no re-triage. Refuses if the id is
+// already here -- there is no deck delete (D3: archive, not delete), so
+// "replace" would need its own design; open the existing one instead.
+async function importDeckFileCommit(){
+  const df=importDeckFile;
+  if(!df) return;
+  if(userDeckExists(df.id)){ $('ipError').textContent='That deck is already on this device.'; return; }
+  const row={id:df.id, key:df.key, title:df.title, script:df.script, kind:df.kind, words:df.content.DATA.length,
+              blurb:df.content.DATA.length+' word'+(df.content.DATA.length===1?'':'s')+', imported '+new Date().toLocaleDateString(),
+              archived:false, source:'idb'};
+  const ok=await writeUserDeck(df.id, df.content, row);
+  if(!ok){ toast('Could not import the deck — try again',2200); return; }
+  location.href='deck.html?deck='+df.id;
+}
+// Settings -> "Export deck file": the pristine content record (BASE_CONTENT
+// -- never DATA, which has this device's customRows unioned in; those ride
+// the state backup) plus the registry row. Only offered for a deck that
+// lives on this device (source:'idb'); Latin/Greek are files already.
+function exportDeckFile(){
+  const entry=window.DECK_ENTRY;
+  if(!entry||entry.source!=='idb'||!BASE_CONTENT){ toast('Only a deck created on this device can be exported this way',2200); return; }
+  const out={format:'vocabula-deck', version:1, exported:new Date().toISOString(),
+             deck:{id:entry.id, key:entry.key, title:entry.title, script:entry.script, kind:entry.kind||'language'},
+             content:{DATA:BASE_DATA, CHANGES:BASE_CONTENT.CHANGES, DECK:BASE_CONTENT.DECK, KEY:BASE_CONTENT.KEY, DECK_TITLE:BASE_CONTENT.DECK_TITLE}};
+  const blob=new Blob([JSON.stringify(out)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='vocabula-deck-'+entry.id+'-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('Deck file saved',1600);
 }
 
 /* ---- manual confusable-group modal (createConfuseGroup/addToConfuseGroup/
@@ -6719,6 +7428,9 @@ function renderSet(){
   $('fDevice').value=s.deviceName||'';
   $('fSyncCode').value=loadSyncCode();
   $('fExtractKey').value=loadExtractKey();
+  // "Export deck file" only means anything for a deck that lives on this
+  // device (source:'idb'); Latin/Greek are files already.
+  $('expDeckBtn').classList.toggle('hidden', !(window.DECK_ENTRY&&window.DECK_ENTRY.source==='idb'));
   { const n=$('syncNote'); if(n){
       const code=loadSyncCode();
       n.textContent=!code ? 'Sync is off on this device.'
@@ -6834,6 +7546,55 @@ tapZone($('extractBack'),()=>{
 });
 tapZone($('exBegin'),beginTriage);
 tapZone($('exExtractBtn'),extractCandidates);
+// The no-key import path (IMPORT_PLAN.md): the local parser, its preview,
+// the file picker, and the deck-file export.
+tapZone($('exParseBtn'),findWords);
+$('exTarget').addEventListener('change',syncTargetFields);
+tapZone($('exFileBtn'),()=>$('exFile').click());
+$('exFile').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0];
+  if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ $('exText').value=String(rd.result||''); $('exParseError').textContent=''; findWords(); };
+  rd.onerror=()=>{ $('exParseError').textContent='Could not read that file.'; };
+  rd.readAsText(f);
+  e.target.value='';
+});
+// A range copied from Google Sheets / a web page arrives as an HTML <table>
+// alongside plain text; Excel and Numbers already put tab-separated text
+// in text/plain. Prefer the plain text whenever it has tabs; otherwise turn
+// the table into tab-separated lines so the same tab rule reads it.
+$('exText').addEventListener('paste',e=>{
+  const cd=e.clipboardData; if(!cd) return;
+  const plain=cd.getData('text/plain')||'', html=cd.getData('text/html')||'';
+  if(!html||/\t/.test(plain)||!/<table/i.test(html)) return;
+  try{
+    const doc=new DOMParser().parseFromString(html,'text/html');
+    const rows=Array.from(doc.querySelectorAll('tr')).map(tr=>Array.from(tr.querySelectorAll('td,th')).map(td=>td.textContent||''));
+    const tsv=importRowsToTsv(rows);
+    if(!tsv||rows.length<2) return;
+    e.preventDefault();
+    const ta=e.target, s=ta.selectionStart||0, en=ta.selectionEnd||0;
+    ta.value=ta.value.slice(0,s)+tsv+ta.value.slice(en);
+  }catch(err){ /* fall back to the browser's own plain-text paste */ }
+});
+tapZone($('ipBack'),leaveImportPreview);
+tapZone($('ipAcceptAll'),importAcceptAll);
+tapZone($('ipReviewFlagged'),importReviewFlagged);
+tapZone($('ipTriageAll'),importTriageAll);
+tapZone($('ipDeckImport'),importDeckFileCommit);
+$('ipSep').addEventListener('change',e=>{ importOpts.sep=e.target.value; importOpts.mapping=null; renderImportPreview(); });
+tapZone($('ipSwap'),()=>{ importOpts.swap=!importOpts.swap; renderImportPreview(); });
+$('ipHeader').addEventListener('change',e=>{ importOpts.header=!!e.target.checked; importOpts.mapping=null; renderImportPreview(); });
+$('ipCounts').addEventListener('change',e=>{ importOpts.keepCounts=!!e.target.checked; renderImportPreview(); });
+$('ipMapping').addEventListener('change',e=>{
+  const sel=e.target; if(!sel||sel.dataset.col==null||!importResult||!importResult.mapping) return;
+  const m=importResult.mapping.slice(); const col=+sel.dataset.col, role=sel.value;
+  // one column per role, except Ignore -- giving this column a role takes it off whichever column had it
+  if(role!=='ignore') m.forEach((r,i)=>{ if(i!==col&&r===role) m[i]='ignore'; });
+  m[col]=role; importOpts.mapping=m; renderImportPreview();
+});
+tapZone($('expDeckBtn'),exportDeckFile);
 tapZone($('trBin'),()=>triageDecide('bin'));
 tapZone($('trKeep'),()=>triageDecide('keep'));
 tapZone($('trCommit'),commitTriage);
@@ -6966,7 +7727,7 @@ $('drillListView').addEventListener('click',e=>{
 $('wordNoteOverlay').addEventListener('click',e=>{
   if(e.target.id==='wnSave'){
     const v=$('wnInput').value.trim(), cs=cardState(noteEditId);
-    cs.note = v ? v.slice(0,200) : null;
+    cs.note = v ? v.slice(0,CAP_NOTE) : null;
     save(); toast(v?'Note saved':'Note cleared',1400);
     openWordNote(noteEditId);   // re-render in place, same pattern ddSave uses -- Save keeps the panel open
   } else if(e.target.id==='wnClose' || e.target.id==='wordNoteOverlay'){
@@ -6978,7 +7739,7 @@ $('cardInspectorOverlay').addEventListener('click',e=>{
   if(!inspectId) return;
   if(e.target.id==='ciSaveNote'){
     const v=$('ciNote').value.trim();
-    cardState(inspectId).note = v ? v.slice(0,200) : null;
+    cardState(inspectId).note = v ? v.slice(0,CAP_NOTE) : null;
     save(); toast('Note saved',1400); renderCardInspector();
     return;
   }
@@ -7017,9 +7778,9 @@ $('addWordOverlay').addEventListener('click',e=>{
           sec=$('awSection').value.trim()||'Added words', note=$('awNote').value.trim();
     if(!term||!gloss){ toast('Term and gloss are both required',1800); return; }
     const rid=mintRowId();
-    S.customRows.push([term.slice(0,200),gloss.slice(0,200),sec.slice(0,60),0,rid]);
+    S.customRows.push([term.slice(0,CAP_TERM),gloss.slice(0,CAP_GLOSS),sec.slice(0,CAP_SECTION),0,rid]);
     rebuildCards();
-    if(note) cardState('L'+rid).note=note.slice(0,200);
+    if(note) cardState('L'+rid).note=note.slice(0,CAP_NOTE);
     save();
     toast('Added',1400);
     closeAddWord();
@@ -7631,6 +8392,10 @@ function bootFail(err){
       // re-adopts it via the same orphans path a stale reference always
       // used. Must run before anything below that reads CARDS/BY_ID.
       rebuildCards(); S=normalise(S);
+      // Notes kept in triage when THIS deck was created on this device were
+      // parked under its id (parkPendingNotes) -- its own S didn't exist yet.
+      // First boot picks them up; the persistNow() just below writes them.
+      applyPendingNotes();
       applyTheme(); applyLayout(); renderHome(); show('scHome');
       // Phase 2 (PHASE2_PLAN.md §2.3): refresh the summary record once at boot
       // even if nothing gets rated this sitting, so the launcher isn't showing
