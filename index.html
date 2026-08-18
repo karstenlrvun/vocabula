@@ -211,6 +211,8 @@ a.card .d{color:var(--muted);font-size:13.5px}
 const SYNC_SHARED_KEY='vocabula.sync.v1';
 const LEGACY_GIST_SHARED_KEY='vocabula.gist.v1';
 const SYNC_ENDPOINT='https://vocabula-sync.karsten-vun.workers.dev';
+const SYNC_MAX_BYTES=20*1024*1024;   // mirrors deck.html's own cap -- matches the Worker's, KV values top out at 25 MiB
+const SYNC_KEEPALIVE_MAX=60*1024;    // mirrors deck.html's own -- a keepalive fetch over ~64KiB is a spec-level network error, not just a dropped flag
 const $=id=>document.getElementById(id);
 function loadShared(){
   let cur={};
@@ -299,6 +301,19 @@ function replaceMessage(){
     'each deck looks at what the new code holds before it pushes anything.\n'+
     'Cancel = keep the code this device already has.';
 }
+// Distinct from replaceMessage() above, and used only by btnNewCode(): that
+// button now pushes both decks' local copies immediately (see
+// pushDeckFromLauncher()), unlike typing an existing code into the field
+// above, which still only ever defers to each deck's own reconcile-first
+// check on its next load. Sharing one message between the two would either
+// overclaim what typing a code in does, or underclaim what generating one now
+// does -- worth the extra function to keep both honest.
+function replaceAndPushMessage(){
+  return 'This device already has a sync code set up.\n\n'+
+    'OK = replace it with a new one and push what’s on this device up to it right now. '+
+    'This device will stop syncing with anything still on the old code.\n'+
+    'Cancel = keep the code this device already has.';
+}
 $('fSyncCode').addEventListener('change',e=>{
   const raw=e.target.value, cur=loadShared().syncCode;
   if(!raw.trim()){
@@ -315,12 +330,56 @@ $('fSyncCode').addEventListener('change',e=>{
   pairStatus('Code saved — open a deck and it will pick up whatever this code holds.');
   renderAll(); checkSync(true);
 });
-$('btnNewCode').addEventListener('click',()=>{
+// Pushes both decks' current local copies up under the fresh code, rather
+// than just minting it and hoping the owner remembers to open a deck
+// afterward -- see pushDeckFromLauncher()'s own comment for why that hope was
+// exactly the gap. The field and both buttons stay disabled for the round
+// trip: the old version showed a green "✓ saved" tag and a plain, calmly-
+// sitting code the instant it was minted, which read as "done" well before
+// anything had reached the server -- copy it and switch devices in that gap
+// and the other end found nothing under the code at all, not a stale copy
+// (FINALISATION_PLAN.md §5.2). Disabling the controls can't stop a tab close,
+// but it does make "not done yet" impossible to miss, and makes copying the
+// code out mid-push a deliberate act rather than the easy default.
+let newCodeBusy=false;
+$('btnNewCode').addEventListener('click',async()=>{
+  if(newCodeBusy) return;
   const cur=loadShared().syncCode;
-  if(cur&&!confirm(replaceMessage())){ pairStatus('Left as it was.'); return; }
+  if(cur&&!confirm(replaceAndPushMessage())){ pairStatus('Left as it was.'); return; }
   const code=randomSyncCode();
-  saveShared({syncCode:code}); $('fSyncCode').value=code; flash('savedCode');
-  pairStatus('New code — open a deck on this device to push its copy up, then type the same code into the other device.');
+  saveShared({syncCode:code}); $('fSyncCode').value=code;
+  newCodeBusy=true;
+  const btnNew=$('btnNewCode'), btnCopy=$('btnCopyCode'), field=$('fSyncCode');
+  btnNew.disabled=true; btnCopy.disabled=true; field.disabled=true;
+  btnNew.textContent='Saving…';
+  pairStatus('Saving to the sync server — don’t switch devices yet…');
+  try{
+    if(!dbPromise) dbPromise=openDeckDb();
+    const db=await dbPromise;
+    const deviceName=loadShared().deviceName||'';
+    const results=await Promise.allSettled(DECKS.map(d=>pushDeckFromLauncher(db,code,d,deviceName)));
+    const outcomes=results.map((r,i)=>r.status==='fulfilled'?r.value:{id:DECKS[i].id,ok:false,error:(r.reason&&r.reason.message)||String(r.reason)});
+    const pushed=outcomes.filter(o=>o.ok);
+    const failed=outcomes.filter(o=>o.ok===false&&!o.skipped);
+    const skipped=outcomes.filter(o=>o.skipped);
+    if(failed.length){
+      pairStatus('Pushed '+pushed.length+' of '+(outcomes.length-skipped.length)+' — '+
+        failed.map(o=>o.id+' failed ('+o.error+')').join('; ')+
+        '. Try again before switching devices.',true);
+    } else if(!pushed.length){
+      pairStatus('No deck has been opened on this device yet, so there was nothing local to push. '+
+        'Open Latin or Greek here first — it will push its own copy up on its own.');
+    } else {
+      flash('savedCode');
+      pairStatus('New code saved and pushed'+(skipped.length?' ('+skipped.map(o=>o.id).join(', ')+' skipped — never opened here)':'')+
+        ' — safe to type into the other device now.');
+    }
+    await renderAll();
+  } finally {
+    newCodeBusy=false;
+    btnNew.disabled=false; btnCopy.disabled=false; field.disabled=false;
+    btnNew.textContent='Get a code for this device';
+  }
 });
 $('btnCopyCode').addEventListener('click', async ()=>{
   const code=loadShared().syncCode;
@@ -731,7 +790,11 @@ async function syncKeys(code,deckKey){
   const kv=await crypto.subtle.digest('SHA-256',enc.encode(mat.kvInput));
   const ek=await crypto.subtle.digest('SHA-256',enc.encode(mat.encInput));
   const kvKey=Array.from(new Uint8Array(kv)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  const cryptoKey=await crypto.subtle.importKey('raw',ek,'AES-GCM',false,['decrypt']);
+  // ['encrypt','decrypt'], not just 'decrypt': this page used to only ever
+  // fetch (checkSync/fetchDeck), but pushDeckFromLauncher() below now needs
+  // to encrypt too -- same derivation either way, just a wider usage list on
+  // the derived key.
+  const cryptoKey=await crypto.subtle.importKey('raw',ek,'AES-GCM',false,['encrypt','decrypt']);
   return {kvKey,cryptoKey};
 }
 function unb64(s){ return Uint8Array.from(atob(s),c=>c.charCodeAt(0)); }
@@ -745,6 +808,118 @@ async function decryptPayload(pkt,cryptoKey){
   let buf=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(pkt.iv)},cryptoKey,unb64(pkt.data)));
   if(pkt.z) buf=await gunzipBytes(buf);
   return JSON.parse(new TextDecoder().decode(buf));
+}
+// ---------- the write path, added so btnNewCode() (above) can push both
+// decks' current copies up itself instead of just minting a code and hoping
+// the owner remembers to open a deck afterward -- see pushDeckFromLauncher()'s
+// own comment for why that hope was exactly the gap (FINALISATION_PLAN.md
+// §5.2). b64/gzipBytes/encryptPayload mirror deck.html's own byte-for-byte
+// (same packet shape: {v,iv,data,z}) -- the read-side twins (unb64/
+// gunzipBytes/decryptPayload) already live just above, for fetchDeck().
+function b64(buf){
+  const u=new Uint8Array(buf); let s='';
+  for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));
+  return btoa(s);
+}
+async function gzipBytes(bytes){
+  if(typeof CompressionStream==='undefined') return null;
+  const cs=new CompressionStream('gzip');
+  const w=cs.writable.getWriter(); w.write(bytes); w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function encryptPayload(obj,cryptoKey){
+  let plain=new TextEncoder().encode(JSON.stringify(obj)), z=0;
+  const gz=await gzipBytes(plain);
+  if(gz&&gz.length<plain.length){ plain=gz; z=1; }
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const data=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},cryptoKey,plain);
+  return {v:1, iv:b64(iv), data:b64(data), z:z};
+}
+// What leaves this device -- same choke point as deck.html's own sanitised(),
+// kept for the same reason: the sync code and any secret never live inside a
+// deck's own state to begin with, this only guards the case where one
+// somehow ends up in .settings anyway.
+function sanitisedForPush(full){
+  const st=Object.assign({},full.settings);
+  delete st.gistTok; delete st.gistId; delete st.syncCode;
+  return Object.assign({},full,{settings:st});
+}
+// The `state` store never carries the log (localData()'s own comment above
+// explains why) -- a real push needs it, so this reads the log store too and
+// stitches the two back into one state-shaped object, exactly what deck.html's
+// own readStructured() does for the same two stores. The legacy fallbacks (the
+// `kv` blob, pre-cutover localStorage) already carry their log inline -- see
+// localData() -- so only the primary, post-cutover branch needs the extra read.
+function idbGetLog(db,key){
+  return new Promise(res=>{
+    try{
+      if(!db.objectStoreNames.contains('log')) return res([]);
+      const rq=db.transaction('log','readonly').objectStore('log')
+        .getAll(IDBKeyRange.bound([key,0],[key,Infinity]));
+      rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>res([]);
+    }catch(e){ res([]); }
+  });
+}
+async function fullLocalData(db,key){
+  if(!db) return null;
+  const st=await idbGet(db,'state',key);
+  if(st){ const core=Object.assign({},st); core.log=await idbGetLog(db,key); return core; }
+  const kv=await idbGet(db,'kv',key);
+  let ls=null; try{ ls=JSON.parse(localStorage.getItem(key)); }catch(e){}
+  if(kv&&ls) return ((kv.log&&kv.log.length)||0)>=((ls.log&&ls.log.length)||0)?kv:ls;
+  return kv||ls||null;
+}
+// Writes back only the sync-bookkeeping fields a successful push just made
+// true -- lastSync/syncedLogLen/lastDevice/lastPushBytes/lastPushError --
+// never anything a deck's own log/cards/settings hold. The one deliberate,
+// narrow exception to this page's "read-only, cannot alter either deck's
+// real state" rule (see the per-deck-card section's own comment further
+// up): without it, opening that deck here afterwards would show Settings'
+// "nothing synced yet" for a push that, in fact, just landed -- the same
+// ambiguity §5.2 already flags for deck.html's own screens, recreated in
+// miniature the moment sync can happen from this page too.
+function markDeckPushed(db,key,lastSync,logLen,deviceName,bytes){
+  return new Promise(res=>{
+    try{
+      const tx=db.transaction('state','readwrite'), store=tx.objectStore('state');
+      const rq=store.get(key);
+      rq.onsuccess=()=>{
+        const core=rq.result; if(!core){ res(false); return; }
+        core.lastSync=lastSync; core.syncedLogLen=logLen; core.lastDevice=deviceName;
+        core.lastPushBytes=bytes; core.lastPushError=null; core.lastPushErrorAt=null;
+        store.put(core,key);
+      };
+      tx.oncomplete=()=>res(true); tx.onerror=()=>res(false); tx.onabort=()=>res(false);
+    }catch(e){ res(false); }
+  });
+}
+// Pushes one deck's current local copy up under `code`. Returns
+// {id, ok, skipped?, bytes?, error?} -- skipped means this device has never
+// opened that deck at all (nothing local to push, not a failure); ok:false
+// with an error means a real push attempt failed. A fresh code is provably
+// empty (nobody else can be holding it yet -- randomSyncCode() is only ever
+// called here to mint a brand new one), so pushing straight away with no
+// fetch-first check is exactly as safe as newSyncCode() already relies on in
+// deck.html for the same reason.
+async function pushDeckFromLauncher(db,code,deckEntry,deviceName){
+  const id=deckEntry.id;
+  try{
+    const full=await fullLocalData(db,deckEntry.key);
+    if(!full) return {id,ok:false,skipped:true};
+    full.lastDevice=deviceName||'this device';
+    const {kvKey,cryptoKey}=await syncKeys(code,deckEntry.key);
+    const pkt=await encryptPayload(sanitisedForPush(full),cryptoKey);
+    const body=JSON.stringify(pkt);
+    if(body.length>SYNC_MAX_BYTES) throw new Error('too large');
+    const opts={method:'PUT',headers:{'Content-Type':'application/json'},body:body};
+    if(body.length<=SYNC_KEEPALIVE_MAX) opts.keepalive=true;
+    const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey,opts);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    await markDeckPushed(db,deckEntry.key,Date.now(),(full.log&&full.log.length)||0,full.lastDevice,body.length);
+    return {id,ok:true,bytes:body.length};
+  }catch(e){
+    return {id,ok:false,error:(e&&e.message)||String(e)};
+  }
 }
 async function fetchDeck(code,deckKey){
   const {kvKey,cryptoKey}=await syncKeys(code,deckKey);

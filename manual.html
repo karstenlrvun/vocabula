@@ -9,7 +9,7 @@
 :root{
   --bg:#fffdfb; --ink:#1b1a18; --muted:#6f6c66; --faint:#a5a29b;
   --line:#e7e3dc; --panel:#faf8f5; --coral:#c04d26;
-  --again:#a8372b; --good:#2b7049; --easy:#6a5cc0;
+  --again:#a8372b; --hard:#8a6410; --good:#2b7049; --easy:#6a5cc0;
   --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
 }
@@ -17,7 +17,7 @@
   :root{
     --bg:#0e1230; --ink:#e9ecf8; --muted:#a3abd0; --faint:#7780ab;
     --line:#2a3169; --panel:#181d47; --coral:#ff8a5c;
-    --again:#ff8175; --good:#5ecb92; --easy:#b0a4ff;
+    --again:#ff8175; --hard:#e8b860; --good:#5ecb92; --easy:#b0a4ff;
   }
 }
 *{box-sizing:border-box}
@@ -41,6 +41,7 @@ em{font-style:italic}
 .lead{font-size:17.5px}
 .key{display:inline-block; padding:1px 8px; border-radius:6px; font-weight:600; font-size:14.5px}
 .k-again{background:rgba(176,59,46,.11); color:var(--again)}
+.k-hard{background:rgba(154,115,24,.13); color:var(--hard)}
 .k-good{background:rgba(47,125,79,.12); color:var(--good)}
 .k-easy{background:rgba(122,107,207,.13); color:var(--easy)}
 table{width:100%; border-collapse:collapse; margin:6px 0 18px; font-size:15px}
@@ -68,7 +69,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <div class="toc">
 <ol>
   <li><a href="#idea">The one idea behind it</a></li>
-  <li><a href="#buttons">The three buttons</a></li>
+  <li><a href="#buttons">The buttons</a></li>
   <li><a href="#surprises">Two things that will surprise you</a></li>
   <li><a href="#when">When words come back</a></li>
   <li><a href="#front">The front screen</a></li>
@@ -76,6 +77,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <li><a href="#backup">Backing up — read this one</a></li>
   <li><a href="#settings">Every setting, one line each</a></li>
   <li><a href="#wrong">If something looks wrong</a></li>
+  <li><a href="#keys">Every key, one line each</a></li>
 </ol>
 </div>
 
@@ -84,7 +86,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <p>That's the whole system. Everything else is detail.</p>
 <p>The reason it spaces things out is that a word you review the moment before you'd have forgotten it sticks far better than one you review while it's still fresh. Reviewing something you already know solidly is close to wasted effort. So when the app tells you a word isn't due for two months, it isn't neglecting it — it's saying you don't need it yet, and it's usually right.</p>
 
-<h2 id="buttons">2. The three buttons</h2>
+<h2 id="buttons">2. The buttons</h2>
 <p>After you reveal the answer, you tell the app how it went.</p>
 <table>
   <tr><td><span class="key k-again">Again</span></td><td>You didn't know it, or you got it wrong.</td></tr>
@@ -93,10 +95,18 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 </table>
 <p>Each button shows the interval it will produce, so you can see the consequence before you commit to it.</p>
 
+<h3>The fourth button, on settled words</h3>
+<p>Once a word has graduated out of its short-term steps, a fourth button appears between Again and Good:</p>
+<table>
+  <tr><td><span class="key k-hard">Hard</span></td><td>You got it — but it was a real struggle to pull up.</td></tr>
+</table>
+<p>It means <em>correct, barely</em>. Not "I want to see this sooner", and not "I recognised it once I saw the answer" — that second one is Again. It sits between Again and Good and schedules accordingly: sooner than Good, much later than Again.</p>
+<p>It is deliberately absent while a word is still being learned. There, the difference between Hard and Good is a few minutes either way and not worth the decision; on a word due in three weeks it's the difference between three weeks and five, which is worth telling the app about.</p>
+
 <div class="box">
 <h3>The only way to break this</h3>
 <p>Press <strong>Easy</strong> on a word you actually half-guessed. Everything the app does rests on your grades being honest. If you're generous, it schedules words too far out, you forget them, and you'll conclude the app doesn't work. Being harsh on yourself costs you a few extra reviews. Being generous costs you the word.</p>
-<p>The rule for words with several meanings: count it as known only once you've produced every meaning listed. Missing even one is Again, not Good.</p>
+<p>The rule for words with several meanings, revised 2026-08-18: one sense, correctly, is enough. An extra sense inside the word's own range — a synonym, a finer shade of the same meaning — costs you nothing; it's never graded, up or down. If what came to mind actually belongs to a <em>different</em> word, that's a real mix-up, but the fix isn't a worse grade here: grade this card on its own meanings, then flag both words (§10) and group them from Browse — the app will start quizzing them side by side instead of letting them keep bleeding into each other.</p>
 </div>
 
 <h2 id="surprises">3. Two things that will surprise you</h2>
@@ -105,17 +115,13 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <p>Press <span class="key k-good">Good</span> on a word you're meeting for the first time and it comes back in ten minutes — not tomorrow. If nothing else is left to review, it may come back sooner rather than leave you with an empty screen. It keeps circling back until you press <span class="key k-easy">Easy</span>. So a day's batch of new words stays in front of you until you've genuinely got each one, which is what you asked for. The same applies to a word you've just failed.</p>
 <p>This only affects words being learned or relearned. A word that's settled into a normal rhythm behaves normally — Good moves it along.</p>
 
-<h3>Taking too long is recorded as a lower grade</h3>
-<p>The app times the gap between seeing the word and revealing the answer. It never shows a clock and never interrupts you.</p>
-<ul>
-  <li>Under ten seconds — your grade stands.</li>
-  <li>Ten to thirty seconds — Easy is recorded as Good.</li>
-  <li>Over thirty seconds — Easy is recorded as Good, and Good is recorded as a weaker pass.</li>
-</ul>
-<p>Nothing is ever recorded <em>higher</em> than what you pressed, and Again is never altered. When a grade does get adjusted, a brief message tells you. If you put the phone down mid-card, that card's timing is discarded rather than counted against you. You can switch the whole thing off in settings.</p>
+<h3>A slow Easy is recorded as Good</h3>
+<p>The app times the gap between seeing the word and revealing the answer. It never shows a clock and never interrupts you. There is one rule: <strong>take more than five seconds and an Easy is recorded as Good.</strong></p>
+<p>Nothing else is ever touched. Good stays Good however long you take, Hard stays Hard, and Again is never altered — nor is anything ever recorded <em>higher</em> than what you pressed. When a grade does get adjusted, a brief message tells you. If you put the phone down mid-card, that card's timing is discarded rather than counted against you. You can switch the whole thing off in settings.</p>
+<p>The reasoning: "that was effortless" is the one claim a clock can check and no button can. Whether a pass was a <em>struggle</em> is a different question, and on a settled word you now answer that yourself with <span class="key k-hard">Hard</span> (§2) — so the app stopped guessing at it.</p>
 
 <h3>The study-screen timer</h3>
-<p>The small running time under the new/learning/due counts is a different clock from the one above — a plain stopwatch of today's total time in the study screen, not a per-card measurement and not the thing the three thresholds above are read against. It starts at zero each time you walk into the study screen, keeps running while you're actually looking at it, and pauses the moment you leave — back to the front screen, into Settings, or the app going to the background. Stepping away for a few seconds and coming straight back (a call, a notification) doesn't reset it, only leaving the screen does. What it adds up to today, across however many separate sittings, is the figure the front screen shows next to <em>rated today</em>.</p>
+<p>The small running time under the new/learning/due counts is a different clock from the one above — a plain stopwatch of today's total time in the study screen, not a per-card measurement and not the thing the five-second rule above is read against. It starts at zero each time you walk into the study screen, keeps running while you're actually looking at it, and pauses the moment you leave — back to the front screen, into Settings, or the app going to the background. Stepping away for a few seconds and coming straight back (a call, a notification) doesn't reset it, only leaving the screen does. What it adds up to today, across however many separate sittings, is the figure the front screen shows next to <em>rated today</em>.</p>
 
 <h2 id="when">4. When words come back</h2>
 <p>Rough guide. The exact number depends on the word's own history, so treat these as the shape of it rather than a promise.</p>
@@ -130,12 +136,13 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 
 <h3>A word already in the rotation</h3>
 <table>
-  <tr><th>Currently due every</th><th>Again</th><th>Good</th><th>Easy</th></tr>
-  <tr><td>3 days</td><td>10 min</td><td>12 d</td><td>21 d</td></tr>
-  <tr><td>10 days</td><td>10 min</td><td>5 wk</td><td>8 wk</td></tr>
-  <tr><td>1 month</td><td>10 min</td><td>3 mo</td><td>5 mo</td></tr>
-  <tr><td>3 months</td><td>10 min</td><td>8 mo</td><td>1 yr</td></tr>
+  <tr><th>Currently due every</th><th>Again</th><th>Hard</th><th>Good</th><th>Easy</th></tr>
+  <tr><td>3 days</td><td>10 min</td><td>9 d</td><td>12 d</td><td>21 d</td></tr>
+  <tr><td>10 days</td><td>10 min</td><td>4 wk</td><td>5 wk</td><td>8 wk</td></tr>
+  <tr><td>1 month</td><td>10 min</td><td>2 mo</td><td>3 mo</td><td>5 mo</td></tr>
+  <tr><td>3 months</td><td>10 min</td><td>6 mo</td><td>8 mo</td><td>1 yr</td></tr>
 </table>
+<p>Hard is a pass, not a failure — notice it still moves the word <em>forward</em> every time, just less far than Good. It is nothing like Again, which sends the word back to ten minutes.</p>
 <p>A word you've failed before grows more slowly than one you've always got — roughly half these figures. The app tracks that per word, without you having to do anything.</p>
 
 <h3>Words carried over from your audit</h3>
@@ -190,7 +197,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 <h3>Tap targets</h3>
 <p>The buttons are bigger than they look — the invisible tappable area extends well above each one and into the gaps, so you don't need to aim. Tapping anywhere on the card reveals the answer, and for a fraction of a second afterwards the rating buttons ignore taps, so a reveal can't accidentally grade the card. The same fraction of a second runs the other way too: right after a new card appears, its own "show answer" button ignores taps for a moment, so the tail end of a fast double-tap on the previous card's rating can't flash the next word's answer before you meant to see it.</p>
 <p>Made a mistake? The arrow at the top right undoes the last rating, up to forty back. On a wide screen with the review-history setting on (§8), a small card in the top-right corner also recaps the word you just rated, what you pressed, and how far it jumped forward — often enough to answer "what did I just do" without undoing anything.</p>
-<p>On a keyboard — a Mac or an iPad with one attached — Space or Enter reveals the answer, and once it's showing, Space or Enter again rates it Easy (changed 2026-08-13 from Good) — the fastest path through a word that needed no thought at all. <code>1</code>, <code>2</code> and <code>3</code> rate Again, Good and Easy directly — <code>I</code>, <code>O</code> and <code>P</code> do the same thing, for whichever hand you'd rather use — and <code>Z</code> or <code>0</code> undoes. Pressed right after a quick-rate grade (below), <code>Z</code>/<code>0</code> corrects that same word to Again instead of undoing it — one keystroke to fix a mis-press without losing your place; any other <code>Z</code>/<code>0</code> is a normal undo. <code>F</code> flags or unflags the word you're looking at, silently, with no toast (see §9), and <code>K</code> keeps a word in when it is one "Again" away from setting itself aside — also §9. On a wide screen these can optionally be written right on the buttons themselves — see "Study screen, wide layout" in section 8; "Quick rate" in the same section lets <code>1</code>/<code>I</code> and <code>3</code>/<code>P</code> — and, in one of its two modes, <code>2</code>/<code>O</code> too — grade a word before you reveal it at all, moving straight to the next one's front immediately.</p>
+<p>On a keyboard — a Mac or an iPad with one attached — Space or Enter reveals the answer, and once it's showing, Space or Enter again rates it Easy (changed 2026-08-13 from Good) — the fastest path through a word that needed no thought at all. The number keys rate the word, running left to right along the buttons (Again, Hard, Good, Easy on a settled word; Again, Good, Easy on one still being learned) — and <code>Z</code> or <code>0</code> undoes. Pressed right after a quick-rate grade (below), <code>Z</code>/<code>0</code> corrects that same word to Again instead of undoing it — one keystroke to fix a mis-press without losing your place; any other <code>Z</code>/<code>0</code> is a normal undo. Hold Shift with Z (added 2026-08-18) to force a plain undo even in that same keystroke, if correcting to Again genuinely isn't what you meant. <code>F</code> flags or unflags the word you're looking at, silently, with no toast (see §9), and <code>K</code> keeps a word in when it is one "Again" away from setting itself aside — also §9. On a wide screen these can optionally be written right on the buttons themselves — see "Study screen, wide layout" in section 8; "Quick rate" in the same section lets you grade a word before you reveal it at all, moving straight to the next one's front immediately. §10 has every key on every screen in one place, if you just want the list.</p>
 </div>
 
 <h2 id="backup">7. Backing up — read this one</h2>
@@ -219,7 +226,7 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <tr><td><strong>Longest interval</strong></td><td>Nothing will be scheduled further out than this. Lower it to force everything through one more pass before a deadline.</td></tr>
   <tr><td><strong>A study day begins at</strong></td><td>The hour everything scheduled for a day unlocks, together. Before it, a late-night session still counts as the previous day. Changing it takes effect from the next time the old hour comes around, not instantly — nothing already scheduled is reinterpreted, so switching it never makes anything look due that wasn't a moment before.</td></tr>
   <tr><td><strong>Appearance</strong></td><td>Light, dark, or follow your phone.</td></tr>
-  <tr><td><strong>Let hesitation adjust the grade</strong></td><td>The timing rule from section 3. Off records exactly what you press.</td></tr>
+  <tr><td><strong>Let hesitation adjust the grade</strong></td><td>The five-second rule from section 3 — a slow Easy recorded as Good. Off records exactly what you press.</td></tr>
   <tr><td><strong>Clearing a word for the day</strong></td><td>Whether Good is enough to release a new word, or only Easy is — either way, enough same-day tries without an Easy releases it anyway (the slider below it sets how many, 3 to 10), so a word never just repeats forever.</td></tr>
   <tr><td><strong>Same-day bounces before it clears anyway</strong></td><td>Only matters when "Only Easy clears it" is selected above. 3 to 10 — lower gets a word you keep answering Good (never Easy) out of the drill sooner, higher drills it harder first.</td></tr>
   <tr><td><strong>Consecutive good days before release</strong></td><td>Forces a word to a daily rhythm until you've got it right this many days running. Leave at 0 — it is very expensive and works against the spacing that makes the whole thing effective.</td></tr>
@@ -228,19 +235,49 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
   <tr><td><strong>Introduce unseen before shaky</strong></td><td>Hardest words first, rather than working through in book order.</td></tr>
   <tr><td><strong>Michaelmas begins</strong></td><td>Feeds the countdown on the front screen. Nothing else uses it.</td></tr>
   <tr><td><strong>Theme</strong></td><td>Twelve palettes, each with its own light and dark variant, chosen separately. Five are calm and muted (Vellum, Catppuccin, Rose Pine, Gruvbox, Legacy); two are deliberately bolder and higher-contrast — Dracula, a well-known vivid developer theme, and Amphora, an original palette after black-figure and red-figure Attic pottery's stark black and burnt terracotta; five lean on material or texture as much as colour — Marble (gold leaf on white marble in light mode, the same gold on black marble in dark), Wood (honey oak and brass, walnut and the same brass in dark), Steel (brushed gunmetal), Glass (frosted and translucent) and Neon (glow-on-black). A preview above the grid shows the currently selected theme full-size, split down the middle — light half, dark half, of the same mock card — before you commit to it. Optionally a different one each day, in a shuffled cycle that shows every theme before repeating any.</td></tr>
-  <tr><td><strong>Study screen, wide layout</strong></td><td>A laptop, iPad, or phone turned sideways — any screen at least 700px wide, in landscape — automatically gets a wider study card: a two-pane spread instead of a single column, with the front screen, Settings and Browse laid out to match. That part isn't a setting; it always happens, on any device, and a phone held upright is never affected. These three selects decide what fills the extra room: review history on the card (times seen, current streak, last result) plus a small recap card in the top-right corner showing the word you just rated, what you pressed, and how far it jumped forward — meant to answer "what did I just do" without reaching for undo; keyboard hints written on the buttons (Space, 1/2/3 or I/O/P, 0/Z); and a small amount of motion on reveal and between cards. Independent of each other, all off by default, and motion turns itself off if your system asks for reduced motion regardless of this setting.</td></tr>
-  <tr><td><strong>Quick rate</strong></td><td>On a keyboard, once a word is past its first learning steps — including a brief post-lapse relearn step, not only a fully settled review — <code>1</code>/<code>I</code> and <code>3</code>/<code>P</code> grade it straight from the question — no tap to reveal first — and the next word's front appears immediately. "Flash the answer" also lets <code>2</code>/<code>O</code> grade this way, and shows the answer for a beat right after grading, floating over the next word rather than holding it up; "fully blind" skips that and leaves <code>2</code>/<code>O</code> reveal-gated, since Good is the one grade that still means you actually looked. Either way, <code>0</code>/<code>Z</code> pressed right after a quick-rate grades that word Again instead of undoing it — see §6's keyboard section. New and still-learning words always go through the ordinary reveal-then-rate — getting one of those wrong quietly is the one place it actually costs you. Off by default.</td></tr>
+  <tr><td><strong>Study screen, wide layout</strong></td><td>A laptop, iPad, or phone turned sideways — any screen at least 700px wide, in landscape — automatically gets a wider study card: a two-pane spread instead of a single column, with the front screen, Settings and Browse laid out to match. That part isn't a setting; it always happens, on any device, and a phone held upright is never affected. These three selects decide what fills the extra room: review history on the card (times seen, current streak, last result) plus a small recap card in the top-right corner showing the word you just rated, what you pressed, and how far it jumped forward — meant to answer "what did I just do" without reaching for undo; keyboard hints written on the buttons (Space, the rating numbers, 0/Z); and a small amount of motion on reveal and between cards. Independent of each other, all off by default, and motion turns itself off if your system asks for reduced motion regardless of this setting.</td></tr>
+  <tr><td><strong>Study card shape</strong></td><td>Also only on the wide study card above — a phone held upright is unaffected either way. <em>Two panes</em> is the layout just described: the word on the left, the answer appears to its right once revealed. <em>Replace</em> and <em>Swap</em> both put the answer where the word already was instead of off to the side, so revealing a card doesn't ask your eye to jump anywhere: <em>Replace</em> simply swaps the word for the answer in place; <em>Swap</em> keeps the word too, shrunk to a small line above the answer, so the two are still both there to compare, just no longer side by side. The recap card described above is unaffected by any of this — same content, same corner, in every shape. Pairs naturally with Quick rate just below for the fastest pace the app offers. Two panes by default; nothing changes here until you pick one of the other two.</td></tr>
+  <tr><td><strong>Quick rate</strong></td><td>On a keyboard, once a word is past its first learning steps — including a brief post-lapse relearn step, not only a fully settled review — the number keys grade it straight from the question, with no tap to reveal first, and the next word's front appears immediately. Again and Easy work in either mode. "Flash the answer" also lets Hard and Good grade this way, and shows the answer for a beat right after grading, floating over the next word rather than holding it up; "fully blind" skips that and leaves those two reveal-gated, since they are the grades that still mean you actually looked. Either way, <code>0</code>/<code>Z</code> pressed right after a quick-rate grades that word Again instead of undoing it — hold Shift with Z to undo it plainly instead. See §6's keyboard paragraph, or §10 for the full key reference. New and still-learning words always go through the ordinary reveal-then-rate — getting one of those wrong quietly is the one place it actually costs you. Off by default.</td></tr>
   <tr><td><strong>Export / restore</strong></td><td>Save a backup file by hand, or load one back in. A file from the other language is refused rather than loaded over the top.</td></tr>
   <tr><td><strong>This device's name</strong></td><td>A label such as "iPhone" or "Mac", local to this device. Stamped onto anything this device pushes or exports, so a sync conflict on any device names both copies instead of just "this device" and "the other one". Also settable once from the launcher page if you open both decks from there (§7) — either place writes the same value.</td></tr>
   <tr><td><strong>Sync between devices</strong></td><td>The sync code — the primary backup. Pushes after every save (paced to once a minute during a sitting, plus once when the app is put away). Restoring or pulling never changes the code or device name stored on this device, and the code is never included in what gets pushed. <em>Get a code for this device</em> mints a fresh one and pushes at once; <em>Push now</em> and <em>Pull now</em> do exactly that. Clearing the field switches sync off on this device only. Also settable once from the launcher page if you open both decks from there (§7).</td></tr>
   <tr><td><strong>What happens on its own</strong></td><td>Live state — last save, last push, what the queue is holding — and a list of every process the app runs without being asked.</td></tr>
   <tr><td><strong>Same-day "Again" presses before a word sets itself aside</strong></td><td>5 to 15, default 12 — the slider just above the "Set aside" field below. Raising it never brings an already-set-aside word back on its own; it only changes what happens going forward. Lowering it takes effect at once for any fresh "Again" press, but never reaches back into presses already logged earlier the same study day — those stay judged against whatever the number was when they happened, so nothing already in progress this session gets swept aside with no warning. It reaches full effect, with no exceptions, from your next study day on. Whatever you set it to, the study card warns you one press before a word parks itself, and that warning can be overridden for the rest of the day — see §9.</td></tr>
   <tr><td><strong>Set aside</strong></td><td>Once "Again" has landed on a word 2 times in a single study day, a flag icon appears on the card that you can tap to set it aside by hand; past the slider above (5 to 15, default 12) it happens on its own. Setting a word aside stops it appearing until you bring it back, either from the flag itself or in bulk here — and it stays aside regardless of the day, even once today's count resets. Bringing a word back holds for the rest of that day even though the day's count is already past the threshold; the next day's count will set it aside again.</td></tr>
-  <tr><td><strong>New deck / import</strong></td><td>Turns a word list into its own deck, or adds it to the deck you're in. Paste text or open a file (<code>.txt</code>, <code>.csv</code>, <code>.tsv</code>, <code>.json</code>) — columns copied from a spreadsheet, a Quizlet or Anki export, "term — gloss" or "term: gloss" lines, numbered lists, chapter headings that become sections. It is all read on the device, with no key and no model: a preview shows every word found, every line skipped and why, and lets you change the separator, swap the two sides, or say which column is which. Then <em>Accept all</em>, <em>Review the flagged</em> (only the rows it wasn't sure of, one at a time), or <em>Triage everything</em>. Nothing is written until you press Create or Add. A new deck's kind — language, word list, or formula sheet — only sets what its two directions are called. "Extract with the model instead" is the one path that needs the extraction key: for a passage of prose, or a list with no shape the parser can find.</td></tr>
+  <tr><td><strong>New deck / import</strong></td><td>Turns a word list into its own deck, or adds it to the deck you're in. Paste text or open a file (<code>.txt</code>, <code>.csv</code>, <code>.tsv</code>, <code>.json</code>, <code>.pdf</code>, <code>.docx</code>, <code>.xlsx</code>) — columns copied from a spreadsheet, a Quizlet or Anki export, "term — gloss" or "term: gloss" lines, numbered lists, chapter headings that become sections. A PDF is read by position rather than as flat text: the gaps between the columns of a printed vocabulary list are tab stops, so the columns come back separated instead of running together — which is what copying the same page out of Preview loses. A list that is really a table (an exam board’s <em>Latin · Notes · Part of Speech · Classification · Meaning</em>, say) keeps every column, and its header row names them, so the meanings land in the gloss rather than in whichever column happened to come second. A page printed two-up — two columns of entries side by side — is read down one column and then down the other, not across. Page numbers go, repeated running heads and table headers go, a definition that wrapped onto the next line is rejoined, front matter above the header row is left out, and part headings survive as sections. The summary line above the preview says which shape was found, so a wrong guess is visible before anything is kept. A Word document is read the same way: its own table becomes columns, and if it has no table its paragraphs are read one line each. An Excel or Numbers workbook’s first sheet comes in like a paste from one, its header row naming the columns. A scan or a photograph has no text in it to read: let the phone read that one (Live Text, or Preview’s text selection on a Mac) and paste the words in. It is all read on the device, with no key and no model: a preview shows every word found, every line skipped and why, and lets you change the separator, swap the two sides, or say which column is which. Then <em>Accept all</em>, <em>Review the flagged</em> (only the rows it wasn't sure of, one at a time), or <em>Triage everything</em>. Nothing is written until you press Create or Add. A new deck's kind — language, word list, or formula sheet — only sets what its two directions are called. "Extract with the model instead" is the one path that needs the extraction key: for a passage of prose, or a list with no shape the parser can find.</td></tr>
   <tr><td><strong>Export deck file</strong></td><td>Shown for a deck created on this device. Saves that deck's words as a file the import screen reads back on another device, keeping the same words and ids so a review-history backup restored there re-attaches to them. History itself travels in the ordinary backup or by sync, not in this file.</td></tr>
   <tr><td><strong>Extraction key</strong></td><td>Only needed for "Extract with the model instead" on the import screen. Generate one here, then set the same value on the sync Worker once (<code>wrangler secret put EXTRACT_KEY</code>). Everything else on that screen works with no key at all.</td></tr>
   <tr><td><strong>Erase all progress</strong></td><td>Pushes a backup to the sync server first and only wipes the device once that push is confirmed. Needs a sync code set up — without it, this refuses, since there's no reliable way to confirm a local download actually happened.</td></tr>
 </table>
+
+<h3>Checking an import before you keep it</h3>
+<p>A parser gets a page wrong <em>quietly</em>. One column boundary read a word too far, and every gloss on that page becomes the wrong answer — and a wrong
+card doesn't sit still: it gets scheduled, and you rehearse it until you notice. So the preview is worth reading, and reading past the first screen. On a long
+import it now shows three windows — the start, the middle and the end — because the top of a list is where the front matter is, while a boundary that drifts
+does so somewhere in the middle. The count line above the table says how many rows it is showing of how many, and every line the parser refused is listed
+underneath, with the reason.</p>
+<p>Check before you keep, rather than after: once a word is in a deck you can edit its <em>term</em>, set it aside, or delete it (tap it in Browse), but there
+is no way to edit a gloss in place — a mis-split gloss has to be deleted and added again.</p>
+
+<h3>When a page defeats it: converting with an AI first</h3>
+<p>Some pages have nothing to read — a scan, a photograph — and some come out wrong however the separator is set. One route is to hand the page to a chat
+assistant, have it produce plain tab-separated lines, read what comes back <em>against the page</em>, and bring that text back here.
+<em>Copy a prompt for an AI</em> on the import screen puts the instruction below on the clipboard.</p>
+<p>Know which way round the two fail. This parser fails loudly: rows go missing, columns come out visibly wrong, and it lists every line it skipped. A model
+fails quietly — an invented or silently "corrected" gloss reads exactly like a real one. That is why the prompt forbids invention and makes it declare
+anything it could not read, and why the output is worth checking against the page rather than merely read for plausibility.</p>
+<pre class="ipSkipped" style="white-space:pre-wrap">Turn this vocabulary list into tab-separated lines -- one entry per line, in this shape:
+
+term&lt;TAB&gt;gloss
+
+Rules:
+- Copy exactly what is printed. Do not translate, correct, modernise, expand abbreviations, or add anything that is not on the page.
+- Keep accents, breathings and macrons exactly as printed.
+- Keep grammatical information (principal parts, genitive endings, gender, "+ acc") with the term, in the order printed.
+- One printed entry is one line. Where a page has two columns of entries side by side, read the whole of one column before starting the other.
+- If the list is divided into parts, chapters or lessons, put that name in a third tab-separated column.
+- If you cannot read an entry with confidence, leave it out and list it at the end under a line reading SKIPPED.
+- Output nothing else: no commentary, no headings, no numbering, no markdown.</pre>
 
 <h2 id="wrong">9. If something looks wrong</h2>
 
@@ -264,6 +301,39 @@ td:not(:first-child), th:not(:first-child){text-align:right; padding-right:0; wh
 
 <h3>How do I know which version I'm running?</h3>
 <p>The version sits at the bottom of the front screen. Tap it for the list of what changed. If the front screen has no <em>whole syllabus</em> section, you are on an older file. The launcher page (the one with the Latin/Greek links) shows the same version at its foot too, and tapping it jumps straight to that same list — no need to open a deck first.</p>
+
+<h2 id="keys">10. Every key, one line each</h2>
+<p>Only on a keyboard — a Mac, or an iPad or phone with one attached. None of this appears as a button on a touchscreen; tap the on-screen buttons there instead. On a wide screen you can also have most of these written right on the buttons themselves — "Study screen, wide layout" in §8.</p>
+
+<h3>Studying</h3>
+<table>
+  <tr><th>Key</th><th>What it does</th></tr>
+  <tr><td><code>Space</code> / <code>Enter</code></td><td>Reveal the answer — or, once it's showing, rate Easy.</td></tr>
+  <tr><td><code>1</code> <code>2</code> <code>3</code> <code>4</code></td><td>Rate the word. The numbers run left to right along the buttons, so on a settled word they are Again, Hard, Good, Easy — and on one still being learned, where there is no Hard button, just Again, Good, Easy. Each button prints its own number, so you never have to remember which shape you're in.</td></tr>
+  <tr><td><code>Z</code> / <code>0</code></td><td>Undo the last rating. Pressed right after a quick-rate grade (see below), corrects that same word to Again instead of undoing it.</td></tr>
+  <tr><td><code>Shift</code> + <code>Z</code></td><td>Undo the last rating — always, even in that same keystroke right after a quick-rate grade, if correcting to Again genuinely isn't what you meant.</td></tr>
+  <tr><td><code>F</code></td><td>Flag or unflag the word on screen. Silent — no toast, unlike tapping the flag icon itself.</td></tr>
+  <tr><td><code>K</code></td><td>Keep the word in for today, overriding an automatic set-aside that's one "Again" away.</td></tr>
+</table>
+<p>With <strong>Quick rate</strong> switched on (§8), the same numbers grade a settled word straight from the question, before you've revealed it at all, and jump straight to the next word's front. Again and Easy work in either mode; Hard and Good only in "flash" mode, since those two are the grades that mean you actually looked. That's what the Z-right-afterwards correction above is for: with no reveal step left, there's nothing else to catch a mis-press before it commits.</p>
+
+<h3>Drilling set-aside words</h3>
+<p>Practice rounds only. The plain list view and the tap-to-match round are mouse/touch either way, and typing into the English→Latin/Greek answer box is left alone — Enter submits it, same as any text field.</p>
+<table>
+  <tr><th>Key</th><th>What it does</th></tr>
+  <tr><td><code>Space</code> / <code>Enter</code></td><td>Next word once graded — or, for an honour round (Latin/Greek→English), reveal the meaning.</td></tr>
+  <tr><td><code>1</code></td><td>Honour round: "Didn't know it".</td></tr>
+  <tr><td><code>2</code> / <code>Space</code> / <code>Enter</code></td><td>Honour round: "Knew it".</td></tr>
+  <tr><td><code>F</code></td><td>Bring the word — or, mid-match-round, the whole group — back to normal review.</td></tr>
+</table>
+
+<h3>Reviewing an import</h3>
+<p>While triaging a flagged row under <em>New deck / import</em> (§8) — not while typing in that row's term, gloss, section or note fields, where the same letters need to reach the text untouched.</p>
+<table>
+  <tr><th>Key</th><th>What it does</th></tr>
+  <tr><td><code>1</code></td><td>Bin — reject this row.</td></tr>
+  <tr><td><code>2</code> / <code>Space</code></td><td>Keep — accept this row.</td></tr>
+</table>
 
 <p class="foot">Both apps work the same way. Greek has no parts and no audit groups, so those chips don't appear, and it starts entirely from scratch. Your Latin and Greek progress are stored separately and can't affect each other.</p>
 

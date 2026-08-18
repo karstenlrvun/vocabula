@@ -217,6 +217,13 @@ html:not([data-layout="landscape"]) .quickFlash{
 .rate .ivl{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.1}
 .rate:active{filter:brightness(.94)}
 #bAgain{background:var(--again-bg);border-color:var(--again-br)} #bAgain .lbl{color:var(--again)}
+/* Hard reuses the --warn-* family rather than introducing a --hard one: the
+   recap card's own Hard chip (.rc-rating.rc-hard, below) already made that
+   choice, and every one of the 24 palettes already ships warn colours that
+   have been through their own legibility passes. A new family would mean 48
+   hand-picked values across those palettes, which is exactly where
+   FINALISATION_PLAN.md §2a's legibility bug came from. */
+#bHard{background:var(--warn-bg);border-color:var(--warn-br)}   #bHard .lbl{color:var(--warn-ink)}
 #bGood{background:var(--good-bg);border-color:var(--good-br)}   #bGood .lbl{color:var(--good)}
 #bEasy{background:var(--easy-bg);border-color:var(--easy-br)}   #bEasy .lbl{color:var(--easy)}
 .revealRow{flex:0 0 auto;padding:10px 12px 14px}
@@ -667,6 +674,7 @@ html:not([data-layout="landscape"]) .quickFlash{
 .cardPreviewRates{display:flex;gap:4px;margin-top:3px}
 .cpRate{font-size:9.5px;font-weight:600;padding:4px 7px;border-radius:8px;border:1px solid;white-space:nowrap}
 .cpRate.again{color:var(--again);background:var(--again-bg);border-color:var(--again-br)}
+.cpRate.hard{color:var(--warn-ink);background:var(--warn-bg);border-color:var(--warn-br)}
 .cpRate.good{color:var(--good);background:var(--good-bg);border-color:var(--good-br)}
 .cpRate.easy{color:var(--easy);background:var(--easy-bg);border-color:var(--easy-br)}
 .cardPreviewLbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-top:auto;padding-top:4px}
@@ -704,6 +712,13 @@ html:not([data-layout="landscape"]) .quickFlash{
 .field input[type=range]{width:100%;height:34px}
 .field .sel{width:100%;height:46px;border:1px solid var(--line);border-radius:11px;padding:0 10px;
   font-size:16px;background:var(--panel);color:var(--ink);font-family:inherit}
+/* exText (the import screen's paste box) is a plain textarea inside a
+   .field, same as every input/select above -- but had no width rule of its
+   own at all until now, so it rendered at the browser's ~20-column default
+   regardless of min-height. Found live, 2026-08-18: a taller min-height
+   alone didn't fix the cramped look, because width was the real problem. */
+.field textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 12px;
+  font-size:16px;background:var(--panel);color:var(--ink);font-family:inherit;box-sizing:border-box}
 .act{position:relative;width:100%;height:52px;border-radius:13px;border:1px solid var(--line);
   background:var(--panel);font-size:16px;margin-top:11px}
 .act::before{content:"";position:absolute;top:-9px;bottom:-9px;left:-4px;right:-4px}
@@ -863,6 +878,156 @@ html[data-layout="landscape"][data-study-hints] .revealBtn{
 html[data-layout="landscape"][data-study-hints] .rate:hover,
 html[data-layout="landscape"][data-study-hints] .revealBtn:hover{
   transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.10);
+}
+
+/* ============================================================
+   Study card shape: Replace / Swap (LAYOUT_PLAN.md §6-9; "F1"/"F2" there).
+   A fourth setting alongside studyStats/studyHints/studyMotion, keyed on
+   its own data-study-card attribute -- never a third value on data-layout
+   itself (§3.4/§9.2: 54 rules key on that one, only 20 of them study-
+   scoped, and one of the other 34 is the negated
+   html:not([data-layout="landscape"]) .quickFlash selector a few screens
+   above -- a third value there would silently change what that selector
+   matches). "spread" (the default, unmodified two-pane layout above) needs
+   no rules at all here; everything below only fires for "replace"/"swap".
+
+   The shared idea: #prompt and #answer occupy the SAME named grid area
+   ("prompt") before reveal, exactly the way #quickFlash already shares
+   #answer's area in the spread layout above -- later DOM order paints on
+   top, and #answer starts at opacity:0 (its own base rule, untouched here)
+   so it stays invisible without any extra work. Reveal doesn't move
+   anything or resize the card; it only changes which of the two visible
+   elements is opaque (Replace) or which named area #prompt occupies
+   (Swap) -- see #cardArea.revealed below, toggled by reveal()/renderCard()
+   and documented at its own class management there. Neither mode touches
+   #answer's own opacity mechanism (reveal()'s .on/animate() calls) -- the
+   Safari transition-race comment at renderCard() is exactly why not.
+
+   A dedicated "promptSm" row above the shared slot is Swap's demotion
+   target; Replace never populates it, so its 720px-wide column carries a
+   small unused gap above the word -- a known cosmetic asymmetry, accepted
+   rather than forking the whole template in two for one row's sake.
+   minmax(34px,auto) rather than a hard px height: reserves the space even
+   while empty (an auto track with no content collapses to zero, which
+   would make the row APPEAR on reveal instead of already being there --
+   the one reflow this whole card shape exists to avoid), while still
+   letting an unusually long demoted headword wrap to two lines rather
+   than clip. Same "min-height over hard height" reasoning the plan
+   recommends for Column's own panel, applied here instead of a rule that
+   was never built. */
+html[data-layout="landscape"][data-study-card="replace"] #scStudy.on,
+html[data-layout="landscape"][data-study-card="swap"] #scStudy.on{
+  grid-template-columns:1fr minmax(0,720px) 1fr;
+  grid-template-rows:auto 1fr minmax(34px,auto) 1fr auto auto auto 1fr;
+  grid-template-areas:
+    "bar bar bar"
+    ".   .        ."
+    ".   promptSm ."
+    ".   prompt   ."
+    ".   leech    ."
+    ".   hint     ."
+    ".   controls ."
+    ".   .        .";
+}
+/* The bordered/backgrounded panel spread's own #prompt draws for itself
+   (border/background right on the element, further down) is drawn here as
+   a shared backdrop instead, spanning every row the card's content
+   actually uses -- named grid lines (auto-generated per area name, "prompt
+   leech" etc.) place it with no markup change, the same technique
+   LAYOUT_PLAN.md's own Column prototype used. Controls sit below it,
+   unpaneled, matching how spread's own #prompt border never wrapped its
+   reveal/rate row either. */
+html[data-layout="landscape"][data-study-card="replace"] #scStudy.on::before,
+html[data-layout="landscape"][data-study-card="swap"] #scStudy.on::before{
+  content:"";
+  grid-row:promptSm-start / hint-end; grid-column:2 / 3;
+  margin:-18px -8px -8px;
+  border:1px solid var(--line); border-radius:20px; background:var(--panel);
+}
+html[data-layout="landscape"][data-study-card="replace"] #multi,
+html[data-layout="landscape"][data-study-card="swap"] #multi{margin:14px 14px 0 0}
+html[data-layout="landscape"][data-study-card="replace"] #prompt,
+html[data-layout="landscape"][data-study-card="swap"] #prompt,
+html[data-layout="landscape"][data-study-card="replace"] #answer,
+html[data-layout="landscape"][data-study-card="swap"] #answer,
+html[data-layout="landscape"][data-study-card="replace"] #quickFlash,
+html[data-layout="landscape"][data-study-card="swap"] #quickFlash{
+  grid-area:prompt; align-self:center; justify-self:stretch; z-index:1;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; margin:0; padding:0 32px; border:none; background:none; max-width:none;
+}
+html[data-layout="landscape"][data-study-card="replace"] #prompt,
+html[data-layout="landscape"][data-study-card="swap"] #prompt{
+  font-size:clamp(36px,calc(18px + 2.1vw),60px);
+}
+html[data-layout="landscape"][data-study-card="replace"] #prompt.eng,
+html[data-layout="landscape"][data-study-card="swap"] #prompt.eng{
+  font-size:clamp(30px,calc(16px + 1.8vw),48px);
+}
+/* Answer sizing is independent of the prompt's clamp on purpose -- an
+   English gloss (sometimes a merged .alt list) at headword size would wrap
+   awkwardly and blow the fixed-height promise (LAYOUT_PLAN.md §6.4). The
+   .lat variant (dir==='E': the "answer" is itself a Latin/Greek headword)
+   gets a step back up, same relationship the spread layout's own
+   #answer/.answer.lat pair already has. */
+html[data-layout="landscape"][data-study-card="replace"] #answer,
+html[data-layout="landscape"][data-study-card="swap"] #answer,
+html[data-layout="landscape"][data-study-card="replace"] #quickFlash,
+html[data-layout="landscape"][data-study-card="swap"] #quickFlash{
+  font-size:clamp(24px,calc(15px + 1.1vw),36px);
+}
+html[data-layout="landscape"][data-study-card="replace"] #answer.lat,
+html[data-layout="landscape"][data-study-card="swap"] #answer.lat{
+  font-size:clamp(28px,calc(18px + 1.4vw),42px);
+}
+html[data-layout="landscape"][data-study-card="replace"] #leechTag,
+html[data-layout="landscape"][data-study-card="swap"] #leechTag{
+  grid-area:leech; justify-content:center; padding:10px 32px 0; z-index:1;
+}
+html[data-layout="landscape"][data-study-card="replace"] #hintline,
+html[data-layout="landscape"][data-study-card="swap"] #hintline{
+  grid-area:hint; text-align:center; padding:6px 32px 0; margin-top:0; z-index:1;
+}
+/* Recap: what rating a word got last time and how long ago -- genuinely
+   useful, not decorative chrome, so this deliberately does NOT repeat B4's
+   demote-the-salience treatment the way the *spread* layout's own recap
+   got in LAYOUT_PLAN.md -- that call was about a bordered panel reading as
+   the second most prominent thing on an otherwise busy two-pane screen;
+   replace/swap's whole screen is quiet already, so the same panel doesn't
+   fight for attention here, and the owner's own report is that this is
+   exactly the piece he was worried a redesign would quietly drop. Kept
+   pixel-for-pixel as it already renders -- border, background, full
+   opacity, same corner spread uses -- only repositioned, since this
+   template has no "recap" grid area for it to land in. Position:fixed
+   takes it out of grid flow entirely regardless of any grid-area value, so
+   nothing about grid-area itself needs resetting; the top offset matches
+   the one other fixed-below-the-bar element in the file (quickFlash's own
+   portrait rule, a few screens above) rather than a new hand-picked
+   number. */
+html[data-layout="landscape"][data-study-card="replace"] .recapCard.on,
+html[data-layout="landscape"][data-study-card="swap"] .recapCard.on{
+  position:fixed; top:calc(52px + env(safe-area-inset-top) + 14px); right:16px;
+  margin:0;
+}
+/* Replace (F1): the prompt just disappears on reveal -- #answer, already
+   sharing its cell, is the only thing left opaque via its own .on class.
+   pointer-events:none is belt-and-braces: tapZone's own reveal() call is
+   idempotent (its very first line returns once rateRow is no longer
+   hidden), so a stray tap reaching the invisible prompt is already
+   harmless, but there's no reason to leave it hit-testable regardless. */
+html[data-layout="landscape"][data-study-card="replace"] #cardArea.revealed #prompt{
+  opacity:0; pointer-events:none;
+}
+/* Swap (F2): the prompt relocates into the reserved small row and shrinks
+   -- #answer stays put in the cell it was already sharing, so the answer
+   itself needs no rule here at all; it was always going to end up exactly
+   where the prompt just was. */
+html[data-layout="landscape"][data-study-card="swap"] #cardArea.revealed #prompt{
+  grid-area:promptSm; padding:0; font-weight:500; color:var(--muted);
+  font-size:15px;
+}
+html[data-layout="landscape"][data-study-card="swap"] #cardArea.revealed #prompt.eng{
+  font-size:15px;
 }
 
 /* drill: added after the "New" layout shipped (§10 predates the drill mode,
@@ -1250,9 +1415,20 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <button class="revealBtn" id="revealBtn">Show answer<span class="keycap">Space</span></button>
     </div>
     <div class="rateRow hidden" id="rateRow">
-      <button class="rate" id="bAgain"><span class="lbl">Again</span><span class="ivl" id="iAgain"></span><span class="keycap">1 / I</span></button>
-      <button class="rate" id="bGood"><span class="lbl">Good</span><span class="ivl" id="iGood"></span><span class="keycap">2 / O</span></button>
-      <button class="rate" id="bEasy"><span class="lbl">Easy</span><span class="ivl" id="iEasy"></span><span class="keycap">3 / P</span></button>
+      <button class="rate" id="bAgain"><span class="lbl">Again</span><span class="ivl" id="iAgain"></span><span class="keycap">1</span></button>
+      <!-- Hard sits second, the FSRS-standard order, and takes the 2 key with
+           it: the numbers run left to right along the row rather than each
+           grade owning a fixed digit for ever. That means 2 and 3 mean
+           different grades depending on whether Hard is on screen, which is
+           a real cost in retrained muscle memory -- taken deliberately
+           (owner's call 2026-08-18) because a row whose keys read 1,4,2,3 is
+           the worse thing to look at several hundred times a day. Good's and
+           Easy's keycaps are therefore rewritten per card by reveal(); only
+           Again's and Hard's are fixed. Hidden entirely outside review
+           state; see reveal(). -->
+      <button class="rate hidden" id="bHard"><span class="lbl">Hard</span><span class="ivl" id="iHard"></span><span class="keycap">2</span></button>
+      <button class="rate" id="bGood"><span class="lbl">Good</span><span class="ivl" id="iGood"></span><span class="keycap" id="kGood">2</span></button>
+      <button class="rate" id="bEasy"><span class="lbl">Easy</span><span class="ivl" id="iEasy"></span><span class="keycap" id="kEasy">3</span></button>
     </div>
   </section>
 
@@ -1322,6 +1498,15 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh">Only affects a screen wide enough for the two-column study card. The last card you rated is always shown either way.</div>
       </div>
       <div class="field">
+        <label for="fCardShape">Study card shape</label>
+        <select id="fCardShape" class="sel">
+          <option value="spread">Two panes — the word on the left, the answer on the right</option>
+          <option value="replace">Replace — the answer takes the word's place</option>
+          <option value="swap">Swap — the word shrinks above, the answer takes its place</option>
+        </select>
+        <div class="fh">Only affects a screen wide enough for the two-column study card; a phone is unchanged. Replace and Swap both put the answer where your eye already is instead of off to the side — Swap keeps the word visible in small type above it, Replace does not. Pairs well with Quick rate below for the fastest possible review.</div>
+      </div>
+      <div class="field">
         <label for="fCardNotes">Notes on the study card</label>
         <select id="fCardNotes" class="sel">
           <option value="1">On — show a word's note on the answer side</option>
@@ -1336,7 +1521,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <option value="flash">On — flash the answer first</option>
           <option value="blind">On — no flash, fully blind</option>
         </select>
-        <div class="fh">Grades a settled word straight from the question, no tap to reveal first. Pressing 0 or Z right afterwards corrects that same word to Again rather than undoing it. New and still-learning words always stay reveal-then-rate.</div>
+        <div class="fh">Grades a settled word straight from the question, no tap to reveal first. Pressing 0 or Z right afterwards corrects that same word to Again rather than undoing it — hold Shift with Z for a plain undo instead, every time. New and still-learning words always stay reveal-then-rate.</div>
       </div>
       <div class="field">
         <label for="fTerm">Michaelmas begins</label>
@@ -1430,10 +1615,10 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="field advOnly">
         <label for="fTiming">Let hesitation adjust the grade</label>
         <select id="fTiming" class="sel">
-          <option value="1">Yes — a slow answer is recorded one grade lower</option>
+          <option value="1">Yes — a slow Easy is recorded as Good</option>
           <option value="0">No — record exactly what I press</option>
         </select>
-        <div class="fh">Over 30 seconds, Easy is recorded as Good and Good as Hard. Between 10 and 30, Easy is recorded as Good. Nothing is ever promoted, and a failure is never altered.</div>
+        <div class="fh">Take more than five seconds and an Easy is recorded as Good. Nothing else is ever changed: a grade is never raised, a failure is never altered, and Good and Hard are left exactly as you press them. On a review card, Hard is a button of its own.</div>
       </div>
       <div class="field advOnly">
         <label for="fEasy">Clearing a word for the day</label>
@@ -1543,10 +1728,11 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       </div>
       <div class="field">
         <label for="exText">Paste text — or choose a file</label>
-        <textarea id="exText" style="min-height:160px" placeholder="One entry per line — “term — gloss”, “term: gloss”, a numbered list — or columns copied from a spreadsheet, Quizlet, or Anki…"></textarea>
-        <input type="file" id="exFile" accept=".txt,.csv,.tsv,.json,.md,text/plain,text/csv,text/tab-separated-values,application/json" class="hidden">
+        <textarea id="exText" style="min-height:260px;resize:vertical" placeholder="One entry per line — “term — gloss”, “term: gloss”, a numbered list — or columns copied from a spreadsheet, Quizlet, or Anki…"></textarea>
+        <input type="file" id="exFile" accept=".txt,.csv,.tsv,.json,.md,.pdf,.docx,.xlsx,text/plain,text/csv,text/tab-separated-values,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="hidden">
         <button class="act" id="exFileBtn">Choose a file…</button>
-        <div class="fh">Read right here on this device -- nothing is sent anywhere, no key needed. Tab-separated columns (a spreadsheet, a Quizlet or Anki export), "term — gloss" or "term: gloss" lines, numbered lists and chapter headings are all recognised, and a preview shows exactly what was found before anything is kept. A vocabula deck file (Settings, "Export deck file") comes back in the same way.</div>
+        <button class="act" id="exAiPromptBtn">Copy a prompt for an AI</button>
+        <div class="fh">Read right here on this device -- nothing is sent anywhere, no key needed. Tab-separated columns (a spreadsheet, a Quizlet or Anki export), "term — gloss" or "term: gloss" lines, numbered lists and chapter headings are all recognised, and a preview shows exactly what was found before anything is kept. A PDF with real text in it is read here too -- the columns of a printed vocabulary list come back separated, though a scan or a photograph has no text to read. A Word document's own table, or its plain paragraphs if it has no table, and the first sheet of an Excel workbook are read the same deliberate way -- neither ever leaves this device either. When a page defeats this -- a scan, a photograph, a layout that comes out wrong above -- "Copy a prompt for an AI" puts an instruction on the clipboard for a chat assistant: give it the page, read what comes back against the page yourself, then bring that text here. Worth knowing which way round the two fail: this parser gets things wrong loudly, and lists every line it skipped; a model gets them wrong quietly, and an invented gloss reads exactly like a correct one. A vocabula deck file (Settings, "Export deck file") comes back in the same way.</div>
         <button class="act primary" id="exParseBtn" style="margin-top:12px">Find the words</button>
         <div class="fh bad" id="exParseError"></div>
       </div>
@@ -1585,10 +1771,12 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
               <option value="pipe">Pipes |</option>
               <option value="emdash">Em dash —</option>
               <option value="endash">En dash –</option>
+              <option value="dashdash">Double hyphen --</option>
               <option value="colon">Colon :</option>
               <option value="equals">Equals =</option>
               <option value="hyphen">Hyphen -</option>
               <option value="spaces">Two+ spaces</option>
+              <option value="script">Change of script (Greek → English)</option>
               <option value="alt">Alternating lines</option>
             </select>
           </label>
@@ -1605,6 +1793,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <div class="fh bad" id="ipError"></div>
         <div class="fh hidden" id="ipModel">No shape found -- an extraction key is set up, so "Extract with the model instead" on the previous screen can read this text as prose.</div>
       </div>
+      <div class="fh hidden" id="ipCaution"></div>
       <div class="triageBtns impBtns">
         <button class="act" id="ipBack">Back to the text</button>
         <button class="act" id="ipTriageAll">Triage everything</button>
@@ -1627,8 +1816,8 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <textarea id="trNote" placeholder="Note (optional)"></textarea>
       </div>
       <div class="triageBtns">
-        <button class="triageBtn bin" id="trBin"><span class="lbl">Bin</span><span class="keycap">1 / I</span></button>
-        <button class="triageBtn keep" id="trKeep"><span class="lbl">Keep</span><span class="keycap">Space / O</span></button>
+        <button class="triageBtn bin" id="trBin"><span class="lbl">Bin</span><span class="keycap">1</span></button>
+        <button class="triageBtn keep" id="trKeep"><span class="lbl">Keep</span><span class="keycap">Space / 2</span></button>
       </div>
     </div>
     <!-- Step 3: nothing has touched storage until this point -- Discard
@@ -2196,9 +2385,9 @@ function rebuildCards(){
 }
 function makeDefaults(){ return {
   version:2, created:Date.now(),
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, quickRate:'off', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, requireEasy:true, drillDays:0, drillCap:3, reviewDay:-1, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, quickRate:'off', cardShape:'spread', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, drillLog:[], sinceExport:0, lastExport:null, lastPushBytes:0,
-  deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null, confuseGroups:{},
+  deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
   // Phase 3 §C/§B (PHASE3_4_HANDOFF.md): user-added words and term overrides.
   // Both ride backup/sync/gist for free -- they're just more fields on S,
   // same as everything else here -- rather than a separate store. See
@@ -3162,6 +3351,18 @@ function applyLayout(){
   document.documentElement.toggleAttribute('data-study-stats', !!S.settings.studyStats);
   document.documentElement.toggleAttribute('data-study-hints', !!S.settings.studyHints);
   document.documentElement.toggleAttribute('data-study-motion', !!S.settings.studyMotion);
+  // A fourth member of the family above, but a three-way *value* rather than
+  // a boolean, so dataset assignment rather than toggleAttribute -- LAYOUT_PLAN.md
+  // §3.4/§9.2: deliberately its own attribute, never a third value on
+  // data-layout itself. That attribute is load-bearing for the drill screen,
+  // Home/Settings' column split and the keycap family (54 rules key on it,
+  // only 20 of them study-scoped), and one of those 34 non-study rules is
+  // negated (html:not([data-layout="landscape"]) .quickFlash) -- a third
+  // data-layout value would silently flip that selector's match and change
+  // what it does. data-study-card carries none of that risk: every rule
+  // keyed on it is new, and everything above keeps reading data-layout
+  // exactly as before.
+  document.documentElement.dataset.studyCard = S.settings.cardShape || 'spread';
   // Re-balance on every call, not just a detected transition -- cheap (a
   // handful of offsetHeight reads), and correct on the very first call too
   // (portrait/landscape's own branch inside balanceColumns handles that),
@@ -3414,13 +3615,24 @@ function histogramOf(entries,axis,groupBy){
   return {buckets:buckets.map(b=>b[0]), counts, cats};
 }
 const RATING_LABEL={1:'Again',2:'Hard',3:'Good',4:'Easy'};
-// Hard has no button of its own (see #bAgain/#bGood/#bEasy) but adjustGrade()
-// can still land a press there via the hesitation upgrade in rate() -- the
-// recap card needs a colour for that case too, so this covers all four
-// rather than mirroring just the three buttons.
+// All four grades, and all four are now reachable by hand: Hard got its own
+// button on 2026-08-18 (#bHard), shown on review-state cards only. Before
+// that the only route to a Hard was adjustGrade()'s hesitation demotion,
+// which is precisely why this map has always covered four where the button
+// row covered three -- the recap card needed a colour for a grade nothing
+// could deliberately press. It no longer has to work that way round.
 const RATING_CLASS={1:'again',2:'hard',3:'good',4:'easy'};
 function renderCard(){
   const c=BY_ID[current], cs=peek(current);
+  // Replace/Swap card shapes (LAYOUT_PLAN.md §6.3) key their CSS off this
+  // class rather than :has() -- #answer follows #prompt in the DOM, so no
+  // sibling combinator can reach backwards from #answer.on to restyle
+  // #prompt, and :has() has zero other uses in this file. Cleared here on
+  // every new card unconditionally (cheap, and correct regardless of which
+  // shape is active) so a fresh card is never mistakenly drawn as revealed;
+  // reveal() is the only place it's set. Touches nothing about #answer's
+  // own opacity mechanism -- an independent class on a different element.
+  $('cardArea').classList.remove('revealed');
   $('prompt').className='prompt'+(c.dir==='E'?' eng':'');
   $('prompt').style.fontFamily=(c.dir==='E')?'':'var(--serif)';
   $('prompt').textContent=c.q;
@@ -3551,6 +3763,12 @@ function reveal(){
   // control right after next() has just swapped it in -- see rate()'s
   // symmetric guard and HANDOFF.md for the full mechanism
   if(tooSoonAfter(Date.now(),shownAt,260)) return;
+  // See renderCard()'s own comment on this class -- only visually meaningful
+  // under the Replace/Swap card shapes, but set unconditionally rather than
+  // gated on the current setting, matching how .on/.eng/.lat are handled
+  // just below: cheaper to always keep it correct than to reconcile stale
+  // state if the setting changes mid-session.
+  $('cardArea').classList.add('revealed');
   const ans=$('answer');
   ans.classList.add('on');
   // Played explicitly rather than via a CSS transition on .answer -- see
@@ -3582,7 +3800,29 @@ function reveal(){
   // below has its own matching guard, so the button stays tappable either way
   // -- this used to be the point a stuck card required leaving the queue and
   // starting a fresh one to get past.
-  [[AGAIN,'iAgain'],[GOOD,'iGood'],[EASY,'iEasy']].forEach(([r,el])=>{
+  // Hard is offered on review-state cards only. Learning and relearning keep
+  // the three buttons they have always had: FSRS's own weakest-modelled area
+  // is same-day/short-term memory, a Hard-vs-Good mix-up barely moves a
+  // learning interval either way, and learning is ~95% of real rating volume
+  // -- which is where added friction costs most and buys least.
+  // (REVIEW_SYSTEM_PLAN.md §6A.) This one toggle is the single source of
+  // truth for whether Hard is live: the keydown handler reads it back off
+  // the DOM rather than recomputing the state, so the two can never disagree.
+  const hardOn=(cs.st==='R');
+  $('bHard').classList.toggle('hidden',!hardOn);
+  // Good and Easy shuffle one key along when Hard is present -- see #bHard's
+  // comment in the markup. Written here rather than in the markup because
+  // they are the two keycaps that are not constant.
+  $('kGood').textContent=hardOn?'3':'2';
+  $('kEasy').textContent=hardOn?'4':'3';
+  // Each button computes its own preview through the SAME adjustGrade() the
+  // press itself will go through -- if these two ever diverge the buttons
+  // advertise intervals they don't deliver, which is the failure mode Anki's
+  // own passfail3 add-on ships with today.
+  const previews=hardOn
+    ? [[AGAIN,'iAgain'],[HARD,'iHard'],[GOOD,'iGood'],[EASY,'iEasy']]
+    : [[AGAIN,'iAgain'],[GOOD,'iGood'],[EASY,'iEasy']];
+  previews.forEach(([r,el])=>{
     try{ $(el).textContent=fmtIvl(schedule(cs,adjustGrade(r,thinkMs),now,st).ivl); }
     catch(e){ $(el).textContent='?'; }
   });
@@ -3672,14 +3912,40 @@ function quickFlash(c){
 }
 const BRACKETS=[['instant',0,2000],['under 10s',2000,10000],['10 to 30s',10000,30000],['over 30s',30000,Infinity]];
 function bracketOf(ms){ return ms==null?-1:BRACKETS.findIndex(b=>ms>=b[1]&&ms<b[2]); }
-// hesitation maps onto the grade, never straight onto the interval:
-// the scheduler is fitted to grades, so this keeps the adjustment on-model
+// An Easy that took a while is recorded as Good. Hesitation maps onto the
+// GRADE, never straight onto the interval -- the scheduler is fitted to
+// grades, so this keeps the adjustment on-model.
+//
+// Narrowed twice on 2026-08-18, both times off a walk over real backups
+// (REVIEW_SYSTEM_PLAN.md §3.2-3.2c). What this used to do, and why it
+// doesn't any more:
+//
+// 1. THE Good->Hard ARM IS GONE. It fired 15 times in 35,482 real ratings,
+//    and never once on a review-state card. Now that Hard is a button you
+//    press yourself (#bHard), a silent timing override of a deliberate
+//    press stops being "catching what you missed" and becomes
+//    second-guessing a choice that had its own control -- the objection
+//    Anki's own maintainer raised when this exact feature was proposed for
+//    Anki core, and the reason it never landed there.
+// 2. THE THRESHOLD IS ITS OWN CONSTANT, not a BRACKETS boundary. At the old
+//    10s line this converted literally zero Easy presses in either deck:
+//    Easy's p99 is 7.2-8.7s, so the cutoff sat past the end of the only
+//    distribution it can act on. At 5s it converts 2-6% of ratings, and
+//    those presses go on to fail 7-27pp more often than fast ones -- real
+//    signal at a proportionate rate. The per-press effect is flat from 2s
+//    to 6s, so a lower line buys no precision and only converts more (at
+//    1s: 97% of every Easy press, which is not a heuristic but an abolition
+//    of the grade). Anywhere in 4-6s is defensible; do not go below 4s
+//    without new evidence.
+//
+// BRACKETS stays exactly where it is, for latencyStats()'s histogram --
+// which is what it was built for. The two are deliberately no longer
+// coupled: a display constant silently doing scheduling work is what went
+// wrong here the first time.
+const EASY_SLOW_MS=5000;
 function adjustGrade(r,ms){
-  if(!S.settings.useTiming||ms==null||r===AGAIN) return r;
-  const b=bracketOf(ms);
-  if(b===3) return r===EASY?GOOD:(r===GOOD?HARD:r);
-  if(b===2) return r===EASY?GOOD:r;
-  return r;
+  if(!S.settings.useTiming||ms==null||r!==EASY) return r;
+  return ms>EASY_SLOW_MS?GOOD:r;
 }
 function rate(pressed){
   if(tooSoonAfter(Date.now(),revealAt,260)) return; // guard: the reveal tap must not grade
@@ -3732,7 +3998,11 @@ function rate(pressed){
     setAside(current,true,now);   // routes through setAside() so setAsideAt/rec.drillFlag (Drill stats) get stamped here too, not just on a manual flag
     toast('Set aside automatically — "Again" '+S.settings.flagAuto+' times today',3200);
   }
-  if(r!==pressed) toast(pressed===EASY?'Recorded as Good — that one took a while':'Recorded as Hard — that one took a while',1600);
+  // Only one adjustment exists now, so only one message does. This used to be
+  // a ternary with a 'Recorded as Hard' arm for the Good->Hard demotion --
+  // unreachable since that arm was deleted 2026-08-18, and left standing it
+  // would have gone on advertising a rule the app no longer has.
+  if(r!==pressed) toast('Recorded as Good — that one took a while',1600);
   const d=today();
   const rec=S.days[d]||(S.days[d]={n:0,intro:0,ok:0,tot:0,words:0});
   rec.n++;
@@ -5691,17 +5961,72 @@ function parseCandidates(raw){
    other delimiters only with a CONSISTENT field count and real quoting,
    comma last of those -- `a, ab (+ abl.)` is a real Latin term, so a
    comma alone can never win. */
-const IMPORT_HEADING_RE=/^(?:chapter|ch\.?|cap(?:itulum|ut)?\.?|unit|lesson|part|stage|reading|week|list|group|section|topic|book|liber|lib\.?)\s*(?:[0-9]{1,4}|[ivxlcIVXLC]{1,7})\b[.:)]?\s*(?:[-–—:]\s*)?(?:.{0,50})$/i;
+// The keyword needs a real gap before its numeral: "liberi -orum m. pl."
+// would otherwise read as "Liber I", and "capio" as "Cap. I" -- real Latin
+// words, seen in the freshers' list test run.
+const IMPORT_HEADING_RE=/^(?:chapter|ch|cap(?:itulum|ut)?|unit|lesson|part|stage|reading|week|list|group|section|topic|book|liber|lib)(?:\.\s*|\s+)(?:[0-9]{1,4}|[ivxlcIVXLC]{1,7})\b[.:)]?\s*(?:[-–—:]\s*)?(?:.{0,50})$/i;
+const IMPORT_ROMAN_RE=/^(?=[IVXLC])M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\.?$/;   // a lone Roman numeral line
 const IMPORT_NUM_RE=/^\(?\d{1,4}[.)]\s*(?=\S)/;          // "12. abate", "12) abate", "(12) abate"
 const IMPORT_BARE_NUM_RE=/^\d{1,4}\s+(?=\S)/;             // "12 abate" -- only honoured when nearly every line has it
-const IMPORT_LINE_SEPS=[                                  // ordered: the first to reach the coverage bar wins ties
-  {id:'emdash', re:/\s*—\s*/},
-  {id:'endash', re:/\s+–\s+|\s*–\s*/},
-  {id:'colon',  re:/:\s+/},
-  {id:'equals', re:/\s*=\s*/},
-  {id:'hyphen', re:/\s+-\s+/},                            // spaced only: "-ή, -όν" and "-orum" stay inside the term
-  {id:'spaces', re:/ {2,}/}
+// Each rule's find(text) returns {index,len} for the split point, or null.
+// Ordered: the first to reach the coverage bar wins ties. 'script' is last
+// on purpose -- an explicit separator always outranks a script change.
+const IMPORT_RE_RULE=(id,re)=>({id, find:s=>{ const m=re.exec(s); return m?{index:m.index,len:m[0].length}:null; }});
+const IMPORT_LINE_SEPS=[
+  IMPORT_RE_RULE('emdash', /\s*—\s*/),
+  IMPORT_RE_RULE('endash', /\s+–\s+|\s*–\s*/),
+  IMPORT_RE_RULE('dashdash', /\s+-{2,3}\s+/),             // "--" or "---": the plain-ASCII em dash, from anyone typing on a keyboard with no real one -- a deliberate separator, unlike the single spaced hyphen below
+  IMPORT_RE_RULE('colon',  /:\s+/),
+  IMPORT_RE_RULE('equals', /\s*=\s*/),
+  IMPORT_RE_RULE('hyphen', /\s+-\s+/),                    // spaced only: "-ή, -όν" and "-orum" stay inside the term
+  IMPORT_RE_RULE('spaces', / {2,}/),
+  {id:'script', find:importScriptSplit}
 ];
+// The script-boundary rule: a term in a non-Latin script followed, on the
+// same line with nothing but a space between, by a gloss in Latin script --
+// exactly what Preview / iOS put on the clipboard for a two-column Greek
+// PDF ("ἀγαθός -ή -όν good"). The split is the first token containing a
+// Latin letter, provided every token before it carries a non-Latin letter
+// (endings like "-ή," count -- they contain Greek). Never fires on a
+// Latin-script term, so a Latin list can't be mangled by it.
+const IMPORT_LATIN_LETTER=/[A-Za-z\u00C0-\u024F]/, IMPORT_NONLATIN_LETTER=/[\u0370-\u03FF\u1F00-\u1FFF\u0400-\u04FF\u0530-\u058F\u0590-\u05FF\u0600-\u06FF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/;
+// Two refinements, both from the freshers' Greek list: (1) a bracketed
+// grammatical label right after the headword -- "(adv.)", "(+ gen.)",
+// "(adv. and prep. + gen.)" -- is part of the term, not the gloss, when
+// every word inside the brackets is a grammatical abbreviation from the
+// fixed list below ("(do) wrong" and "(upper) air" fail that test and stay
+// on the gloss side); (2) an "or"/"and" between two Greek forms ("δόρυ
+// δόρατος or δορός, τό") is a connector inside the term when Greek resumes
+// right after it.
+const IMPORT_GRAM_ABBR=new Set(['adv','adj','conj','prep','gen','dat','acc','abl','nom','voc','loc','m','f','n','c','pl','sg','sing','mid','pass','act','dep','impers','indecl','comp','superl','interj','aor','pf','perf','fut','impf','pres','subj','opt','inf','ptc','part','w','+','and','or','of','with','the','a','an','usu','esp','also','only','etc','abs','trans','intrans','intr','tr','poet','rare','late','aorist','future','perfect','imperfect','present','strong','weak','middle','passive','active','pluperfect','plural','singular','masculine','feminine','neuter','irregular','defective','1st','2nd','3rd','first','second','third']);
+const IMPORT_CONNECTORS=new Set(['or','and','vel','sive','seu']);
+function importScriptSplit(text){
+  const toks=[]; const re=/\S+/g; let m;
+  while((m=re.exec(text))) toks.push({s:m[0], at:m.index});
+  let sawTerm=false;
+  for(let i=0;i<toks.length;i++){
+    const tok=toks[i].s;
+    if(IMPORT_LATIN_LETTER.test(tok)){
+      if(!sawTerm) return null;
+      const bare=tok.toLowerCase().replace(/[.,;:()]/g,'');
+      // (2) connector between two non-Latin forms
+      if(IMPORT_CONNECTORS.has(bare) && i+1<toks.length && IMPORT_NONLATIN_LETTER.test(toks[i+1].s) && !IMPORT_LATIN_LETTER.test(toks[i+1].s)) continue;
+      // (1) grammatical parenthetical opening here: every word up to ")" is an abbreviation
+      if(tok[0]==='('){
+        let j=i, okAll=true, closed=false;
+        for(;j<toks.length;j++){
+          const w=toks[j].s.toLowerCase().replace(/^\(+|[).,;:]+$/g,'').replace(/\.$/,'');
+          if(w && !IMPORT_GRAM_ABBR.has(w) && !IMPORT_NONLATIN_LETTER.test(w)){ okAll=false; break; }
+          if(/\)[.,;:]*$/.test(toks[j].s)){ closed=true; break; }
+        }
+        if(okAll && closed && j+1<toks.length){ i=j; continue; }
+      }
+      return {index:toks[i].at,len:0};
+    }
+    if(IMPORT_NONLATIN_LETTER.test(tok)) sawTerm=true;
+  }
+  return null;
+}
 const IMPORT_TAB_DELIMS=[{id:'tab',ch:'\t'},{id:'semicolon',ch:';'},{id:'pipe',ch:'|'},{id:'comma',ch:','}];
 const IMPORT_HEADER_WORDS={
   term:['term','terms','word','words','headword','lemma','front','question','latin','greek','vocab','vocabulary','name','formula name','concept','key term'],
@@ -5732,17 +6057,28 @@ function importSplitFields(line, ch){
 function importIsGreek(s){ return /[Ͱ-Ͽἀ-῿]/.test(s); }
 function importHasMacron(s){ return /[āēīōūĀĒĪŌŪ]/.test(s); }
 function importWords(s){ return s.split(/\s+/).filter(Boolean).length; }
-function importClean(s){ return String(s==null?'':s).normalize('NFC').replace(/\s+/g,' ').trim(); }
+// U+00B5 MICRO SIGN stands in for Greek mu in a lot of real text: PDF text
+// layers whose font mapped mu that way (the freshers' Greek list -- 264 of
+// its 983 rows), and anything typed with Option-M on a Mac keyboard. NFC
+// leaves it alone (only NFKC folds it, and NFKC would also flatten σ² to
+// σ2, wrong for a formula deck), so it is folded here explicitly, alone.
+function importFold(s){ return String(s==null?'':s).replace(/\u00b5/g,'\u03bc').normalize('NFC'); }
+function importClean(s){ return importFold(s).replace(/\s+/g,' ').trim(); }
 // Line-level clean keeps tabs and runs of spaces intact -- both are shapes
 // the detector reads (tab rule, two-plus-spaces rule); only the fields cut
 // out of a line get fully collapsed, by importClean above.
-function importCleanLine(s){ return String(s==null?'':s).normalize('NFC').replace(/\u00a0/g,' ').replace(/^[ \t]+|[ \t]+$/g,''); }
+function importCleanLine(s){ return importFold(s).replace(/\u00a0/g,' ').replace(/^[ \t]+|[ \t]+$/g,''); }
 // Header-row detection for tabular input: enough of the first row's cells
 // have to read like column names, and none of them like content.
+// A header cell is matched on its letters alone: OCR's defined-vocabulary
+// list heads its last column "Meaning(s)", which is the word "meanings" with
+// punctuation on it and was matching nothing -- so the meanings ended up in
+// the one column the positional fallback throws away.
+function importHeaderKey(s){ return String(s||'').toLowerCase().replace(/[^a-z ]+/g,'').replace(/\s+/g,' ').trim(); }
 function importLooksLikeHeader(cells){
   let hits=0;
   for(const c of cells){
-    const k=c.toLowerCase().trim();
+    const k=importHeaderKey(c);
     if(!k) continue;
     for(const role in IMPORT_HEADER_WORDS) if(IMPORT_HEADER_WORDS[role].indexOf(k)!==-1){ hits++; break; }
   }
@@ -5753,7 +6089,7 @@ function importAutoMapping(cells, header){
   const taken={};
   if(header){
     cells.forEach((c,i)=>{
-      const k=c.toLowerCase().trim();
+      const k=importHeaderKey(c);
       for(const role of ['term','gloss','section','note']){
         if(taken[role]) continue;
         if(IMPORT_HEADER_WORDS[role].indexOf(k)!==-1){ roles[i]=role; taken[role]=true; break; }
@@ -5774,7 +6110,7 @@ function importAnalyse(text, opts){
   opts=opts||{};
   const forced=opts.sep&&opts.sep!=='auto'?opts.sep:null;
   const src=String(text||'').replace(/^﻿/,'').replace(/\r\n?/g,'\n');
-  const all=src.split('\n').map((s,i)=>({line:i+1, text:importCleanLine(s)})).filter(l=>l.text);
+  const all=src.split('\n').map((s,i)=>({line:i+1, text:importCleanLine(s), indent:(/^[ \t]*/.exec(s.replace(/\u00a0/g,' '))[0]).replace(/\t/g,'    ').length})).filter(l=>l.text);
   const res={mode:'none', sep:null, columns:0, header:false, mapping:null, rows:[], skipped:[],
              total:0, parsed:0, confidence:0, headings:0, countsStripped:0};
   if(!all.length) return res;
@@ -5785,6 +6121,11 @@ function importAnalyse(text, opts){
     if(IMPORT_HEADING_RE.test(l.text) && !/\t/.test(l.text) && importWords(l.text)<=8){
       section=l.text.slice(0,CAP_SECTION); res.headings++; continue;
     }
+    // A line that is nothing but a Roman numeral ("I", "IV") is a part
+    // heading -- the freshers' lists head each part that way. Labelled
+    // "Part I" the way those decks already are. Bare digits are NOT
+    // headings: in extracted PDF text they are page numbers.
+    if(IMPORT_ROMAN_RE.test(l.text)){ section=('Part '+l.text.replace(/\.$/,'')).slice(0,CAP_SECTION); res.headings++; continue; }
     headingAt[body.length]=section;
     body.push(l);
   }
@@ -5793,11 +6134,22 @@ function importAnalyse(text, opts){
   // 2. numbering: "12." / "12)" / "(12)" prefixes are stripped per line; a bare
   //    "12 word" prefix only when nearly every line carries one.
   const bareNumbered=body.filter(l=>IMPORT_BARE_NUM_RE.test(l.text)).length>=Math.ceil(body.length*0.8) && body.length>=3;
-  const lines=body.map(l=>{
+  let lines=body.map(l=>{
     let t=l.text.replace(IMPORT_NUM_RE,'');
     if(bareNumbered) t=t.replace(IMPORT_BARE_NUM_RE,'');
-    return {line:l.line, raw:l.text, text:t.trim()};
+    return {line:l.line, raw:l.text, text:t.trim(), indent:l.indent||0};
   });
+  // A term that wrapped in the source: a line carrying no Latin-script
+  // letter at all (a headword and its endings, nothing else) followed by a
+  // line that opens with an ending fragment ("-οῦν (made of) silver") is one
+  // entry -- an ending can't start a term, so re-join before any rule runs.
+  for(let i=0;i+1<lines.length;i++){
+    if(!IMPORT_LATIN_LETTER.test(lines[i].text) && IMPORT_NONLATIN_LETTER.test(lines[i].text) && /^-\S/.test(lines[i+1].text) && lines[i].text.indexOf('\t')===-1){
+      lines[i+1]={line:lines[i].line, raw:lines[i].raw+' / '+lines[i+1].raw, text:lines[i].text+' '+lines[i+1].text, indent:lines[i].indent};
+      lines[i]=null;
+    }
+  }
+  lines=lines.filter(Boolean);
   const n=lines.length;
   // 3. which rule wins
   let mode='none', sep=null, delim=null;
@@ -5832,8 +6184,12 @@ function importAnalyse(text, opts){
     }
     if(mode==='none'){
       let best=null;
+      // Indented lines can't be entries in layout-preserving text (they are
+      // wrapped glosses, handled as continuations below), so they don't
+      // count against a rule's coverage.
+      const base=lines.filter(l=>l.indent<4), covLines=base.length>=2?base:lines;
       for(const s of IMPORT_LINE_SEPS){
-        const cov=lines.filter(l=>s.re.test(l.text)).length/n;
+        const cov=covLines.filter(l=>{ const f=s.find(l.text); return f&&f.index>0; }).length/covLines.length;
         if(cov>=IMPORT_MIN_LINES && (!best||cov>best.cov)){ best={id:s.id,cov}; }
       }
       if(best){ mode='lines'; sep=best.id; }
@@ -5873,13 +6229,31 @@ function importAnalyse(text, opts){
     for(const k in cc) if(cc[k]>(cc[columns]||0)) columns=+k;
     if(delim==='\t' && columns<2){ columns=Math.max.apply(null, table.map(f=>f.length)); }
     res.columns=columns;
-    const header = opts.header==='auto'||opts.header==null ? importLooksLikeHeader(table[0]) : !!opts.header;
+    // The header is the first COMPLETE row. Everything above it is a PDF's
+    // title page and rubric: OCR's defined-vocabulary list runs to two pages
+    // of them, some of those lines carry two columns of their own, and its
+    // copyright line spans the first and last columns with nothing between --
+    // so neither "the first line" nor "the first full-width line" finds the
+    // header. The first row with every cell filled is either the header or
+    // the first entry, and importLooksLikeHeader says which.
+    let hIdx=0;
+    for(; hIdx<table.length; hIdx++){
+      const f=table[hIdx];
+      if(f.length===columns && f.every(c=>c)) break;
+    }
+    if(hIdx>=table.length) hIdx=0;
+    const head=table[hIdx]||[];
+    const header = opts.header==='auto'||opts.header==null ? importLooksLikeHeader(head) : !!opts.header;
     res.header=header;
-    const mapping = (opts.mapping&&opts.mapping.length===columns) ? opts.mapping.slice() : importAutoMapping(table[0].length===columns?table[0]:new Array(columns).fill(''), header);
+    const mapping = (opts.mapping&&opts.mapping.length===columns) ? opts.mapping.slice() : importAutoMapping(head.length===columns?head:new Array(columns).fill(''), header);
     res.mapping=mapping;
     const ti=mapping.indexOf('term'), gi=mapping.indexOf('gloss'), si=mapping.indexOf('section'), ni=mapping.indexOf('note');
     table.forEach((f,idx)=>{
-      if(header&&idx===0) return;
+      if(header&&idx===hIdx) return;
+      // Once a header row has been identified, everything above it is front
+      // matter by definition -- a title page, a rubric, a copyright line that
+      // happens to reach the last column. Those are not entries.
+      if(header&&idx<hIdx){ res.skipped.push({line:lines[idx].line, text:lines[idx].raw, reason:'above the header row'}); return; }
       if(f.length>columns){ res.skipped.push({line:lines[idx].line, text:lines[idx].raw, reason:'has '+f.length+' columns, expected '+columns}); return; }
       if(f.length<2){ res.skipped.push({line:lines[idx].line, text:lines[idx].raw, reason:'only one column'}); return; }
       const get=i=>(i>=0&&i<f.length)?f[i]:'';
@@ -5889,12 +6263,22 @@ function importAnalyse(text, opts){
     });
   } else if(mode==='lines'){
     const rule=IMPORT_LINE_SEPS.find(s=>s.id===sep);
+    let prevRow=null;   // the row the immediately preceding line produced, for wrapped glosses
     lines.forEach((l,idx)=>{
-      const m=rule.re.exec(l.text);
-      if(!m){ res.skipped.push({line:l.line, text:l.raw, reason:'no separator found'}); return; }
-      let term=l.text.slice(0,m.index), gloss=l.text.slice(m.index+m[0].length);
+      const m=rule.find(l.text);
+      if(!m){
+        // A gloss that wrapped onto a second line in the source (layout-
+        // preserving PDF text indents the continuation under the gloss
+        // column): an indented, separator-less line right after a row
+        // continues that row's gloss rather than being a failed entry.
+        if(prevRow&&l.indent>=4&&l.text){ prevRow.gloss=(prevRow.gloss+' '+l.text).trim(); prevRow.rawText+=' / '+l.raw; return; }
+        prevRow=null;
+        res.skipped.push({line:l.line, text:l.raw, reason:'no separator found'}); return;
+      }
+      let term=l.text.slice(0,m.index), gloss=l.text.slice(m.index+m.len);
       if(opts.swap){ const x=term; term=gloss; gloss=x; }
-      raw.push({term, gloss, section:sectionFor(idx), note:'', line:l.line, rawText:l.raw});
+      prevRow={term, gloss, section:sectionFor(idx), note:'', line:l.line, rawText:l.raw};
+      raw.push(prevRow);
     });
   } else if(mode==='alt'){
     for(let i=0;i<n;i+=2){
@@ -5909,6 +6293,14 @@ function importAnalyse(text, opts){
   const countRe=/[,;]?\s+(\d{1,4})$/;
   const withCount=raw.filter(r=>countRe.test(r.gloss)).length;
   const stripCounts=raw.length>=2 && withCount>=Math.ceil(raw.length*0.5);
+  // Page numbers: in layout-preserving PDF text the number at the foot of a
+  // page lands on that page's last row. Told apart from occurrence counts
+  // by shape -- a handful of rows, and the integers run 1,2,3,... in order.
+  let stripPages=false;
+  if(!stripCounts && withCount>=3){
+    const seq=raw.filter(r=>countRe.test(r.gloss)).map(r=>+countRe.exec(r.gloss)[1]);
+    stripPages=seq.every((v,i)=>i===0||v===seq[i-1]+1);
+  }
   // 6. normalise, cap, flag, dedupe
   const seen=new Set();
   raw.forEach(r=>{
@@ -5916,6 +6308,9 @@ function importAnalyse(text, opts){
     if(stripCounts){
       const m=countRe.exec(gloss);
       if(m){ gloss=gloss.slice(0,m.index).trim(); res.countsStripped++; if(opts.keepCounts) note=(note?note+' · ':'')+m[1]; }
+    } else if(stripPages){
+      const m=countRe.exec(gloss);
+      if(m){ gloss=gloss.slice(0,m.index).trim(); res.pagesStripped=(res.pagesStripped||0)+1; }
     }
     if(!term||!gloss){ res.skipped.push({line:r.line, text:r.rawText, reason:!term?'empty term':'empty gloss'}); return; }
     const flags=[];
@@ -5940,6 +6335,363 @@ function importAnalyse(text, opts){
 // handler, not here.
 function importRowsToTsv(rows){
   return rows.map(cells=>cells.map(c=>importClean(c).replace(/\t/g,' ')).join('\t')).filter(l=>l.replace(/\t/g,'').trim()).join('\n');
+}
+// Every <table> in an HTML string -> tab-separated rows, via the real DOM
+// rather than guessing from flattened text. Shared by the clipboard-paste
+// sniff below and the .docx table reader further down -- same shape either
+// way once something (the browser, or mammoth) hands back real HTML.
+function importHtmlTablesToTsv(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const tables=Array.from(doc.querySelectorAll('table'));
+  const lines=[];
+  tables.forEach(table=>{
+    Array.from(table.querySelectorAll('tr')).forEach(tr=>{
+      lines.push(Array.from(tr.querySelectorAll('td,th')).map(td=>td.textContent||''));
+    });
+  });
+  return {tsv:importRowsToTsv(lines), tableCount:tables.length};
+}
+// mammoth.js and SheetJS are both UMD bundles (attach window.mammoth /
+// window.XLSX), not ES modules like pdf.js -- import() can't load them, a
+// real same-origin <script> tag can. Cached per src so a second .docx/.xlsx
+// chosen in the same sitting is instant, and never re-fetched.
+const importUmdCache={};
+function importLoadUmd(src, globalName){
+  if(!importUmdCache[src]) importUmdCache[src]=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=src;
+    s.onload=()=>{ const g=window[globalName]; g?resolve(g):reject(new Error(globalName+' did not attach after loading '+src)); };
+    s.onerror=()=>reject(new Error('Could not load '+src));
+    document.head.appendChild(s);
+  });
+  return importUmdCache[src];
+}
+/* ---- a PDF's text layer -> text the shape parser can read (IMPORT_PLAN.md
+   §5 step 5). pdf.js hands back positioned runs, not lines, and in a
+   vocabulary list the gloss column is a TAB STOP: copying the page flattens
+   it to a single space, which is why the freshers' Latin list parsed 3002
+   rows from `pdftotext -layout` and 0 rows from a Preview copy (the
+   2026-08-18 test run). Rebuilding that boundary from x positions is the
+   whole reason to read the PDF here rather than ask for a copy of it.
+
+   importPdfLayout is pure, and deliberately library-shaped but not
+   library-bound: items arrive as {str,x,y,w,h} in VIEWPORT space (x right,
+   y DOWN from the top-left, y at the baseline), which is what
+   importPdfExtract computes from pdf.js's transforms -- so the tests drive
+   all of this with plain numbers and no pdf.js at all.
+
+   importPdfLayout(pages, opts) -> {text, mode, boundary, lines, dropped}
+     pages    [{width, height, items:[{str,x,y,w,h}]}]
+     mode     'columns'  a term|gloss tab stop was found -> emitted as TSV
+              'blocks'   side-by-side page columns -> left block, then right
+              'flow'     neither -> lines in the order they fall
+     boundary x of the gloss column, when mode is 'columns'
+     dropped  page numbers removed by geometry
+   opts: {gapMin, tol} -- the geometry knobs, defaulted below; tests pin them. */
+const IMPORT_PDF_GAP_MIN=10;    // pt: narrower than this is word spacing, not a tab stop
+const IMPORT_PDF_X_TOL=3;       // pt: two column starts this close are one column
+const IMPORT_PDF_MARGIN=0.08;   // the head/foot band of a page where a lone number is a page number
+const IMPORT_PDF_MAX_PAGES=400; // a book is not a word list; read this far and say so
+
+// Items -> visual lines, grouped by baseline rather than by pdf.js's item
+// order: a two-column page emits its columns in whatever order the content
+// stream happens to hold them, and hasEOL is only ever as good as that order.
+function importPdfPageLines(page, opts){
+  const items=((page&&page.items)||[]).filter(i=>i&&typeof i.str==='string'&&i.str.trim());
+  if(!items.length) return [];
+  const heights=items.map(i=>i.h||0).filter(h=>h>0).sort((a,b)=>a-b);
+  const med=heights.length?heights[heights.length>>1]:10;
+  const tol=Math.max(2, med*0.5);
+  const sorted=items.slice().sort((a,b)=> a.y-b.y || a.x-b.x);
+  const lines=[]; let cur=null;
+  for(const it of sorted){
+    if(cur && Math.abs(it.y-cur.y)<=tol){ cur.items.push(it); cur.y=(cur.y*cur.items.length+it.y)/(cur.items.length+1); }
+    else { cur={y:it.y, items:[it]}; lines.push(cur); }
+  }
+  lines.forEach(l=>l.items.sort((a,b)=>a.x-b.x));
+  return lines;
+}
+// The widest gap on a line, and where the run after it starts -- the raw
+// material for finding the tab stop.
+function importPdfLineGap(line){
+  let best=0, at=0;
+  for(let i=1;i<line.items.length;i++){
+    const prev=line.items[i-1], it=line.items[i];
+    const gap=it.x-(prev.x+(prev.w||0));
+    if(gap>best){ best=gap; at=it.x; }
+  }
+  return {gap:best, x:at};
+}
+// Join a run of items into text. A gap wide enough to be a space becomes one
+// space; anything tighter is concatenation, because pdf.js splits a word at
+// every font change -- "ἀπεχθάνο"+"μ"+"αι" is one word in three runs, and a
+// space between them would make it three (the freshers' Greek list again).
+function importPdfJoin(items){
+  let s='';
+  for(let i=0;i<items.length;i++){
+    const it=items[i];
+    if(i){
+      const prev=items[i-1];
+      const gap=it.x-(prev.x+(prev.w||0));
+      if(gap>=Math.max(1,(it.h||10)*0.22) || /\s$/.test(s) || /^\s/.test(it.str)) s+=' ';
+    }
+    s+=it.str;
+  }
+  return s.replace(/\s+/g,' ').trim();
+}
+// The document's tab stops: the x positions that the most lines' wide gaps
+// land on. Modal, not mean -- one term overrunning its column must not drag a
+// stop -- and there can be SEVERAL, because a defined-vocabulary list is
+// often a real table (OCR's AS Level Latin list is Latin | Notes | Part of
+// Speech | Classification | Meaning), and collapsing that to two columns
+// throws away exactly the structure the preview's column roles exist to map.
+function importPdfStops(lines, opts){
+  const gapMin=opts.gapMin||IMPORT_PDF_GAP_MIN, tol=opts.tol||IMPORT_PDF_X_TOL, xs=[];
+  for(const l of lines){
+    for(let i=1;i<l.items.length;i++){
+      const prev=l.items[i-1], it=l.items[i];
+      if(it.x-(prev.x+(prev.w||0))>=gapMin) xs.push(it.x);
+    }
+  }
+  if(!xs.length) return [];
+  xs.sort((a,b)=>a-b);
+  // cluster, then keep only the stops that most lines actually use: a gap
+  // that happens once is a wide word space, not a column.
+  const multi=lines.filter(l=>l.items.length>=2).length, bar=Math.max(3, multi*0.35), stops=[];
+  for(let i=0;i<xs.length;){
+    let j=i; while(j<xs.length && xs[j]-xs[i]<=tol*2) j++;
+    if(j-i>=bar) stops.push(xs[i+((j-i-1)>>1)]);
+    i=j;
+  }
+  return stops;
+}
+// Two entry columns printed side by side on one page are the same geometry as
+// a term|gloss list -- one stop, content either side of it -- so geometry
+// alone cannot tell them apart. What can: on a 2-up page each half is a list
+// in its own right. So ask the shape parser whether the left half ALONE reads
+// as entries; if it does, the stop is a page gutter and the columns must be
+// read down, not across. (Reaching for importAnalyse from here is a layering
+// inversion on purpose: "does this look like a list" is its judgement to make,
+// and duplicating a weaker version of it here would be worse.)
+function importPdfTwoUp(lines, stop, opts){
+  const left=[];
+  for(const l of lines){
+    const s=importPdfSplit(l, stop);
+    if(s.left.length&&s.right.length) left.push(importPdfJoin(s.left));
+  }
+  if(left.length<8) return false;
+  const r=importAnalyse(left.join('\n'), {sep:'auto', swap:false, header:'auto', mapping:null, keepCounts:false, existingTerms:null});
+  return r.mode!=='none' && r.confidence>=0.6 && r.rows.length>=5;
+}
+// The other shape: two independent blocks of entries side by side, whose
+// lines DON'T pair up. No intra-line gap can find that boundary -- most lines
+// only have items on one side of it -- so look for a vertical band of page
+// that no run ever crosses.
+function importPdfBand(lines, width, opts){
+  const B=5, n=Math.ceil(width/B), used=new Array(n).fill(false);
+  for(const l of lines) for(const it of l.items){
+    const a=Math.max(0,Math.floor(it.x/B)), b=Math.min(n-1,Math.ceil((it.x+(it.w||0))/B));
+    for(let i=a;i<=b;i++) used[i]=true;
+  }
+  let best=null, run=0;
+  for(let i=0;i<=n;i++){
+    if(i<n && !used[i]){ run++; continue; }
+    if(run*B>=20){
+      const mid=(i-run/2)*B, x=i*B;
+      // A band only counts with real content on BOTH sides of it: the empty
+      // right margin of a short-measure page is a gap the full height of the
+      // page too, and calling that a column turns plain prose into blocks.
+      let l=0, rr=0;
+      for(const ln of lines) for(const it of ln.items){ if(it.x<x-1) l++; else rr++; }
+      if(mid>width*0.25 && mid<width*0.75 && l>=3 && rr>=3 && (!best||run>best.run)) best={run, x};
+    }
+    run=0;
+  }
+  return best?best.x:null;
+}
+// Where a line's content sits relative to the boundary. An item belongs to
+// the side it STARTS on, so a long term that overruns the column still counts
+// as a term.
+function importPdfSplit(line, boundary){
+  const left=[], right=[];
+  for(const it of line.items) (it.x<boundary-1?left:right).push(it);
+  return {left, right};
+}
+// Which column an item belongs to: the one it STARTS in, so a term that
+// overruns its stop is still a term.
+function importPdfCells(line, stops){
+  const cells=new Array(stops.length+1).fill(null).map(()=>[]);
+  for(const it of line.items){
+    let c=0; while(c<stops.length && it.x>=stops[c]-1) c++;
+    cells[c].push(it);
+  }
+  return cells;
+}
+function importPdfRow(cells){
+  // A cell after the first that opens with the source's own separator (": a
+  // concise collection") keeps a colon it no longer needs, now that the column
+  // boundary says the same thing. The space is required, so a Greek ending
+  // like "-ή" is never touched.
+  const out=cells.map((c,i)=>{ const s=importPdfJoin(c); return i?s.replace(/^[:\u2013\u2014-]\s+/,''):s; });
+  while(out.length&&!out[out.length-1]) out.pop();
+  return out;
+}
+// Emit one run of lines as rows. With stops, every line becomes cells and a
+// row is tab-separated; without them each line is a row of its own, except
+// that in a block a line indented past the block's own margin is a definition
+// that wrapped. (That indent rule is deliberately NOT applied to a whole page
+// of prose, where an indent marks the START of a paragraph, not a runover.)
+function importPdfEmit(lines, stops, out, opts, indentJoin){
+  const tol=(opts.tol||IMPORT_PDF_X_TOL)*2;
+  let edge=Infinity;
+  if(indentJoin&&!stops.length) for(const l of lines) if(l.items.length) edge=Math.min(edge, l.items[0].x);
+  for(const l of lines){
+    if(!stops.length){
+      const text=importPdfJoin(l.items);
+      if(!text) continue;
+      if(indentJoin && l.items[0].x>edge+tol && out.length) out[out.length-1]+=' '+text;
+      else out.push(text);
+      continue;
+    }
+    const cells=importPdfRow(importPdfCells(l, stops));
+    if(!cells.length) continue;
+    if(cells[0]){ out.push(cells.join('\t')); continue; }
+    // Nothing in the first column. Either a gloss that wrapped -- which
+    // belongs on the end of the row above, and is typeset AT a stop -- or a
+    // centred part heading, which sits right of one ("II", 41pt further right,
+    // in the freshers' Latin list). Swallowing that heading loses the section
+    // for every row that follows it.
+    const atStop=stops.some(s=>Math.abs(l.items[0].x-s)<=tol), prev=out.length-1;
+    if(atStop && prev>=0 && out[prev].indexOf('\t')>=0){
+      const was=out[prev].split('\t');
+      cells.forEach((c,i)=>{ if(c) was[i]=(was[i]?was[i]+' ':'')+c; });
+      out[prev]=was.join('\t');
+    } else out.push(cells.filter(Boolean).join(' '));
+  }
+}
+// One side of a gutter, as lines in its own right -- so a block can have its
+// own tab stops. Two two-column lists printed side by side are four stops on
+// the page and two on each side of it, and only the second reading is true.
+function importPdfSide(lines, gutter, left){
+  const out=[];
+  for(const l of lines){
+    const s=importPdfSplit(l, gutter), run=left?s.left:s.right;
+    if(run.length) out.push({y:l.y, items:run});
+  }
+  return out;
+}
+function importPdfLayout(pages, opts){
+  opts=opts||{};
+  const perPage=(pages||[]).map(p=>({page:p, lines:importPdfPageLines(p, opts)}));
+  const all=[].concat.apply([], perPage.map(p=>p.lines));
+  if(!all.length) return {text:'', mode:'flow', boundary:null, stops:[], lines:0, dropped:0};
+  const width=(pages[0]&&pages[0].width)||595;
+  let stops=importPdfStops(all, opts), mode='columns', gutter=null;
+  // Is one of those stops a page gutter rather than a column? Try the stops
+  // nearest the middle of the page first -- that is where a gutter is.
+  for(const s of stops.slice().sort((a,b)=>Math.abs(a-width/2)-Math.abs(b-width/2))){
+    if(s>width*0.25 && s<width*0.75 && importPdfTwoUp(all, s, opts)){ gutter=s; mode='blocks'; break; }
+  }
+  if(!stops.length){
+    // No stop at all, but two blocks of entries whose lines never pair up
+    // still leave a band of page that nothing crosses.
+    const band=importPdfBand(all, width, opts);
+    if(band!==null){
+      let both=0, one=0;
+      for(const l of all){ const s=importPdfSplit(l, band); if(s.left.length&&s.right.length) both++; else one++; }
+      if(both<one*0.25){ gutter=band; stops=[band]; mode='blocks'; }
+    }
+    if(!stops.length) mode='flow';
+  }
+  const out=[];
+  let dropped=0;
+  const kept=[];
+  for(const pl of perPage){
+    const H=(pl.page&&pl.page.height)||842, keep=[];
+    for(const l of pl.lines){
+      const text=importPdfJoin(l.items);
+      if(!text) continue;
+      // A lone number in the head or foot margin is a page number. The text
+      // parser has to guess that from the number alone; here it is geometry.
+      if(/^\d{1,4}$/.test(text) && (l.y<H*IMPORT_PDF_MARGIN || l.y>H*(1-IMPORT_PDF_MARGIN))){ dropped++; continue; }
+      keep.push({line:l, text, head:(l.y<H*0.15||l.y>H*0.85)});
+    }
+    kept.push(keep);
+  }
+  // Running heads and feet: the same words, at the same height, page after
+  // page -- a repeated table header or a title bar, not content. OCR's AS
+  // Level Latin list reprints its "Latin | Notes | Part of Speech | ..."
+  // header on all thirteen of its pages. The first is left alone, so a header
+  // row that IS the first line can still be read as one.
+  const runs=new Map();
+  kept.forEach((keep,pi)=>keep.forEach(k=>{
+    if(!k.head) return;
+    // Keyed on the words alone: bucketing by height split OCR's reprinted
+    // table header across two buckets, and one copy of it survived.
+    const key=k.text;
+    if(!runs.has(key)) runs.set(key,[]);
+    if(runs.get(key).indexOf(pi)<0) runs.get(key).push(pi);
+  }));
+  const dropRun=new Set(), runSeen=new Set();
+  runs.forEach((pgs,key)=>{ if(pgs.length>=3) dropRun.add(key); });
+  const sideStops=[null,null];
+  if(mode==='blocks'){
+    [true,false].forEach((left,i)=>{ sideStops[i]=importPdfStops(importPdfSide(all, gutter, left), opts); });
+  }
+  for(let pi=0;pi<perPage.length;pi++){
+    const keep=kept[pi].filter(k=>{
+      if(!k.head) return true;
+      const key=k.text;
+      if(!dropRun.has(key)) return true;
+      if(runSeen.has(key)){ dropped++; return false; }
+      runSeen.add(key); return true;
+    });
+    const lines=keep.map(k=>k.line);
+    if(mode==='blocks'){
+      importPdfEmit(importPdfSide(lines, gutter, true),  sideStops[0], out, opts, true);
+      importPdfEmit(importPdfSide(lines, gutter, false), sideStops[1], out, opts, true);
+    } else {
+      importPdfEmit(lines, mode==='columns'?stops:[], out, opts, false);
+    }
+  }
+  return {text:out.join('\n'), mode, boundary:gutter!==null?gutter:(stops.length?stops[0]:null),
+          stops:mode==='blocks'?[gutter]:stops, lines:out.length, dropped};
+}
+// pdf.js itself: 1.7 MB in vendor/, fetched only when a PDF is actually
+// chosen, so a person who never opens one never pays for it. Text only --
+// nothing is rendered, no canvas, no fonts, and the file goes in as bytes
+// (getDocument({data}), never a URL) because the CSP allows connect-src to
+// the sync Worker and nothing else.
+let importPdfLib=null;
+async function importPdfExtract(file, onProgress){
+  if(!importPdfLib){
+    importPdfLib=await import('./vendor/pdf.min.mjs');
+    importPdfLib.GlobalWorkerOptions.workerSrc='./vendor/pdf.worker.min.mjs';
+  }
+  const pdfjs=importPdfLib;
+  // A PDF whose text is set in unembedded Helvetica/Times/Courier makes
+  // pdf.js log "Ensure that the standardFontDataUrl API parameter is
+  // provided". It is a warning, not a failure -- the text still comes out
+  // right -- and the font data is deliberately NOT vendored: it is fetched,
+  // and connect-src reaches the sync Worker and nothing else.
+  const task=pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer()), isEvalSupported:false, disableAutoFetch:true});
+  const doc=await task.promise;
+  const read=Math.min(doc.numPages, IMPORT_PDF_MAX_PAGES), pages=[];
+  try{
+    for(let p=1;p<=read;p++){
+      const page=await doc.getPage(p), vp=page.getViewport({scale:1});
+      const items=[];
+      for(const it of (await page.getTextContent()).items){
+        if(typeof it.str!=='string'||!it.str.trim()) continue;
+        const tx=pdfjs.Util.transform(vp.transform, it.transform);
+        items.push({str:it.str, x:tx[4], y:tx[5], w:it.width||0, h:Math.hypot(tx[2],tx[3])||it.height||0});
+      }
+      pages.push({width:vp.width, height:vp.height, items});
+      page.cleanup();
+      if(onProgress) onProgress(p, read, doc.numPages);
+    }
+  } finally { task.destroy(); }   // the LOADING TASK owns destroy() in pdf.js 6; doc.destroy is undefined
+  return {pages, read, numPages:doc.numPages};
 }
 // A vocabula deck file (Settings -> "Export deck file"): the content record
 // exactly as the IndexedDB `content` store holds it, plus enough of the
@@ -5990,7 +6742,7 @@ function deckLabelsFor(kind, title){
    trailing counts), and the three ways out: Accept all, Review the flagged,
    Triage everything. Re-runs the pure parser on every control change; the
    source text itself is never mutated. ---- */
-let importSource='', importResult=null, importDeckFile=null;
+let importSource='', importResult=null, importDeckFile=null, importNote='';
 let importOpts={sep:'auto', swap:false, header:'auto', mapping:null, keepCounts:false};
 function existingTermSet(){
   const s=new Set();
@@ -6003,8 +6755,8 @@ function readTargetChoice(){
   triageScript=($('exScript').value==='greek')?'greek':'latin';
   triageTitle=triageTarget==='append'?DECK_TITLE:$('exTitle').value.trim();
 }
-function startImportPreview(text){
-  importSource=text; importDeckFile=null;
+function startImportPreview(text, note){
+  importSource=text; importDeckFile=null; importNote=note||'';
   importOpts={sep:'auto', swap:false, header:'auto', mapping:null, keepCounts:false};
   $('extractSetup').classList.add('hidden');
   $('triageArea').classList.add('hidden');
@@ -6012,7 +6764,7 @@ function startImportPreview(text){
   $('importPreview').classList.remove('hidden');
   renderImportPreview();
 }
-function findWords(){
+function findWords(note){
   readTargetChoice();
   const text=$('exText').value;
   if(!text.trim()){ $('exParseError').textContent='Paste some text, or choose a file, first.'; return; }
@@ -6027,7 +6779,7 @@ function findWords(){
     const r=parseCandidates(text);
     if(!r.error){ importCandidatesToPreview(r.candidates); return; }
   }
-  startImportPreview(text);
+  startImportPreview(text, note);
 }
 // A candidate array that arrived ready-made (a .json file, or JSON pasted
 // into the main box) still goes through the preview -- so the counts,
@@ -6037,18 +6789,53 @@ function importCandidatesToPreview(cands){
   const tsv=importRowsToTsv(cands.map(c=>[c.term,c.gloss,c.section||'',c.note||'']));
   startImportPreview('term\tgloss\tsection\tnote\n'+tsv);
 }
+/* ---- Which rows the preview actually shows. The table is capped for the
+   DOM's sake, and a cap spent entirely on the TOP is the worst possible
+   sample: the front matter is at the top, while a column boundary that
+   drifts on page 40 of a 64-page PDF sits in the middle and is invisible
+   until you are already studying the wrong answer. So the cap buys three
+   windows -- the start, the middle, and the end. Pure, so the tests can
+   pin the arithmetic. */
+function importPreviewSlices(n, show){
+  if(n<=show) return [[0,n]];
+  const head=Math.round(show*0.5), midN=Math.round(show*0.25), tailN=show-head-midN;
+  const m0=Math.floor((n-midN)/2), t0=n-tailN;
+  if(m0<=head || t0<=m0+midN) return [[0,show]];   // too few rows for three clean windows
+  return [[0,head],[m0,m0+midN],[t0,n]];
+}
+// The prompt the "Copy a prompt for an AI" button puts on the clipboard, for
+// the sources this parser can't read: a scan, a photograph, a page whose
+// columns it gets wrong. The rules are all about fencing the model in --
+// a parser fails loudly and a model fails quietly, and an invented gloss
+// looks exactly like a correct one, so the only defence is to forbid
+// invention and demand that anything unreadable be declared.
+const IMPORT_AI_PROMPT=[
+  'Turn this vocabulary list into tab-separated lines -- one entry per line, in this shape:',
+  '',
+  'term<TAB>gloss',
+  '',
+  'Rules:',
+  '- Copy exactly what is printed. Do not translate, correct, modernise, expand abbreviations, or add anything that is not on the page.',
+  '- Keep accents, breathings and macrons exactly as printed.',
+  '- Keep grammatical information (principal parts, genitive endings, gender, "+ acc") with the term, in the order printed.',
+  '- One printed entry is one line. Where a page has two columns of entries side by side, read the whole of one column before starting the other.',
+  '- If the list is divided into parts, chapters or lessons, put that name in a third tab-separated column.',
+  '- If you cannot read an entry with confidence, leave it out and list it at the end under a line reading SKIPPED.',
+  '- Output nothing else: no commentary, no headings, no numbering, no markdown.'
+].join('\n');
 function importFlagLabel(f){ return f==='overcap'?'cut to length':f==='longterm'?'long term — check the split':f; }
 function renderImportPreview(){
   const opts=Object.assign({}, importOpts, {existingTerms: triageTarget==='append'?existingTermSet():null});
   const r=importAnalyse(importSource, opts);
   importResult=r;
   const flagged=r.rows.filter(x=>x.flags.length).length;
-  const sepName={tab:'tabs',semicolon:'semicolons',pipe:'pipes',comma:'commas',emdash:'em dashes',endash:'en dashes',colon:'colons',equals:'equals signs',hyphen:'hyphens',spaces:'runs of spaces',alt:'alternating lines'}[r.sep]||'';
+  const sepName={tab:'tabs',semicolon:'semicolons',pipe:'pipes',comma:'commas',emdash:'em dashes',endash:'en dashes',dashdash:'double hyphens',colon:'colons',equals:'equals signs',hyphen:'hyphens',spaces:'runs of spaces',script:'the change of script',alt:'alternating lines'}[r.sep]||'';
   $('ipSummary').textContent = r.mode==='none'
     ? 'No consistent shape found in '+r.total+' line'+(r.total===1?'':'s')
     : r.rows.length+' word'+(r.rows.length===1?'':'s')+' found · '+r.skipped.length+' skipped · '+flagged+' flagged'
       +(sepName?' · split on '+sepName:'')+(r.header?' · header row':'')+(r.headings?' · '+r.headings+' heading'+(r.headings===1?'':'s'):'')
       +(r.countsStripped?' · trailing counts '+(importOpts.keepCounts?'kept in notes':'dropped'):'');
+  if(importNote) $('ipSummary').textContent+=' · '+importNote;
   // controls
   $('ipSep').value=importOpts.sep;
   $('ipSwap').classList.toggle('on',!!importOpts.swap);
@@ -6070,13 +6857,19 @@ function renderImportPreview(){
   }
   // the table itself -- capped for the DOM's sake; the count line above is the truth
   const SHOW=400;
-  const rows=r.rows.slice(0,SHOW);
+  const slices=importPreviewSlices(r.rows.length, SHOW);
   let html='<thead><tr><th>#</th><th>Term</th><th>Gloss</th><th>Section</th><th>Note</th></tr></thead><tbody>';
-  rows.forEach((x,i)=>{
-    html+='<tr'+(x.flags.length?' class="flag"':'')+'><td class="n">'+(i+1)+'</td><td>'+escHtml(x.term)+'</td><td>'+escHtml(x.gloss)+'</td><td>'+escHtml(x.section)+'</td><td>'+escHtml(x.note)
-         +(x.flags.length?'<span class="ipFlag">'+escHtml(x.flags.map(importFlagLabel).join(', '))+'</span>':'')+'</td></tr>';
+  let shown=0, at=0;
+  slices.forEach(([a,b])=>{
+    if(a>at) html+='<tr><td colspan="5" class="more">… '+(a-at)+' row'+(a-at===1?'':'s')+' not shown …</td></tr>';
+    for(let i=a;i<b;i++){
+      const x=r.rows[i];
+      html+='<tr'+(x.flags.length?' class="flag"':'')+'><td class="n">'+(i+1)+'</td><td>'+escHtml(x.term)+'</td><td>'+escHtml(x.gloss)+'</td><td>'+escHtml(x.section)+'</td><td>'+escHtml(x.note)
+           +(x.flags.length?'<span class="ipFlag">'+escHtml(x.flags.map(importFlagLabel).join(', '))+'</span>':'')+'</td></tr>';
+    }
+    shown+=b-a; at=b;
   });
-  if(r.rows.length>SHOW) html+='<tr><td colspan="5" class="more">… and '+(r.rows.length-SHOW)+' more</td></tr>';
+  if(at<r.rows.length) html+='<tr><td colspan="5" class="more">… '+(r.rows.length-at)+' row'+(r.rows.length-at===1?'':'s')+' not shown …</td></tr>';
   if(!r.rows.length) html+='<tr><td colspan="5" class="more">'+(r.mode==='none'?'Try a separator from the list above, or check the skipped lines below.':'Nothing usable — check the skipped lines below.')+'</td></tr>';
   html+='</tbody>';
   $('ipTable').innerHTML=html;
@@ -6085,6 +6878,16 @@ function renderImportPreview(){
   $('ipSkippedSummary').textContent=r.skipped.length+' skipped line'+(r.skipped.length===1?'':'s');
   $('ipSkipped').textContent=r.skipped.slice(0,300).map(s=>'line '+s.line+' — '+s.reason+'\n    '+s.text).join('\n')+(r.skipped.length>300?'\n… and '+(r.skipped.length-300)+' more':'');
   // buttons
+  // Said where it matters -- above the button that keeps the batch -- and only
+  // when the batch is big enough that nobody is reading every row.
+  const cau=$('ipCaution');
+  if(r.rows.length>25){
+    cau.classList.remove('hidden');
+    cau.textContent='What a parser gets wrong, it gets wrong quietly: one boundary read a word too far turns every gloss on that page into the wrong answer, and a word learnt wrong is worse than one never imported. '
+      +(shown<r.rows.length
+        ? 'Check a few rows against the original — the table shows '+shown+' of '+r.rows.length+', from the start, the middle and the end, so read past the first screen.'
+        : 'Check a few rows against the original before keeping them.');
+  } else cau.classList.add('hidden');
   $('ipAcceptAll').disabled=!r.rows.length;
   $('ipAcceptAll').textContent=triageTarget==='append'?'Add all '+r.rows.length+' to '+DECK_TITLE:'Accept all '+r.rows.length;
   $('ipReviewFlagged').disabled=!flagged;
@@ -6805,7 +7608,15 @@ function renderSync(){
   // owner should never have to guess "did that last review make it over"
   // before switching devices.
   const unsynced=S.syncedLogLen!=null?Math.max(S.log.length-S.syncedLogLen,0):0;
-  if(!S.lastSync){ el.className='note bad'; el.textContent='A sync code is set but nothing has been pushed yet.'; return; }
+  if(!S.lastSync){
+    // A failed push and a never-attempted one used to read identically here
+    // -- see pushSync()'s own comment (FINALISATION_PLAN.md §5.2).
+    el.className='note bad';
+    el.textContent=S.lastPushError
+      ? 'Last push failed (' + S.lastPushError + ') — tap Sync now to retry.'
+      : 'A sync code is set but nothing has been pushed yet.';
+    return;
+  }
   const age=Date.now()-S.lastSync;
   const txt = age<MIN? 'just now'
             : age<HOUR? Math.round(age/MIN)+'m ago'
@@ -6916,6 +7727,16 @@ const SYNC_ENDPOINT='https://vocabula-sync.karsten-vun.workers.dev';
 const SYNC_SHARED_KEY='vocabula.sync.v1';       // {syncCode, deviceName}, shared with index.html and the other deck
 const SYNC_MIN_GAP=60*1000;                     // never more than one automatic push a minute mid-sitting -- see save()
 const SYNC_MAX_BYTES=20*1024*1024;              // matches the Worker's own cap; KV values top out at 25 MiB
+const SYNC_KEEPALIVE_MAX=60*1024;               // see shouldKeepalive()'s own comment -- a keepalive fetch over ~64KiB is a spec-level network error, not just a dropped flag
+// Pure, so the boundary is provable without a real fetch -- see tests.js.
+// keepalive lets a PUT survive the tab closing/backgrounding a beat after it
+// fires (exactly the gap newSyncCode() found itself exposed in,
+// FINALISATION_PLAN.md §5.2), but the Fetch spec turns a keepalive request
+// over ~64KiB into an outright network error rather than just dropping the
+// flag -- so this must never apply to a push that size or larger. Those
+// already can't rely on surviving an immediate close either way, so plain
+// fetch is strictly no worse for them.
+function shouldKeepalive(bytes){ return bytes<=SYNC_KEEPALIVE_MAX; }
 // Old gist credentials (pre-2026.08.16.7) lived in this key. Read once for the
 // device name, then removed: the token in there is a secret nothing needs any
 // more, and the shared-origin caveat in SECURITY_PASS_2026-08-08.md is one
@@ -7055,13 +7876,23 @@ async function pushSync(quiet){
     bytes=body.length;
     S.lastPushBytes=bytes;
     if(bytes>SYNC_MAX_BYTES) throw new Error('too large ('+fmtBytes(bytes)+')');
-    const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey,{method:'PUT',headers:{'Content-Type':'application/json'},body:body});
+    const opts={method:'PUT',headers:{'Content-Type':'application/json'},body:body};
+    if(shouldKeepalive(bytes)) opts.keepalive=true;
+    const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey,opts);
     if(!r.ok) throw new Error('HTTP '+r.status);
     S.lastSync=Date.now(); S.syncedLogLen=S.log.length; S.sinceExport=0; lastPushAt=S.lastSync;
+    S.lastPushError=null; S.lastPushErrorAt=null;
     persistNow();
     if(!quiet) toast('Synced as '+S.lastDevice+' ('+fmtBytes(bytes)+')');
     return true;
   }catch(e){
+    // Persisted, not just tossed to a toast: a failed push and a push that
+    // was never attempted used to render identically ("nothing synced yet")
+    // in both Settings and the home banner -- the exact ambiguity that let a
+    // real failure here go unnoticed until the other device came up empty
+    // (FINALISATION_PLAN.md §5.2). renderSet()/renderSync() now read this.
+    S.lastPushError=String((e&&e.message)||e); S.lastPushErrorAt=Date.now();
+    persistNow();
     if(!quiet) toast('Sync push failed ('+(e.message||e)+')',3000);
     return false;
   }
@@ -7407,7 +8238,13 @@ function renderCardPreview(pal){
       '<span class="cardPreviewRule"></span>'+
       '<span class="cardPreviewGloss">'+escHtml(PAL_SAMPLE_GLOSS)+'</span>'+
       '<span class="cardPreviewRates">'+
-        '<span class="cpRate again">Again</span><span class="cpRate good">Good</span><span class="cpRate easy">Easy</span>'+
+        // Hard added 2026-08-18 alongside the real #bHard button. It is the
+        // only chip here whose colours (--warn-*) were not originally chosen
+        // for a rate button, so this preview is the one place a bad
+        // warn-ink-on-warn-bg pair would be caught across all 24 palettes --
+        // exactly the class of defect FINALISATION_PLAN.md §2a was.
+        '<span class="cpRate again">Again</span><span class="cpRate hard">Hard</span>'+
+        '<span class="cpRate good">Good</span><span class="cpRate easy">Easy</span>'+
       '</span>'+
       '<span class="cardPreviewLbl">'+(mode==='light'?'Light':'Dark')+'</span>'+
     '</div>';
@@ -7434,7 +8271,9 @@ function renderSet(){
   { const n=$('syncNote'); if(n){
       const code=loadSyncCode();
       n.textContent=!code ? 'Sync is off on this device.'
-        : !S.lastSync ? 'Code set \u2014 nothing synced yet.'
+        : !S.lastSync ? (S.lastPushError
+            ? 'Last push failed (' + S.lastPushError + ') \u2014 tap Push now to retry.'
+            : 'Code set \u2014 nothing synced yet.')
         : 'Last synced '+new Date(S.lastSync).toLocaleString()+(S.lastDevice?' (last pushed by '+S.lastDevice+')':'')+
           (S.lastPushBytes?' \u00b7 '+fmtBytes(S.lastPushBytes)+' encrypted':'')+'.'; } }
   $('fTerm').value=s.term||'2026-10-11';
@@ -7448,6 +8287,7 @@ function renderSet(){
    // old mixed combination lands on Full rather than silently losing whichever
    // extras it had turned on.
   $('fSimple').value=(s.studyStats||s.studyHints||s.studyMotion)?'0':'1';
+  $('fCardShape').value=s.cardShape||'spread';
   $('fCardNotes').value=s.cardNotes?'1':'0';
   $('fQuickRate').value=s.quickRate||'off';
   commitPendingRollover();
@@ -7498,6 +8338,7 @@ function tapZone(el,fn){
 tapZone($('cardArea'),()=>{ if($('rateRow').classList.contains('hidden')) reveal(); });
 tapZone($('revealBtn'),reveal);
 tapZone($('bAgain'),()=>rate(AGAIN));
+tapZone($('bHard'), ()=>rate(HARD));
 tapZone($('bGood'), ()=>rate(GOOD));
 tapZone($('bEasy'), ()=>rate(EASY));
 // not tapZone: the flag sits inside cardArea, whose own click handler would
@@ -7548,18 +8389,132 @@ tapZone($('exBegin'),beginTriage);
 tapZone($('exExtractBtn'),extractCandidates);
 // The no-key import path (IMPORT_PLAN.md): the local parser, its preview,
 // the file picker, and the deck-file export.
-tapZone($('exParseBtn'),findWords);
+tapZone($('exParseBtn'),()=>findWords());
 $('exTarget').addEventListener('change',syncTargetFields);
 tapZone($('exFileBtn'),()=>$('exFile').click());
+// navigator.clipboard needs a secure context (it has one: https, or localhost
+// while working on it); the textarea fallback is for anything older.
+tapZone($('exAiPromptBtn'),async()=>{
+  let ok=false;
+  try{ await navigator.clipboard.writeText(IMPORT_AI_PROMPT); ok=true; }
+  catch(e){
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=IMPORT_AI_PROMPT; ta.setAttribute('readonly','');
+      ta.style.cssText='position:fixed;top:-1000px;left:0;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      ok=document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e2){}
+  }
+  toast(ok?'Prompt copied — give it to a chat assistant with the page':'Could not copy — the prompt is in the manual, §8',2600);
+});
 $('exFile').addEventListener('change',e=>{
   const f=e.target.files&&e.target.files[0];
+  e.target.value='';
   if(!f) return;
+  if(/\.pdf$/i.test(f.name)||f.type==='application/pdf'){ importPdfPick(f); return; }
+  if(/\.docx$/i.test(f.name)||f.type.indexOf('wordprocessingml')!==-1){ importDocxPick(f); return; }
+  if(/\.xlsx$/i.test(f.name)||f.type.indexOf('spreadsheetml')!==-1){ importXlsxPick(f); return; }
   const rd=new FileReader();
   rd.onload=()=>{ $('exText').value=String(rd.result||''); $('exParseError').textContent=''; findWords(); };
   rd.onerror=()=>{ $('exParseError').textContent='Could not read that file.'; };
   rd.readAsText(f);
-  e.target.value='';
 });
+// A PDF is the one file kind that isn't already text. The extracted text
+// lands in the same box as a paste, so it can be read and edited before
+// anything is parsed -- and the summary line says which shape was found,
+// because a wrong guess about the gloss column is the failure worth seeing.
+async function importPdfPick(f){
+  const msg=$('exParseError');
+  msg.textContent='Reading “'+f.name+'”…';
+  try{
+    const got=await importPdfExtract(f,(p,n)=>{ msg.textContent='Reading page '+p+' of '+n+'…'; });
+    if(!got.pages.some(p=>p.items.length)){
+      msg.textContent='There is no text in that PDF — it’s a scan. Let the phone read it instead (Live Text, or Preview’s text selection on a Mac) and paste the words in.';
+      return;
+    }
+    const lay=importPdfLayout(got.pages,{});
+    $('exText').value=lay.text;
+    msg.textContent='';
+    findWords('from a PDF, '+got.read+' page'+(got.read===1?'':'s')
+      +(got.read<got.numPages?' of '+got.numPages:'')
+      +' · '+(lay.mode==='blocks'?'two page columns, left then right'
+              :lay.mode!=='columns'?'no column found'
+              :lay.stops.length>1?(lay.stops.length+1)+' columns kept'
+              :'gloss column kept as a tab')
+      +(lay.dropped?' · '+lay.dropped+' page number'+(lay.dropped===1?'':'s')+' dropped':''));
+  }catch(err){
+    msg.textContent=(err&&err.name==='PasswordException')?'That PDF is locked with a password.':'Could not read that PDF.';
+  }
+}
+// A Word document, read for the same reason a PDF is: opening it in Word
+// first just to copy from it is a real ask, and IMPORT_PLAN.md names tutor
+// handouts as exactly this case. mammoth's convertToHtml (not
+// extractRawText) is what makes a real Word TABLE usable -- a glossary is
+// as likely to be one as a page of loose paragraphs -- by handing the
+// result to the SAME table -> TSV path the clipboard paste below already
+// has, rather than a second table detector. Any table found wins outright:
+// surrounding prose in a document built around one real table is almost
+// always instructions, not more vocabulary. No table -> one line per
+// paragraph, read exactly like a paste of that same text would be.
+let importDocxLib=null;
+async function importDocxExtract(file){
+  if(!importDocxLib) importDocxLib=await importLoadUmd('./vendor/mammoth.browser.min.js','mammoth');
+  const result=await importDocxLib.convertToHtml({arrayBuffer:await file.arrayBuffer()});
+  const {tsv,tableCount}=importHtmlTablesToTsv(result.value);
+  if(tableCount) return {text:tsv, mode:'table', tableCount};
+  const doc=new DOMParser().parseFromString(result.value,'text/html');
+  const paras=Array.from(doc.body.querySelectorAll('p,li,h1,h2,h3,h4,h5,h6'))
+                    .map(p=>(p.textContent||'').trim()).filter(Boolean);
+  return {text:paras.join('\n'), mode:paras.length?'prose':'empty', tableCount:0};
+}
+async function importDocxPick(f){
+  const msg=$('exParseError');
+  msg.textContent='Reading “'+f.name+'”…';
+  try{
+    const got=await importDocxExtract(f);
+    if(got.mode==='empty'){ msg.textContent='There is no readable text in that document.'; return; }
+    $('exText').value=got.text;
+    msg.textContent='';
+    findWords('from a Word document · '+(got.mode==='table'
+      ?got.tableCount+' table'+(got.tableCount===1?'':'s')+' found, read as columns'
+      :'no table found, read as plain paragraphs'));
+  }catch(err){
+    msg.textContent='Could not read that document.';
+  }
+}
+// SheetJS's own sheet_to_json(header:1) already returns exactly the array-
+// of-arrays importRowsToTsv expects -- no new row logic, only the file
+// reading and which sheet to use. Only the FIRST sheet: the real cases here
+// (a formula sheet, a vocab list) are almost always one sheet, and reading
+// several blindly risks a second sheet's own header row being misread as
+// data -- only line 1 of the combined text is ever checked for header-
+// likeness. sheetCount says plainly when more were left unread, rather
+// than silently dropping them.
+let importXlsxLib=null;
+async function importXlsxExtract(file){
+  if(!importXlsxLib) importXlsxLib=await importLoadUmd('./vendor/xlsx.mini.min.js','XLSX');
+  const XLSX=importXlsxLib;
+  const wb=XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array'});
+  const names=wb.SheetNames||[];
+  if(!names.length) return {text:'', sheetName:null, sheetCount:0};
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[names[0]],{header:1,raw:false,defval:''});
+  return {text:importRowsToTsv(rows), sheetName:names[0], sheetCount:names.length};
+}
+async function importXlsxPick(f){
+  const msg=$('exParseError');
+  msg.textContent='Reading “'+f.name+'”…';
+  try{
+    const got=await importXlsxExtract(f);
+    if(!got.sheetName){ msg.textContent='There are no sheets in that workbook.'; return; }
+    $('exText').value=got.text;
+    msg.textContent='';
+    findWords('from “'+got.sheetName+'”'+(got.sheetCount>1?' (1 of '+got.sheetCount+' sheets — the rest weren’t read)':''));
+  }catch(err){
+    msg.textContent='Could not read that workbook.';
+  }
+}
 // A range copied from Google Sheets / a web page arrives as an HTML <table>
 // alongside plain text; Excel and Numbers already put tab-separated text
 // in text/plain. Prefer the plain text whenever it has tabs; otherwise turn
@@ -7569,10 +8524,8 @@ $('exText').addEventListener('paste',e=>{
   const plain=cd.getData('text/plain')||'', html=cd.getData('text/html')||'';
   if(!html||/\t/.test(plain)||!/<table/i.test(html)) return;
   try{
-    const doc=new DOMParser().parseFromString(html,'text/html');
-    const rows=Array.from(doc.querySelectorAll('tr')).map(tr=>Array.from(tr.querySelectorAll('td,th')).map(td=>td.textContent||''));
-    const tsv=importRowsToTsv(rows);
-    if(!tsv||rows.length<2) return;
+    const {tsv}=importHtmlTablesToTsv(html);
+    if(!tsv) return;
     e.preventDefault();
     const ta=e.target, s=ta.selectionStart||0, en=ta.selectionEnd||0;
     ta.value=ta.value.slice(0,s)+tsv+ta.value.slice(en);
@@ -7955,7 +8908,26 @@ tapZone($('impBtn'),()=>$('impFile').click());
 $('impFile').addEventListener('change',e=>{ if(e.target.files[0]) doImport(e.target.files[0]); e.target.value=''; });
 tapZone($('pushBtn'),()=>pushSync(false));
 tapZone($('pullBtn'),pullSync);
-tapZone($('syncNewCodeBtn'),()=>{ if(!loadSyncCode()||confirm(syncCodeReplaceMessage())) newSyncCode(); });
+// Mirrors syncNowBtn's own busy-button pattern below. newSyncCode() pushes as
+// soon as the code is minted (see its own comment) -- but the button used to
+// hand back control, and the field sat there showing the new code as a plain,
+// calmly-finished value, before that push had actually resolved. A device
+// closed in that gap didn't end up with a stale copy on the other end; it
+// ended up with nothing there at all (FINALISATION_PLAN.md §5.2). Disabling
+// the button AND the field for the round trip can't stop a tab close, but it
+// does make "not done yet" impossible to miss, and makes copying the code
+// out mid-push a deliberate act rather than the easy default.
+let newCodeBusy=false;
+tapZone($('syncNewCodeBtn'),async ()=>{
+  if(newCodeBusy) return;
+  if(loadSyncCode()&&!confirm(syncCodeReplaceMessage())) return;
+  newCodeBusy=true;
+  const btn=$('syncNewCodeBtn'), field=$('fSyncCode');
+  btn.disabled=true; btn.textContent='Saving…'; field.disabled=true;
+  await newSyncCode();
+  newCodeBusy=false;
+  btn.disabled=false; btn.textContent='Get a code for this device'; field.disabled=false;
+});
 // Extraction key (Phase 4a) -- no network call here, unlike newSyncCode():
 // there's nothing to push to yet, this only ever generates and stores a
 // value on THIS device. The matching Worker secret is set by hand
@@ -8024,6 +8996,12 @@ $('fSimple').addEventListener('change',e=>{
   const full=e.target.value!=='1';
   S.settings.studyStats=full; S.settings.studyHints=full; S.settings.studyMotion=full;
   save(); applyLayout();
+});
+// Pure geometry, deliberately not bundled with Quick rate or any other
+// behaviour -- LAYOUT_PLAN.md §5.3. Independent of layout and of every
+// other study-screen switch, same as the three above.
+$('fCardShape').addEventListener('change',e=>{
+  S.settings.cardShape=e.target.value; save(); applyLayout();
 });
 // Advanced group: a plain show/hide on sibling .field elements rather than a
 // <details>, so balanceColumns() still sees each field as its own child and
@@ -8132,28 +9110,58 @@ document.addEventListener('keydown',e=>{
       else rate(EASY);
     }
     else if(!$('rateRow').classList.contains('hidden')){
-      // 1/2/3 sit on the left of the number row -- I/O/P are the right-hand
-      // alternative directly below them on QWERTY, added alongside the
-      // existing keys, not instead of them
-      if(e.key==='1'||e.key==='i'||e.key==='I') rate(AGAIN);
-      if(e.key==='2'||e.key==='o'||e.key==='O') rate(GOOD);
-      if(e.key==='3'||e.key==='p'||e.key==='P') rate(EASY);
+      // The number keys run left to right along the buttons themselves, in
+      // FSRS's own order. Hard only exists on a review-state card, so on a
+      // learning card the row is three wide and 2/3 mean Good/Easy instead
+      // -- the keys follow what is actually on screen rather than holding a
+      // fixed grade each. Read off the button's own visibility, not off
+      // cardState(): reveal() already made that decision, and reading it
+      // back is what stops the two from ever drifting apart.
+      const hardOn=!$('bHard').classList.contains('hidden');
+      const g=(hardOn?{'1':AGAIN,'2':HARD,'3':GOOD,'4':EASY}
+                     :{'1':AGAIN,'2':GOOD,'3':EASY})[e.key];
+      if(g!=null) rate(g);
     }
     else if(quickRateReady()){
-      // Same 1/I and 3/P as above, live before reveal too -- see
-      // quickRateReady()/quickRate() and Settings' "Quick rate" switch. 2/O
-      // works here too, but flash-variant only -- see quickRate()'s own
-      // comment for why blind mode still leaves Good reveal-gated.
-      if(e.key==='1'||e.key==='i'||e.key==='I') quickRate(AGAIN);
-      if((e.key==='2'||e.key==='o'||e.key==='O')&&S.settings.quickRate==='flash') quickRate(GOOD);
-      if(e.key==='3'||e.key==='p'||e.key==='P') quickRate(EASY);
+      // The same numbers as the post-reveal row above, for the same card --
+      // but peek() rather than #bHard's class, because the row is hidden
+      // here and that button still carries whatever the PREVIOUS card left
+      // on it. quickRateReady() admits 'X' (relearning) as well as 'R', and
+      // only 'R' gets a Hard button, so the map has to be chosen per card.
+      const hardOn=peek(current).st==='R';
+      const g=(hardOn?{'1':AGAIN,'2':HARD,'3':GOOD,'4':EASY}
+                     :{'1':AGAIN,'2':GOOD,'3':EASY})[e.key];
+      // Hard and Good stay reveal-gated in blind mode, for exactly the
+      // reason Good always has been (see quickRateReady()'s comment): they
+      // are the two grades that mean "I actually looked at it". Again and
+      // Easy are confident enough to call without seeing. Hard joins Good
+      // there rather than becoming the one hesitation grade callable blind.
+      if(g!=null&&(S.settings.quickRate==='flash'||g===AGAIN||g===EASY)) quickRate(g);
     }
-    // 0 sits right above P on the number row, the same right-hand-friendly
-    // reasoning as I/O/P below -- added alongside Z, not instead of it.
+    // 0 sits at the far end of the number row, next to the rating digits --
+    // added alongside Z, not instead of it. (It originally paired with an
+    // I/O/P right-hand alternative to 1/2/3; that convention was removed
+    // 2026-08-18 as unused, but 0 stayed, being genuinely handy on its own.)
     // Right after a quick-rate press specifically, this corrects to Again
-    // instead of undoing -- see quickCorrectToAgain()'s own comment.
+    // instead of undoing -- see quickCorrectToAgain()'s own comment. Shift
+    // forces a plain undo regardless -- the escape hatch for "no, I really
+    // meant undo, not correct-to-Again" (added 2026-08-18, once that
+    // correction had shipped for long enough to turn out to need one).
+    // Read off e.shiftKey itself, not off e.key's case: isUndoKey above
+    // already folds z/Z together on purpose, so caps lock or a mobile
+    // keyboard's own autocapitalisation keeps landing as a plain undo-or-
+    // correct Z -- a genuinely shifted Z has to stay distinguishable from
+    // those, which only the modifier flag can do. No Shift+0 alongside it:
+    // Shift changes what a digit key *produces* on most layouts (0 becomes
+    // ')'), so e.key stops matching '0' before this code ever sees it --
+    // there's no reliable event left to bind it to. Clears the arm itself
+    // rather than leaving it to quickCorrectToAgain() (which this bypasses
+    // entirely by calling undo() directly) -- left stale, the very next bare
+    // Z would still see wasQuickRated set and wrongly re-fire the correction
+    // against whatever the stack holds by then.
     if(isUndoKey){
-      if(wasQuickRated!=null) quickCorrectToAgain();
+      if(e.shiftKey){ lastQuickRateId=null; lastQuickRateGrade=null; undo(); }
+      else if(wasQuickRated!=null) quickCorrectToAgain();
       else undo();
     }
     // f flags/unflags the current word straight from the keyboard, silently
@@ -8190,8 +9198,8 @@ document.addEventListener('keydown',e=>{
       // honor round, revealed, waiting on a self-report -- 1/I on the left
       // for "Didn't know it" mirrors Study's own AGAIN placement; Space/
       // Enter doubles as "Knew it", the same way Space doubles as Easy there.
-      if(e.key==='1'||e.key==='i'||e.key==='I') gradeHonorRound(false);
-      else if(e.key==='2'||e.key==='o'||e.key==='O'||e.key===' '||e.key==='Enter'){ e.preventDefault(); gradeHonorRound(true); }
+      if(e.key==='1') gradeHonorRound(false);
+      else if(e.key==='2'||e.key===' '||e.key==='Enter'){ e.preventDefault(); gradeHonorRound(true); }
     }
     // The contrastive round itself is left mouse/tap-only -- matching
     // tiles is a spatial action a key mapping wouldn't make any faster.
@@ -8209,8 +9217,8 @@ document.addEventListener('keydown',e=>{
     // would otherwise get eaten mid-edit. Same 1/I = reject, Space/O =
     // accept convention Drill's own honour round already established for
     // exactly this shape of binary choice -- reused rather than invented.
-    if(e.key==='1'||e.key==='i'||e.key==='I') triageDecide('bin');
-    else if(e.key==='2'||e.key==='o'||e.key==='O'||e.key===' '){ e.preventDefault(); triageDecide('keep'); }
+    if(e.key==='1') triageDecide('bin');
+    else if(e.key==='2'||e.key===' '){ e.preventDefault(); triageDecide('keep'); }
   }
 });
 document.addEventListener('gesturestart',e=>e.preventDefault());
