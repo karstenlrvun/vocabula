@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.20.4">
+<link rel="stylesheet" href="palettes.css?v=2026.08.20.5">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.20.4"></script>
+<script src="shared.js?v=2026.08.20.5"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -229,28 +229,38 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .leechtag{margin-top:10px;display:flex;align-items:center;justify-content:center;gap:16px}
 #leechTag .flagBtn{padding:8px;font-size:26px;min-width:44px;min-height:44px;
   display:flex;align-items:center;justify-content:center}
-/* The one-turn warning that a word is one "Again" away from setting itself
-   aside, and the control that overrides it -- see keepWarnState()/
-   keepInToday(). Deliberately no text: 2026-08-13's strip-the-banner decision
-   stands (owner's call again 2026-08-15), so the glyph has to carry this on
-   its own. The U+FE0E after it forces text presentation, so it renders
-   monochrome in the palette's own warn ink on every theme instead of as a
-   colour emoji -- which is exactly why an alarm clock isn't used here, that
-   character has no text form at all and would always paint itself orange.
-   Same 44px tap target and the same .on-toggles-colour idiom as the flag
-   right above; and deliberately ONE glyph in two states rather than two
-   glyphs, so there is nothing extra to learn at the moment a word is already
-   being frustrating. Armed it pulses, held it is the same mark defused. The
-   pulse needs no reduced-motion guard of its own -- the global rule further
-   down already kills every animation on the page. The 16px gap added above is
-   for this pairing specifically: the flag and this button do opposite things
-   to the same word, so they must not sit a thumb-width apart. */
-#leechTag .keepBtn{flex:0 0 auto;background:none;border:none;padding:8px;
-  font-size:26px;line-height:1;color:var(--warn-ink);min-width:44px;min-height:44px;
-  display:flex;align-items:center;justify-content:center;
-  animation:keepPulse 1.9s ease-in-out infinite}
-#leechTag .keepBtn.on{color:var(--faint);opacity:.45;animation:none}
-@keyframes keepPulse{0%,100%{opacity:1}50%{opacity:.38}}
+/* The study card's gentler exit -- "Not today", the hourglass, sitting to the
+   LEFT of the flag (2026.08.20.5, LEECH_RESEARCH.md §16.4 Section A). It
+   replaced the pulsing warning glyph that used to occupy this slot, which
+   warned that a word was one "Again" from parking itself; nothing parks a
+   word by itself any more, so that warning had nothing left to count down to.
+
+   Left of the flag on purpose: the two are read in order of severity, and the
+   lighter door should be met first. Same 44px tap target and the same
+   deliberately-textless treatment as the flag beside it -- 2026-08-13's
+   strip-the-banner decision still stands (owner's call again 2026-08-15), so
+   the glyphs have to carry this on their own. Painted in the warn ink rather
+   than the flag's bad ink, which is the whole distinction in one colour:
+   "not now" is not "not until I deal with this".
+
+   The glyph is U+29D6, an hourglass from the MATHEMATICAL symbols block, not
+   U+231A (the watch this and Browse's own button used until 2026.08.20.5) and
+   not U+231B or U+23F3, the two obvious hourglasses. All three of those have
+   emoji presentation and no text form -- U+231A does not even take a U+FE0E
+   variation selector, which was verified in a browser rather than assumed --
+   so each paints itself in its own colours and ignores `color` entirely,
+   exactly the trap the flag's own U+FE0E is there to avoid. U+29D6 is an
+   ordinary symbol: it takes the palette's warn ink on every theme. Browse's
+   row button and its bulk bar were moved to the same glyph at the same time,
+   so one mark means one thing everywhere in the app.
+
+   The 16px gap on .leechtag above is for this pairing specifically: two
+   controls that do different things to the same word must not sit a
+   thumb-width apart. No .on state -- unlike the flag, pressing this moves
+   straight to the next card, so there is nothing left on screen to toggle. */
+.notTodayBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:15px;line-height:1;color:var(--faint)}
+#leechTag .notTodayBtn{padding:8px;font-size:24px;color:var(--warn-ink);
+  min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
 
 /* ---------- rating row ---------- */
 .rateRow{flex:0 0 auto;display:flex;gap:9px;padding:10px 12px 14px}
@@ -1587,7 +1597,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <b id="bulkCount">0 selected</b>
         <div class="bulkBtns">
           <button id="bulkFlag">&#9873;&#65038; Flag</button>
-          <button id="bulkBury">&#8986; Bury today</button>
+          <button id="bulkBury">&#10710; Not today</button>
           <button id="bulkGroup">&#128279; Group</button>
           <button id="bulkClear">Clear</button>
         </div>
@@ -1659,8 +1669,8 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
            that rule's own comment for why), not because it IS the answer. -->
       <div class="answer quickFlash" id="quickFlash" aria-hidden="true"></div>
       <div class="leechtag hidden" id="leechTag">
-        <button class="flagBtn" id="flagBtn" aria-label="Flag this word">&#9873;&#65038;</button>
-        <button class="keepBtn hidden" id="keepBtn" aria-label="About to set itself aside — keep it in for today">&#9888;&#65038;</button>
+        <button class="notTodayBtn" id="notTodayBtn" aria-label="Not today — bring this word back tomorrow">&#10710;</button>
+        <button class="flagBtn" id="flagBtn" aria-label="Set this word aside">&#9873;&#65038;</button>
       </div>
       <div class="hintline" id="hintline"></div>
       <div class="cardMeta" id="cardMeta"></div>
@@ -1939,11 +1949,6 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
           <option value="0">No — work through in list order</option>
           <option value="1">Yes — hardest first</option>
         </select>
-      </div>
-      <div class="field advOnly">
-        <label for="fFlagAuto">Same-day "Again" presses before a word sets itself aside — <b id="fFlagAutoVal">12</b></label>
-        <input type="range" id="fFlagAuto" min="5" max="15" step="1">
-        <div class="fh">Lower parks a struggling word sooner; higher gives it more real, spaced attempts first. Raising this never brings an already-set-aside word back on its own. Lowering it takes effect at once for any new "Again" press, but never reaches back to reinterpret presses already logged earlier today. Whatever it is set to, the study card warns you one press before it happens, and that warning can be overridden for the rest of the day.</div>
       </div>
       <div class="field advOnly" style="border-bottom:none">
         <label>What happens on its own</label>
@@ -2229,60 +2234,37 @@ const RATE_KEYS={'1':AGAIN,'2':HARD,'3':GOOD,'4':EASY};
 // watch list and the set-aside pile, under a summary hardcoded to describe
 // only the first of the two, so the front screen would announce
 // `Hit "Again" 5+ times today (15)` above fifteen rows each showing 0.
-// Nothing replaced it: FLAG_KEY below still governs flagging by hand, and
-// S.settings.flagAuto still parks a word automatically.
-// FLAG_AUTO: same-day Agains before a word is set aside on its own -- see
-// rate() and normalise(). Promoted 2026.08.14 from a bare constant to
-// S.settings.flagAuto (Settings' own slider, range 5-15), at the owner's
-// request, after his own report that the old fixed value of 8 was parking
-// words before they'd had a fair number of genuinely-spaced attempts.
-// FLAG_AUTO_DEFAULT is only: (a) normalise()'s merge-default for a state
-// that doesn't carry the setting yet, and (b) the fallback SETTINGS_BOUNDS
-// clamps back to if a stored value is missing, non-finite, or outside [5,15]
-// (hand-edited file, crafted backup). Never read directly for the live check itself -- that
-// always goes through S.settings.flagAuto, live, at LEARNING_LOAD_PLAN.md
-// §2's own request, so a change takes effect on the very next qualifying
-// Again press, not on some later reload.
-// Chosen at 12, not 8: same first-hand report as above -- 8 was already
-// shown to feel like the app giving up on a word before it had a fair
-// number of real, spaced attempts, so the shipped default starts higher
-// than the old constant while staying inside his own specified 5-15 range.
-// The old FLAG_MANUAL=5 collision note that stood here is void as of
-// 2026.08.16.1: the curated watch list it described is gone, so there is
-// nothing left for flagAuto=5 to collide with, and the whole 5-15 range
-// now behaves identically.
+// Nothing replaced it: FLAG_KEY below still governs when the two exits
+// appear on the study card.
 //
-// Lowering flagAuto mid-day must not retroactively sweep Agains that were
-// already logged earlier today, back when a higher threshold was still in
-// effect -- the same "a setting change reinterprets already-written
-// history" bug class the deferred-rollover machinery above exists to stop,
-// just for a different field (see the due-date-snap removal comment in
-// normalise()). Unlike rollover, though, a live Again press right now
-// should still use whatever flagAuto reads right now, immediately -- only
-// normalise()'s passive defensive rescan needs holding back. So rather than
-// deferring the *setting itself* (rolloverPending's shape), normalise()
-// snapshots flagAuto once per study day (S.settings.flagAutoBaseline) and
-// rescans today's log against whichever is loosest -- today's snapshot or
-// the live value -- so a same-day lowering can never trip a word out of
-// nowhere, while a same-day raising (always safe: it can only make the
-// rescan MORE conservative, and susp is one-way regardless, see setAside())
-// still applies at once. The snapshot resets every study day, so a lowered
-// threshold is fully in force, unqualified, from the next one on. See the
-// rescan in normalise() for the actual mechanics, and note this is a
-// same-day approximation, not a per-Again-event ledger: changing flagAuto
-// more than once in a single study day only grandfathers against the day's
-// *first* value seen, not every intermediate one.
-const FLAG_AUTO_DEFAULT=12;
-// FLAG_KEY: the threshold that actually governs when a word becomes
-// flaggable by hand on the study screen, in either of its two forms -- the
-// keyboard's f key (silently, no toast: see the keydown handler) and the
-// on-screen flag icon (renderLeech; no text, no dismiss, just the icon --
-// tapping it *does* toast, the same confirmation every other flag tap in
-// the app gives). Deliberately low: two real same-day Agains is enough to
-// want the word out of rotation, well before flagAuto would park it there
-// automatically. Changed 2026.08.13 at the owner's request from the icon's
-// old higher-gated text banner, which made the flag look unavailable
-// several presses later than it actually was.
+// The automatic parking that used to live here is gone (2026.08.20.5,
+// LEECH_RESEARCH.md §16.4 Section A). It set a word aside on its own at
+// S.settings.flagAuto same-day Agains, and with it went a whole subsystem
+// that existed only to serve it: the 5-15 slider, FLAG_AUTO_DEFAULT, the
+// once-per-day flagAutoBaseline snapshot and its loosest-of-two rule, the
+// per-card unflagDay stamp, normalise()'s defensive rescan, and the
+// PREFS_SKIP_SETTINGS entry that kept the baseline out of the sync merge.
+// Six mechanisms, every one of them a correct fix for a real bug, all six
+// downstream of the single decision that the app parks words by itself.
+//
+// It was removed because the evidence it rested on failed an audit: it
+// counted same-day learning failures, which is precisely the signal Anki
+// and SuperMemo both deliberately EXCLUDE from leech counting. The counting
+// itself stays -- againTodayFor/againTodayCounts still gate the two exits
+// below, still fill the struggling list, still colour the Browse rows. What
+// changed is that a card-quality signal no longer drives a retention
+// response: the app shows you the word is fighting you and offers two
+// doors, and you decide. See LEECH_RESEARCH.md §0.1 (the failed audit),
+// §14.1 (the chain), §13.4 (what this is and is not).
+// FLAG_KEY: the threshold that governs when the study card's two exits
+// appear at all -- "Not today" (bury until tomorrow) and the flag (set
+// aside until brought back), plus their keys. Deliberately low: two real
+// same-day Agains is enough to want a word out of the way, and offering
+// nothing until later is exactly the complaint §12.3 was written about.
+// Changed 2026.08.13 at the owner's request from the icon's old
+// higher-gated text banner, which made the flag look unavailable several
+// presses later than it actually was; the second door joined it
+// 2026.08.20.5 on the same gate, so the pair appears together or not at all.
 const FLAG_KEY=2;
 // "Time to learn a word" (timeToLearnFor, browse screen) sums thinkMs across
 // a card's whole history as a rough active-engagement figure. reveal()
@@ -2650,7 +2632,7 @@ const CALIBRATION_DUE_DEFAULT=new Date(2026,8,2,9,0,0).getTime();   // 2 Sept 20
 function calibrationDue(s,now){ return !!(s&&s.calibrationDueAt!=null&&Number.isFinite(s.calibrationDueAt)&&now>=s.calibrationDueAt); }
 function makeDefaults(){ return {
   version:2, created:Date.now(), calibrationDueAt:CALIBRATION_DUE_DEFAULT,
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', flagAuto:FLAG_AUTO_DEFAULT, flagAutoBaseline:null, heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15, topBarStyle:'counts'},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15, topBarStyle:'counts'},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, drillLog:[], sinceExport:0, lastExport:null, lastPushBytes:0,
   deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
   // Phase 3 §C/§B (PHASE3_4_HANDOFF.md): user-added words and term overrides.
@@ -2694,7 +2676,7 @@ const CAP_TERM=200, CAP_GLOSS=500, CAP_SECTION=60, CAP_NOTE=500;
 function freshCard(c){
   const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
             reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null,
-            unflagDay:null, holdSince:null, buryUntil:0,
+            unflagDay:null, holdSince:null, buryUntil:0,   // unflagDay: legacy since 2026.08.20.5, see normalise()
             note:null, setAsideAt:null, lastDrilled:null, confuseGroups:[]};
   if(c.dir==='L'&&(c.seed===1||c.seed===2)){
     st.st='R'; st.step=null;
@@ -2948,12 +2930,19 @@ function buildSummary(){
 // between two saves, so a rating, a push, a pull never move one -- and, by
 // construction of the snapshot, neither do the things that change by
 // themselves: the palette while daily rotation is on (rollTheme() picks it),
-// the rotation cursor (rotDay/rotSeen), flagAutoBaseline (re-derived per
-// day), and the deferred rollover's commit (the snapshot reads the EFFECTIVE
+// the rotation cursor (rotDay/rotSeen), and the deferred rollover's commit
+// (the snapshot reads the EFFECTIVE
 // rollover -- pending or current -- so the commit is not a change, only the
 // owner's original choice was). Pure: a {key: canonical string} map.
 const PREFS_TOP=['theme','palette','rotate','dir','parts','buckets','layout'];
-const PREFS_SKIP_SETTINGS=['deviceName','flagAutoBaseline','rollover','rolloverPending','rolloverPendingFrom'];
+// flagAutoBaseline was the sixth entry here until 2026.08.20.5. Removing it
+// is safe against an older copy: a stale stamp for a key that no longer
+// exists in either side's snapshot is simply never compared, because
+// prefsSnapshot() only ever walks the keys it finds in s.settings, and
+// normalise() deletes the field before any snapshot is taken. See
+// SYNC_MERGE_RESEARCH.md's per-key stamping (settings stamped per key since
+// 2026.08.19.5) and normalise()'s own delete, below.
+const PREFS_SKIP_SETTINGS=['deviceName','rollover','rolloverPending','rolloverPendingFrom'];
 function prefsSnapshot(s){
   const out={}, st=s.settings||{};
   for(const k in st){ if(PREFS_SKIP_SETTINGS.indexOf(k)===-1) out['s:'+k]=canonJSON(st[k]); }
@@ -3073,7 +3062,7 @@ function normalise(o){
   const SETTINGS_BOUNDS={
     retention:[0.01,0.99], maxIvl:[1,36500],
     newPerDayL:[0,4000], newPerDayE:[0,4000], knownDays:[1,3650],
-    flagAuto:[5,15], drillFocusN:[10,25]
+    drillFocusN:[10,25]
   };
   for(const k in SETTINGS_BOUNDS){
     const [lo,hi]=SETTINGS_BOUNDS[k];
@@ -3098,10 +3087,19 @@ function normalise(o){
   // the keys here and schedules exactly as one that never had them. Nothing
   // reads them any more, so there is nothing to convert; the removal is silent
   // by construction (no prompt, no reschedule of anything already due).
+  // Retired 2026.08.20.5: automatic set-aside (LEECH_RESEARCH.md §16.4
+  // Section A). flagAuto was the 5-15 threshold, flagAutoBaseline its
+  // once-per-day snapshot. Same silent migration as the row above -- nothing
+  // reads either key, so a save carrying flagAuto:9 simply loses it and
+  // behaves exactly like one that never had it. Deleting rather than leaving
+  // them inert also keeps them out of prefsSnapshot(), which walks whatever
+  // keys it finds in s.settings: an orphaned key with a live per-key stamp on
+  // one device only is the one way this could still have reached the merge.
   for(const k of ['gateDays','learnBufferOn','learnBufferL','learnBufferE',
                   'learnBufferSinceL','learnBufferSinceE',
                   'learnBufferDismissedL','learnBufferDismissedE',
-                  'requireEasy','drillCap','drillDays','reviewDay'])
+                  'requireEasy','drillCap','drillDays','reviewDay',
+                  'flagAuto','flagAutoBaseline'])
     delete s.settings[k];
   // quickRate: pinned off between 2026.08.19.1 and 2026.08.20.1 (decision 5),
   // and back since -- in ONE narrow form, so the setting is now a plain
@@ -3120,15 +3118,6 @@ function normalise(o){
   // anything that is not one falls back to the default (on), so a hand-edited
   // 'yes' or a missing key cannot read as off by accident.
   if(typeof s.settings.gradeReminder!=='boolean') s.settings.gradeReminder=defaults.settings.gradeReminder;
-  // flagAutoBaseline isn't a bounded number, so SETTINGS_BOUNDS above can't
-  // cover it -- a hand-edited or crafted backup could still hand it a
-  // non-object, a day that isn't a real dayKey, or a value outside flagAuto's
-  // own already-clamped range. Reset rather than repair: normalise()'s own
-  // rescan below recreates it correctly on its next pass, exactly as if this
-  // were a state that had never had the setting at all.
-  { const bl=s.settings.flagAutoBaseline;
-    if(!bl||typeof bl!=='object'||!Number.isFinite(bl.day)||!Number.isFinite(bl.value)||bl.value<5||bl.value>15)
-      s.settings.flagAutoBaseline=null; }
   // applyTheme() already falls back for an unknown palette, but it does that
   // without writing the fallback down, so a junk value survives in S and
   // renderSet() prints it back out. Settled here instead, once, where every
@@ -3322,13 +3311,22 @@ function normalise(o){
       if(!pairSet&&!pairUnset){ c.s=null; c.d=null; c.st='L'; c.step=0; }
       if(c.last!=null&&!Number.isFinite(c.last)) c.last=null;   // dayKey(c.last) otherwise
       if(c.step!=null&&!Number.isFinite(c.step)) c.step=0;      // indexes LEARN_STEPS
-      // holdSince is a dayKey int or null -- junk is cleared, not repaired,
-      // same as flagAutoBaseline below. Legacy, write-only: it was stamped by
-      // the drill hold (removed 2026.08.19.1) and read by buildQueue()'s
-      // concurrency cap (retired 2026-08-17). Nothing reads it now; the field,
-      // this repair and the backfill below stay only because dropping the
-      // field changes the persisted card shape (see schedule()'s own note).
+      // holdSince is a dayKey int or null -- junk is cleared, not repaired.
+      // Legacy, write-only: it was stamped by the drill hold (removed
+      // 2026.08.19.1) and read by buildQueue()'s concurrency cap (retired
+      // 2026-08-17). Nothing reads it now; the field, this repair and the
+      // backfill below stay only because dropping the field changes the
+      // persisted card shape (see schedule()'s own note).
       if(c.holdSince!=null&&!Number.isFinite(c.holdSince)) c.holdSince=null;
+      // unflagDay joined it as legacy on 2026.08.20.5. It meant "a deliberate
+      // decision was made about this word today, so neither rate()'s live
+      // automatic set-aside nor normalise()'s rescan may act on today's log
+      // for it" -- both of those are gone (see FLAG_KEY's own comment), so
+      // nothing reads or writes it any more. Kept for the same reason as
+      // holdSince and streak: dropping a persisted card field changes the
+      // card shape and wants its own migration + replay pass, not a
+      // drive-by edit alongside a behaviour change.
+      if(c.unflagDay!=null&&!Number.isFinite(c.unflagDay)) c.unflagDay=null;
       // setAsideAt/lastDrilled: plain metadata timestamps, never fed to
       // schedule() -- junk is cleared, not repaired, same "worst case it
       // just looks like it's never happened" reasoning as holdSince above.
@@ -3392,55 +3390,16 @@ function normalise(o){
         if(c.confuseGroups.length) c.confuseGroups=c.confuseGroups.filter(gid=>s.confuseGroups[gid]);
       }
     }
-    // defensive: catch a state whose log already shows FLAG_AUTO same-day
-    // Agains for "today" (this device's today, via ROLL_OVR/dayKey below)
-    // without susp set -- e.g. an imported backup, or a crash between the
-    // qualifying press and rate()'s own live check.
-    // unflagDay is what stops this fighting the user. The log is append-only,
-    // so a word that drew FLAG_AUTO Agains today keeps reading as qualifying
-    // however deliberately it was brought back afterwards -- and this re-set
-    // susp on the very next load, which made bringing a word back (the study
-    // screen's flag, the struggling list, the drill, and Settings'
-    // bring-back-everything alike) impossible to make stick for the rest of
-    // that study day, on exactly the words a bad sitting had just flagged. A
-    // bring-back now stamps the study day it happened on, and both this and
-    // rate()'s live check stand down for that one day; tomorrow's FLAG_AUTO
-    // Agains flag the word again as they should.
-    const dk=today();
-    // flagAuto is a live setting (see its own comment, above FLAG_AUTO_DEFAULT)
-    // and this rescan runs on every load/import/gist-pull, not just once --
-    // read naively it would let a same-day *lowering* reinterpret Agains
-    // already logged under the old, higher threshold, sweeping a word aside
-    // with no live action on it at all. flagAutoBaseline snapshots flagAuto
-    // once per study day (recreated here whenever the stored snapshot is
-    // missing or stale for today); the rescan then uses whichever is
-    // loosest -- today's snapshot or the current live value -- so a same-day
-    // lowering can't retroactively trip anything, while a same-day raising
-    // (never unsafe -- see FLAG_AUTO_DEFAULT's comment) still applies right
-    // away. rate()'s own live check just below is unaffected by any of this
-    // and always reads S.settings.flagAuto directly.
-    let flBase=s.settings.flagAutoBaseline;
-    if(!flBase||flBase.day!==dk) flBase={day:dk, value:s.settings.flagAuto};
-    s.settings.flagAutoBaseline=flBase;
-    const rescanFlagAuto=Math.max(s.settings.flagAuto, flBase.value);
-    const bad=againTodayCounts(s.log, dk);
-    for(const id in bad){
-      if(bad[id]>=rescanFlagAuto && s.cards[id] && !s.cards[id].susp && s.cards[id].unflagDay!==dk){
-        // Same three writes setAside(id,true,...) makes on the live S -- can't
-        // call that helper here, since cardState()/S.cards it closes over is
-        // the global being loaded, not this local `s` mid-validation. This
-        // rescan only ever looks at *today*'s log (dk=today(), above), so
-        // stamping "now" for setAsideAt is never retroactive the way it would
-        // be for an old historical leech.
-        s.cards[id].susp=true;
-        s.cards[id].setAsideAt=Date.now();
-        s.cards[id].unflagDay=null;
-        const rec=s.days[dk]||(s.days[dk]={n:0,intro:0,ok:0,tot:0,words:0});
-        rec.drillFlag=(rec.drillFlag|0)+1;
-        const rdir=BY_ID[id]&&BY_ID[id].dir;   // same per-direction split setAside() does, see its own comment
-        if(rdir) rec['drillFlag'+rdir]=(rec['drillFlag'+rdir]|0)+1;
-      }
-    }
+    // The defensive rescan that stood here until 2026.08.20.5 is gone with
+    // the automatic set-aside it backstopped (see FLAG_KEY's own comment). It
+    // caught a state whose log already showed enough same-day Agains without
+    // susp set -- an imported backup, or a crash between the qualifying press
+    // and rate()'s live check -- and it existed ONLY because the app parked
+    // words by itself. Nothing parks a word now except a deliberate press, and
+    // a press writes susp on the spot, so there is no state left to catch up
+    // with on load. Deleting it also removes the two mechanisms that existed
+    // to stop it fighting the user: the once-per-day flagAutoBaseline snapshot
+    // and the per-card unflagDay stamp.
   } finally { ROLL_OVR=null; }
   return s;
 }
@@ -3486,7 +3445,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.20.4';
+const BUILD='2026.08.20.5';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -4265,29 +4224,28 @@ function renderCard(){
   shownAt=Date.now(); thinkMs=null; cardDirty=false;
   renderCounts();
 }
-// Gates on FLAG_KEY -- the low by-hand threshold, not the much higher
-// flagAuto that parks a word on its own. See FLAG_KEY's own comment. Just
-// the icon: no text, no dismiss button (2026-08-13).
+// The study card's two exits: "Not today" (bury until tomorrow) and the flag
+// (set aside until brought back). Both appear together at FLAG_KEY same-day
+// Agains -- the same low by-hand threshold the flag has gated on since
+// 2026-08-13 -- and neither appears before that, so the card stays clean on
+// every rating where nothing is wrong. Just the icons: no text, no dismiss.
+//
+// Their keys (- and @, and f for the flag) are deliberately NOT gated the
+// same way: see the keydown handler's own note.
+//
+// A set-aside word hides "Not today" outright rather than showing it inert.
+// The two exits are mutually exclusive (setAside()/buryToday()), so on such a
+// word the button could only refuse the press, and a control that does
+// nothing is worse than one that is not there -- the flag, which brings the
+// word back, is the only useful thing to offer.
 function renderLeech(){
   const n=againTodayFor(current,S.log,today()), tag=$('leechTag');
-  // Computed before the early return below, not after: this must be cleared
-  // on a card that shows no tag at all, or the previous card's warning would
-  // still be sitting in the DOM the next time the tag is shown for any reason.
-  const warn=keepWarnState(current), keep=$('keepBtn');
-  keep.classList.toggle('hidden',!warn);
-  keep.classList.toggle('on',warn==='held');
-  keep.setAttribute('aria-label', warn==='held'
-    ? 'Kept in for today — press to let it set itself aside again'
-    : 'About to set itself aside — keep it in for today');
-  // `&&!warn` cannot currently be false-y here (a warning needs flagAuto-1
-  // Agains, and the slider's floor of 5 puts that at 4, above FLAG_KEY's 2) --
-  // it is there so that widening the slider's range downwards can never hide
-  // the more urgent of the two controls behind the threshold for the lesser.
-  if(n<FLAG_KEY&&!warn){ tag.classList.add('hidden'); return; }
+  if(n<FLAG_KEY){ tag.classList.add('hidden'); return; }
   tag.classList.remove('hidden');
   const susp=!!(S.cards[current]&&S.cards[current].susp);
+  $('notTodayBtn').classList.toggle('hidden',susp);
   $('flagBtn').classList.toggle('on',susp);
-  $('flagBtn').setAttribute('aria-label',susp?'Bring back to normal review':'Flag this word');
+  $('flagBtn').setAttribute('aria-label',susp?'Bring back to normal review':'Set this word aside');
 }
 // shared by reveal() and rate(): a tap landing within `ms` of `ref` is
 // treated as the tail of a fast double-tap rather than a deliberate one --
@@ -4654,20 +4612,11 @@ function rate(pressed){
   // no stage attached -- see creditStudyMs's own comment.
   const stage=learnStageOf(cs);
   sessionMs+=flushStudyTime(now,stage);
-  // FLAG_AUTO same-day Agains sets a word aside on its own, right when the
-  // qualifying press happens -- normalise()'s migration only catches this
-  // defensively, on the next load, for a state that reached it without the
-  // live check having fired (see normalise()). Reads S.settings.flagAuto
-  // live, deliberately unguarded by normalise()'s flagAutoBaseline: a fresh
-  // Again press, right now, is exactly the "new word reaching the threshold"
-  // case that should always honour whatever the setting currently is, even
-  // seconds after being lowered -- only the passive rescan needs holding
-  // back (see flagAutoBaseline's own comment in normalise()).
-  if(r===AGAIN&&!S.cards[current].susp&&S.cards[current].unflagDay!==today()&&
-     againTodayFor(current,S.log,today())>=S.settings.flagAuto){
-    setAside(current,true,now);   // routes through setAside() so setAsideAt/rec.drillFlag (Drill stats) get stamped here too, not just on a manual flag
-    toast('Set aside automatically — "Again" '+S.settings.flagAuto+' times today',3200);
-  }
+  // The automatic set-aside that stood here until 2026.08.20.5 is gone --
+  // this is the actual decision being reversed, and everything else deleted
+  // with it existed only to serve it (see FLAG_KEY's own comment above).
+  // rate() no longer changes whether a word stays in the deck; the two exits
+  // on the card do, and only when pressed.
   // Only one adjustment exists now, so only one message does. This used to be
   // a ternary with a 'Recorded as Hard' arm for the Good->Hard demotion --
   // unreachable since that arm was deleted 2026-08-18, and left standing it
@@ -4712,12 +4661,7 @@ function rate(pressed){
   // relearning cards are real reviews too, and were being left out of the rate
   if(cs.st==='R'||cs.st==='X'){ rec.tot++; if(r!==AGAIN) rec.ok++; }
   // bury the same word in the other direction until tomorrow
-  c.idx.forEach(i=>(SIBLINGS[i]||[]).forEach(sid=>{
-    if(sid!==current&&BY_ID[sid].dir!==c.dir){
-      const s2=cardState(sid);
-      if(s2.buried<d+1){ frame.buried.push([sid,s2.buried]); s2.buried=d+1; touchCard(s2,now); }
-    }
-  }));
+  burySiblings(current,c,d,now,frame);
   S.sinceExport=(S.sinceExport||0)+1;
   // Captured for the recap card (top-right, landscape, studyStats setting)
   // so a glance answers "what did I just do" without reaching for undo() --
@@ -4733,6 +4677,49 @@ function next(){
   current=pick();
   if(!current){ renderDone(); return; }
   renderCard();
+}
+// Buries the same word in its OTHER direction until tomorrow, so a word met
+// one way is not met the other way in the same sitting. Factored out of
+// rate() 2026.08.20.5 when "Not today" became a second caller: the two must
+// bury identically, or saying "not today" to a word would leave its reverse
+// in the queue -- exactly the frustration that exit exists to relieve.
+//
+// cs.buried, not cs.buryUntil: this is the app's own anti-interference
+// bookkeeping, the field available() has always checked for it, and it is
+// what undo() knows how to restore. `frame` is optional -- rate() passes its
+// undo frame so a rating can be taken back; notToday() has none to pass.
+function burySiblings(id,c,d,now,frame){
+  c.idx.forEach(i=>(SIBLINGS[i]||[]).forEach(sid=>{
+    if(sid!==id&&BY_ID[sid].dir!==c.dir){
+      const s2=cardState(sid);
+      if(s2.buried<d+1){ if(frame) frame.buried.push([sid,s2.buried]); s2.buried=d+1; touchCard(s2,now); }
+    }
+  }));
+}
+// "Not today" -- the study card's gentler exit. Puts the word (and its other
+// direction) away until the next rollover and moves straight on, rather than
+// leaving it on screen the way the flag does: the flag is a toggle you may
+// want to take back in the same breath, this one is a "next, please".
+//
+// Nothing happens to an already-set-aside word. The two exits are mutually
+// exclusive (see setAside()/buryToday()), the button is hidden on such a card
+// (renderLeech), and the key has to agree with the button -- silently doing
+// nothing is right here, because the word is already out of review and the
+// press has asked for nothing it has not already got.
+//
+// Toasts, unlike the flag's silent f key: the only visible result is the card
+// changing, which is what EVERY press on this screen does, so without a line
+// of text there is nothing to tell "I buried that" from "I rated that".
+function notToday(){
+  if(current==null) return;
+  const cs=cardState(current);
+  if(cs.susp) return;
+  const now=Date.now(), d=today(), c=BY_ID[current];
+  buryToday(current,true);
+  if(c) burySiblings(current,c,d,now,null);
+  save();
+  toast('Not today — back tomorrow',1600);
+  next();
 }
 // Pure state revert: pops the most recent undo frame and restores S to it,
 // without any of undo()'s own UI side effects (toast, save(), re-render) --
@@ -5005,11 +4992,23 @@ function leaveConfuseGroups(id){
   cs.confuseGroups=[]; touchCard(cs);
   gids.forEach(gid=>dissolveConfuseGroupIfThin(gid));
 }
+// The stronger of the study card's two exits: out of review until brought
+// back by hand. Anki calls this suspend; the app has always called it
+// setting a word aside, and the field is `susp` on both.
+//
+// Either transition clears any "not today" bury sitting on the word. Both
+// directions matter, and the bring-back one is the safety-critical one: a
+// word buried this morning and set aside this afternoon would otherwise come
+// back from the pile still carrying a live buryUntil, and vanish again for
+// the rest of the day with nothing on screen to explain it. That is the
+// silent-removal class CASE_STUDY_DRILL_TRAP.md is about, and it is the
+// reason Anki's own "a card cannot be buried and suspended at once" rule is
+// worth adopting here rather than leaving the two states orthogonal.
 function setAside(id,on,now){
   const cs=cardState(id), t=(now!=null)?now:Date.now(), wasSusp=!!cs.susp;
   if(on && !wasSusp) cs.setAsideAt=t;   // first moment it joined the pile, for the Drill stats' "days set aside" figure -- an already-susp word re-flagged (never happens today, but harmless) doesn't overwrite it
   cs.susp=!!on;
-  cs.unflagDay = on ? null : dayKey(t);
+  cs.buryUntil=0;                       // see the note above: the two exits are mutually exclusive
   touchCard(cs,t);
   if(!on && wasSusp) leaveConfuseGroups(id);   // see leaveConfuseGroups' own comment, just above
   // Drill-stats turnover rollup (renderStatsDrill) -- same S.days record
@@ -5029,90 +5028,38 @@ function setAside(id,on,now){
   }
   return cs;
 }
-// "Keep this word in" -- the one-turn override on automatic set-aside, added
-// 2026-08-15. A word one "Again" away from parking itself shows the warning
-// glyph on the study card (renderLeech below); this, and the K key, are what
-// that glyph actually does.
+// keepInToday()/keepWarnState()/toggleKeepIn() stood here until 2026.08.20.5,
+// with the warning glyph on the study card and the K key that fired them.
+// All three were the one-turn override on AUTOMATIC set-aside: a word one
+// "Again" away from parking itself pulsed a warning you could defuse for the
+// rest of the day. Nothing parks a word by itself any more, so there is
+// nothing left to warn about and nothing left to defuse -- the whole
+// mechanism went with the threshold it counted down to, rather than being
+// re-pointed at a number that no longer exists. The card now carries the two
+// exits instead: "Not today" and the flag. See FLAG_KEY's own comment.
+
+// "Not today" -- the gentler of the study card's two exits, and the same
+// mechanism the Browse screen's own per-row button and bulk bar use. A
+// temporary, self-clearing defer, distinct from both setAside() above
+// (permanent, stays until brought back by hand) and rate()'s own automatic
+// same-word-other-direction bury (cs.buried, unrelated -- pure
+// anti-interference bookkeeping the user never sees or controls). Reuses the
+// exact "hidden while cs.X>d" shape that existing field already uses:
+// cs.buryUntil holds the day-key it becomes available again, so there is
+// nothing to explicitly clear -- the next real study day, available()'s own
+// check simply stops matching. Excluded from buildQueue()'s inFlight count
+// while buried (see its own comment), so burying a word actually frees the
+// concurrent-learning slot it was holding.
 //
-// Deliberately NOT a new field. cs.unflagDay already means precisely "a
-// deliberate decision was made about this word on this study day, so neither
-// rate()'s live FLAG_AUTO check nor normalise()'s passive rescan may act on
-// today's log for it" -- it exists because the log is append-only, so without
-// it a manual bring-back was re-parked on the very next load. A keep-in is the
-// same claim made one press earlier, so it reuses the same stamp: nothing new
-// to store, nothing new to sync, and it survives a reload, an import and a
-// gist pull for free, through machinery already proven for the bring-back.
-//
-// Today-only on purpose (owner's call): the FLAG_AUTO counter is itself
-// same-day (againTodayFor), so tomorrow's count starts at zero and the safety
-// valve is live again with no state to expire. A word that needs rescuing five
-// days running genuinely is a leech, and being asked afresh each day is how
-// that becomes visible rather than being quietly exempted forever.
-//
-// Turning it back OFF re-runs the same threshold test rate() would, right
-// here, rather than only clearing the stamp. At flagAuto-1 that test is false
-// and this simply re-arms the trap for the next "Again" -- but a word already
-// AT or past flagAuto (kept in earlier in the day, then failed again) has to
-// be set aside now, visibly, in response to the press. Clearing the stamp
-// alone would leave it in the queue looking untouched until some later load,
-// where normalise()'s rescan would park it with no action to attribute it to.
-function keepInToday(id,on,now){
-  const cs=cardState(id), t=(now!=null)?now:Date.now();
-  if(on){ cs.unflagDay=dayKey(t); touchCard(cs,t); return cs; }
-  cs.unflagDay=null;
-  if(!cs.susp && againTodayFor(id,S.log,dayKey(t))>=S.settings.flagAuto) cs.susp=true;
-  touchCard(cs,t);
-  return cs;
-}
-// The gate for both the warning glyph and the K key: 'armed' when this word is
-// one "Again" from setting itself aside, 'held' when that has already been
-// overridden today, null when neither applies (which is what hides the glyph
-// and makes K a no-op, so the key is never live while nothing is showing).
-//
-// >= rather than === on purpose. A word can sit PAST the threshold without
-// being set aside -- lower flagAuto mid-day and normalise()'s flagAutoBaseline
-// deliberately holds the passive rescan back, while rate()'s live check will
-// still fire on the very next "Again". === would show no warning in exactly
-// the case where the next press is most certainly fatal.
-//
-// Already-set-aside words return null: the flag, not this, is their control,
-// and two adjacent buttons offering to un-park the same word would be worse
-// than one. Reads S.cards[id] directly rather than cardState(id) so that
-// merely rendering a card can never materialise state for it.
-function keepWarnState(id){
-  if(id==null) return null;
-  const cs=S.cards[id];
-  if(cs&&cs.susp) return null;
-  const dk=today();
-  if(againTodayFor(id,S.log,dk)<S.settings.flagAuto-1) return null;
-  return (cs&&cs.unflagDay===dk)?'held':'armed';
-}
-// Shared by the warning glyph's tap and by K, so the two can never drift.
-// Unlike F -- silent by design, since the flag's own red .on state and the
-// word leaving the queue are confirmation enough -- this toasts on both paths:
-// the only other visible result is one small glyph changing colour, which is
-// too quiet for a decision that governs whether a word stays in the deck.
-function toggleKeepIn(){
-  const st=keepWarnState(current);
-  if(!st) return;
-  const cs=keepInToday(current,st!=='held');
-  save(); renderLeech();
-  toast(cs.susp ? 'Set aside'
-      : st==='held' ? 'No longer kept in — the next "Again" sets it aside'
-      : 'Kept in for today', 1800);
-}
-// Manual "bury for today" (Browse screen) -- a temporary, self-clearing
-// defer, distinct from both setAside() above (permanent, stays until
-// brought back by hand) and rate()'s own automatic same-word-other-direction
-// bury (cs.buried, unrelated -- pure anti-interference bookkeeping the user
-// never sees or controls). Reuses the exact "hidden while cs.X>d" shape that
-// existing field already uses: cs.buryUntil holds the day-key it becomes
-// available again, so there is nothing to explicitly clear -- the next real
-// study day, available()'s own check simply stops matching. Excluded from
-// buildQueue()'s inFlight count while buried (see its own comment), so
-// burying a word actually frees the concurrent-learning slot it was holding.
+// Refuses to bury an already-set-aside word (2026.08.20.5). The two exits are
+// mutually exclusive, Anki's rule and setAside()'s own note above: a word out
+// of review indefinitely cannot also be out of review until tomorrow, and
+// letting the pair coexist is what would strand a brought-back word. Returns
+// the state either way, so the caller can read back what actually happened
+// rather than assuming the press landed -- Browse's per-row button does.
 function buryToday(id,on){
   const cs=cardState(id);
+  if(on && cs.susp) return cs;
   cs.buryUntil = on ? today()+1 : 0;
   touchCard(cs);
   return cs;
@@ -5129,10 +5076,10 @@ function isBuriedToday(cs){ return !!(cs&&cs.buryUntil>today()); }
 // of 0 -- none of which had been answered wrong even once that day. Removed
 // entirely 2026.08.16.1 at the owner's request rather than relabelled: the
 // "watch list" half was built for a heavy new-word intake, and it stops
-// earning its place once study is mostly review. Automatic set-aside
-// (S.settings.flagAuto) is untouched and is what fills this list now; so is
-// FLAG_KEY, the separate and much lower threshold that lets a word be
-// flagged by hand from the study card.
+// earning its place once study is mostly review. What fills this list now is
+// deliberate presses only: automatic set-aside was removed 2026.08.20.5 (see
+// FLAG_KEY's own comment), so every row here is a word someone chose to put
+// there, from the study card, from Browse, or from the inspector.
 function strugglingWords(dir){
   const counts=againTodayCounts(S.log,today()), rows=[];
   for(const id in S.cards){
@@ -5794,7 +5741,7 @@ function wordRowHtml(c){
   // icon, its own guard in the click handler below.
   const buried=isBuriedToday(cs);
   const checked=browseSelected.has(c.id)?' checked':'';
-  const note=buried?'<div class="wrNote">Buried — back to normal review tomorrow</div>':'';
+  const note=buried?'<div class="wrNote">Not today — back to normal review tomorrow</div>':'';
   // Manual confusable-group badge (openGroupManager) -- only ever meaningful
   // for a set-aside word, same "susp-only" scope the grouping engine itself
   // uses (see leaveConfuseGroups). Empty-state "+ group" mirrors the note
@@ -5815,7 +5762,7 @@ function wordRowHtml(c){
     inspectBtn+
     groupBtn+
     '<button class="flagBtn'+(flagged?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(flagged?'Bring back to normal review':'Set aside')+'">&#9873;&#65038;</button>'+
-    '<button class="buryBtn'+(buried?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(buried?'Bring back today':'Bury for today')+'">&#8986;</button>'+
+    '<button class="buryBtn'+(buried?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(buried?'Bring back today':'Not today')+'">&#10710;</button>'+
     '</div>'+
     '<div class="gloss">'+escHtml(gloss)+'</div>'+learn+note+'</div>';
 }
@@ -6231,7 +6178,7 @@ function renderDrillDone(){
   const n=new Set(drillDeck).size;
   $('drillDoneText').textContent = drillSeen
     ? ((drillMode==='focus'?'Focus session — ':'Syllabus check — ')+n+' word'+(n===1?'':'s')+' — '+drillRight+' of '+drillSeen+' right.')
-    : 'Nothing set aside right now — words show up here once you flag one, or "Again" lands on one '+S.settings.flagAuto+' times in a day.';
+    : 'Nothing set aside right now — words show up here once you set one aside from the study card.';
 }
 function renderChips(){
   const box=$('chips');
@@ -8129,7 +8076,7 @@ function flagRow(r){
     : '';
   return '<div class="flagRow"><div class="flagTop"><span class="term">'+escHtml(c.q)+'</span><span class="cnt">'+r.n+'</span>'+
     noteBtn+
-    '<button class="flagBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="Flag">&#9873;&#65038;</button></div>'+
+    '<button class="flagBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="'+(r.susp?'Bring back to normal review':'Set aside')+'">&#9873;&#65038;</button></div>'+
     '<div class="gloss">'+escHtml(answerText(c))+'</div></div>';
 }
 function renderStruggling(){
@@ -8137,8 +8084,7 @@ function renderStruggling(){
   $('asideCount').textContent=aside.length;
   $('asideList').innerHTML = aside.length
     ? aside.map(flagRow).join('')
-    : '<div class="note">Nothing set aside. A word lands here once "Again" has hit it '+
-      S.settings.flagAuto+' times in one day, or when you flag it yourself.</div>';
+    : '<div class="note">Nothing set aside. A word lands here when you set it aside yourself, from the study card or from Browse.</div>';
 }
 // New words introduced on one day in one direction. rate() keeps three
 // counters: rec.intro (either direction) and the rec.introL/introE pair. Same
@@ -9809,7 +9755,7 @@ function renderBg(){
     ['When nothing else is due','serves a learning card up to 20 minutes early, so a day cannot end with cards still circling.'],
     ['Rating a word','buries its opposite direction for the rest of the day, so you never meet the same word both ways in one sitting.'],
     ['At the rollover hour','the day turns over: the new-word allowance resets, buried words come back, and everything scheduled for the new day unlocks at once.'],
-    [S.settings.flagAuto+' failures in one day','sets a word aside and stops showing it until you bring it back. One press before that happens, the card shows a warning mark you can tap -- or press K -- to keep the word in for the rest of the day. The number is Settings\' own "Again presses before a word is set aside".'],
+    ['"Again" '+FLAG_KEY+' times on one word in a day','puts two small buttons on the study card: an hourglass that hides the word until tomorrow, and a flag that sets it aside until you bring it back. Nothing happens on its own -- until 2026.08.20.5 the app parked a word by itself after enough failures, and it no longer does.'],
     ['Answering slowly','records a lower grade than the button you pressed. Never a higher one, and never on a failure. This is the only place the app ever changes what you pressed; nothing else sits between a grade and the scheduler.'],
     ['Nothing at all','downloads a file on its own. Safari blocks that silently, so files are saved by hand or from the button above.'],
     ['Each launch, with rotation on','picks a theme you have not had yet this cycle.']
@@ -9955,8 +9901,6 @@ function renderSet(){
     $('fRollPending').textContent='Takes effect '+new Date(s.rolloverPendingFrom).toLocaleString()+
       ' — until then, today still runs on the '+rollLabel(s.rollover)+' schedule.';
   } else $('fRollPending').hidden=true;
-  $('fFlagAuto').value=s.flagAuto>0?s.flagAuto:FLAG_AUTO_DEFAULT;
-  $('fFlagAutoVal').textContent=($('fFlagAuto').value);
   $('fRot').value=S.rotate||'off';
   $('palNote').innerHTML='<span class="swatch" style="background:var(--coral)"></span>'+
     PALETTES[S.palette]+', '+((S.theme==='auto')?'following the system':S.theme)+
@@ -9976,7 +9920,7 @@ function renderSet(){
   const flagged=CARDS.filter(c=>S.cards[c.id]&&S.cards[c.id].susp).length;
   $('leechNote').textContent = flagged
     ? flagged+' word'+(flagged===1?'':'s')+' set aside. Words you set aside stop appearing until you bring them back.'
-    : 'Nothing set aside yet. "Again" '+FLAG_KEY+' times in one day lets you flag a word by hand; '+s.flagAuto+' does it on its own.';
+    : 'Nothing set aside yet. Once "Again" has landed on a word '+FLAG_KEY+' times in one day, the study card offers two ways out of it: not today, or set aside.';
   balanceColumns(document.querySelector('#scSet .setCols'));
 }
 
@@ -10014,9 +9958,9 @@ $('flagBtn').addEventListener('click',e=>{
 // not tapZone either, and for the same reason as the flag directly above: it
 // sits inside cardArea, whose own click handler would otherwise reveal the
 // card on the same bubbled click that pressed this.
-$('keepBtn').addEventListener('click',e=>{
+$('notTodayBtn').addEventListener('click',e=>{
   e.preventDefault(); e.stopPropagation();
-  toggleKeepIn();
+  notToday();
 });
 tapZone($('undoBtn'),undo);
 // seven buttons across six screens, all "go back to the front screen".
@@ -10476,13 +10420,18 @@ $('browseResults').addEventListener('click',e=>{
   const buryBtn=e.target.closest('.buryBtn');
   if(buryBtn){
     e.preventDefault(); e.stopPropagation();
+    // Read the state BACK out rather than assuming the press landed: since
+    // 2026.08.20.5 buryToday() refuses to bury an already-set-aside word (the
+    // two exits are mutually exclusive), so a blind toggle here would paint
+    // the row as buried when nothing had changed.
     const id=buryBtn.dataset.id, wasBuried=isBuriedToday(cardState(id));
-    buryToday(id,!wasBuried);
+    const nowBuried=isBuriedToday(buryToday(id,!wasBuried));
+    if(nowBuried===wasBuried){ toast('That word is set aside — bring it back first',2200); return; }
     save();
-    buryBtn.classList.toggle('on',!wasBuried);
-    buryBtn.setAttribute('aria-label',!wasBuried?'Bring back today':'Bury for today');
-    buryBtn.closest('.wordRow').classList.toggle('buried',!wasBuried);
-    toast(!wasBuried?'Buried — back tomorrow':'Brought back',1400);
+    buryBtn.classList.toggle('on',nowBuried);
+    buryBtn.setAttribute('aria-label',nowBuried?'Bring back today':'Not today');
+    buryBtn.closest('.wordRow').classList.toggle('buried',nowBuried);
+    toast(nowBuried?'Not today — back tomorrow':'Brought back',1400);
     return;
   }
   const groupBtn=e.target.closest('.groupBtn');
@@ -10523,9 +10472,13 @@ tapZone($('bulkFlag'),()=>{
   toast(n+' word'+(n===1?'':'s')+' flagged',1400);
 });
 tapZone($('bulkBury'),()=>{
-  browseSelected.forEach(id=>buryToday(id,true));
-  save(); const n=browseSelected.size; browseSelected.clear(); renderBrowse();
-  toast(n+' word'+(n===1?'':'s')+' buried for today',1400);
+  // Counts what actually moved, not what was selected: buryToday() refuses an
+  // already-set-aside word since 2026.08.20.5, so a selection spanning both
+  // would otherwise report a number the screen does not show.
+  let n=0;
+  browseSelected.forEach(id=>{ if(isBuriedToday(buryToday(id,true))) n++; });
+  save(); browseSelected.clear(); renderBrowse();
+  toast(n+' word'+(n===1?'':'s')+' put off until tomorrow',1400);
 });
 tapZone($('bulkGroup'),()=>{ openConfirmGroup(Array.from(browseSelected)); });
 tapZone($('bulkClear'),()=>{ browseSelected.clear(); renderBrowse(); });
@@ -10734,11 +10687,6 @@ $('surpriseBtn').addEventListener('click',surprise);
 $('bgBackupBtn').addEventListener('click',()=>{doExport(false);renderBg();});
 $('buildTag').addEventListener('click',()=>{renderLog();show('scLog');});
 $('fTiming').addEventListener('change',e=>{S.settings.useTiming=(e.target.value==='1');save();});
-// Live, not deferred like fRoll -- flagAuto itself takes effect immediately
-// (see FLAG_AUTO_DEFAULT's comment); only normalise()'s own defensive rescan
-// holds a same-day lowering back, via flagAutoBaseline, not this listener.
-$('fFlagAuto').addEventListener('input',e=>{S.settings.flagAuto=e.target.value|0;$('fFlagAutoVal').textContent=e.target.value;});
-$('fFlagAuto').addEventListener('change',()=>save());
 $('fKnown').addEventListener('change',e=>{S.settings.knownDays=Math.max(1,e.target.value|0);save();});
 $('fWeak').addEventListener('change',e=>{S.settings.weakFirst=(e.target.value==='1');save();});
 $('fTerm').addEventListener('change',e=>{S.settings.term=e.target.value;save();});
@@ -10842,20 +10790,41 @@ document.addEventListener('keydown',e=>{
       else if(wasQuickRated!=null) quickCorrectToAgain();
       else undo();
     }
-    // f flags/unflags the current word straight from the keyboard, silently
-    // -- no toast -- once it's drawn FLAG_KEY Agains today (see FLAG_KEY's
-    // own comment). The on-screen flag icon gates on the same threshold, so
-    // this never fires "early" relative to what's already visible.
-    if((e.key==='f'||e.key==='F') && current!=null &&
-       againTodayFor(current,S.log,today())>=FLAG_KEY){
-      setAside(current,!cardState(current).susp); save(); renderLeech();
+    // The two exits, by key. Anki's own bindings (docs.ankiweb.net/studying)
+    // -- `-` buries until tomorrow, `@` suspends until brought back -- adopted
+    // deliberately with the model itself, so anything read in Anki's manual or
+    // forums transfers without translation. f is kept alongside @ because it
+    // is what this app has always used and it is in the owner's fingers; both
+    // do exactly the same thing, through the same call.
+    //
+    // Ungated, unlike the icons. Until 2026.08.20.5 f fired only once a word
+    // had drawn FLAG_KEY Agains today, matching the icon's own gate so the key
+    // never ran "early" relative to what was visible. That gate is dropped
+    // here: the icons still wait for two same-day Agains, because a permanent
+    // pair of glyphs on 1,500 clean cards a day is chrome nobody reads -- but
+    // there is no reason a deliberate keypress should be refused on a word the
+    // user has already decided about. One rule, easy to hold: the keys always
+    // work, the icons appear when a word is fighting you. On a phone, where
+    // there is no keyboard, the icons ARE the whole interface, which is why
+    // their gate is the one that had to stay defensible.
+    //
+    // Both self-gate on the state that actually matters instead: notToday()
+    // no-ops on an already-set-aside word (the two exits are mutually
+    // exclusive), and the flag toggles either way, which is how a word gets
+    // brought back from the card it is sitting on.
+    //
+    // f used to be silent, on the reasoning that the icon turning red was
+    // confirmation enough. Ungating the key is what makes a toast necessary:
+    // on a card below the icon gate there is no icon to turn red, so without
+    // a line of text a press would change whether a word stays in the deck
+    // with nothing at all on screen to say so. It now toasts on every path --
+    // key and tap, the same words -- rather than only on the one where the
+    // icon happens to be showing.
+    if(e.key==='-' && current!=null) notToday();
+    if((e.key==='@'||e.key==='f'||e.key==='F') && current!=null){
+      const cs=setAside(current,!cardState(current).susp); save(); renderLeech();
+      toast(cs.susp?'Set aside':'Brought back',1400);
     }
-    // k keeps the current word in for today, overriding the automatic
-    // set-aside it is one "Again" away from. No threshold test here:
-    // toggleKeepIn() self-gates on keepWarnState(), the same gate that decides
-    // whether the glyph is on screen at all, so the key can never fire while
-    // nothing is showing and the two can never disagree about when it applies.
-    if(e.key==='k'||e.key==='K') toggleKeepIn();
   }
   else if($('scDrill').classList.contains('on') && drillView==='practice' &&
           !(document.activeElement && document.activeElement.id==='drillInput')){
