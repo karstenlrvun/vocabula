@@ -119,6 +119,20 @@ function heatmapAvgRatings(days){
   for(const k in days){ const r=days[k]; if(r&&r.n){ sum+=r.n; n++; } }
   return n?sum/n:0;
 }
+// Trailing-window average ms/rating (2026-08-20, moved here from index.html
+// so deck.html's own "~N min left" top-bar estimate can share the exact same
+// number rather than a second, possibly-drifting implementation). Gated the
+// same way the Stats page's own seconds/review readout is (a couple of data
+// points is noise, not a real pace) -- returns null rather than guess off
+// too little, and every caller must degrade gracefully.
+function avgMsPerRating(days,todayKey,windowDays){
+  let sumMs=0,sumN=0,daysWithData=0;
+  for(let k=todayKey-windowDays;k<todayKey;k++){
+    const r=days[k];
+    if(r&&r.n&&r.studyMs){ sumMs+=r.studyMs; sumN+=r.n; daysWithData++; }
+  }
+  return (daysWithData>=3&&sumN>=10)?(sumMs/sumN):null;
+}
 // The one baseline both the "Daily average" chip and the Volume colour ramp
 // read (2026-08-17). They used to disagree: the chip showed
 // windowedDailyAverage() under the user's own picker while every cell was

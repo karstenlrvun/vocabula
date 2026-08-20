@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css">
+<link rel="stylesheet" href="palettes.css?v=2026.08.20.4">
 <!-- Phase 2 (PHASE2_PLAN.md §2.1): the deck list itself, read by the script
      below instead of a hand-written DECKS array. 'self' added to script-src
      above for this -- the old 'unsafe-inline'-only policy blocks a real
@@ -31,7 +31,18 @@
      manually kept in step. Neither is new; both were just never caught
      because nothing before this session read this page's own console. -->
 <script src="decks/registry.js"></script>
-<script src="shared.js"></script>
+<!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
+     number must be bumped with BUILD (sec95c pins that it matches).
+     Why: these two are the only files both pages load by a fixed name, and a
+     browser keys its cache on the whole URL. Without the query, a returning
+     visitor gets the NEW deck.html against a cached OLD shared.js -- which is
+     not a cosmetic problem: 2026.08.20.2 moved avgMsPerRating() into
+     shared.js and renderCounts() calls it unguarded on every card, so the
+     study screen threw ReferenceError on the first word. Reproduced in the
+     in-app browser the same day (transferSize:0 on shared.js, currentStreak
+     defined, avgMsPerRating not). The query makes each build's pair a
+     distinct URL, so the two can never be mismatched again. -->
+<script src="shared.js?v=2026.08.20.4"></script>
 <script>
 // The launcher's own chrome is always Vellum (fixed, not switchable -- see the
 // :root comment below); only light/dark follows the system. Stamped on <html>
@@ -200,7 +211,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
   </div>
 </div>
 
-<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.18.1</a>
+<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.20.4</a>
 
 <script>
 // ---------- shared sync settings: the ONE place the sync code and this device's
@@ -218,22 +229,43 @@ function loadShared(){
   let cur={};
   try{ cur=JSON.parse(localStorage.getItem(SYNC_SHARED_KEY))||{}; }catch(e){}
   if(cur&&typeof cur==='object'&&Object.prototype.hasOwnProperty.call(cur,'__proto__')) delete cur['__proto__'];
-  const out={syncCode:(typeof cur.syncCode==='string')?cur.syncCode:'', deviceName:(typeof cur.deviceName==='string')?cur.deviceName:''};
+  // installId (2026.08.19.5): one permanent random id per copy of the app,
+  // minted by whichever page reads the shared blob first and never changed --
+  // same rule and same alphabet as deck.html's randomInstallId(). Stamped on
+  // the launcher's own push as `from` so the sync Worker can tell installs
+  // apart (it keeps a spare copy only when a different install takes over).
+  const out={syncCode:(typeof cur.syncCode==='string')?cur.syncCode:'', deviceName:(typeof cur.deviceName==='string')?cur.deviceName:'',
+             installId:(typeof cur.installId==='string'&&/^[a-z0-9]{8}$/.test(cur.installId))?cur.installId:''};
+  let changed=false;
   try{
     const legacy=localStorage.getItem(LEGACY_GIST_SHARED_KEY);
     if(legacy){
       try{ const g=JSON.parse(legacy); if(g&&typeof g.deviceName==='string'&&!out.deviceName) out.deviceName=g.deviceName; }catch(e){}
       localStorage.removeItem(LEGACY_GIST_SHARED_KEY);
-      saveShared(out);
+      changed=true;
     }
   }catch(e){}
+  if(!out.installId){ out.installId=randomInstallId(); changed=true; }
+  if(changed) saveShared(out);
   return out;
 }
+function randomInstallId(){
+  const chars='abcdefghijklmnopqrstuvwxyz0123456789';
+  const bytes=crypto.getRandomValues(new Uint8Array(8));
+  let s=''; for(let i=0;i<8;i++) s+=chars[bytes[i]%chars.length];
+  return s;
+}
+// Writes back on top of whatever the blob already holds. It used to rebuild
+// the blob from {syncCode, deviceName} alone and so silently dropped the
+// extraction key deck.html keeps in the same blob every time a name or a new
+// code was saved here (found 2026-08-19, fixed with the installId work --
+// deck.html's saveSyncShared() now spreads the current object the same way).
 function saveShared(patch){
   let cur={};
   try{ cur=JSON.parse(localStorage.getItem(SYNC_SHARED_KEY))||{}; }catch(e){}
+  if(cur&&typeof cur==='object'&&Object.prototype.hasOwnProperty.call(cur,'__proto__')) delete cur['__proto__'];
   const next=Object.assign({syncCode:'',deviceName:''},cur,patch);
-  try{ localStorage.setItem(SYNC_SHARED_KEY, JSON.stringify({syncCode:next.syncCode||'',deviceName:next.deviceName||''})); }catch(e){}
+  try{ localStorage.setItem(SYNC_SHARED_KEY, JSON.stringify(Object.assign({},next,{syncCode:next.syncCode||'',deviceName:next.deviceName||''}))); }catch(e){}
   return next;
 }
 function flash(id){
@@ -532,19 +564,9 @@ function fmtDuration(ms){
   if(mins<60) return mins+'m';
   return Math.floor(mins/60)+'h '+(mins%60)+'m';
 }
-// Trailing-window average ms/rating, for the rough "~Nm to go" projection
-// below. Gated the same way deck.html's own Stats screen gates its own
-// seconds/review readout (STATS_TIME_PLAN.md's hasData convention) -- a
-// couple of data points is noise, not a real pace, so this returns null
-// rather than guess off too little, and the caller must degrade gracefully.
-function avgMsPerRating(days,todayKey,windowDays){
-  let sumMs=0,sumN=0,daysWithData=0;
-  for(let k=todayKey-windowDays;k<todayKey;k++){
-    const r=days[k];
-    if(r&&r.n&&r.studyMs){ sumMs+=r.studyMs; sumN+=r.n; daysWithData++; }
-  }
-  return (daysWithData>=3&&sumN>=10)?(sumMs/sumN):null;
-}
+// avgMsPerRating() moved to shared.js (2026-08-20) so deck.html's own
+// top-bar time estimate reads the exact same number, not a second
+// implementation that could drift from this one.
 // Today's numbers for one deck (his 2026-08-16 ask, replacing the 35-day
 // dot-strip that used to render here -- see the section comment above).
 // "Due" is deliberately the narrow FSRS sense (S.summary.due alone,
@@ -909,6 +931,7 @@ async function pushDeckFromLauncher(db,code,deckEntry,deviceName){
     full.lastDevice=deviceName||'this device';
     const {kvKey,cryptoKey}=await syncKeys(code,deckEntry.key);
     const pkt=await encryptPayload(sanitisedForPush(full),cryptoKey);
+    pkt.from=loadShared().installId||'';   // see loadShared(): the Worker's spare-copy rule compares this
     const body=JSON.stringify(pkt);
     if(body.length>SYNC_MAX_BYTES) throw new Error('too large');
     const opts={method:'PUT',headers:{'Content-Type':'application/json'},body:body};
