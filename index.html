@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.20.5">
+<link rel="stylesheet" href="palettes.css?v=2026.08.21.0">
 <!-- Phase 2 (PHASE2_PLAN.md §2.1): the deck list itself, read by the script
      below instead of a hand-written DECKS array. 'self' added to script-src
      above for this -- the old 'unsafe-inline'-only policy blocks a real
@@ -42,7 +42,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.20.5"></script>
+<script src="shared.js?v=2026.08.21.0"></script>
 <script>
 // The launcher's own chrome is always Vellum (fixed, not switchable -- see the
 // :root comment below); only light/dark follows the system. Stamped on <html>
@@ -115,6 +115,22 @@ a.card .d{color:var(--muted);font-size:13.5px}
   margin-left:8px;opacity:0;transition:opacity .25s ease}
 .savedTag.on{opacity:1}
 
+/* ---------- Export all (2026-08-21, his ask -- Riverbank's launcher feature,
+   re-plumbed for this page's async storage). The glyph is this page's own:
+   an arrow settling into an open tray, drawn in the select-arrow's stroke
+   style (1.5px, round caps, currentColor) rather than Riverbank's heavy
+   unicode arrow, which sat oddly against everything else here. Beside the
+   h1, so saving backups reads as an app-level act, not one deck's. ---------- */
+.h1Row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 4px}
+.h1Row h1{margin-bottom:0}
+.exportBtn{flex:0 0 auto;width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:11px;background:var(--raise);color:var(--muted);cursor:pointer;padding:0}
+.exportBtn:active{border-color:var(--coral);background:var(--accent-soft);color:var(--ink)}
+.exportBtn:disabled{opacity:.5;cursor:default}
+.exportNote{font-size:12.5px;color:var(--muted);margin:2px 0 0;min-height:0}
+.exportNote:empty{margin:0}
+.exportNote.bad{color:var(--coral)}
+
 /* ---------- version line, same idiom as the decks' own .build ---------- */
 .verlink{display:block;text-align:center;margin:34px 0 0;padding:8px;font-size:11px;
   letter-spacing:.09em;text-transform:uppercase;color:var(--faint);text-decoration:none}
@@ -166,8 +182,17 @@ a.card .d{color:var(--muted);font-size:13.5px}
 </style>
 </head>
 <body>
-<h1>Vocabula</h1>
+<div class="h1Row">
+  <h1>Vocabula</h1>
+  <button type="button" id="btnExportAll" class="exportBtn" aria-label="Save a backup file of every deck">
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+      <path d="M9 2.5v8M5.8 7.3L9 10.5l3.2-3.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 12v1.8A1.7 1.7 0 0 0 4.7 15.5h8.6a1.7 1.7 0 0 0 1.7-1.7V12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
 <p class="sub">Freshers' vocabulary, spaced out</p>
+<p class="exportNote" id="exportNote"></p>
 
 <div id="deckCards"></div>
 <div class="refreshRow">
@@ -211,7 +236,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
   </div>
 </div>
 
-<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.20.5</a>
+<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.21.0</a>
 
 <script>
 // ---------- shared sync settings: the ONE place the sync code and this device's
@@ -991,6 +1016,61 @@ $('btnRefreshCards').addEventListener('click',async()=>{
   await checkSync(true);
   btn.disabled=false;
 });
+// ---------- Export all (2026-08-21, his ask; Riverbank's launcher feature,
+// re-plumbed for this page's async IndexedDB storage). One tap saves one
+// dated backup file per deck that has any data on this device -- the SAME
+// per-deck file deck.html's own doExport() writes, deliberately not a new
+// combined format: restoring stays deck.html's own guarded, stamp-checked
+// path, and sync storage is per-deck anyway. Every deck that exists is
+// offered, archived ones included -- archiving hides a card, it does not
+// delete the history behind it, and a backup that skipped it would be the
+// one you reach for the day you need it. Downloads are spaced out, not
+// fired together: Safari can silently drop all but the first download
+// triggered in one instant (the same reason doExport() never triggers one
+// nobody tapped for).
+function downloadOneBackup(deckId,obj){
+  const blob=new Blob([JSON.stringify(obj)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='vocabula-'+deckId+'-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);              // Safari needs it in the DOM
+  a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },1500);
+}
+// Pure: the file that leaves for one deck. Two guarantees, both pinned by
+// tests: no secret rides along (sanitisedForPush(), the push's own choke
+// point), and the deck stamp is always present -- a legacy copy from before
+// the stamp existed gets it written in from the registry key it was read
+// under, or deck.html's own import guard would (rightly) refuse the very
+// file this button just saved.
+function backupFileFor(full,deckKey){
+  const obj=sanitisedForPush(full);
+  if(!obj.deck) obj.deck=deckKey;
+  return obj;
+}
+async function exportAllBackups(){
+  const note=$('exportNote'), btn=$('btnExportAll');
+  btn.disabled=true; note.classList.remove('bad');
+  try{
+    if(!dbPromise) dbPromise=openDeckDb();
+    const db=await dbPromise;
+    const found=[];
+    for(const d of mergeRegistry(REGISTRY,loadUserDecks())){
+      const full=await fullLocalData(db,d.key);
+      if(!full||typeof full!=='object') continue;
+      found.push({id:d.id,title:d.title,obj:backupFileFor(full,d.key)});
+    }
+    if(!found.length){ note.textContent='Nothing to save yet \u2014 open a deck and study a little first.'; return; }
+    note.textContent='Saving '+found.length+' file'+(found.length===1?'':'s')+'\u2026';
+    found.forEach((f,i)=>{ setTimeout(()=>downloadOneBackup(f.id,f.obj), i*600); });
+    await new Promise(r=>setTimeout(r,found.length*600));
+    note.textContent='Saved '+found.map(f=>f.title).join(' and ')+' \u2014 one dated file each, stamped for its own deck.';
+  }catch(e){
+    note.textContent='Could not save the backups ('+((e&&e.message)||e)+')'; note.classList.add('bad');
+  }finally{ btn.disabled=false; }
+}
+$('btnExportAll').addEventListener('click',exportAllBackups);
 checkSync(false);
 </script>
 </body>

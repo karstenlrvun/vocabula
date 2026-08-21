@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.20.5">
+<link rel="stylesheet" href="palettes.css?v=2026.08.21.0">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.20.5"></script>
+<script src="shared.js?v=2026.08.21.0"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -243,16 +243,31 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
    than the flag's bad ink, which is the whole distinction in one colour:
    "not now" is not "not until I deal with this".
 
-   The glyph is U+29D6, an hourglass from the MATHEMATICAL symbols block, not
-   U+231A (the watch this and Browse's own button used until 2026.08.20.5) and
-   not U+231B or U+23F3, the two obvious hourglasses. All three of those have
-   emoji presentation and no text form -- U+231A does not even take a U+FE0E
-   variation selector, which was verified in a browser rather than assumed --
-   so each paints itself in its own colours and ignores `color` entirely,
-   exactly the trap the flag's own U+FE0E is there to avoid. U+29D6 is an
-   ordinary symbol: it takes the palette's warn ink on every theme. Browse's
-   row button and its bulk bar were moved to the same glyph at the same time,
-   so one mark means one thing everywhere in the app.
+   The glyph was chosen as U+29D6, an hourglass from the MATHEMATICAL symbols
+   block, not U+231A (the watch this and Browse's own button used until
+   2026.08.20.5) and not U+231B or U+23F3, the two obvious hourglasses. All
+   three of those have emoji presentation and no text form -- U+231A does not
+   even take a U+FE0E variation selector, which was verified in a browser
+   rather than assumed -- so each paints itself in its own colours and ignores
+   `color` entirely, exactly the trap the flag's own U+FE0E is there to avoid.
+   U+29D6 doesn't have that problem -- where it renders, it takes the
+   palette's warn ink correctly, on every theme.
+
+   Where it renders turned out to be the catch (found the same day, a user
+   report + a follow-up test). U+29D6 is real but obscure -- Miscellaneous
+   Mathematical Symbols-B, not a block general-purpose fonts reliably ship --
+   and on macOS/iOS, apparently none of them do: rendered with the app's own
+   font stack, then again with every likely symbol-font fallback (Apple
+   Symbols, Segoe UI Symbol, Noto Sans Symbols/2) forced ahead of it, it still
+   came out as a missing-glyph box on a real screenshot, not assumed. No
+   font-stack fix exists for a glyph that plain isn't installed anywhere on
+   the device. So this button, Browse's row button, and the bulk bar (the
+   other two places this icon appears -- still one mark for one thing, see
+   wordRowHtml's buryBtn and #bulkBury) now draw a small filled SVG hourglass
+   instead: sized off font-size via `1em` so every colour/size rule on this
+   page still applies unchanged, `fill="currentColor"` doing the job U+29D6's
+   own colour-taking used to do. Guaranteed to render, for a few more lines
+   than a single character cost.
 
    The 16px gap on .leechtag above is for this pairing specifically: two
    controls that do different things to the same word must not sit a
@@ -337,6 +352,13 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .drillListTop{display:flex;align-items:center;gap:8px}
 .drillListTop .term{flex:1;min-width:0}
 .drillListNote{margin-top:5px;color:var(--warn-ink);font-size:12.5px;line-height:1.4;font-style:italic}
+/* the release offer -- states a fact ("this has earned its way out"), it does
+   not act. The button right under it is the action. Accent, not warning
+   colours: nothing has gone wrong. */
+.drillReady{margin:10px 0 0;padding:8px 11px;border-radius:10px;font-size:13px;line-height:1.45;
+  background:var(--accent-soft);border:1px solid var(--coral);color:var(--coral)}
+.drillListRow.isReady .term::after{content:' \2713';color:var(--coral);font-weight:600}
+.flagRow.isReady .term::after{content:' \2713';color:var(--coral);font-weight:600}
 /* shared by the Drill list's row and the Set-aside list's flagRow (below) --
    same small, low-emphasis tap target either place a note can be opened from */
 .noteBtn{flex:0 0 auto;background:none;border:none;padding:2px 6px;font-size:12.5px;color:var(--muted);white-space:nowrap}
@@ -803,6 +825,10 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 /* the calibration reminder is a tap target, not a warning: the app's own
    call-to-action colours (see .browseDateBar), and a pointer */
 .warn.calib{background:var(--accent-soft);border-color:var(--coral);color:var(--coral);cursor:pointer}
+/* the pile invitation is a tap target and NOT a warning: a standing count of
+   set-aside words in warning colours would read as a scold every single day.
+   Panel ground, ordinary ink, a pointer -- see renderWarn(). */
+.warn.pile{background:var(--panel);border-color:var(--line);color:var(--ink);cursor:pointer}
 
 /* ---------- settings ---------- */
 .set{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 40px}
@@ -1597,7 +1623,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <b id="bulkCount">0 selected</b>
         <div class="bulkBtns">
           <button id="bulkFlag">&#9873;&#65038; Flag</button>
-          <button id="bulkBury">&#10710; Not today</button>
+          <button id="bulkBury"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M4,2.5 h16 a1,1 0 0 1 0,2 L12.9,12 L20,19.5 a1,1 0 0 1 0,2 H4 a1,1 0 0 1 0,-2 L11.1,12 L4,4.5 a1,1 0 0 1 0,-2 Z"/></svg> Not today</button>
           <button id="bulkGroup">&#128279; Group</button>
           <button id="bulkClear">Clear</button>
         </div>
@@ -1619,6 +1645,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="prompt" id="drillPrompt"></div>
       <div class="rule"></div>
       <div class="drillChoices" id="drillChoices"></div>
+      <div class="drillReady hidden" id="drillReady"></div>
       <button class="chip drillFlagBtn" id="drillFlagBtn">Bring this word back to normal review</button>
       <div class="note" id="drillScore"></div>
     </div>
@@ -1669,7 +1696,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
            that rule's own comment for why), not because it IS the answer. -->
       <div class="answer quickFlash" id="quickFlash" aria-hidden="true"></div>
       <div class="leechtag hidden" id="leechTag">
-        <button class="notTodayBtn" id="notTodayBtn" aria-label="Not today — bring this word back tomorrow">&#10710;</button>
+        <button class="notTodayBtn" id="notTodayBtn" aria-label="Not today — bring this word back tomorrow"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M4,2.5 h16 a1,1 0 0 1 0,2 L12.9,12 L20,19.5 a1,1 0 0 1 0,2 H4 a1,1 0 0 1 0,-2 L11.1,12 L4,4.5 a1,1 0 0 1 0,-2 Z"/></svg></button>
         <button class="flagBtn" id="flagBtn" aria-label="Set this word aside">&#9873;&#65038;</button>
       </div>
       <div class="hintline" id="hintline"></div>
@@ -2517,8 +2544,8 @@ const BUCKET_NAME={2:'known',1:'shaky',0:'unseen'};
 // names they always have.
 let CARDS=null;               // {id, dir, idx:[entry indices], q, a, sec}
 let SECTIONS=null, HAS_BUCKETS=false, BY_ID=null, SIBLINGS=null, defaults=null;
-// The deck's own file/idb content, before any S.customRows/S.overrides are
-// unioned in (Phase 3 §B/§C) -- captured once, on the FIRST bootContent()
+// The deck's own file/idb content, before any S.customRows are
+// unioned in (Phase 3 §C) -- captured once, on the FIRST bootContent()
 // call a boot ever makes (the real boot chain's own file/idb fetch; tests
 // and tools/replay_migration.js call bootContent() exactly once too, so this
 // is a no-op for them). BASE_DATA is a plain COPY of the file's own rows,
@@ -2574,9 +2601,9 @@ function bootContent(content){
   PAL_SAMPLE=PAL_SAMPLE_ROW[0]; PAL_SAMPLE_GLOSS=PAL_SAMPLE_ROW[1]||'';
 }
 // Re-derives CARDS/BY_ID/SECTIONS/etc from the file's own rows plus this
-// device's S.customRows and S.overrides (Phase 3 §C/§B) -- always rebuilt
-// from BASE_DATA, never from the currently-published DATA, so calling this
-// again later (another word added, an override changed) never compounds.
+// device's S.customRows (Phase 3 §C) -- always rebuilt from BASE_DATA,
+// never from the currently-published DATA, so calling this again later
+// (another word added) never compounds.
 // Reuses bootContent() wholesale rather than hand-rolling a second copy of
 // the E-card grouping logic (see minId()'s comment for why that's delicate
 // enough once).
@@ -2609,14 +2636,25 @@ function bootContent(content){
 // answer-alternative array built from that same row, with no special-casing
 // needed for either.
 //
-// Callers: bootDeck() once after load() resolves (S.customRows/S.overrides
-// only exist once S itself does -- see its own comment on why bootContent()
-// alone, pre-load(), can't do this), and again after any live add/edit/
-// delete of a custom row or override so Browse/Study reflect it immediately.
+// Callers: bootDeck() once after load() resolves (S.customRows only exists
+// once S itself does -- see its own comment on why bootContent() alone,
+// pre-load(), can't do this), and again after any live add/delete of a
+// custom row so Browse/Study reflect it immediately.
+//
+// Term overrides USED to apply here too (Phase 3 §B) -- an editable text box
+// on the built-in Latin/Greek headword. Removed 2026-08-20 (owner's call,
+// same night as the icon/typo fix): for a prescribed list, the term IS the
+// fact being memorised, so rewriting it "for memorability" produces a
+// flashcard that tests the wrong word rather than one that's easier to
+// learn -- and the one thing that could legitimately be personalised for
+// recall, the gloss, was never editable in the first place (rebuildCards
+// only ever touched the term; see normalise()'s own comment on why a gloss
+// can't be). Removed in full, not left as inert legacy state the way
+// unflagDay (2026.08.20.5) was: that field persists per-card, so stripping
+// it needed its own migration decision; S.overrides was one flat unkeyed
+// dict on S, cheap and safe to retire outright along with it.
 function rebuildCards(){
-  const ov=S.overrides||{};
-  const rows=BASE_DATA.concat(S.customRows||[])
-    .map(r=>{ const o=ov[r[4]]; return (o&&o.term) ? [o.term,r[1],r[2],r[3],r[4]] : r; });
+  const rows=BASE_DATA.concat(S.customRows||[]);
   DATA.length=0; Array.prototype.push.apply(DATA,rows);
   bootContent(BASE_CONTENT);
 }
@@ -2634,12 +2672,15 @@ function makeDefaults(){ return {
   version:2, created:Date.now(), calibrationDueAt:CALIBRATION_DUE_DEFAULT,
   settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15, topBarStyle:'counts'},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, drillLog:[], sinceExport:0, lastExport:null, lastPushBytes:0,
-  deck:KEY, lastSync:null, syncedLogLen:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
-  // Phase 3 §C/§B (PHASE3_4_HANDOFF.md): user-added words and term overrides.
-  // Both ride backup/sync/gist for free -- they're just more fields on S,
-  // same as everything else here -- rather than a separate store. See
-  // rebuildCards() for how they're unioned into CARDS.
-  customRows:[], overrides:{},
+  deck:KEY, lastSync:null, syncedLogLen:null, lastRemoteAt:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
+  // Phase 3 §C (PHASE3_4_HANDOFF.md): user-added words. Rides backup/sync/
+  // gist for free -- it's just another field on S, same as everything else
+  // here -- rather than a separate store. See rebuildCards() for how it's
+  // unioned into CARDS. (Phase 3 §B, term overrides on the built-in list,
+  // sat alongside this until 2026-08-20 -- removed outright, not left as an
+  // inert legacy field, since it's a flat unkeyed dict rather than one more
+  // property per card: nothing to migrate per-card the way unflagDay needed.)
+  customRows:[],
   // 2026.08.19.5 (STUDY_SYSTEM.md 5.5, the sync merge). tombs: what has been
   // taken back -- log rows retracted by undo as [id, at] pairs, and deleted
   // custom-word ids -- so a merge never resurrects them. installs: the label
@@ -2677,7 +2718,8 @@ function freshCard(c){
   const st={id:c.id, st:'L', step:0, s:null, d:null, due:0, last:null,
             reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null,
             unflagDay:null, holdSince:null, buryUntil:0,   // unflagDay: legacy since 2026.08.20.5, see normalise()
-            note:null, setAsideAt:null, lastDrilled:null, confuseGroups:[]};
+            note:null, setAsideAt:null, lastDrilled:null, confuseGroups:[],
+            drillOkDays:0, drillOkDay:null};   // the release rule -- see creditDrillLook()
   if(c.dir==='L'&&(c.seed===1||c.seed===2)){
     st.st='R'; st.step=null;
     st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
@@ -3004,7 +3046,10 @@ function save(){
   const armDecision=syncArmDecision(loadSyncCode(),S.syncedLogLen);
   if(armDecision==='debounce-push'){
     const delay=nextPushDelay(Date.now(),lastPushAt,6000,SYNC_MIN_GAP);
-    saveTimer=setTimeout(()=>{ saveTimer=null; pushSync(true); },delay);
+    // guardedAutoPush, not pushSync: the unattended push looks at the slot
+    // first and merges in anything another device pushed meanwhile, instead
+    // of blind-overwriting it -- see pushRaceDecision()'s comment.
+    saveTimer=setTimeout(()=>{ saveTimer=null; guardedAutoPush(); },delay);
   }
   else if(armDecision==='reconcile-first') syncOnLaunch();   // look before writing -- see syncFetchOutcome()
   // #homeWarn lives inside scHome, so this is wasted work unless it is on screen --
@@ -3051,6 +3096,12 @@ function normalise(o){
   // so drop both from anything loaded, restored, or pulled rather than carry
   // them forward into every future export.
   delete s.settings.gistId; delete s.settings.gistTok; delete s.settings.syncCode;
+  // Term overrides (pre-2026-08-20) have no home in S any more either --
+  // the feature was removed outright, not just stopped reading -- so the
+  // same treatment: drop it from anything loaded, restored, or pulled,
+  // rather than let the blanket Object.assign above carry a stray raw
+  // `overrides` key from an old backup straight through unsanitized.
+  delete s.overrides;
   // Card fields just below get Number.isFinite checks; these settings never did,
   // even though several feed straight into the same scheduling arithmetic. A
   // retention of 0 (or missing/garbage, e.g. from a hand-edited or partially
@@ -3196,19 +3247,13 @@ function normalise(o){
       .map(r=>[r[0].trim().slice(0,CAP_TERM),r[1].trim().slice(0,CAP_GLOSS),r[2].trim().slice(0,CAP_SECTION),0,r[4]])
       .slice(0,10000);   // bounded like every other list arriving from outside (a crafted blob, 2026.08.19.5 review)
   }
-  // Text overrides (Phase 3 §B) -- term-only, keyed by row id (a built-in
-  // row's integer id or a user row's 'u...' string, same namespace either
-  // way). {term} only: a gloss field is deliberately never read here even if
-  // present in a crafted/legacy object -- see rebuildCards()'s own comment
-  // for why a gloss can never be overridden (it would silently restructure
-  // E-card grouping).
-  { const raw=(o.overrides&&typeof o.overrides==='object')?o.overrides:{}, ov={};
-    for(const k in raw){
-      const v=raw[k];
-      if(v&&typeof v==='object'&&typeof v.term==='string'&&v.term.trim()) ov[k]={term:v.term.trim().slice(0,CAP_TERM)};
-    }
-    s.overrides=ov;
-  }
+  // Text overrides (Phase 3 §B) used to be sanitized here -- a term-only
+  // edit on a built-in headword, keyed by row id. Removed 2026-08-20 along
+  // with the rest of the feature (see rebuildCards()'s own comment); an
+  // incoming backup's `overrides` key, if any, is actively dropped near the
+  // top of this function instead (`delete s.overrides`, beside the gist-
+  // credentials cleanup) -- the blanket Object.assign that builds `s` would
+  // otherwise carry a stray one straight through unsanitized.
   // Manual confusable groups (DEVELOPMENT_IDEAS.md sec E) -- a small registry
   // of {label,created} keyed by an opaque group id. Membership is deliberately
   // NOT stored here: it lives on each card (cs.confuseGroups, sanitized in the
@@ -3335,6 +3380,12 @@ function normalise(o){
       // the Set-aside list.
       if(c.setAsideAt!=null&&!Number.isFinite(c.setAsideAt)) c.setAsideAt=null;
       if(c.lastDrilled!=null&&!Number.isFinite(c.lastDrilled)) c.lastDrilled=null;
+      // The release rule's two counters (2026.08.20.8). Same standing as
+      // setAsideAt/lastDrilled above: plain metadata, never fed to schedule().
+      // A card saved before this build carries neither and starts from zero,
+      // which is the truth -- it has no drill history to credit.
+      c.drillOkDays=Number.isFinite(c.drillOkDays)?Math.max(0,Math.min(99,Math.round(c.drillOkDays))):0;
+      c.drillOkDay=Number.isFinite(c.drillOkDay)?c.drillOkDay:null;   // written unconditionally: a card from before this build has the key ABSENT, and `undefined != null` is false, so a guarded assignment would leave it undefined rather than null and the card shape would differ by vintage
       if(typeof c.note==='string'&&c.note.trim()) c.note=c.note.slice(0,CAP_NOTE);
       else c.note=null;
       // confuseGroups: which manual groups (registry sanitized just above)
@@ -3445,7 +3496,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.20.5';
+const BUILD='2026.08.21.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -5004,11 +5055,106 @@ function leaveConfuseGroups(id){
 // silent-removal class CASE_STUDY_DRILL_TRAP.md is about, and it is the
 // reason Anki's own "a card cannot be buried and suspended at once" rule is
 // worth adopting here rather than leaving the two states orthogonal.
+// The return door (2026.08.20.6, SUSPENDED_WORDS_RESEARCH.md): what state a
+// word comes back in, decided by what it was doing when it left. The card's
+// own `st` answers that with no counter, because nothing reschedules a word
+// while it sits in the pile -- drilling writes lastDrilled and S.drillLog and
+// is never fed to schedule() -- so the state read here IS the state it was
+// suspended in.
+//
+// A word set aside mid-LEARNING never had a memory to keep. Measured across
+// both decks: its stability is a rounding error (0.007 days) while its
+// difficulty is pinned at the ceiling -- 9.97 of 10 on every one of the 259
+// words in the pile -- and the fitted mean-reversion weight is 0.001, so
+// nothing walks that back: twenty-five consecutive Goods reach 9.61. The cost
+// of resuming as-is, run on the real engine: six Goods after a return land the
+// word on a 3-day interval where the same six on a reset word reach 471. It is
+// not theory either -- the forty words brought back same-day under the old
+// behaviour run 59% retention against the deck's 88%. So the model's BELIEF is
+// cleared and re-earned from the next rating (schedule() re-inits s and d
+// whenever either is null, its own `c.s==null||c.d==null` arm).
+//
+// A word set aside from REVIEW is the opposite case and is left exactly alone:
+// it has real stability and a real history, relearning is fast for precisely
+// that reason, and Anki's own guidance against resetting a leech -- it "robs
+// FSRS of the data it needs to understand what is happening with the card" --
+// is about this card and not the other one.
+//
+// What is deliberately NOT touched: `reps` and `lapses`. They are historical
+// counts, and buildQueue keys NEW on `reps===0` -- zeroing them would push a
+// returning word back through the new-word bucket filter in available(), where
+// a bucket the owner has switched off would make it silently unavailable. That
+// is the CASE_STUDY_DRILL_TRAP class of defect and this door exists to undo
+// one of those, not to add another. Also untouched: the note, setAsideAt,
+// lastDrilled, and S.log -- every rating ever pressed stays on the record, so
+// nothing measurable is lost by coming back.
+const returnsAsNew=cs=>cs.st==='L'||cs.st==='X';
+function resetOnReturn(cs,t){
+  cs.st='L'; cs.step=0; cs.s=null; cs.d=null; cs.last=null;
+  cs.due=t;                             // due now, so it joins buildQueue's `learn` list (st L + due<=now) rather than sorting to 1970 ahead of every genuine step
+  cs.streak=0; cs.lastDay=null; cs.loops=0; cs.loopDay=null;
+}
+// ---- the release rule (2026.08.20.8, SUSPENDED_WORDS_RESEARCH.md 5.1) ----
+// A word earns its way OUT of the pile by being recalled on DRILL_RELEASE_DAYS
+// separate study days. Nothing is ever released automatically: crossing the
+// line only makes the app offer, which is the owner's standing shape for this
+// whole area -- the app counts, he decides.
+//
+// Three rules, each his call, each with a reason worth keeping:
+//
+// FIRST LOOK ONLY. The drill hands a missed word straight back for one more
+// go in the same session (requeueDrillItem). A "correct" on that second look
+// is a recall thirty seconds after being shown the answer -- the massed
+// version the spacing literature is unambiguous about, and the one that would
+// let a word grind its way out of the pile by failing repeatedly. Callers
+// therefore credit only when the word is NOT already in drillRequeued.
+//
+// ONE CREDIT PER DAY, AND THE DAY IS SPENT EITHER WAY. The result this comes
+// from is one clean recall in each of N SEPARATE sessions -- three in one
+// sitting is worth less than half of three across three days. Drilling twice
+// in one day therefore cannot bank two days, and a miss in the morning is not
+// undone by a hit in the evening: whichever way the first look of the day
+// went is what that day was.
+//
+// A BAD DAY WIPES THE COUNT. So "ready to come back" means the word is
+// holding right now, not that it once had three good days scattered among
+// twenty bad ones. An offer that fires on a word he knows is not ready is an
+// offer he learns to ignore.
+const DRILL_RELEASE_DAYS=3;
+const readyToReturn=cs=>!!cs&&!!cs.susp&&(cs.drillOkDays|0)>=DRILL_RELEASE_DAYS;
+function creditDrillLook(id,ok,now){
+  // No card behind the id, no credit. cardState() MATERIALISES on miss, so
+  // without this a stale id left in drillDeck -- a word the deck content no
+  // longer has, mid-session -- would write a junk card state keyed to a word
+  // that does not exist, and freshCard() would throw on the way. Caught by
+  // sec88, which grades a contrastive block of synthetic ids.
+  if(!BY_ID[id]) return null;
+  const cs=cardState(id), t=(now!=null)?now:Date.now(), d=dayKey(t);
+  if(cs.drillOkDay===d) return cs;      // the day is already spent -- see above
+  cs.drillOkDay=d;
+  cs.drillOkDays = ok ? (cs.drillOkDays|0)+1 : 0;
+  touchCard(cs,t);
+  return cs;
+}
+// Both pile transitions clear the count. Leaving: it means nothing to a word
+// back in normal review, and if it is ever set aside again it must earn its
+// way out afresh rather than resume a streak from weeks ago. Entering: same
+// argument from the other side.
+function resetDrillProgress(cs){ cs.drillOkDays=0; cs.drillOkDay=null; }
+// How many words in the pile are currently offering to come back.
+function readyCount(dir){
+  let n=0;
+  for(const c of CARDS){ if(c.dir===dir&&readyToReturn(S.cards[c.id])) n++; }
+  return n;
+}
 function setAside(id,on,now){
   const cs=cardState(id), t=(now!=null)?now:Date.now(), wasSusp=!!cs.susp;
   if(on && !wasSusp) cs.setAsideAt=t;   // first moment it joined the pile, for the Drill stats' "days set aside" figure -- an already-susp word re-flagged (never happens today, but harmless) doesn't overwrite it
   cs.susp=!!on;
   cs.buryUntil=0;                       // see the note above: the two exits are mutually exclusive
+  // The return door, before touchCard so one stamp covers the whole transition.
+  if(!on && wasSusp && returnsAsNew(cs)) resetOnReturn(cs,t);
+  if(!!on!==wasSusp) resetDrillProgress(cs);   // see resetDrillProgress: both directions
   touchCard(cs,t);
   if(!on && wasSusp) leaveConfuseGroups(id);   // see leaveConfuseGroups' own comment, just above
   // Drill-stats turnover rollup (renderStatsDrill) -- same S.days record
@@ -5762,7 +5908,7 @@ function wordRowHtml(c){
     inspectBtn+
     groupBtn+
     '<button class="flagBtn'+(flagged?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(flagged?'Bring back to normal review':'Set aside')+'">&#9873;&#65038;</button>'+
-    '<button class="buryBtn'+(buried?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(buried?'Bring back today':'Not today')+'">&#10710;</button>'+
+    '<button class="buryBtn'+(buried?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(buried?'Bring back today':'Not today')+'"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M4,2.5 h16 a1,1 0 0 1 0,2 L12.9,12 L20,19.5 a1,1 0 0 1 0,2 H4 a1,1 0 0 1 0,-2 L11.1,12 L4,4.5 a1,1 0 0 1 0,-2 Z"/></svg></button>'+
     '</div>'+
     '<div class="gloss">'+escHtml(gloss)+'</div>'+learn+note+'</div>';
 }
@@ -5905,6 +6051,7 @@ function renderDrill(){
   $('drillProgress').textContent='Word '+(drillPos+1)+' of '+drillDeck.length;
   $('drillScore').textContent = drillSeen ? (drillRight+' of '+drillSeen+' right this round') : '';
   $('drillNextRow').classList.add('hidden');
+  renderReleaseOffer([]);                    // never linger from the previous word
   const id=drillDeck[drillPos], group=drillGroups[id];
   // Coverage stamp for the focus-session rotation (blockDrillPriority) --
   // every member of a shown block counts as "just drilled", not only the
@@ -5951,6 +6098,20 @@ function renderDrillChooser(){
     '</div>';
 }
 function drillFlagLabel(plural){ return 'Bring '+(plural?'these words':'this word')+' back to normal review'; }
+// The release offer, under a graded round, the moment a word crosses
+// DRILL_RELEASE_DAYS. It never releases anything itself -- the bring-back
+// button directly beneath it is the action, unchanged; this only reports that
+// the word has earned it. Called with the ids the round just graded, and with
+// nothing on every new card, so it can never linger from the previous word.
+function renderReleaseOffer(ids){
+  const el=$('drillReady'); if(!el) return;
+  const ready=(ids||[]).filter(id=>readyToReturn(S.cards[id]));
+  if(!ready.length){ el.classList.add('hidden'); el.textContent=''; return; }
+  el.classList.remove('hidden');
+  el.textContent = ready.length===1
+    ? 'Ready to come back — recalled first time on '+DRILL_RELEASE_DAYS+' separate days.'
+    : ready.length+' of these are ready to come back — each recalled first time on '+DRILL_RELEASE_DAYS+' separate days.';
+}
 /* ---- typed recall ---- */
 function renderTypedRound(c){
   $('drillFlagBtn').classList.remove('hidden');
@@ -6000,8 +6161,10 @@ function submitTypedRound(){
   const id=drillDeck[drillPos], c=BY_ID[id], input=$('drillInput');
   const ok=answersMatch(input.value,c);
   drillSubmitted=true; drillSeen++;
+  if(!drillRequeued.has(id)){ creditDrillLook(id,ok); save(); }   // first look only -- see creditDrillLook()
   if(ok) drillRight++;
   else requeueDrillItem([id]);
+  renderReleaseOffer([id]);
   input.disabled=true; input.classList.add(ok?'right':'wrong');
   $('drillCheckBtn').disabled=true;
   const fb=$('drillFeedback');
@@ -6050,8 +6213,10 @@ function gradeHonorRound(ok){
   if(drillSubmitted) return;
   const id=drillDeck[drillPos];
   drillSubmitted=true; drillSeen++;
+  if(!drillRequeued.has(id)){ creditDrillLook(id,ok); save(); }   // first look only -- see creditDrillLook()
   if(ok) drillRight++;
   else requeueDrillItem([id]);
+  renderReleaseOffer([id]);
   $('drillHonorRight').disabled=true; $('drillHonorWrong').disabled=true;
   $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
   $('drillNextRow').classList.remove('hidden');
@@ -6114,6 +6279,17 @@ function finishContrastRound(){
   const total=drillContrastIds.length;
   const firstTry=drillContrastIds.filter(id=>!drillContrastMissed.has(id)).length;
   drillSeen+=total; drillRight+=firstTry;
+  // First look only, per member: a block already given its second look is
+  // wholly in drillRequeued (requeueDrillItem takes the block, not the card),
+  // so this same test reads "is this the block's first pass" here. Each word
+  // is credited on its OWN result -- drillContrastMissed marks the individual
+  // tiles that were mispaired, so one bad pairing in a block of four does not
+  // wipe the other three.
+  drillContrastIds.forEach(id=>{
+    if(!drillRequeued.has(id)) creditDrillLook(id,!drillContrastMissed.has(id));
+  });
+  save();
+  renderReleaseOffer(drillContrastIds);
   if(drillContrastMissed.size) requeueDrillItem(drillContrastIds.slice());
   $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
   $('drillNextRow').classList.remove('hidden');
@@ -6139,7 +6315,7 @@ function renderDrillList(){
   const listIds=[...new Set(drillDeck)];
   $('drillListView').innerHTML = listIds.length
     ? listIds.map(id=>{ const c=BY_ID[id], cs=S.cards[id], hasNote=!!(cs&&cs.note);
-        return '<div class="drillListRow"><div class="drillListTop"><span class="term">'+escHtml(c.q)+'</span>'+
+        return '<div class="drillListRow'+(readyToReturn(cs)?' isReady':'')+'"><div class="drillListTop"><span class="term">'+escHtml(c.q)+'</span>'+
           '<button class="noteBtn'+(hasNote?' on':'')+'" data-id="'+escHtml(id)+'" aria-label="'+(hasNote?'Edit note':'Add a note')+'">'+(hasNote?'\u{1F4DD}':'+ note')+'</button></div>'+
           '<span class="gloss">'+escHtml(answerText(c))+'</span>'+
           (hasNote?'<div class="drillListNote">'+escHtml(cs.note)+'</div>':'')+
@@ -6585,8 +6761,7 @@ function closeWordNote(){
   renderStruggling();
 }
 /* ---- card inspector (Phase 3 "bonus, same screens", PHASE3_4_HANDOFF.md
-   §1) -- stats, note, and (for a single row, i.e. an L-card only -- see
-   below) a term edit and, for a user-added word, delete. Opened from
+   §1) -- stats, note, and (for a user-added word only) delete. Opened from
    wordRowHtml's own inspectBtn, a dedicated control rather than a takeover
    of the row's existing tap-to-reveal -- see that button's own comment for
    why (the reveal already hides the WHOLE gloss, not just stats, so Browse
@@ -6595,14 +6770,19 @@ function closeWordNote(){
    flagRow/renderDrillList's note buttons are dedicated note-only entry
    points and stay exactly that.
 
-   Term-edit and delete are gated to c.dir==='L': an E-card can span rows
-   from MULTIPLE DATA entries (a user word whose gloss happens to coincide
-   with a built-in one groups with it), so "the term" and "delete this word"
-   aren't well-defined at that granularity -- see rebuildCards()'s own
-   comment on why a gloss can never be overridden, which is the same reason
-   in different clothes. Stats and note stay available on an E-card too:
-   both are keyed by the card's own id (cs.note, cs.reps/streak), independent
-   of how many rows it spans. */
+   Delete is gated to a single custom row (c.dir==='L' AND a 'u...' id): an
+   E-card can span rows from MULTIPLE DATA entries (a user word whose gloss
+   happens to coincide with a built-in one groups with it), so "delete this
+   word" isn't well-defined at that granularity. Stats and note stay
+   available on an E-card too: both are keyed by the card's own id (cs.note,
+   cs.reps/streak), independent of how many rows it spans.
+
+   Editing a built-in term used to live here too (Phase 3 §B) -- removed
+   2026-08-20, owner's call: on a prescribed list the term is the fact being
+   memorised, not something a learner should be free to rewrite for
+   memorability, and the one field that COULD legitimately be personalised
+   for recall, the gloss, was never editable in the first place (see
+   rebuildCards()'s own comment on why a gloss can never be overridden). */
 let inspectId=null;
 function openCardInspector(id){
   inspectId=id;
@@ -6632,7 +6812,7 @@ function renderCardInspector(){
   const c=BY_ID[id];
   if(!c){ closeCardInspector(); return; }   // deleted (or set aside then its group dissolved) out from under an open panel
   const cs=S.cards[id], susp=!!(cs&&cs.susp);
-  const isRow=c.dir==='L';                  // term-edit/delete only well-defined for a single row -- see comment above
+  const isRow=c.dir==='L';                  // delete only well-defined for a single row -- see comment above
   const rid=isRow?DATA[c.idx[0]][4]:null;
   const isCustom=isRow&&typeof rid==='string';
   const t=timeToLearnFor(id,S.log,Date.now());
@@ -6646,14 +6826,10 @@ function renderCardInspector(){
     +'<textarea id="ciNote" maxlength="'+CAP_NOTE+'" placeholder="Why does this one keep tripping you up? A mnemonic, the word it gets confused with…">'+escHtml((cs&&cs.note)||'')+'</textarea>'
     +'<div class="ddBtns"><button class="small primary" id="ciSaveNote">Save note</button>'
     +'<button class="small" id="ciFlag">'+(susp?'Bring back to normal review':'Set aside')+'</button></div>';
-  if(isRow){
-    html+='<input type="text" id="ciTerm" maxlength="'+CAP_TERM+'" value="'+escHtml(c.q)+'" style="margin-top:12px">'
-      +'<div class="ddBtns"><button class="small" id="ciSaveTerm">Save term</button></div>';
-    if(isCustom){
-      html+='<div class="ddBtns" style="margin-top:2px"><button class="small danger" id="ciDelete">Delete this word</button></div>';
-    }
-  } else {
-    html+='<div class="fh" style="margin-top:12px">The gloss groups several words together on this reverse card -- edit or delete each one from its own forward-direction row instead.</div>';
+  if(isCustom){
+    html+='<div class="ddBtns" style="margin-top:12px"><button class="small danger" id="ciDelete">Delete this word</button></div>';
+  } else if(!isRow){
+    html+='<div class="fh" style="margin-top:12px">The gloss groups several words together on this reverse card -- delete a custom one from its own forward-direction row instead.</div>';
   }
   html+='<div class="ddBtns" style="margin-top:10px"><button class="small" id="ciClose">Close</button></div>';
   $('cardInspectorDetail').innerHTML=html;
@@ -8074,7 +8250,7 @@ function flagRow(r){
   const noteBtn=r.susp
     ? '<button class="noteBtn'+(hasNote?' on':'')+'" data-id="'+r.id+'" aria-label="'+(hasNote?'Edit note':'Add a note')+'">'+(hasNote?'\u{1F4DD}':'+ note')+'</button>'
     : '';
-  return '<div class="flagRow"><div class="flagTop"><span class="term">'+escHtml(c.q)+'</span><span class="cnt">'+r.n+'</span>'+
+  return '<div class="flagRow'+(readyToReturn(S.cards[r.id])?' isReady':'')+'"><div class="flagTop"><span class="term">'+escHtml(c.q)+'</span><span class="cnt">'+r.n+'</span>'+
     noteBtn+
     '<button class="flagBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="'+(r.susp?'Bring back to normal review':'Set aside')+'">&#9873;&#65038;</button></div>'+
     '<div class="gloss">'+escHtml(answerText(c))+'</div></div>';
@@ -8609,8 +8785,47 @@ function renderWarn(qE){
   // #homeWarn in the wiring below, since this box is rebuilt on every render.
   if(calibrationDue(S,Date.now()))
     h+='<div class="warn calib" data-act="calib">Calibration check: the fortnight is up. Tap to open the panel and see whether the scheduler is keeping its promise.</div>';
+  // The set-aside pile's invitation (2026.08.20.6, SUSPENDED_WORDS_RESEARCH.md).
+  // The pile had never once been opened -- zero drill sessions logged in either
+  // deck across three weeks, with 259 words in it and nothing ever coming back
+  // out -- and no screen had ever said it was there. So this is not a new
+  // mechanism, it is the doorway the existing one never had. Same delegated
+  // click as the calibration line above, and direction-scoped like the rest of
+  // Home.
+  const pile=pileWait(S.dir), ready=readyCount(S.dir);
+  if(pile.n)
+    h+='<div class="warn pile" data-act="pile">'+pile.n+' word'+(pile.n===1?'':'s')+' set aside'+
+       (pile.oldest>=1?' · oldest has waited '+pile.oldest+' day'+(pile.oldest===1?'':'s'):'')+
+       (ready?' · '+ready+' ready to come back':'')+
+       '. Tap to open them.</div>';
   w.innerHTML=h;
 }
+// Pile size and the longest wait in it, for the Home line above.
+// The wait falls back from setAsideAt to cs.last on purpose: setAsideAt only
+// exists on words parked since that field was added, which is 21 of 123 Latin
+// words and 5 of 136 Greek. Computed from the stamp alone the figure would
+// read off a fifth of the pile and report it as far younger than it is. For a
+// set-aside word cs.last -- the last time it was actually rated -- is the
+// moment it stopped being studied, which is the thing the line claims to say.
+// A word with neither (flagged from Browse before it was ever seen) counts
+// toward n and simply contributes no age.
+function pileWait(dir,now){
+  const t=(now!=null)?now:Date.now();
+  let n=0, oldest=null;
+  for(const c of CARDS){
+    if(c.dir!==dir) continue;
+    const cs=S.cards[c.id];
+    if(!cs||!cs.susp) continue;
+    n++;
+    const from=(cs.setAsideAt!=null)?cs.setAsideAt:cs.last;
+    if(from!=null){ const d=Math.floor((t-from)/DAY); if(oldest==null||d>oldest) oldest=d; }
+  }
+  return {n:n, oldest:oldest};
+}
+// From the Home pile line: into the Drill chooser, the same entry the Drill
+// button itself uses, so the pile is never entered in a state the chooser did
+// not build.
+function openPile(){ openDrillChooser(); show('scDrill'); }
 // From the Home reminder line: clear it, open Stats, land on the panel.
 function openCalibration(){
   S.calibrationDueAt=null; save();
@@ -8647,11 +8862,32 @@ function doExport(){
     toast('Export failed — try again from Settings');
   }
 }
+// Pure: what doImport() may do with a parsed backup before normalise() sees
+// it. normalise()'s own deck guard only fires when a stamp is PRESENT and
+// wrong -- a file with no stamp at all used to clear that guard by omission
+// and restore into whichever deck it was opened on, mapping every card id
+// onto that deck's words (FINALISATION_PLAN.md 5.2, proven directly: the ids
+// are the same shape in both decks, so the stamp is the file's only
+// identity). Owner's call 2026-08-21: refuse outright rather than confirm --
+// every export since 2026-08-16 writes the stamp, sync is unaffected either
+// way, and the launcher's Export all stamps even a legacy state on its way
+// out, so nothing the app itself produces is ever refused. Refusing also
+// swallows shapes like a bare array, which Object.assign({},defaults,[])
+// would otherwise quietly turn into an empty state that "restores" cleanly.
+function importFileDecision(parsed){
+  if(!parsed||typeof parsed!=='object') return 'unreadable';   // normalise() nulls these itself; its own message stands
+  return parsed.deck?'ok':'reject-unstamped';
+}
 function doImport(file){
   const fr=new FileReader();
   fr.onload=()=>{
     try{
-      const inc=normalise(JSON.parse(fr.result));
+      const parsed=JSON.parse(fr.result);
+      if(importFileDecision(parsed)==='reject-unstamped'){
+        toast('That file has no deck marker, so nothing can verify which deck it belongs to — refused, rather than risk restoring another deck’s history into this one. Backups saved since 16 Aug 2026 all carry the marker; export a fresh file and use that.',5600);
+        return;
+      }
+      const inc=normalise(parsed);
       if(!inc) throw 0;
       if(inc.log.length<S.log.length &&
          !confirm('That file ('+(inc.lastDevice?'from '+inc.lastDevice+', ':'')+inc.log.length+
@@ -8980,7 +9216,12 @@ async function pushSync(quiet){
     if(shouldKeepalive(bytes)) opts.keepalive=true;
     const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey,opts);
     if(!r.ok) throw new Error('HTTP '+r.status);
-    try{ const j=await r.json(); if(j&&Number.isFinite(j.now)) noteServerTime(j.now); }catch(e){}   // an old Worker answers plain text; fine
+    // The PUT answer's `now` IS the `at` the Worker just stored on the blob
+    // (worker.js writes one Date.now() into both). Recording it as
+    // S.lastRemoteAt means this device's own write never later reads as
+    // "someone else pushed" -- without this, pushRaceDecision() would order a
+    // harmless but wasted merge before every auto-push after the first.
+    try{ const j=await r.json(); if(j&&Number.isFinite(j.now)){ noteServerTime(j.now); S.lastRemoteAt=j.now; } }catch(e){}   // an old Worker answers plain text; fine
     S.lastSync=Date.now(); S.syncedLogLen=S.log.length; S.sinceExport=0; lastPushAt=S.lastSync;
     S.lastPushError=null; S.lastPushErrorAt=null;
     persistNow();
@@ -9051,6 +9292,7 @@ async function fetchSync(quiet){
     catch(e){ throw new Error('could not decrypt -- is this the same code the other device uses?'); }
     const inc=normalise(parsed);
     if(!inc) throw new Error('that copy belongs to the other deck');
+    inc.__pushedAt=Number.isFinite(pkt.at)?pkt.at:null;   // when the Worker stored it -- pushRaceDecision() reads this; adopt() strips it, so it is never persisted
     return inc;
   }catch(e){ if(!quiet) toast('Sync pull failed ('+(e.message||e)+')',3000); return null; }
 }
@@ -9070,7 +9312,7 @@ async function fetchSyncPrev(){
     catch(e){ throw new Error('could not decrypt the spare copy'); }
     const inc=normalise(parsed);
     if(!inc) throw new Error('the spare copy belongs to the other deck');
-    inc.__pushedAt=Number.isFinite(pkt.at)?pkt.at:null;   // when the Worker stored it; read by the restore prompt only, never persisted
+    inc.__pushedAt=Number.isFinite(pkt.at)?pkt.at:null;   // when the Worker stored it; read by the restore prompt (and, via fetchSync(), pushRaceDecision()), never persisted -- adopt() strips it
     return inc;
   }catch(e){ toast('Could not fetch the spare copy ('+(e.message||e)+')',3000); return null; }
 }
@@ -9328,7 +9570,8 @@ function mergeStates(local,remote,opts){
     const seen=new Set(), rows=[];
     ordered.forEach(r=>{ if(seen.has(r[4])) return; seen.add(r[4]); rows.push(r.slice()); });
     out.customRows=rows;
-    const ov={}; [L.overrides,R.overrides].forEach(o=>{ if(!o) return; for(const k in o){ if(!ov[k]||cmpAny(canonJSON(o[k]),canonJSON(ov[k]))>0) ov[k]=Object.assign({},o[k]); } }); out.overrides=ov;
+    // out.overrides merge (term overrides) removed 2026-08-20 with the rest
+    // of the feature -- see rebuildCards()'s own comment.
     const dn={}; [L.dayNotes,R.dayNotes].forEach(o=>{ if(!o) return; for(const k in o){ const v=o[k]; if(typeof v!=='string') continue; const cur=dn[k]; if(cur==null||v.length>cur.length||(v.length===cur.length&&v>cur)) dn[k]=v; } }); out.dayNotes=dn;
     const cg={}; [L.confuseGroups,R.confuseGroups].forEach(o=>{ if(!o) return; for(const k in o){ const v=o[k]; if(!v) continue; const cur=cg[k]; if(!cur||(v.created|0)<(cur.created|0)||((v.created|0)===(cur.created|0)&&cmpAny(canonJSON(v),canonJSON(cur))>0)) cg[k]=Object.assign({},v); } }); out.confuseGroups=cg;
     const dl=[], dseen=new Set(); (L.drillLog||[]).concat(R.drillLog||[]).forEach(e=>{ const k=canonJSON(e); if(dseen.has(k)) return; dseen.add(k); dl.push(e); });
@@ -9375,7 +9618,7 @@ function mergeSig(s){
   // NOT rotDay/rotSeen either: the rotation cursor moves by itself, per device
   return canonJSON({log:s.log, tombs:s.tombs, cards:s.cards, orphans:s.orphans, days:s.days,
     prefs:prefsSnapshot(s), prefsModBy:s.prefsModBy||{},
-    customRows:s.customRows, overrides:s.overrides, dayNotes:s.dayNotes, confuseGroups:s.confuseGroups,
+    customRows:s.customRows, dayNotes:s.dayNotes, confuseGroups:s.confuseGroups,
     gradeNoteToastDay:s.gradeNoteToastDay});
 }
 // The one-line, honest account of a merge (the calibration panel's rule:
@@ -9465,6 +9708,46 @@ function nextPushDelay(now,lastPushAt,debounce,minGap){
   const byDebounce=debounce;
   const byGap=Math.max(0,(lastPushAt||0)+minGap-now);
   return Math.max(byDebounce,byGap);
+}
+// Pure: whether an automatic push must merge before it writes. pushSync()
+// serialises whatever S holds and PUTs it unconditionally -- no re-fetch, no
+// compare-and-swap on the Worker either -- so two devices' automatic pushes
+// could clobber each other silently inside the debounce window
+// (SYNC_GUARDRAILS_RESEARCH.md 1.3). inc is fetchSync()'s resolution;
+// lastRemoteAt is the newest server-stamped write this device has fully
+// merged (stamped by applySyncMerge() and by pushSync()'s own landing).
+// 'push' on a failed fetch or an empty slot is deliberate: both are exactly
+// today's behaviour, and offline must never block the push. 'push' on a
+// stampless inc (an old Worker answering without `at`) is the same call the
+// research made: without a date there is nothing to compare, and merging
+// every push blind would cost a full mergeStates() walk per write.
+function pushRaceDecision(inc,lastRemoteAt){
+  if(inc&&inc!=='missing'&&Number.isFinite(inc.__pushedAt)&&inc.__pushedAt>(lastRemoteAt||0)) return 'merge-first';
+  return 'push';
+}
+// The look-before-writing wrapper for the AUTOMATIC debounced push -- save()'s
+// timer is its one caller. Manual pushes (Settings' "Push now", newSyncCode())
+// and applySyncMerge()'s own push-back keep calling pushSync() directly: they
+// are either user-chosen or already post-merge. flushPendingPush() also stays
+// on the direct call, by the owner's explicit choice (2026-08-21): its PUT is
+// built to land via keepalive even when the app is frozen mid-close, and the
+// extra GET here needs live JS to finish -- guarding it would sometimes cost
+// the catch-up push entirely, a commoner loss than the <=1-minute race it
+// would close. One GET per automatic push (already spaced >=SYNC_MIN_GAP
+// apart) is the whole cost; a detected race turns the push into a merge,
+// which pushes back itself -- still exactly one KV write either way.
+async function guardedAutoPush(){
+  if(!loadSyncCode()||S.syncedLogLen==null) return pushSync(true);   // nothing reconciled yet to race against -- pushSync()/syncArmDecision() own those cases
+  const inc=await fetchSync(true);
+  if(pushRaceDecision(inc,S.lastRemoteAt)==='merge-first'){
+    // someone else pushed since this device last merged -- fold that in first.
+    // applySyncMerge() decides the push itself from there (its push-local and
+    // merged-and-pushed branches call pushSync(true)); a rating landed while
+    // the fetch was in flight is in S by merge time, so it is never lost.
+    try{ applySyncMerge(inc,'race-guard'); return; }
+    catch(e){ console.error('race-guard merge failed, pushing anyway',e); }   // a broken merge must not block the push forever -- exactly today's unguarded behaviour
+  }
+  return pushSync(true);
 }
 // Both copies are named and counted, not just "this device" vs "the other" --
 // the whole point is never being unsure which is which across three devices.
@@ -9558,6 +9841,28 @@ function restoreMessage(kind,when,n,label){
     'It replaces the copy on this device ('+S.log.length+' review'+(S.log.length===1?'':'s')+') -- which is kept as the new spare, so this can be undone once -- '+
     'and wins over the synced copy on every device: its word states and settings take over; no ratings are lost, the other copy\u2019s merge back in.';
 }
+// Pure: whether the exception-fallback 'take-remote' adopt in syncOnLaunch()
+// has anything to silently lose (SYNC_GUARDRAILS_RESEARCH.md 2.1). That
+// branch only runs when mergeStates() itself threw AND this device has rated
+// nothing since it last agreed with the synced copy -- so review history is
+// never at stake there by construction. The one thing it could discard
+// un-asked is an unpushed local settings change: exactly what comparing the
+// two preference snapshots by content detects. A device that has never
+// reconciled under this code (syncedLogLen==null) has no settings claim on
+// the slot at all -- asking there would be the false alarm, not the guard.
+function takeRemoteNeedsConfirm(local,inc){
+  return local.syncedLogLen!=null && prefsSig(local)!==prefsSig(inc);
+}
+// Modelled on conflictMessage(): name what differs, say what is and is not
+// at risk, one safe default. Cancel is a genuine no-op, same reasoning as
+// there -- Escape must never be the destructive path.
+function takeRemoteSettingsMessage(inc){
+  const there=inc.lastDevice||'the other device';
+  return 'This device\u2019s settings differ from the synced copy (last pushed by '+there+') and would be replaced by it.\n\n'+
+    'No reviews are at risk -- this device hasn\u2019t rated anything since it last agreed with the synced copy -- but its current settings would be.\n\n'+
+    'OK = take the synced copy, settings and all.\n'+
+    'Cancel = keep this device\u2019s settings for now; sync will ask again next time.';
+}
 async function restoreSnapshot(){
   const snap=await readSnapshot();
   if(!snap||!snap.state){ toast('No spare copy on this device yet'); return false; }
@@ -9594,15 +9899,24 @@ function applySyncMerge(inc,via,now){
   const {merged,stats}=mergeStates(S,inc,{now:now});
   const sigL=mergeSig(S), sigM=mergeSig(merged), sigR=mergeSig(inc);
   const changedLocal=sigM!==sigL, changedRemote=sigM!==sigR;
+  // The newest server-stamped write this device has fully accounted for --
+  // pushRaceDecision() compares the slot's `at` against this before an
+  // automatic push is allowed to overwrite the slot. Stamped per branch
+  // below, never up here: it must only ever be claimed once the merge is
+  // actually applied, and the normalise() throw further down is a path where
+  // it is not. `now` covers an inc with no stamp (an old Worker, or a caller
+  // handing in a state that never came from fetchSync()).
+  const remoteAt=Number.isFinite(inc.__pushedAt)?inc.__pushedAt:now;
   // the install registry is never a reason to adopt, but keep it current
   S.installs=merged.installs;
-  if(!changedLocal&&!changedRemote){ S.syncedLogLen=S.log.length; return {action:'in-sync',stats:stats}; }
+  if(!changedLocal&&!changedRemote){ S.syncedLogLen=S.log.length; S.lastRemoteAt=remoteAt; return {action:'in-sync',stats:stats}; }
   if(!changedLocal){
     // This device has looked at the slot and the merge IS what it holds; the
     // push is the follow-through. Mark it reconciled now (syncArmDecision()
     // reads this) rather than only when the push lands -- a failed push is
     // recorded by pushSync() and the next launch merges again regardless.
     S.syncedLogLen=S.log.length;
+    S.lastRemoteAt=remoteAt;
     pushSync(true);
     return {action:'push-local',stats:stats};
   }
@@ -9613,6 +9927,10 @@ function applySyncMerge(inc,via,now){
   inc2.lastMerge={at:now, via:via||'sync', text:text, fromLocal:stats.fromLocal, fromRemote:stats.fromRemote,
                   both:stats.both.length, replay:stats.replay, sources:stats.sources, pushedBack:changedRemote};
   adopt(inc2,{reason:'merged with the synced copy'});
+  // After adopt(), not before: adopt() replaces S wholesale, and the merged
+  // state carries the OLD S's own lastRemoteAt through mergeStates()'s
+  // Object.assign -- stamping first would just be overwritten.
+  S.lastRemoteAt=remoteAt;
   // adopt()'s save() armed the ordinary debounced push; this path decides the
   // push itself (below), so disarm it -- otherwise every merge pushed twice
   // (found in review, 2026-08-19).
@@ -9653,7 +9971,16 @@ async function syncOnLaunch(){
     catch(e){ console.error('merge failed, falling back to the dialog',e); toast('Merge failed ('+(e.message||e)+') \u2014 falling back',3000); }
     const fallback=syncDecision(S.log.length,inc.log.length,base);
     if(fallback==='conflict') offerConflict(inc,base);
-    else if(fallback==='take-remote'){ adopt(inc,{reason:'took the synced copy'}); renderHome(); toast('Took the synced copy ('+S.log.length+' reviews)',3000); }
+    else if(fallback==='take-remote'){
+      // Guardrail A (SYNC_GUARDRAILS_RESEARCH.md 2.1): this adopt used to be
+      // silent, and the one thing it can silently discard is an unpushed
+      // local settings change -- ask first when, and only when, there is one.
+      if(takeRemoteNeedsConfirm(S,inc)&&!confirm(takeRemoteSettingsMessage(inc))){
+        toast('Kept this device’s settings — sync will ask again next time',3200);
+      }else{
+        adopt(inc,{reason:'took the synced copy'}); renderHome(); toast('Took the synced copy ('+S.log.length+' reviews)',3000);
+      }
+    }
     else if(fallback==='push-local') pushSync(true);
     else S.syncedLogLen=S.log.length;
     return;
@@ -10165,9 +10492,12 @@ tapZone($('statsDirE'),()=>{S.dir='E';save();renderStats();});
 // not bound to the line. Only the line marked data-act="calib" reacts; the
 // other warnings in that box stay plain text.
 $('homeWarn').addEventListener('click',e=>{
-  const t=e.target&&e.target.closest?e.target.closest('[data-act="calib"]'):null;
+  const t=e.target&&e.target.closest?e.target.closest('[data-act]'):null;
   if(!t) return;
-  e.preventDefault(); openCalibration();
+  const act=t.getAttribute('data-act');
+  if(act!=='calib'&&act!=='pile') return;   // the plain warnings in this box stay plain text
+  e.preventDefault();
+  if(act==='calib') openCalibration(); else openPile();
 });
 tapZone($('calibRemind'),()=>{
   S.calibrationDueAt=Date.now()+14*DAY; save(); renderCalibration();
@@ -10321,23 +10651,13 @@ $('cardInspectorOverlay').addEventListener('click',e=>{
     save(); toast(cs.susp?'Set aside':'Brought back',1400); renderCardInspector();
     return;
   }
-  if(e.target.id==='ciSaveTerm'){
-    const v=$('ciTerm').value.trim();
-    if(!v){ toast('Term can’t be empty',1800); return; }
-    const c=BY_ID[inspectId], rid=DATA[c.idx[0]][4];
-    // Matches the file/customRows row's own text -- nothing to override, so
-    // drop any existing one rather than storing a redundant no-op entry.
-    if(v===DATA[c.idx[0]][0]) delete S.overrides[rid]; else S.overrides[rid]={term:v};
-    rebuildCards(); save(); toast('Term saved',1400);
-    renderCardInspector();
-    return;
-  }
+  // ciSaveTerm (term overrides on a built-in word) removed 2026-08-20 along
+  // with the rest of the feature -- see rebuildCards()'s own comment.
   if(e.target.id==='ciDelete'){
     const c=BY_ID[inspectId];
     if(!confirm('Delete “'+c.q+'”? Its review history stays on this device but stops counting anywhere.')) return;
     const rid=DATA[c.idx[0]][4];
     S.customRows=S.customRows.filter(r=>r[4]!==rid);
-    delete S.overrides[rid];
     retractCustomRow(rid);   // so a sync merge with a copy that still has the row does not bring it back (2026.08.19.5)
     rebuildCards(); save();
     toast('Deleted',1400);
@@ -10875,6 +11195,13 @@ document.addEventListener('gesturestart',e=>e.preventDefault());
 // Safe to call more than once: saveTimer is null once already flushed, or once it
 // has already fired on its own.
 function flushPendingPush(){
+  // pushSync() directly, NOT guardedAutoPush() -- owner's call, 2026-08-21.
+  // Both callers of this run while the page is going away (hidden/pagehide);
+  // this PUT survives that via keepalive, but the guard's own look-first GET
+  // needs live JS to finish, which a pocketed iPhone often doesn't grant.
+  // Guarded, this flush would sometimes not happen at all -- a commoner loss
+  // than the race it would close, which the guarded 6s path already bounds
+  // to roughly the final minute of a sitting and the next launch merges away.
   if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; pushSync(true); }
 }
 document.addEventListener('visibilitychange',()=>{
@@ -11036,7 +11363,7 @@ function bootFail(err){
     $('browseSearch').placeholder='Search '+(DECK&&DECK.script==='greek'?'Greek':'Latin')+' or English…';
     renderKbdToggle($('browseKbd'));
     return load().then(()=>{
-      // Phase 3 §C/§B: S.customRows/S.overrides only exist once S itself
+      // Phase 3 §C: S.customRows only exists once S itself
       // does, so this can't happen inside bootContent() above (which runs
       // before load()) -- see rebuildCards()'s own comment. load()'s
       // internal normalise() calls ran against a BY_ID that didn't know
