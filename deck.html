@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.21.0">
+<link rel="stylesheet" href="palettes.css?v=2026.08.21.2">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.21.0"></script>
+<script src="shared.js?v=2026.08.21.2"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -357,6 +357,22 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
    colours: nothing has gone wrong. */
 .drillReady{margin:10px 0 0;padding:8px 11px;border-radius:10px;font-size:13px;line-height:1.45;
   background:var(--accent-soft);border:1px solid var(--coral);color:var(--coral)}
+.drillReady.quiet{background:transparent;border-color:var(--line);color:var(--muted)}
+.drillMissNote{margin:10px 0 0;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.drillMissNote .noteBtn{padding:4px 0}
+.drillMissNoteRow{display:flex;flex-direction:column;align-items:flex-start}
+.drillMissNoteRow+.drillMissNoteRow{margin-top:6px}
+.drillMissNoteRow .term{font-weight:600;font-size:13.5px}
+.drillGroupList{margin-top:10px}
+.drillGroupRow{padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.drillGroupRow:last-child{border-bottom:none}
+.drillGroupTop{display:flex;align-items:center;gap:8px}
+.drillGroupTop .term{font-weight:600;flex:0 0 auto}
+.drillGroupTop .gloss{flex:1 1 auto;color:var(--muted);font-size:12.5px;line-height:1.35}
+.drillGroupTop button.small{flex:0 0 auto;border:1px solid var(--line);background:var(--raise);border-radius:9px;
+  padding:6px 13px;font-size:13px;font-family:inherit;color:var(--ink);cursor:pointer}
+.drillGroupTop button.small.primary{background:var(--coral);border-color:var(--coral);color:#fff}
+.drillGroupRow.isDeferred .term{color:var(--muted)}
 .drillListRow.isReady .term::after{content:' \2713';color:var(--coral);font-weight:600}
 .flagRow.isReady .term::after{content:' \2713';color:var(--coral);font-weight:600}
 /* shared by the Drill list's row and the Set-aside list's flagRow (below) --
@@ -1196,7 +1212,8 @@ html[data-layout="landscape"][data-study-card="swap"] #answer.lat{
    "leech") gets it out of that cell entirely, same fix shape as leech/hint
    already get their own rows rather than sharing "prompt". */
 html[data-layout="landscape"][data-study-card="replace"] .cardMeta,
-html[data-layout="landscape"][data-study-card="swap"] .cardMeta{
+html[data-layout="landscape"][data-study-card="swap"] .cardMeta,
+html[data-layout="landscape"][data-study-card="column"] .cardMeta{
   grid-area:meta; align-self:center; justify-self:stretch;
   margin-bottom:0; padding:8px 32px 0; z-index:1;
 }
@@ -1225,7 +1242,8 @@ html[data-layout="landscape"][data-study-card="swap"] #hintline{
    portrait rule, a few screens above) rather than a new hand-picked
    number. */
 html[data-layout="landscape"][data-study-card="replace"] .recapCard.on,
-html[data-layout="landscape"][data-study-card="swap"] .recapCard.on{
+html[data-layout="landscape"][data-study-card="swap"] .recapCard.on,
+html[data-layout="landscape"][data-study-card="column"] .recapCard.on{
   position:fixed; top:calc(52px + env(safe-area-inset-top) + 14px); right:16px;
   margin:0;
   /* z-index, added 2026.08.20.1 off a settings sweep, and it is a fix rather
@@ -1280,14 +1298,17 @@ html[data-layout="landscape"][data-study-card="swap"] .recapCard.on{
      considered and rejected was dropping the word too (39px, 16px of air):
      more margin, but it loses the one thing he built the card for. */
   html[data-layout="landscape"][data-study-card="replace"] .recapCard.on,
-  html[data-layout="landscape"][data-study-card="swap"] .recapCard.on{
+  html[data-layout="landscape"][data-study-card="swap"] .recapCard.on,
+  html[data-layout="landscape"][data-study-card="column"] .recapCard.on{
     padding:6px 11px; gap:4px;
     top:calc(52px + env(safe-area-inset-top) + 6px);
   }
   html[data-layout="landscape"][data-study-card="replace"] .recapLbl,
-  html[data-layout="landscape"][data-study-card="swap"] .recapLbl{display:none}
+  html[data-layout="landscape"][data-study-card="swap"] .recapLbl,
+  html[data-layout="landscape"][data-study-card="column"] .recapLbl{display:none}
   html[data-layout="landscape"][data-study-card="replace"] .recapWord,
-  html[data-layout="landscape"][data-study-card="swap"] .recapWord{font-size:13px}
+  html[data-layout="landscape"][data-study-card="swap"] .recapWord,
+  html[data-layout="landscape"][data-study-card="column"] .recapWord{font-size:13px}
 }
 /* Replace (F1): the prompt just disappears on reveal -- #answer, already
    sharing its cell, is the only thing left opaque via its own .on class.
@@ -1310,6 +1331,78 @@ html[data-layout="landscape"][data-study-card="swap"] #cardArea.revealed #prompt
   font-size:15px;
 }
 
+/* Column (F3, LAYOUT_PLAN.md's third shape) -- built 2026.08.21.2, and worth
+   recording why it took this long and what it actually is. It was written up
+   as unbuilt for months, which was wrong twice over. A phone in portrait has
+   ALWAYS rendered exactly this: #prompt, the .rule, then #answer in ordinary
+   document flow, one above the other -- which is also, to the element, what
+   Anki's stock Basic note type does on its answer side ({{FrontSide}}, an
+   <hr id=answer>, then {{Back}}), the most-used flashcard arrangement there
+   is. So the arrangement was never missing; what was missing was any way to
+   ASK for it on a wide screen, where the two-pane spread is imposed instead.
+   That is all this shape adds.
+
+   Structure is deliberately replace/swap's grid, not the base spread's: the
+   same 1fr / 720px / 1fr centred column, so all three chosen shapes share one
+   measured content width and the recap card, .cardMeta and the keycaps all
+   keep the treatments already written for them (this shape is added to those
+   selector lists above rather than given copies of the rules). It differs in
+   one way, and it is the point of the shape: prompt and answer get their own
+   rows with the .rule between them, so both stay on screen after the reveal
+   instead of sharing a cell. The rule itself is simply un-hidden -- landscape
+   hides .cardarea>.rule for the other three shapes; here it comes back, doing
+   the job it already does on the phone.
+
+   #quickFlash is NOT given replace/swap's floating-panel treatment, and that
+   is on purpose rather than an omission: those two need it because the
+   receipt would otherwise land in the same cell as the live prompt. Column's
+   answer has a row to itself, so the receipt can sit in it exactly as it does
+   in the spread layout, with no fixed positioning at all. */
+html[data-layout="landscape"][data-study-card="column"] #scStudy.on{
+  grid-template-columns:1fr minmax(0,720px) 1fr;
+  grid-template-rows:auto 1fr auto auto auto auto auto auto 1fr;
+  grid-template-areas:
+    "bar bar bar"
+    ".   .        ."
+    ".   prompt   ."
+    ".   rule     ."
+    ".   answer   ."
+    ".   meta     ."
+    ".   leech    ."
+    ".   hint     ."
+    ".   controls .";
+}
+/* The word: no panel, no border, no stretch. The spread's #prompt paints a
+   bordered card because it owns a whole column; here it is one line of a
+   stacked card, so it drops to bare centred text the way portrait's already
+   is, and sits at the bottom of its 1fr row so the gap opens ABOVE the word
+   rather than between the word and its own answer. */
+html[data-layout="landscape"][data-study-card="column"] #prompt{
+  grid-area:prompt; align-self:end; justify-self:center;
+  display:flex; align-items:center; justify-content:center;
+  margin:0; padding:0 32px; border:none; background:none;
+  text-align:center; max-width:100%;
+}
+html[data-layout="landscape"][data-study-card="column"] .cardarea>.rule{
+  display:block; grid-area:rule; justify-self:center; margin:22px 0 0;
+}
+/* Both answer nodes centre under the word and lose the spread's left border,
+   which existed only to divide two side-by-side panes. */
+html[data-layout="landscape"][data-study-card="column"] #answer,
+html[data-layout="landscape"][data-study-card="column"] #quickFlash{
+  grid-area:answer; justify-self:center; text-align:center;
+  border-left:none; padding:22px 32px 0; max-width:100%;
+}
+html[data-layout="landscape"][data-study-card="column"] #leechTag{justify-content:center; padding:14px 32px 0}
+html[data-layout="landscape"][data-study-card="column"] #hintline{text-align:center; padding:10px 32px 0}
+/* The multi-answer badge is absolutely placed on the phone and pinned to the
+   spread panel's top-right corner in landscape. With no panel to pin to it
+   would float over the word, so it rides the rule's row instead -- right
+   edge, level with the divider, out of the reading line entirely. */
+html[data-layout="landscape"][data-study-card="column"] #multi{
+  grid-area:rule; align-self:center; justify-self:end; margin:22px 0 0;
+}
+
 /* drill: added after the "New" layout shipped (§10 predates the drill mode,
    §4a added it later), so it never got this treatment -- flagged in the
    2026.08.04 interface scan rather than left unfixed. Same structure as
@@ -1326,10 +1419,17 @@ html[data-layout="landscape"][data-study-card="swap"] #cardArea.revealed #prompt
    explicit span across every row below the bar, over both columns. */
 html[data-layout="landscape"] #scDrill.on{
   display:grid;grid-template-columns:1.3fr 1fr;
-  grid-template-rows:auto 1fr auto auto auto auto 1fr;
-  grid-template-areas:"bar bar" "prompt ." "prompt choices" "prompt flag" "prompt score" "prompt controls" "prompt .";
+  grid-template-rows:auto 1fr auto auto auto auto auto auto 1fr;
+  grid-template-areas:"bar bar" "prompt ." "prompt choices" "prompt ready" "prompt note" "prompt flag" "prompt score" "prompt controls" "prompt .";
   height:100%;
 }
+/* The progress line (#drillReady) and the after-a-miss note panel
+   (#drillMissNote) each get a named row (2026.08.21.1): without one they
+   auto-placed into the "." spacer cells -- the offer line used to land in
+   the 1fr row above the answer, stretched to fill it. A hidden one renders
+   nothing and its auto row collapses to zero. */
+html[data-layout="landscape"] #drillReady{grid-area:ready;margin:10px 32px 0}
+html[data-layout="landscape"] #drillMissNote{grid-area:note;margin:8px 32px 0}
 html[data-layout="landscape"] #scDrill>.bar{grid-area:bar}
 html[data-layout="landscape"] #scDrill .drillArea{display:contents}
 html[data-layout="landscape"] #drillPrompt{grid-area:prompt;align-self:stretch;justify-self:stretch;
@@ -1646,6 +1746,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="rule"></div>
       <div class="drillChoices" id="drillChoices"></div>
       <div class="drillReady hidden" id="drillReady"></div>
+      <div class="drillMissNote hidden" id="drillMissNote"></div>
       <button class="chip drillFlagBtn" id="drillFlagBtn">Bring this word back to normal review</button>
       <div class="note" id="drillScore"></div>
     </div>
@@ -1785,6 +1886,8 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <label for="fRet">Target retention — <b id="fRetVal">90%</b></label>
         <input type="range" id="fRet" min="80" max="95" step="1">
         <div class="fh">How often you want to succeed at review time. Lower means fewer reviews and more forgetting.</div>
+        <div class="fh" style="margin-top:10px">A change here only reaches a word the next time you rate it; everything already on the calendar keeps the gap the old target gave it. The button below catches the calendar up in one go &mdash; it recomputes every review word's due date from what the scheduler already knows about it, and changes nothing else. It shows you the counts first, and it does nothing until you confirm. Best run once, after the September recalibration, rather than after every nudge of the slider.</div>
+        <button class="act" id="btnBulkResched" style="margin-top:10px">Reschedule the calendar to this target&hellip;</button>
       </div>
       <div class="field">
         <label>Theme</label>
@@ -1815,9 +1918,10 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <select id="fCardShape" class="sel">
           <option value="spread">Two panes — the word on the left, the answer on the right</option>
           <option value="replace">Replace — the answer takes the word's place</option>
-          <option value="swap">Swap — the word shrinks above, the answer takes its place</option>
+          <option value="swap">Swap &mdash; the word shrinks above, the answer takes its place</option>
+          <option value="column">Column &mdash; the answer appears under the word, both stay visible</option>
         </select>
-        <div class="fh">Only affects a screen wide enough for the two-column study card; a phone is unchanged. Replace and Swap both put the answer where your eye already is instead of off to the side — Swap keeps the word visible in small type above it, Replace does not.</div>
+        <div class="fh">Only affects a screen wide enough for the two-column study card. A phone is never affected by this setting because it already stacks: the word, a divider, then the answer underneath &mdash; which is what Column is, made available on a wide screen too. Replace and Swap both put the answer where your eye already is instead of off to the side &mdash; Swap keeps the word visible in small type above it, Replace does not.</div>
       </div>
       <div class="field">
         <label for="fTopBar">Study screen, top bar</label>
@@ -2329,6 +2433,63 @@ function nextInterval(s,st){
   d=Math.round(d);
   return Math.min(Math.max(d,1),st.maxIvl);
 }
+// ---- bulk reschedule (2026.08.21.1; BULK_RESCHEDULE_RESEARCH.md, the
+// Ledger's `bulkreschedule` row, his call: build now, RUN ONLY AFTER the
+// September parameter fit) ----
+// Moving the retention target only reaches a word when it is next RATED --
+// no code path recomputes a review card's due date otherwise -- so everything
+// already on the calendar keeps the gap the old target gave it. This recomputes
+// each review card's due date from its stored stability under the current
+// settings, through the very same nextInterval() and the very same day snap
+// schedule() uses, anchored on the card's own last review (not today: using
+// today would silently re-date every card by however long it has been since
+// it was rated, a second change on top of the one asked for). It writes `due`
+// and nothing else -- never the review log (Anki's version writes a log row
+// per card; this app's log readers assume every row is a real press), never
+// stability or difficulty. Scope, from the memo's reading of how cards
+// materialise: review state only (a learning step's due is a fixed minute
+// count, not retention-sensitive), really rated (reps>0 -- a seeded card's
+// first due never came from nextInterval), and not set aside (his call; a
+// parked word's due is inert while parked anyway). It is not truly
+// reversible: old dues are not stored, so "undo" means running it again at
+// the old percentage, and cards rated in between keep their newer gaps.
+// NOTHING here runs on its own -- the only caller is the Settings button,
+// behind a preview count and a confirm. Planning (bulkReschedulePlan) is
+// read-only; only bulkReschedule() writes, and only when that button was
+// confirmed. The data the fit reads (S.log) is untouched either way.
+function rescheduledDue(cs,st){
+  const last=cs.last, days=nextInterval(cs.s,st);
+  let snapped=dayStart(dayKey(last)+days);
+  if(snapped-last<SNAP_GUARD) snapped=dayStart(dayKey(last)+days+1);   // schedule()'s own guard, same anchor
+  return snapped;
+}
+function bulkReschedulePlan(st,now){
+  const t=(now!=null)?now:Date.now();
+  const plan=[]; let earlier=0, later=0, nowDue=0, same=0;
+  for(const id in S.cards){
+    const cs=S.cards[id];
+    if(!cs||cs.st!=='R'||!((cs.reps|0)>0)||cs.susp) continue;
+    if(cs.s==null||!Number.isFinite(cs.s)||cs.last==null||!Number.isFinite(cs.last)) continue;
+    const due=rescheduledDue(cs,st);
+    if(due===cs.due){ same++; continue; }
+    if(due<cs.due) earlier++; else later++;
+    if(cs.due>t && due<=t) nowDue++;      // flips from not-yet-due to due (or overdue) the moment it runs
+    plan.push({id:id, due:due});
+  }
+  return {plan:plan, earlier:earlier, later:later, nowDue:nowDue, same:same, total:plan.length+same};
+}
+function bulkReschedule(st,now){
+  const t=(now!=null)?now:Date.now(), p=bulkReschedulePlan(st,t);
+  p.plan.forEach(x=>{ const cs=S.cards[x.id]; cs.due=x.due; touchCard(cs,t); });
+  if(p.plan.length) save();
+  return p;
+}
+function bulkRescheduleMessage(p,st){
+  const pct=Math.round(st.retention*100);
+  return 'Reschedule '+p.total+' review word'+(p.total===1?'':'s')+' to a '+pct+'% target? '+
+    p.earlier+' move sooner'+(p.nowDue?' ('+p.nowDue+' of them due at once)':'')+', '+p.later+' move later'+(p.same?', '+p.same+' unchanged':'')+'. '+
+    'Only due dates change -- no rating, stability or difficulty is touched. To reverse it, run this again at the old percentage.';
+}
 // Same-day (short-term) stability. The floor -- a pass never lowers stability
 // -- applies to EVERY passing grade, Hard included, since 2026.08.19.3
 // (STUDY_SYSTEM.md section 5.2, item C; owner's call under C1). Until then Hard
@@ -2670,7 +2831,7 @@ const CALIBRATION_DUE_DEFAULT=new Date(2026,8,2,9,0,0).getTime();   // 2 Sept 20
 function calibrationDue(s,now){ return !!(s&&s.calibrationDueAt!=null&&Number.isFinite(s.calibrationDueAt)&&now>=s.calibrationDueAt); }
 function makeDefaults(){ return {
   version:2, created:Date.now(), calibrationDueAt:CALIBRATION_DUE_DEFAULT,
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:15, topBarStyle:'counts'},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, drillFocusN:20, topBarStyle:'counts'},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, drillLog:[], sinceExport:0, lastExport:null, lastPushBytes:0,
   deck:KEY, lastSync:null, syncedLogLen:null, lastRemoteAt:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
   // Phase 3 §C (PHASE3_4_HANDOFF.md): user-added words. Rides backup/sync/
@@ -2719,7 +2880,8 @@ function freshCard(c){
             reps:0, lapses:0, susp:false, buried:0, streak:0, lastDay:null, loops:0, loopDay:null,
             unflagDay:null, holdSince:null, buryUntil:0,   // unflagDay: legacy since 2026.08.20.5, see normalise()
             note:null, setAsideAt:null, lastDrilled:null, confuseGroups:[],
-            drillOkDays:0, drillOkDay:null};   // the release rule -- see creditDrillLook()
+            drillOkDays:0, drillOkDay:null,    // the release rule -- see creditDrillLook()
+            drillDaysSeen:0, drillDeferredAt:null};   // the drill groups (2026.08.21.1) -- see creditDrillLook() and drillGroupsFor()
   if(c.dir==='L'&&(c.seed===1||c.seed===2)){
     st.st='R'; st.step=null;
     st.s = c.seed===1 ? 1.0 : Math.max(S.settings.knownDays||21,1);
@@ -3386,6 +3548,13 @@ function normalise(o){
       // which is the truth -- it has no drill history to credit.
       c.drillOkDays=Number.isFinite(c.drillOkDays)?Math.max(0,Math.min(99,Math.round(c.drillOkDays))):0;
       c.drillOkDay=Number.isFinite(c.drillOkDay)?c.drillOkDay:null;   // written unconditionally: a card from before this build has the key ABSENT, and `undefined != null` is false, so a guarded assignment would leave it undefined rather than null and the card shape would differ by vintage
+      // The drill groups' two fields (2026.08.21.1), same standing and the
+      // same unconditional-write rule as the pair above: drillDaysSeen counts
+      // the separate drill days a word has had since it last entered the
+      // pile (the deferral rule reads it, DRILL_DEFER_DAYS); drillDeferredAt
+      // is the moment it was last sent to the back of the order, or null.
+      c.drillDaysSeen=Number.isFinite(c.drillDaysSeen)?Math.max(0,Math.min(999,Math.round(c.drillDaysSeen))):0;
+      c.drillDeferredAt=Number.isFinite(c.drillDeferredAt)?c.drillDeferredAt:null;
       if(typeof c.note==='string'&&c.note.trim()) c.note=c.note.slice(0,CAP_NOTE);
       else c.note=null;
       // confuseGroups: which manual groups (registry sanitized just above)
@@ -3496,7 +3665,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.21.0';
+const BUILD='2026.08.21.2';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -3587,7 +3756,9 @@ let noteEditId=null;   // which word's note panel is open (openWordNote/#wordNot
 // groups. Neither persisted.
 let groupCreateIds=null, groupManageId=null;
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseDate=null, browseSelected=new Set();   // browse screen's own state
-let drillDeck=[], drillGroups={}, drillPos=0, drillRight=0, drillSeen=0, drillView='choose', drillMode=null, drillLogged=false, drillRequeued=new Set();   // drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags. drillGroups: id -> its similarity block (populated by buildDrillDeck). drillView starts on the chooser so a stray render before openDrillChooser() runs never shows a stale practice round. drillRequeued: ids (or, for a block, every member) already given a second look this session via requeueDrillItem -- caps a miss to exactly one requeue so a word that's wrong every time can't grow the deck forever.
+// drill screen's own state -- never persisted, always rebuilt from S.cards' susp flags. drillGroups: id -> its similarity block (populated by buildDrillDeck). drillView starts on the chooser so a stray render before openDrillChooser() runs never shows a stale practice round. drillRequeued: ids (or, for a block, every member) already given a second look this session via requeueDrillItem -- caps a miss to exactly one requeue so a word that's wrong every time can't grow the deck forever.
+let drillDeck=[], drillGroups={}, drillPos=0, drillRight=0, drillSeen=0, drillView='choose', drillMode=null, drillLogged=false, drillRequeued=new Set();
+let drillGroupLabel=null, drillEarned=0, drillDeferredN=0, drillMissNoteId=null;   // 2026.08.21.1: which group this session is (for the Done screen), how many words crossed into the ready tray / were deferred this session, and which words' notes the after-a-miss panel is showing (a list, so closeWordNote can refresh it)
 let drillSubmitted=false;   // typed round: has this round already been graded
 let drillContrastIds=null, drillContrastAnswerOrder=null, drillContrastSel=null, drillContrastMatched=null, drillContrastMissed=null;   // contrastive round's own state, rebuilt each time renderContrastRound runs
 
@@ -3638,6 +3809,55 @@ function countRatingsBetween(a,b){
   let n=0;
   for(let i=S.log.length-1;i>=0;i--){ const at=S.log[i][2]; if(at<a) break; if(at<b) n++; }
   return n;
+}
+// A daily photograph of where every word stands -- the one metric on the
+// stats plan's Phase 4 list that cannot be recovered afterwards (the
+// cards-matured burn-up: unseen -> learning -> settling -> holding, over
+// time). Nothing reads it yet, which is the same standing, for the same
+// reason, as S.days[k].sit above: the curve has to exist before anything can
+// draw it.
+//
+// Why this one has to be recorded live when Phase 4's other two trends do
+// not. Retention over time and the Again/lapse trend are BOTH already on
+// record and always have been -- rec.ok/rec.tot count them every study day
+// (rec.tot-rec.ok is that day's lapses), so those two only ever needed
+// displaying, never collecting. Maturity is a different kind of fact: it is a
+// property of a card's stability AT THE TIME, and the log stores the interval
+// a rating set, not the strength behind it. Rebuilding the curve from
+// intervals gets its shape right and its level wrong -- run against the
+// 2026-08-20 Latin backup it put 573 words in the mature band where the app
+// itself had 899, a third short. So the sample has to be taken while it is
+// still true.
+//
+// Throttled rather than taken per rating: it walks every card, and at 1,500
+// ratings a day an unthrottled version would walk the deck 1,500 times over
+// to answer a question that moves slowly. The last sample of a day therefore
+// lands within STATUS_SNAP_MS of that day's last rating, which is what a
+// daily burn-up wants. The throttle is module-level and not persisted, so it
+// costs no stored bytes and a reload simply takes a fresh sample.
+const STATUS_SNAP_MS=2*60*1000;
+let lastStatusSnap=0;
+// Counts per direction, in STATUS_ORDER order. Arrays rather than objects
+// keyed by status name: this is five numbers a day per direction, stored on
+// every device and carried in every sync payload, and the key names would
+// cost several times what the values do. STATUS_ORDER is the single source
+// of the order -- read at call time, not captured, so it cannot drift from
+// statusOf() (it is declared further down the file than this function, which
+// is why the index is looked up rather than precomputed into a const here).
+function statusCountsByDir(){
+  const out={L:[0,0,0,0,0], E:[0,0,0,0,0]};
+  CARDS.forEach(c=>{
+    const arr=out[c.dir]; if(!arr) return;
+    const i=STATUS_ORDER.indexOf(statusOf(S.cards[c.id]));
+    if(i>=0) arr[i]++;
+  });
+  return out;
+}
+function stampDayStatus(rec,now){
+  if(!rec||(now-lastStatusSnap)<STATUS_SNAP_MS) return;
+  lastStatusSnap=now;
+  const c=statusCountsByDir();
+  rec.stat={at:now, L:c.L, E:c.E};
 }
 function creditStudyMs(dk,ms,stage){
   if(ms<=0) return;
@@ -3936,13 +4156,39 @@ function toast(msg,ms){
   const t=$('toast'); t.textContent=msg; t.classList.add('on');
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),ms||2200);
 }
-function fmtIvl(ms){
-  if(ms<HOUR) return Math.max(1,Math.round(ms/MIN))+'m';
-  if(ms<DAY)  return Math.round(ms/HOUR)+'h';
-  const d=Math.round(ms/DAY);
+function fmtDays(d){
   if(d<31) return d+'d';
   if(d<365) return Math.round(d/30.4)+'mo';
   const y=d/365; return (y<10?y.toFixed(1):Math.round(y))+'y';
+}
+function fmtIvl(ms){
+  if(ms<HOUR) return Math.max(1,Math.round(ms/MIN))+'m';
+  if(ms<DAY)  return Math.round(ms/HOUR)+'h';
+  return fmtDays(Math.round(ms/DAY));
+}
+// The gap to a due MOMENT, said in study days when that moment is a rollover
+// boundary (2026.08.21.1, the Ledger's `ratchet` row, part A -- his call).
+// Every review is due at a rollover (schedule()'s day snap), so the clock
+// gap to it changes with the hour of the sitting: rated at 4pm, tomorrow's
+// 6am read "14h" and the day after "2d" (38h rounds up); rated at 8pm the
+// same two days read "10h" and "1d" (34h rounds down). So "1d" meant the day
+// after tomorrow in the evening and tomorrow was always some number of
+// hours -- three buttons reading 14h / 14h / 14h looked like three buttons
+// doing the same thing, when underneath they were 1.5 / 1.8 / 2.4 days with
+// only whole days to say it in. Counting rollovers instead says the same
+// day at any hour: the next rollover is "1d", the one after "2d". A due
+// that is NOT on a boundary -- a learning step, minutes or hours off -- is
+// still said the old way, so a genuine 10-minute step never reads "1d" just
+// because it happens to straddle the rollover. Display only: nothing here
+// touches schedule(), the interval it computes, or the log row.
+function fmtDue(due,now){
+  const t=(now!=null)?now:Date.now();
+  if(due<=t) return 'now';                 // neither caller passes a past due today; fmtIvl would floor it to "1m"
+  if(due===dayStart(dayKey(due))){
+    const days=dayKey(due)-dayKey(t);
+    if(days>=1) return fmtDays(days);
+  }
+  return fmtIvl(due-t);
 }
 // ---- the grade reminder (2026.08.19.4, STUDY_SYSTEM.md 5.9.1) ----
 // Owner's call 2026-08-19: a toggleable reminder of what the four buttons
@@ -4252,7 +4498,7 @@ function renderCard(){
       $('recapWord').textContent=lastRated.q;
       $('recapRating').textContent=RATING_LABEL[lastRated.rating]||'?';
       $('recapRating').className='statChip rc-rating rc-'+(RATING_CLASS[lastRated.rating]||'good');
-      $('recapIvl').textContent=fmtIvl(lastRated.ivl);
+      $('recapIvl').textContent=(lastRated.due!=null)?fmtDue(lastRated.due,lastRated.at):fmtIvl(lastRated.ivl);
       rc.classList.add('on');
     } else {
       rc.classList.remove('on');
@@ -4359,7 +4605,7 @@ function reveal(){
   // own passfail3 add-on ships with today.
   const previews=[[AGAIN,'iAgain'],[HARD,'iHard'],[GOOD,'iGood'],[EASY,'iEasy']];
   previews.forEach(([r,el])=>{
-    try{ $(el).textContent=fmtIvl(schedule(cs,adjustGrade(r,thinkMs),now,st).ivl); }
+    try{ $(el).textContent=fmtDue(schedule(cs,adjustGrade(r,thinkMs),now,st).card.due,now); }
     catch(e){ $(el).textContent='?'; }
   });
 }
@@ -4711,6 +4957,8 @@ function rate(pressed){
   if(first||dayKey(cs.last)!==d) rec.words=(rec.words|0)+1;
   // relearning cards are real reviews too, and were being left out of the rate
   if(cs.st==='R'||cs.st==='X'){ rec.tot++; if(r!==AGAIN) rec.ok++; }
+  // the burn-up sample for today (throttled inside; see stampDayStatus)
+  stampDayStatus(rec,now);
   // bury the same word in the other direction until tomorrow
   burySiblings(current,c,d,now,frame);
   S.sinceExport=(S.sinceExport||0)+1;
@@ -4719,7 +4967,7 @@ function rate(pressed){
   // r is the grade actually recorded (post-adjustGrade), matching the
   // interval that follows it; pressed alone would mismatch res.ivl whenever
   // the hesitation toast above just fired.
-  lastRated={q:c.q, rating:r, ivl:res.ivl};
+  lastRated={q:c.q, rating:r, ivl:res.ivl, due:res.card.due, at:now};   // due/at: so the recap says the gap the same way the buttons did (fmtDue)
   save();          // save() schedules the sync push; nothing else fires per rating
   next();
 }
@@ -5122,6 +5370,21 @@ function resetOnReturn(cs,t){
 // offer he learns to ignore.
 const DRILL_RELEASE_DAYS=3;
 const readyToReturn=cs=>!!cs&&!!cs.susp&&(cs.drillOkDays|0)>=DRILL_RELEASE_DAYS;
+// ---- the deferral rule (2026.08.21.1, WORD_GROUPS_RESEARCH.md, applied to the
+// pile on the owner's steer) ----
+// The pile is drilled in fixed groups (drillGroupsFor, below), so a word that
+// never banks its three days would otherwise sit in its group for good and
+// the front groups would slowly fill with the words that never leave. His
+// call: after DRILL_DEFER_DAYS separate drill days since it entered the pile
+// (or was last deferred), a word that is STILL at zero -- i.e. on a first-look
+// miss once it has had that many days -- is deferred: its counts restart and
+// it goes to the back of the order, where it forms the labelled Deferred
+// group. Nothing is released and nothing is hidden; it is only re-ordered,
+// and it comes round again once the rest of the pile has had its turn. A word
+// mid-streak on its tenth day is left alone -- it is about to earn out, and
+// the miss that would defer it is the same miss that wipes the streak.
+const DRILL_DEFER_DAYS=10;
+const isDeferred=cs=>!!cs&&cs.drillDeferredAt!=null;
 function creditDrillLook(id,ok,now){
   // No card behind the id, no credit. cardState() MATERIALISES on miss, so
   // without this a stale id left in drillDeck -- a word the deck content no
@@ -5133,14 +5396,20 @@ function creditDrillLook(id,ok,now){
   if(cs.drillOkDay===d) return cs;      // the day is already spent -- see above
   cs.drillOkDay=d;
   cs.drillOkDays = ok ? (cs.drillOkDays|0)+1 : 0;
+  cs.drillDaysSeen=(cs.drillDaysSeen|0)+1;
+  if(!ok && cs.drillDaysSeen>=DRILL_DEFER_DAYS){   // the deferral rule, above
+    cs.drillDeferredAt=t; cs.drillDaysSeen=0;
+  }
   touchCard(cs,t);
   return cs;
 }
 // Both pile transitions clear the count. Leaving: it means nothing to a word
 // back in normal review, and if it is ever set aside again it must earn its
 // way out afresh rather than resume a streak from weeks ago. Entering: same
-// argument from the other side.
-function resetDrillProgress(cs){ cs.drillOkDays=0; cs.drillOkDay=null; }
+// argument from the other side. The group fields go with it: a returning
+// word's deferral is spent, and a word set aside afresh joins at its own
+// place in the order, not at the back.
+function resetDrillProgress(cs){ cs.drillOkDays=0; cs.drillOkDay=null; cs.drillDaysSeen=0; cs.drillDeferredAt=null; }
 // How many words in the pile are currently offering to come back.
 function readyCount(dir){
   let n=0;
@@ -5356,33 +5625,97 @@ function similarityBlocks(ids){
 function susPileCount(dir){
   return CARDS.filter(c=>c.dir===dir&&S.cards[c.id]&&S.cards[c.id].susp).length;
 }
-// A block's priority for a capped (focus-session) deck: the least-recently-
-// drilled moment among its members, never-drilled reading as 0 so those
-// blocks always sort first. Min, not average -- one member that's genuinely
-// never been seen makes the whole block worth surfacing even if a lookalike
-// sibling was drilled yesterday, and the contrastive round always shows the
-// whole block together anyway (see renderContrastRound).
-function blockDrillPriority(b){
-  return Math.min.apply(null, b.map(id=>(S.cards[id]&&S.cards[id].lastDrilled)||0));
+// ---- the drill groups (2026.08.21.1; WORD_GROUPS_RESEARCH.md, applied to
+// the pile on the owner's steer, three decision rounds on 2026-08-21) ----
+// The focus session used to be a ROTATING slice: a capped deck picked
+// least-recently-drilled first, so each word came round once every pile/n
+// sessions -- and the release rule needs three separate good days on the SAME
+// word with no miss between, which under rotation took dozens to hundreds of
+// sessions per word (the 33-463 figure). Now the pile is laid out in one
+// FIXED order and cut into groups of about drillFocusN words; the same words
+// come up every time that group is drilled, until each earns its way out.
+//
+// The order is a fixed shuffle (drillRank: a hash of the card's own id), not
+// deck order or age -- his call, with the reason checked: set-aside dates
+// follow the order words were introduced, so "oldest first" would rebuild
+// the very cohorts that failed together the first time (for Greek, literally
+// the alphabetically-earliest failures), where a mixed group spreads the
+// many-meaning words among easier ones and mixes parts and letters. A hash
+// rather than a stored shuffle so every device agrees on the order with
+// nothing to sync, and a newly set-aside word simply takes its own place.
+//
+// The groups are WINDOWS over that one order, never a stored membership: when
+// a word earns out, every later word moves up one place, so a group keeps
+// about 17 of its 20 from one day to the next and no word ever disappears --
+// it only moves to the neighbouring group. Sizes flex to split the pile
+// evenly (123 words at 20 a group is seven groups of 17-18, not six of 20
+// and one of 3), look-alike blocks stay whole so the contrastive round still
+// works, words that have earned out (readyToReturn) leave the groups for the
+// ready tray, and deferred words (creditDrillLook) form their own labelled
+// group at the back. Nothing here is persisted: two new per-card fields
+// (drillDaysSeen, drillDeferredAt) carry the deferral, and that is all.
+function drillRank(id){                 // FNV-1a, 32-bit: a word's permanent place in the order
+  let h=0x811c9dc5;
+  for(let i=0;i<id.length;i++){ h^=id.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; }
+  return h>>>0;
 }
-function buildDrillDeck(dir,n){
-  const ids=CARDS.filter(c=>c.dir===dir&&S.cards[c.id]&&S.cards[c.id].susp).map(c=>c.id);
-  let blocks=shuffled(similarityBlocks(ids)).map(shuffled);
-  // Focus session: keep whole blocks only (a contrastive round needs every
-  // member present, so a block is never split mid-pile), picking the
-  // least-recently-drilled blocks first so repeated focus sessions rotate
-  // through the whole pile instead of always landing on the same random
-  // slice. Re-shuffled after trimming so priority decides WHICH blocks made
-  // the cut, not the order they're drilled in -- that shuffle is still fresh
-  // every time, same as a syllabus check.
-  if(n!=null && n<ids.length){
-    const kept=[]; let count=0;
-    blocks.slice().sort((a,b)=>blockDrillPriority(a)-blockDrillPriority(b)).forEach(b=>{
-      if(count>=n) return;
-      kept.push(b); count+=b.length;
-    });
-    blocks=shuffled(kept);
+// Every pile word in the direction: the ready tray apart, and the rest as
+// look-alike blocks in the fixed order, deferred blocks last (earliest
+// deferral first among them, so a word deferred twice sinks again). A block
+// is deferred only when EVERY member is -- a deferred word whose look-alike
+// is still live rides along with it, so the pair is never split.
+function drillOrder(dir){
+  const all=CARDS.filter(c=>c.dir===dir&&S.cards[c.id]&&S.cards[c.id].susp).map(c=>c.id);
+  const ready=all.filter(id=>readyToReturn(S.cards[id]));
+  const live=all.filter(id=>!readyToReturn(S.cards[id]));
+  const defAt=b=>Math.min.apply(null,b.ids.map(id=>S.cards[id].drillDeferredAt||0));
+  const blocks=similarityBlocks(live).map(b=>({ids:b, rank:Math.min.apply(null,b.map(drillRank)), deferred:b.every(id=>isDeferred(S.cards[id]))}));
+  blocks.sort((x,y)=>(x.deferred-y.deferred)||(x.deferred?(defAt(x)-defAt(y)):0)||(x.rank-y.rank)||(x.ids[0]<y.ids[0]?-1:1));
+  return {blocks:blocks, ready:ready};
+}
+// Cut an ordered block list into k groups of roughly equal size, k chosen so
+// no group needs more than n words; a block that straddles a boundary goes
+// whole into the group it started in, so a group can run a few words over.
+function splitDrillGroups(blocks,n){
+  const total=blocks.reduce((a,b)=>a+b.ids.length,0);
+  if(!total) return [];
+  const k=Math.max(1,Math.ceil(total/Math.max(n,1)));
+  const groups=[]; let cur=[], count=0, gi=0;
+  for(const b of blocks){
+    cur.push(b); count+=b.ids.length;
+    // A block big enough to cross more than one boundary at once advances
+    // past ALL the boundaries it crossed -- otherwise the next block, however
+    // small, would close a group on its own against a boundary already
+    // passed (a 40-word block then ten singletons at 20 a group came out
+    // 40 / 1 / 9 instead of 40 / 10; caught in review, 2026-08-21).
+    let cut=false;
+    while(gi<k-1 && count>=Math.round((gi+1)*total/k)){ gi++; cut=true; }
+    if(cut){ groups.push(cur); cur=[]; }
   }
+  if(cur.length) groups.push(cur);
+  return groups.map(g=>g.reduce((a,b)=>a.concat(b.ids),[]));
+}
+function drillGroupsFor(dir,n){
+  const o=drillOrder(dir);
+  const fwd=splitDrillGroups(o.blocks.filter(b=>!b.deferred),n);
+  const def=splitDrillGroups(o.blocks.filter(b=>b.deferred),n);
+  const groups=fwd.map((ids,i)=>({ids:ids, label:'Group '+(i+1), deferred:false}))
+    .concat(def.map((ids,i)=>({ids:ids, label:def.length>1?'Deferred '+(i+1):'Deferred', deferred:true})));
+  return {groups:groups, ready:o.ready};
+}
+// The group size, as the chooser's slider holds it -- clamped the same way
+// normalise() clamps the setting, so a hand-edited value can't ask for a
+// 1-word or a 500-word group.
+function drillGroupSize(){ return Math.min(Math.max(S.settings.drillFocusN||20,10),25); }
+// The deck for one session: either the whole pile (a syllabus check -- ids
+// omitted) or one group's ids. Look-alike blocks are re-derived on the ids
+// given (a group holds whole blocks, so the blocks come out identical), and
+// which block comes first and which member of a block comes first are both
+// reshuffled fresh every time, same as always -- the ORDER within a session
+// is meant to feel fresh; it is the MEMBERSHIP that is fixed.
+function buildDrillDeck(dir,ids){
+  const pool=ids||CARDS.filter(c=>c.dir===dir&&S.cards[c.id]&&S.cards[c.id].susp).map(c=>c.id);
+  const blocks=shuffled(similarityBlocks(pool)).map(shuffled);
   drillGroups={};
   blocks.forEach(b=>{ if(b.length>1) b.forEach(id=>drillGroups[id]=b); });
   return blocks.flat();
@@ -5728,7 +6061,7 @@ function renderStatsDrill(dir){
     return seen ? Math.round(100*right/seen) : null;
   };
   const allAcc=acc(sessions), recentAcc=acc(sessions.slice(-5));
-  const focusN=sessions.filter(r=>r[2]==='F').length, syllN=sessions.filter(r=>r[2]==='S').length;
+  const groupN=sessions.filter(r=>r[2]==='G'||r[2]==='F').length, syllN=sessions.filter(r=>r[2]==='S').length;   // 'F' was the rotating focus session the groups replaced (2026.08.21.1) -- counted with them
   // Pile turnover over the last 14 study days -- the single most direct
   // "is this working" number: a pile that's mostly flagging with little
   // graduating is growing regardless of how good accuracy looks in a
@@ -5744,7 +6077,7 @@ function renderStatsDrill(dir){
     out += row('Never yet drilled', neverDrilled+' of '+n);
     out += row('With a note', notesN+' of '+n);
   }
-  out += row('Sessions run', sessions.length ? (sessions.length+' ('+syllN+' syllabus, '+focusN+' focus)') : 'None yet');
+  out += row('Sessions run', sessions.length ? (sessions.length+' ('+syllN+' syllabus, '+groupN+' group)') : 'None yet');
   if(sessions.length) out += row('First-look accuracy',
     (recentAcc!=null?recentAcc+'% last 5':'—')+' · '+(allAcc!=null?allAcc+'% all-time':'—'));
   out += row('Last 14 days', (flaggedN||gradN) ? (flaggedN+' flagged, '+gradN+' brought back') : 'No change');
@@ -5989,23 +6322,59 @@ function renderBulkBar(){
 /* ======================= drill screen ======================= */
 // Entry point from the front screen's "Drill these words" chip -- shows the
 // chooser (renderDrillChooser) rather than jumping straight into a deck, so
-// every session starts with a deliberate syllabus-check-or-focus-session
-// choice instead of always drilling the whole pile in one sitting. See
+// every session starts with a deliberate syllabus-check-or-group choice
+// instead of always drilling the whole pile in one sitting. See
 // beginDrillSession() for what each choice actually builds.
 function openDrillChooser(){
   drillDeck=[]; drillPos=0; drillRight=0; drillSeen=0; drillRequeued=new Set();
   drillView='choose'; drillMode=null; drillLogged=false;
+  drillGroupLabel=null; drillEarned=0; drillDeferredN=0; drillMissNoteId=null;
   renderDrill();
 }
 // mode: 'syllabus' (every set-aside word, unchanged from before this chooser
-// existed) or 'focus' (a capped, block-respecting slice -- see
-// buildDrillDeck's n parameter and blockDrillPriority).
-function beginDrillSession(mode){
+// existed) or 'group' (one of the fixed groups -- see drillGroupsFor; `gi`
+// is its index in that list). A group index that no longer exists (the
+// pile changed under a stale chooser) falls back to the first group, and an
+// empty pile to an empty deck, which renderDrill() shows as Done.
+function beginDrillSession(mode,gi){
   drillMode=mode;
-  const n = mode==='focus' ? Math.min(Math.max(S.settings.drillFocusN||15,10),25) : null;
-  drillDeck=buildDrillDeck(S.dir,n);          // also (re)populates drillGroups
+  let ids=null; drillGroupLabel=null;
+  if(mode==='group'){
+    const groups=drillGroupsFor(S.dir,drillGroupSize()).groups;
+    const g=groups[gi|0]||groups[0];
+    ids=g?g.ids:[]; drillGroupLabel=g?g.label:null;
+  }
+  drillDeck=buildDrillDeck(S.dir,ids);        // also (re)populates drillGroups
   drillPos=0; drillRight=0; drillSeen=0; drillRequeued=new Set(); drillView='practice'; drillLogged=false;
+  drillEarned=0; drillDeferredN=0; drillMissNoteId=null;
   renderDrill();
+}
+// One credit through creditDrillLook(), plus the session's own tally of what
+// that credit did: a word that just crossed into the ready tray, or was just
+// deferred, is counted for the Done screen. The first-look guard stays at the
+// call sites, exactly as before.
+function creditDrillLookInSession(id,ok){
+  const before=S.cards[id], wasReady=readyToReturn(before), wasDef=isDeferred(before);
+  const cs=creditDrillLook(id,ok);
+  if(!cs) return null;
+  if(!wasReady&&readyToReturn(cs)) drillEarned++;
+  if(!wasDef&&isDeferred(cs)) drillDeferredN++;
+  return cs;
+}
+// The ready tray, released: every word in this direction that has earned its
+// three days comes back to normal review through the same setAside(id,false)
+// every other bring-back uses (the return door decides its state). Only ever
+// called from the chooser's own button -- the app counts, he decides -- and
+// never from the counter crossing the line.
+function readyIds(dir){
+  return CARDS.filter(c=>c.dir===dir&&readyToReturn(S.cards[c.id])).map(c=>c.id);
+}
+function bringBackReady(dir){
+  const ids=readyIds(dir);
+  if(!ids.length) return 0;
+  ids.forEach(id=>setAside(id,false));
+  save();
+  return ids.length;
 }
 // One compact row per finished-or-abandoned session, for the Drill stats
 // panel on the Stats screen (renderStatsDrill) -- never per card, so this
@@ -6016,7 +6385,7 @@ function beginDrillSession(mode){
 function logDrillSession(){
   if(drillLogged || !drillSeen) return;
   drillLogged=true;
-  S.drillLog.push([today(), S.dir, drillMode==='focus'?'F':'S', drillSeen, drillRight, drillDeck.length, Date.now()]);
+  S.drillLog.push([today(), S.dir, drillMode==='group'?'G':(drillMode==='focus'?'F':'S'), drillSeen, drillRight, drillDeck.length, Date.now()]);   // 'F' (the retired rotating focus session) is never written now, only still read by renderStatsDrill
   if(S.drillLog.length>500) S.drillLog=S.drillLog.slice(-500);
   save();
 }
@@ -6052,10 +6421,12 @@ function renderDrill(){
   $('drillScore').textContent = drillSeen ? (drillRight+' of '+drillSeen+' right this round') : '';
   $('drillNextRow').classList.add('hidden');
   renderReleaseOffer([]);                    // never linger from the previous word
+  renderDrillMissNote(null);                 // nor the after-a-miss note
   const id=drillDeck[drillPos], group=drillGroups[id];
-  // Coverage stamp for the focus-session rotation (blockDrillPriority) --
-  // every member of a shown block counts as "just drilled", not only the
-  // card technically at drillPos, since a contrastive round always shows
+  // Coverage stamp (lastDrilled; the Drill stats panel's "never yet
+  // drilled" count -- it used to drive the retired focus session's rotation
+  // too) -- every member of a shown block counts as "just drilled", not only
+  // the card technically at drillPos, since a contrastive round always shows
   // the whole block together. Plain metadata, never touches S.cards' FSRS
   // fields -- same "outside FSRS" invariant as susp/buryUntil.
   const shown=(group&&group.length>1)?group:[id], now=Date.now();
@@ -6065,7 +6436,7 @@ function renderDrill(){
   else if(c.dir==='L') renderHonorRound(c);
   else renderTypedRound(c);
 }
-/* ---- pre-drill chooser: syllabus check vs. a bounded focus session ----
+/* ---- pre-drill chooser: syllabus check vs. one of the fixed groups ----
    Reuses #drillArea/#drillPrompt/#drillChoices rather than adding a fourth
    drill sub-screen -- the same trick renderDrillDone() already plays inside
    this same section. */
@@ -6082,19 +6453,41 @@ function renderDrillChooser(){
   $('drillPrompt').textContent = n ? (n+' word'+(n===1?'':'s')+' set aside') : 'Nothing set aside right now';
   const box=$('drillChoices');
   if(!n){ box.innerHTML=''; return; }
-  const minN=Math.min(10,n), maxN=Math.min(25,n);
-  const cur=Math.min(Math.max(S.settings.drillFocusN||15,minN),maxN);
+  const cur=drillGroupSize(), d=today();
+  const gs=drillGroupsFor(S.dir,cur), groups=gs.groups, ready=gs.ready;
+  // One row per group: its size, how far along its words are (how many have
+  // banked one day, two days), and whether it has been drilled today -- every
+  // member credited today means the group was run through; some means it was
+  // abandoned part-way or its words were reached by a syllabus check.
+  const rows=groups.map((g,i)=>{
+    let d1=0,d2=0,todayN=0;
+    g.ids.forEach(id=>{ const cs=S.cards[id]; const k=cs.drillOkDays|0; if(k===1) d1++; else if(k>=2) d2++; if(cs.drillOkDay===d) todayN++; });
+    const prog=[]; if(d1) prog.push(d1+' on day 1'); if(d2) prog.push(d2+' on day 2');
+    const done = todayN===g.ids.length ? ' · drilled today ✓' : (todayN ? ' · partly drilled today' : '');
+    return '<div class="drillGroupRow'+(g.deferred?' isDeferred':'')+'"><div class="drillGroupTop"><span class="term">'+escHtml(g.label)+'</span>'+
+      '<span class="gloss">'+g.ids.length+' word'+(g.ids.length===1?'':'s')+(prog.length?' · '+prog.join(', '):'')+done+'</span>'+
+      '<button class="small'+(g.deferred?'':' primary')+' drillGroupStart" data-group="'+i+'">Drill</button></div>'+
+      (g.deferred?'<div class="fh">Sent to the back after '+DRILL_DEFER_DAYS+' drill days without earning out. Still set aside; drill it whenever you choose.</div>':'')+
+      '</div>';
+  }).join('');
   box.innerHTML=
-    '<div class="field" style="border-bottom:1px solid var(--line);padding-top:0">'+
-      '<label>Syllabus check</label>'+
-      '<div class="fh">Every set-aside word, one pass through the whole pile — same as Drill always used to be.</div>'+
-      '<button class="act primary" id="drillStartSyllabus" style="margin-top:10px">Start — '+n+' word'+(n===1?'':'s')+'</button>'+
+    (ready.length
+      ? '<div class="field drillTray" style="padding-top:0">'+
+          '<label>'+ready.length+' word'+(ready.length===1?'':'s')+' ready to come back</label>'+
+          '<div class="fh">Each recalled first time on '+DRILL_RELEASE_DAYS+' separate days. They wait here until you release them — nothing leaves the pile on its own. A word set aside while still learning comes back as new and joins today\'s learning list.</div>'+
+          '<button class="act primary" id="drillBringReady" style="margin-top:10px">Bring '+(ready.length===1?'it':'them all')+' back to normal review</button>'+
+        '</div>'
+      : '')+
+    '<div class="field" style="padding-top:'+(ready.length?'14px':'0')+'">'+
+      '<label for="drillFocusRange">Groups of <b id="drillFocusVal">'+cur+'</b></label>'+
+      '<input type="range" id="drillFocusRange" min="10" max="25" step="1" value="'+cur+'">'+
+      '<div class="fh">The pile in a fixed order, cut into groups. The same words come up every time a group is drilled, until each earns its three days and moves to the tray above. Drill one group or all of them, as often as you like — only the first look each day counts.</div>'+
+      '<div class="drillGroupList">'+rows+'</div>'+
     '</div>'+
     '<div class="field" style="border-bottom:none">'+
-      '<label for="drillFocusRange">Focus session — <b id="drillFocusVal">'+cur+'</b> word'+(cur===1?'':'s')+'</label>'+
-      '<input type="range" id="drillFocusRange" min="'+minN+'" max="'+maxN+'" step="1" value="'+cur+'"'+(minN===maxN?' disabled':'')+'>'+
-      '<div class="fh">A rotating slice instead of the whole pile — whichever words haven\'t been drilled recently come up first, so repeated focus sessions work through everyone eventually.</div>'+
-      '<button class="act" id="drillStartFocus" style="margin-top:10px">Start focus session</button>'+
+      '<label>Syllabus check</label>'+
+      '<div class="fh">Every set-aside word in one pass — the tray included.</div>'+
+      '<button class="act" id="drillStartSyllabus" style="margin-top:10px">Start — '+n+' word'+(n===1?'':'s')+'</button>'+
     '</div>';
 }
 function drillFlagLabel(plural){ return 'Bring '+(plural?'these words':'this word')+' back to normal review'; }
@@ -6105,12 +6498,54 @@ function drillFlagLabel(plural){ return 'Bring '+(plural?'these words':'this wor
 // nothing on every new card, so it can never linger from the previous word.
 function renderReleaseOffer(ids){
   const el=$('drillReady'); if(!el) return;
-  const ready=(ids||[]).filter(id=>readyToReturn(S.cards[id]));
-  if(!ready.length){ el.classList.add('hidden'); el.textContent=''; return; }
+  const all=(ids||[]).filter(id=>!!S.cards[id]);
+  const ready=all.filter(id=>readyToReturn(S.cards[id]));
+  el.classList.remove('quiet');
+  if(ready.length){
+    el.classList.remove('hidden');
+    el.textContent = ready.length===1
+      ? 'Ready to come back — recalled first time on '+DRILL_RELEASE_DAYS+' separate days. It leaves its group and waits in the tray until you release it.'
+      : ready.length+' of these are ready to come back — each recalled first time on '+DRILL_RELEASE_DAYS+' separate days. They leave their group and wait in the tray.';
+    return;
+  }
+  // Progress short of the line (2026.08.21.1): what today's first look did to
+  // the count, so the three-day rule is visible while it is being earned
+  // rather than only at the end. Only a look credited TODAY says anything --
+  // the requeued second look, and a word already credited earlier today,
+  // leave the line empty rather than restate yesterday.
+  const d=today(), lines=[];
+  all.forEach(id=>{
+    const cs=S.cards[id]; if(cs.drillOkDay!==d) return;
+    const k=cs.drillOkDays|0;
+    if(k>0) lines.push((all.length>1?BY_ID[id].q+': ':'')+'day '+k+' of '+DRILL_RELEASE_DAYS+' banked');
+    else if(isDeferred(cs)&&dayKey(cs.drillDeferredAt)===d) lines.push((all.length>1?BY_ID[id].q+': ':'')+'deferred — '+DRILL_DEFER_DAYS+' drill days without earning out; it moves to the Deferred group at the back');
+    else lines.push((all.length>1?BY_ID[id].q+': ':'')+'missed — the count starts again from zero');
+  });
+  if(!lines.length){ el.classList.add('hidden'); el.textContent=''; return; }
+  el.classList.remove('hidden'); el.classList.add('quiet');
+  el.textContent=lines.join(' · ');
+}
+// After a miss in a single-word round: the word's own note (a mnemonic, the
+// word it gets confused with), and a button to add or edit one -- the Ledger's
+// "reach the note from the drill" row, folded in 2026.08.21.1. Shown only
+// AFTER grading, never on the card under test, so the round stays a real
+// recall test (see renderDrillList's comment on why notes are kept out of
+// graded rounds). Cleared on every new card, same as the progress line.
+function renderDrillMissNote(ids){
+  const el=$('drillMissNote'); if(!el) return;
+  const list=(Array.isArray(ids)?ids:(ids?[ids]:[])).filter(id=>!!BY_ID[id]);
+  drillMissNoteId=list.length?list:null;
+  if(!list.length){ el.classList.add('hidden'); el.innerHTML=''; return; }
   el.classList.remove('hidden');
-  el.textContent = ready.length===1
-    ? 'Ready to come back — recalled first time on '+DRILL_RELEASE_DAYS+' separate days.'
-    : ready.length+' of these are ready to come back — each recalled first time on '+DRILL_RELEASE_DAYS+' separate days.';
+  // One block per missed word; the word itself is named only when there is
+  // more than one (the contrastive round's mispaired words), since a single
+  // missed word is the one on screen.
+  el.innerHTML=list.map(id=>{
+    const cs=S.cards[id], note=(cs&&cs.note)||'';
+    return '<div class="drillMissNoteRow">'+(list.length>1?'<span class="term">'+escHtml(BY_ID[id].q)+'</span>':'')+
+      (note?'<div class="drillListNote">'+escHtml(note)+'</div>':'')+
+      '<button class="noteBtn'+(note?' on':'')+'" data-id="'+escHtml(id)+'">'+(note?'Edit note':'+ Add a note'+(list.length>1?'':' — why does this one keep tripping you up?'))+'</button></div>';
+  }).join('');
 }
 /* ---- typed recall ---- */
 function renderTypedRound(c){
@@ -6161,10 +6596,11 @@ function submitTypedRound(){
   const id=drillDeck[drillPos], c=BY_ID[id], input=$('drillInput');
   const ok=answersMatch(input.value,c);
   drillSubmitted=true; drillSeen++;
-  if(!drillRequeued.has(id)){ creditDrillLook(id,ok); save(); }   // first look only -- see creditDrillLook()
+  if(!drillRequeued.has(id)){ creditDrillLookInSession(id,ok); save(); }   // first look only -- see creditDrillLook()
   if(ok) drillRight++;
   else requeueDrillItem([id]);
   renderReleaseOffer([id]);
+  renderDrillMissNote(ok?null:id);
   input.disabled=true; input.classList.add(ok?'right':'wrong');
   $('drillCheckBtn').disabled=true;
   const fb=$('drillFeedback');
@@ -6213,10 +6649,11 @@ function gradeHonorRound(ok){
   if(drillSubmitted) return;
   const id=drillDeck[drillPos];
   drillSubmitted=true; drillSeen++;
-  if(!drillRequeued.has(id)){ creditDrillLook(id,ok); save(); }   // first look only -- see creditDrillLook()
+  if(!drillRequeued.has(id)){ creditDrillLookInSession(id,ok); save(); }   // first look only -- see creditDrillLook()
   if(ok) drillRight++;
   else requeueDrillItem([id]);
   renderReleaseOffer([id]);
+  renderDrillMissNote(ok?null:id);
   $('drillHonorRight').disabled=true; $('drillHonorWrong').disabled=true;
   $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
   $('drillNextRow').classList.remove('hidden');
@@ -6286,10 +6723,11 @@ function finishContrastRound(){
   // tiles that were mispaired, so one bad pairing in a block of four does not
   // wipe the other three.
   drillContrastIds.forEach(id=>{
-    if(!drillRequeued.has(id)) creditDrillLook(id,!drillContrastMissed.has(id));
+    if(!drillRequeued.has(id)) creditDrillLookInSession(id,!drillContrastMissed.has(id));
   });
   save();
   renderReleaseOffer(drillContrastIds);
+  renderDrillMissNote(drillContrastIds.filter(id=>drillContrastMissed.has(id)));   // the mispaired words' notes -- "the word it gets confused with" is what this round is for
   if(drillContrastMissed.size) requeueDrillItem(drillContrastIds.slice());
   $('drillScore').textContent=drillRight+' of '+drillSeen+' right this round';
   $('drillNextRow').classList.remove('hidden');
@@ -6352,8 +6790,11 @@ function renderDrillDone(){
   // second look sits in drillDeck twice but is still one word; drillRight/
   // drillSeen are correctly attempt counts already and need no such fix.
   const n=new Set(drillDeck).size;
+  const head = drillMode==='group' ? ((drillGroupLabel||'Group')+' — ') : 'Syllabus check — ';
+  const tail = (drillEarned?' '+drillEarned+' word'+(drillEarned===1?'':'s')+' earned '+(drillEarned===1?'its':'their')+' way out today and wait'+(drillEarned===1?'s':'')+' in the tray.':'')+
+               (drillDeferredN?' '+drillDeferredN+' word'+(drillDeferredN===1?'':'s')+' moved to the Deferred group.':'');
   $('drillDoneText').textContent = drillSeen
-    ? ((drillMode==='focus'?'Focus session — ':'Syllabus check — ')+n+' word'+(n===1?'':'s')+' — '+drillRight+' of '+drillSeen+' right.')
+    ? (head+n+' word'+(n===1?'':'s')+' — '+drillRight+' of '+drillSeen+' right.'+tail)
     : 'Nothing set aside right now — words show up here once you set one aside from the study card.';
 }
 function renderChips(){
@@ -6758,6 +7199,7 @@ function closeWordNote(){
   // cheap either way (both are plain DOM rebuilds off state already in
   // memory), and simpler than tracking which one the panel was opened from.
   if(drillView==='list') renderDrillList();
+  if(drillView==='practice'&&drillMissNoteId) renderDrillMissNote(drillMissNoteId);   // the after-a-miss panel, if it is what opened this
   renderStruggling();
 }
 /* ---- card inspector (Phase 3 "bonus, same screens", PHASE3_4_HANDOFF.md
@@ -8793,11 +9235,14 @@ function renderWarn(qE){
   // click as the calibration line above, and direction-scoped like the rest of
   // Home.
   const pile=pileWait(S.dir), ready=readyCount(S.dir);
-  if(pile.n)
+  if(pile.n){
+    const gN=pileGroupCount(S.dir);
     h+='<div class="warn pile" data-act="pile">'+pile.n+' word'+(pile.n===1?'':'s')+' set aside'+
+       (gN>1?' in '+gN+' groups':'')+
        (pile.oldest>=1?' · oldest has waited '+pile.oldest+' day'+(pile.oldest===1?'':'s'):'')+
        (ready?' · '+ready+' ready to come back':'')+
        '. Tap to open them.</div>';
+  }
   w.innerHTML=h;
 }
 // Pile size and the longest wait in it, for the Home line above.
@@ -8809,6 +9254,23 @@ function renderWarn(qE){
 // moment it stopped being studied, which is the thing the line claims to say.
 // A word with neither (flagged from Browse before it was ever seen) counts
 // toward n and simply contributes no age.
+// How many groups the pile is cut into right now, for the Home line. The
+// arithmetic count, not drillGroupsFor(): that needs the look-alike
+// clustering, which is O(n^2) edit distances -- measured at ~100ms for a
+// 136-word pile, too much for a line redrawn on every return to Home. The
+// two agree unless a single look-alike block outweighs a whole group, which
+// the 10-word floor on group size makes academic. Ready-tray words are
+// excluded, same as the chooser.
+function pileGroupCount(dir){
+  const n=drillGroupSize(); let live=0, def=0;
+  for(const c of CARDS){
+    if(c.dir!==dir) continue;
+    const cs=S.cards[c.id];
+    if(!cs||!cs.susp||readyToReturn(cs)) continue;
+    if(isDeferred(cs)) def++; else live++;
+  }
+  return Math.ceil(live/n)+Math.ceil(def/n);
+}
 function pileWait(dir,now){
   const t=(now!=null)?now:Date.now();
   let n=0, oldest=null;
@@ -9512,6 +9974,19 @@ function mergeStates(local,remote,opts){
       { const seen=new Map(); [a&&a.sit,b&&b.sit].forEach(arr=>{ if(Array.isArray(arr)) arr.forEach(s=>{ if(Array.isArray(s)&&s.length>=2){ const key=s[0]+' '+s[1]; if(!seen.has(key)||canonJSON(s)>canonJSON(seen.get(key))) seen.set(key,s.slice()); } }); });
         if(seen.size) rec.sit=[...seen.values()].sort((x,y)=>(x[0]-y[0])||(x[1]-y[1])); else delete rec.sit; }
       { const v=maxNum(a&&a.feel,b&&b.feel); if(v!=null) rec.feel=v; else delete rec.feel; }
+      // The day's burn-up sample (rec.stat, 2026.08.21.2). NOT a counter and
+      // not derivable from rows, so it is neither in COUNTER_FIELDS nor
+      // rebuilt by recountDay() -- it is picked, like .sit above, by its own
+      // rule: the LATER sample wins. Both devices are describing the same
+      // deck, so the later look is simply the better-informed one; taking the
+      // max of each band instead would invent a state that never existed (a
+      // word leaving 'settling' for 'holding' must decrement one and
+      // increment the other, and per-field max does neither). Ties fall back
+      // to canonJSON ordering for the same reason symmetricAssign does: two
+      // devices must land on the same answer regardless of which called it.
+      { const sa=a&&a.stat, sb=b&&b.stat;
+        const pick=!sa?sb:!sb?sa:((sb.at|0)>(sa.at|0))?sb:((sa.at|0)>(sb.at|0))?sa:(canonJSON(sb)>canonJSON(sa)?sb:sa);
+        if(pick) rec.stat=pick; else delete rec.stat; }
       days[k]=rec;
     });
     out.days=days;
@@ -10591,7 +11066,18 @@ tapZone($('drillViewToggle'),toggleDrillView);
 // on a tap that doesn't apply, e.g. an answer before any prompt is picked).
 $('drillChoices').addEventListener('click',e=>{
   if(e.target.closest('#drillStartSyllabus')){ beginDrillSession('syllabus'); return; }
-  if(e.target.closest('#drillStartFocus')){ beginDrillSession('focus'); return; }
+  const gbtn=e.target.closest('.drillGroupStart');
+  if(gbtn){ beginDrillSession('group',gbtn.dataset.group|0); return; }
+  if(e.target.closest('#drillBringReady')){
+    // The tray, released -- the one place the three-day rule turns into an
+    // actual bring-back, and only by this tap. confirm() in the same plain
+    // register as every other consequential action here.
+    const n=readyIds(S.dir).length;
+    if(n&&confirm('Bring '+n+' word'+(n===1?'':'s')+' back to normal review? A word set aside while still learning comes back as new and joins today\'s learning list; one set aside from real review keeps its history.')){
+      bringBackReady(S.dir); toast(n+' word'+(n===1?'':'s')+' brought back',1600); renderDrill();
+    }
+    return;
+  }
   if(e.target.closest('#drillCheckBtn')){ submitTypedRound(); return; }
   if(e.target.closest('#drillRevealBtn')){ revealHonorRound(); return; }
   if(e.target.closest('#drillHonorRight')){ gradeHonorRound(true); return; }
@@ -10599,7 +11085,8 @@ $('drillChoices').addEventListener('click',e=>{
   const tile=e.target.closest('.drillTile');
   if(tile) pickContrastTile(tile.dataset.side,tile.dataset.id);
 });
-// The chooser's own focus-session slider -- input bubbles, so this is
+// The chooser's own group-size slider (drillFocusN, the old focus-session
+// size, now the size of a group) -- input bubbles, so this is
 // delegated the same way everything else in #drillChoices is, rather than
 // bound fresh per render. Persisted immediately (not just on Start) so the
 // slider remembers where it was left even if the syllabus-check button is
@@ -10609,6 +11096,13 @@ $('drillChoices').addEventListener('input',e=>{
   const v=e.target.value|0;
   $('drillFocusVal').textContent=v;
   S.settings.drillFocusN=v; save();
+});
+// ...and the group list is re-cut when the drag ENDS (change), not on every
+// input tick -- re-rendering #drillChoices mid-drag would replace the very
+// slider under the finger and drop the drag.
+$('drillChoices').addEventListener('change',e=>{
+  if(e.target.id!=='drillFocusRange') return;
+  renderDrillChooser();   // the groups are cut from the new size on the spot
 });
 // Enter submits the typed round same as tapping Check -- delegated (the
 // input itself is rebuilt fresh every round) rather than bound per-render.
@@ -10624,6 +11118,11 @@ $('drillChoices').addEventListener('keydown',e=>{
 // otherwise inert here, unlike Browse's reveal-on-tap -- everything is
 // already shown unfolded).
 $('drillListView').addEventListener('click',e=>{
+  const btn=e.target.closest('.noteBtn'); if(btn) openWordNote(btn.dataset.id);
+});
+// The after-a-miss note panel on the practice card (renderDrillMissNote):
+// same note editor, same delegated shape.
+$('drillMissNote').addEventListener('click',e=>{
   const btn=e.target.closest('.noteBtn'); if(btn) openWordNote(btn.dataset.id);
 });
 $('wordNoteOverlay').addEventListener('click',e=>{
@@ -10946,6 +11445,16 @@ $('fNewL').addEventListener('change',e=>{S.settings.newPerDayL=Math.max(0,e.targ
 $('fNewE').addEventListener('change',e=>{S.settings.newPerDayE=Math.max(0,e.target.value|0);save();});
 $('fRet').addEventListener('input',e=>{S.settings.retention=e.target.value/100;$('fRetVal').textContent=e.target.value+'%';});
 $('fRet').addEventListener('change',()=>save());
+// Bulk reschedule (2026.08.21.1) -- the ONLY caller of bulkReschedule(). A
+// read-only plan first, the counts in the confirm text, nothing written on
+// Cancel or on an empty plan.
+$('btnBulkResched').addEventListener('click',()=>{
+  const p=bulkReschedulePlan(S.settings,Date.now());
+  if(!p.plan.length){ toast(p.total?'Every review word is already on this target':'Nothing in review to reschedule',1800); return; }
+  if(!confirm(bulkRescheduleMessage(p,S.settings))) return;
+  const done=bulkReschedule(S.settings,Date.now());
+  toast(done.plan.length+' word'+(done.plan.length===1?'':'s')+' rescheduled',1800);
+});
 $('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyTheme();renderSet();});
 // The three flags are still three flags in the schema (Ground rule 3: never
 // remove a settings field) -- only the UI collapsed. Simplified clears all
