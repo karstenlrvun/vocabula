@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.21.2">
+<link rel="stylesheet" href="palettes.css?v=2026.08.23.0">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.21.2"></script>
+<script src="shared.js?v=2026.08.23.0"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -760,7 +760,9 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
    "see the set of colours used for again/easy/hard" -- so `.palRatings`
    comes back, but not as the same strip that was cut that morning. That one
    was a full duplicate ROW per half (two rows of three chips, one per mode);
-   this is three plain dots, ONCE per card, not per half -- the actual
+   this is four plain dots (one per rating, in the buttons' own order --
+   three until 2026.08.23, see `.palDot.hard`), ONCE per card, not per
+   half -- the actual
    complaint that got it cut ("repeats itself... same three colours light
    both halves") only applies to showing it twice, and dots at 7px cost a
    fraction of a chip row's height. Sits in its own row below `.palPrev`
@@ -783,8 +785,70 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .palRatings{display:flex;justify-content:center;align-items:center;gap:5px;padding:4px 3px}
 .palDot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
 .palDot.again{background:var(--again)}
+/* Hard reads --warn-ink, matching #bHard .lbl exactly -- Hard has no colour
+   family of its own, it borrows --warn-* (see #bHard's rule above). Added
+   2026.08.23: these dots shipped 2026-08-16 as three, and the ask they came
+   from was literally "see the set of colours used for again/easy/hard", so
+   Hard was requested at the time and Good went in instead. Hard then became
+   a permanent fourth rating button on 2026-08-19, which settled it. */
+.palDot.hard{background:var(--warn-ink)}
 .palDot.good{background:var(--good)}
 .palDot.easy{background:var(--easy)}
+/* ---- the exhibit screen (scDemo) ----
+   A guided argument about what in this app was built here and what was
+   imported, with a working control under each claim. Every control runs the
+   real function -- schedule() with its own settings object, EASY_SLOW_MS
+   itself -- against a scratch card held in `demoCard` that is never in
+   S.cards, so nothing on this screen can reach real progress. save() is
+   never called from here.
+
+   The glow: --glow-text is defined only under [data-palette="neon"], and
+   `var(--glow-text, ...)` therefore falls back everywhere else. This screen
+   supplies its own fallback rather than none, so the treatment is present in
+   all twelve palettes -- his call, 2026-08-23 -- and Neon's own richer
+   three-layer version still wins wherever it is set. It carries meaning
+   rather than decoration: it marks the two things a reader is meant to act
+   on, the headline claim of each panel and any control they are invited to
+   press. Nothing else on the screen glows. */
+.dxWrap{max-width:640px;margin:0 auto}
+.dxLede{color:var(--muted);font-size:14.5px;line-height:1.6;margin:2px 0 22px}
+.dxPanel{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:18px 17px;margin-bottom:14px}
+.dxEyebrow{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.dxClaim{font-family:var(--serif);font-size:20px;line-height:1.28;color:var(--coral);
+  margin-bottom:9px;text-shadow:var(--glow-text,0 0 5px currentColor,0 0 14px currentColor)}
+.dxBody{font-size:14px;line-height:1.62;color:var(--ink)}
+.dxBody + .dxBody{margin-top:9px}
+.dxBody b{font-weight:600}
+.dxMuted{color:var(--muted);font-size:13px;line-height:1.6;margin-top:9px}
+.dxStage{background:var(--bg);border:1px solid var(--line);border-radius:11px;
+  padding:14px 13px;margin:13px 0 4px}
+.dxRow{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.dxOut{font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--ink);
+  margin-top:11px;min-height:2.9em}
+.dxOut .k{color:var(--muted)}
+/* The press-me treatment. Same glow as the claims, so "this is the bit that
+   matters" reads the same way in prose and in a control. */
+.dxBtn{font:inherit;font-size:13.5px;font-weight:500;cursor:pointer;
+  background:var(--bg);color:var(--coral);border:1px solid var(--line);
+  border-radius:9px;padding:8px 13px;
+  text-shadow:var(--glow-text,0 0 5px currentColor,0 0 14px currentColor)}
+.dxBtn:active{transform:translateY(1px)}
+.dxBtn[disabled]{opacity:.45;cursor:default;text-shadow:none}
+.dxGrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.dxCol h4{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.dxTape{font-family:var(--sans);font-size:12px;line-height:1.85;font-variant-numeric:tabular-nums;
+  color:var(--ink);min-height:1.85em}
+.dxTape .flat{color:var(--again)}
+.dxTape .grow{color:var(--good)}
+.dxTape .gone{color:var(--faint);font-style:italic}
+.dxLedger{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;
+  padding:7px 0;border-bottom:1px solid var(--line)}
+.dxLedger:last-child{border-bottom:0}
+.dxLedger .who{color:var(--muted);text-align:right;flex:0 0 auto;font-size:12.5px}
+.dxOwn{color:var(--coral)}
 .palName{display:block;padding:5px 3px;font-size:11px;font-weight:500;color:var(--ink);
   border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .palCard.on .palName{color:var(--coral)}
@@ -1048,10 +1112,16 @@ html[data-layout="landscape"][data-study-hints] #revealBtn .keycap,
 html[data-layout="landscape"][data-study-hints] #quickBtn .keycap{
   position:absolute; right:18px; top:50%; transform:translateY(-50%); margin:0;
 }
-html[data-layout="landscape"][data-study-hints] #undoBtn{position:relative}
+html[data-layout="landscape"][data-study-hints] #undoBtn,
+html[data-layout="landscape"][data-study-hints] #toHome{position:relative}
 html[data-layout="landscape"][data-study-hints] .iconKeycap{
   position:absolute; bottom:-3px; right:-6px; margin:0; font-size:9px; padding:0 5px;
 }
+/* #toHome is the LEFT-hand icon in the bar, so its cap hangs off the left
+   edge -- the shared rule above is written for #undoBtn, which sits at the
+   right and hangs its own cap outward, away from the counts in the middle.
+   Unmirrored, this one would hang inward and crowd them. */
+html[data-layout="landscape"][data-study-hints] #toHome .iconKeycap{right:auto; left:-6px}
 html[data-layout="landscape"][data-study-hints] .rate,
 html[data-layout="landscape"][data-study-hints] .revealBtn,
 html[data-layout="landscape"][data-study-hints] .quickBtn{
@@ -1777,7 +1847,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
   <!-- ============ STUDY ============ -->
   <section id="scStudy" class="screen">
     <div class="bar">
-      <button class="icon" id="toHome" aria-label="Back">&#8249;</button>
+      <button class="icon" id="toHome" aria-label="Back">&#8249;<span class="keycap iconKeycap">S</span></button>
       <div class="title"><div class="counts" id="counts"></div><div class="studyTimer" id="studyTimer"></div></div>
       <button class="icon" id="undoBtn" aria-label="Undo">&#8630;<span class="keycap iconKeycap">0 / Z</span></button>
     </div>
@@ -2018,7 +2088,8 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="field">
         <label>Instructions</label>
         <a class="act" href="manual.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit">How this works</a>
-        <div class="fh">Opens the manual, if it is sitting alongside this file.</div>
+        <button class="act" id="toDemo">What is in here</button>
+        <div class="fh">"How this works" opens the manual, if it is sitting alongside this file. "What is in here" is a short guided walk through what this app does that the algorithm underneath it does not -- written for somebody looking at the work rather than somebody learning the words. Nothing on that screen can touch your progress: it runs the real scheduler against a card of its own.</div>
       </div>
       <div class="field">
         <label>Start over</label>
@@ -2242,6 +2313,140 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="small" id="triageDoneSmall"></div>
       <button class="act primary" id="trCommit" style="max-width:230px;margin-top:20px">Create the deck</button>
       <button class="act" id="trDiscard" style="max-width:230px">Discard</button>
+    </div>
+  </section>
+  <!-- The exhibit screen. Built 2026.08.23, his call: aimed at somebody
+       evaluating the work, not at a first-time learner. Each panel states a
+       claim and then hands over a control that runs the real function, so a
+       reader can check the claim rather than take it. See the .dxWrap CSS
+       block for the sandboxing (there is barely any to do: `demoCard` is a
+       plain object that never enters S.cards, and save() is never called
+       from this screen). -->
+  <section id="scDemo" class="screen">
+    <div class="bar">
+      <button class="icon" id="demoBack" aria-label="Back">&#8249;</button>
+      <div class="title">What is in here</div>
+      <div class="icon" style="visibility:hidden">&middot;</div>
+    </div>
+    <div class="home">
+      <div class="dxWrap">
+        <p class="dxLede">This app schedules with FSRS-6 &mdash; a published algorithm, implemented
+          faithfully and never modified. Everything below is the layer around it. Each claim
+          comes with the control that tests it, running the same code the study screen runs.</p>
+
+        <div class="dxPanel">
+          <div class="dxEyebrow">Borrowed &middot; stated first</div>
+          <div class="dxClaim">The scheduling is not mine.</div>
+          <p class="dxBody">Twenty-one parameters, a learnable decay term, the standard power
+            forgetting curve. It is implemented here exactly as specified and has never been
+            altered &mdash; there is a tool in the repository whose only job is to lift this
+            file&rsquo;s scheduler out verbatim so it can be tested on its own.</p>
+          <p class="dxBody">Two more things worth conceding before anything is claimed:
+            <b>Anki has measured true retention natively since version 24.11</b>, and it has
+            logged per-review response time for far longer. Neither is new here.</p>
+          <div class="dxStage">
+            <div class="dxRow">
+              <button class="dxBtn" id="dxReveal">Show the answer</button>
+              <button class="dxBtn" id="dxA" disabled>Again</button>
+              <button class="dxBtn" id="dxH" disabled>Hard</button>
+              <button class="dxBtn" id="dxG" disabled>Good</button>
+              <button class="dxBtn" id="dxE" disabled>Easy</button>
+            </div>
+            <div class="dxOut" id="dxOut1"></div>
+          </div>
+          <p class="dxMuted">A real card, in review state, ninety-six days since its last look.
+            The intervals are produced by this file&rsquo;s own <span class="mono">schedule()</span>.</p>
+        </div>
+
+        <div class="dxPanel">
+          <div class="dxEyebrow">Mine &middot; and it only ever moves a grade down</div>
+          <div class="dxClaim">A slow Easy is written down as Good.</div>
+          <p class="dxBody">The app times the gap between seeing a word and revealing it. It never
+            shows a clock. One rule: take more than five seconds and an Easy is recorded as Good.
+            Nothing is ever recorded <i>higher</i> than what was pressed, and Again is never touched.</p>
+          <p class="dxBody">The reasoning is narrow on purpose. <b>&ldquo;That was effortless&rdquo;
+            is the one claim a clock can check and no button can.</b> Whether a pass was a
+            <i>struggle</i> is a different question, and that one only the person can answer &mdash;
+            which is what Hard is for.</p>
+          <div class="dxStage">
+            <div class="dxRow">
+              <button class="dxBtn" id="dxFast">Press Easy after 1 second</button>
+              <button class="dxBtn" id="dxSlow">Press Easy after 9 seconds</button>
+            </div>
+            <div class="dxOut" id="dxOut2"></div>
+          </div>
+        </div>
+
+        <div class="dxPanel">
+          <div class="dxEyebrow">Mine &middot; the part I would actually defend</div>
+          <div class="dxClaim">Four features were deleted on evidence, including two that had shipped that week.</div>
+          <p class="dxBody">For three weeks this app could not let a word go. Three settings, each
+            defensible alone, combined into a scheduler where a mature word rated Good came back
+            every ten minutes for ever &mdash; behind an escape hatch that, on a review card,
+            could never fire. The settings text promised the escape hatch worked. Measured
+            afterwards: <b>96% of real intervals had ended up set by an Easy press</b>, and more
+            than half of all ratings were the same words bouncing.</p>
+          <p class="dxBody">It survived code review, a passing test suite and three weeks of daily
+            use. It took under a minute to find once somebody asked a degenerate question:
+            <b>what happens if you press the same button twelve times?</b> That question is the
+            control below.</p>
+          <div class="dxStage">
+            <div class="dxRow"><button class="dxBtn" id="dxTwelve">Try to press Good twelve times</button></div>
+            <div class="dxGrid" style="margin-top:12px">
+              <div class="dxCol"><h4>Before 19 August</h4><div class="dxTape" id="dxTapeOld"></div></div>
+              <div class="dxCol"><h4>Now</h4><div class="dxTape" id="dxTapeNew"></div></div>
+            </div>
+            <div class="dxOut" id="dxOut3"></div>
+          </div>
+          <p class="dxMuted">The right-hand column is live &mdash; the same
+            <span class="mono">schedule()</span> the study screen calls, on the same card. The
+            left reproduces the behaviour of the two layers that were removed; the frozen
+            original engine is kept in the repository so the reproduction can be checked against
+            it rather than believed.</p>
+        </div>
+
+        <div class="dxPanel">
+          <div class="dxEyebrow">Mine &middot; the rule the whole app obeys</div>
+          <div class="dxClaim">The app counts. You decide.</div>
+          <p class="dxBody">A word that keeps beating you can be set aside, and it can earn its way
+            back &mdash; by being recalled on three <i>separate</i> study days, first look only,
+            one credit per day, and a bad day wipes the count. Crossing that line does not release
+            the word. <b>It makes the app offer.</b></p>
+          <p class="dxBody">That shape is everywhere: the two exits appear on a struggling card and
+            the app never takes either; nothing is ever released, rescheduled or graded on your
+            behalf. An offer that fires on a word you know is not ready is an offer you learn
+            to ignore.</p>
+          <div class="dxStage">
+            <div class="dxRow">
+              <button class="dxBtn" id="dxDay">Add a good day</button>
+              <button class="dxBtn" id="dxMiss">Miss one</button>
+            </div>
+            <div class="dxOut" id="dxOut4"></div>
+          </div>
+          <p class="dxMuted">Recovery is the half that is missing even from the best existing
+            implementation &mdash; the leading add-on can un-leech a card automatically, and the
+            usual pile is one-way.</p>
+        </div>
+
+        <div class="dxPanel">
+          <div class="dxEyebrow">The ledger, honestly</div>
+          <div class="dxClaim">What is borrowed, and what is not.</div>
+          <div style="margin-top:11px">
+            <div class="dxLedger"><span>Spacing, the forgetting curve, the four grades</span><span class="who">FSRS-6, unmodified</span></div>
+            <div class="dxLedger"><span>Measuring true retention</span><span class="who">Anki, since 24.11</span></div>
+            <div class="dxLedger"><span>Recording response time per review</span><span class="who">Anki, for years</span></div>
+            <div class="dxLedger"><span>A slow Easy demoted to Good</span><span class="who dxOwn">Built here</span></div>
+            <div class="dxLedger"><span>Two exits, offered, never taken</span><span class="who dxOwn">Built here</span></div>
+            <div class="dxLedger"><span>A word earning its way out of the pile</span><span class="who dxOwn">Built here</span></div>
+            <div class="dxLedger"><span>Deleting four features on measurement</span><span class="who dxOwn">Done here</span></div>
+          </div>
+          <p class="dxMuted">The last row is the one that matters. Three claims of novelty made
+            during that teardown turned out to be wrong, and the worst was not disproven but
+            unsubstantiated &mdash; two searches that found nothing, against an ecosystem of
+            some two thousand add-ons. <b>A null search result is not a finding.</b> Conceding
+            the first three rows is what makes the middle three worth reading.</p>
+        </div>
+      </div>
     </div>
   </section>
 </div>
@@ -3665,7 +3870,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.21.2';
+const BUILD='2026.08.23.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -4121,7 +4326,7 @@ const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.mat
 let almostThereWait=false;
 const show=(name,keepTiming)=>{
   const wasActive=$('scStudy').classList.contains('on')||almostThereWait;
-  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill','scExtract'].forEach(s=>$(s).classList.toggle('on',s===name));
+  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDrill','scExtract','scDemo'].forEach(s=>$(s).classList.toggle('on',s===name));
   // The quick-rate Z/0 correction is armed for exactly ONE keydown (see
   // quickRate()/quickCorrectToAgain()), and the keydown listener that clears
   // it only runs while scStudy is on -- so leaving the study screen used to
@@ -10603,7 +10808,8 @@ function renderPalGrid(){
     '</span>';
   const ratings=pal=>
     '<span class="palRatings" data-palette="'+pal+'" data-theme="dark">'+
-      '<span class="palDot again"></span><span class="palDot good"></span><span class="palDot easy"></span>'+
+      '<span class="palDot again"></span><span class="palDot hard"></span>'+
+      '<span class="palDot good"></span><span class="palDot easy"></span>'+
     '</span>';
   $('palGrid').innerHTML=PAL_KEYS.map(k=>
     '<button type="button" class="palCard'+(k===cur?' on':'')+'" data-pal="'+k+'" '+
@@ -11544,6 +11750,43 @@ $('fSyncCode').addEventListener('change',e=>{
   renderSet();
 });
 
+// Is the user typing into something right now? Only ever consulted by the
+// S binding below -- every key that predates it keeps its own per-branch
+// guard exactly as it was, so this can't change what any of them do.
+//
+// It has to exist because S is the first single-letter key bound OUTSIDE
+// the study screen. Home carries a <select> (heatmap accent) and an
+// <input type=date> (streak start) inside the calendar's gear panel, and
+// both answer letter keys on their own -- a select by type-ahead, a date
+// field by eating the character. Without this, tapping S while either had
+// focus would start a study session out from under a settings edit.
+// contentEditable is checked too: nothing in this app uses it today, but
+// it costs one property read and is exactly the kind of seam that goes
+// stale silently.
+function isTyping(){
+  const el=document.activeElement;
+  if(!el) return false;
+  if(el.isContentEditable) return true;
+  return ['INPUT','TEXTAREA','SELECT'].includes(el.tagName);
+}
+// S -- Anki's own binding for this exact action ("While studying, you can
+// return to the overview by pressing the S key", docs.ankiweb.net/studying),
+// adopted 2026.08.23 on the same reasoning that brought `-` and `@` over
+// from Anki: what he reads in Anki's manual or forums should transfer
+// without translation.
+//
+// Escape is the obvious key and is NOT available -- deliberately, not by
+// oversight. The Fullscreen API makes Escape the browser's guaranteed way
+// out of fullscreen so a page can't trap the user, and it can't reliably be
+// captured; it is also what dismisses this file's own confirm() dialogs,
+// where several call sites go out of their way to make an Escape dismissal
+// mean Cancel and never the destructive path (see the sync-conflict prompt).
+// Binding it would fight both of those at once.
+//
+// Modifier-free only: Cmd+S is Save Page and Ctrl+S is bound in plenty of
+// setups, and swallowing either would be a genuine surprise.
+const isExitKey=e=>(e.key==='s'||e.key==='S')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!isTyping();
+
 document.addEventListener('keydown',e=>{
   if($('scStudy').classList.contains('on')){
     // Armed only for the single keydown right after a quick-rate press (see
@@ -11649,10 +11892,29 @@ document.addEventListener('keydown',e=>{
     // with nothing at all on screen to say so. It now toasts on every path --
     // key and tap, the same words -- rather than only on the one where the
     // icon happens to be showing.
+    // Leaves by the same call the seven back-buttons share, not a bare
+    // show() -- that path also pauses the study clock, closes the sitting,
+    // and flushes a pending sync push while the page is still alive. A
+    // hand-rolled exit here would silently skip all three.
+    if(isExitKey(e)){ e.preventDefault(); flushPendingPush(); renderHome(); show('scHome'); return; }
     if(e.key==='-' && current!=null) notToday();
     if((e.key==='@'||e.key==='f'||e.key==='F') && current!=null){
       const cs=setAside(current,!cardState(current).susp); save(); renderLeech();
       toast(cs.susp?'Set aside':'Brought back',1400);
+    }
+  }
+  else if($('scHome').classList.contains('on')){
+    // The Home screen had NO keyboard bindings at all before this. In Anki
+    // the same key works both ways -- S starts studying from the overview
+    // and returns to it from a card -- so binding only the exit half would
+    // have made S mean "leave" and nothing else, which is the smaller idea.
+    // Guarded on the button's own disabled state rather than re-deriving
+    // "is anything due": renderHome() already decided that (startBtn is
+    // disabled and reads "Nothing due"), and reading it back keeps the key
+    // and the button incapable of disagreeing.
+    if(isExitKey(e) && !$('startBtn').disabled){
+      e.preventDefault();
+      undoStack=[]; next(); if(current) show('scStudy');
     }
   }
   else if($('scDrill').classList.contains('on') && drillView==='practice' &&
@@ -11697,6 +11959,141 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='2'||e.key===' '){ e.preventDefault(); triageDecide('keep'); }
   }
 });
+/* ======================= the exhibit screen ======================= */
+/* Everything here runs the REAL functions -- schedule(), EASY_SLOW_MS,
+   DRILL_RELEASE_DAYS -- against state that lives only in this block. There
+   is no sandbox to build because there is nothing to sandbox: `demoCard` is
+   a plain object that is never put into S.cards, `DEMO_ST` is a settings
+   literal passed to schedule() as its `st` argument (schedule() takes that
+   explicitly and reads nothing global for it), and save() is never called
+   from any handler below. The screen cannot write anywhere.
+
+   Why not a demo deck instead: a deck would drop a reader into a vocabulary
+   trainer with no argument attached, which is the wrong shape for the one
+   audience this is for. His call, 2026-08-23. */
+
+// A real Latin card in review state, ninety-six days since its last look --
+// the same shape cardState() produces, so schedule() cannot tell it apart.
+const DEMO_WORD={t:'gero gerere gessi gestum', g:'wear, carry on, conduct'};
+const DEMO_ST={retention:0.90, maxIvl:36500};
+let demoCard=null, demoShownAt=null, demoOkDays=0;
+
+function demoFreshCard(){
+  return {st:'R', step:null, s:132.7, d:4.2, last:Date.now()-96*DAY,
+          due:Date.now(), reps:14, lapses:0, streak:9, lastDay:null};
+}
+// The timing rule, read off the same constant rate() uses rather than a copy
+// of the number -- retune EASY_SLOW_MS and this panel retunes with it.
+const demoAdjust=(r,ms)=> (r===EASY && ms>EASY_SLOW_MS) ? GOOD : r;
+
+function renderDemoCard(){
+  const showing=demoShownAt!=null;
+  $('dxReveal').textContent = showing ? DEMO_WORD.g : 'Show the answer';
+  $('dxReveal').disabled = showing;
+  ['dxA','dxH','dxG','dxE'].forEach(id=>$(id).disabled=!showing);
+  if(!showing){
+    $('dxOut1').innerHTML='<span class="k">'+escHtml(DEMO_WORD.t)+
+      ' &mdash; in review, last seen 96 days ago. Reveal it to see what each button would do.</span>';
+    return;
+  }
+  const bits=[[AGAIN,'Again'],[HARD,'Hard'],[GOOD,'Good'],[EASY,'Easy']].map(([g,lbl])=>{
+    return lbl+' '+fmtIvl(schedule(demoCard,g,Date.now(),DEMO_ST).ivl);
+  });
+  $('dxOut1').innerHTML='<span class="k">'+escHtml(DEMO_WORD.t)+' &mdash; '+escHtml(DEMO_WORD.g)+
+    '</span><br>'+bits.join(' &middot; ');
+}
+function demoRate(g){
+  if(demoShownAt==null) return;
+  const r=schedule(demoCard,g,Date.now(),DEMO_ST);   // -> {card, ivl}
+  const NAME={1:'Again',2:'Hard',3:'Good',4:'Easy'};
+  demoCard=r.card; demoShownAt=null;
+  $('dxOut1').innerHTML=NAME[g]+' &mdash; back in <b>'+fmtIvl(r.ivl)+
+    '</b>.<br><span class="k">Stability is now '+r.card.s.toFixed(2)+' days, difficulty '+
+    r.card.d.toFixed(2)+' of 10. That arithmetic is FSRS-6, untouched.</span>';
+  $('dxReveal').textContent='Show the answer'; $('dxReveal').disabled=false;
+  ['dxA','dxH','dxG','dxE'].forEach(id=>$(id).disabled=true);
+}
+
+function demoTiming(ms){
+  const card=demoFreshCard();
+  const rec=demoAdjust(EASY,ms);
+  const r=schedule(card,rec,Date.now(),DEMO_ST);
+  const easy=schedule(card,EASY,Date.now(),DEMO_ST);
+  const demoted=rec!==EASY;
+  $('dxOut2').innerHTML=
+    'You pressed <b>Easy</b> after '+(ms/1000).toFixed(0)+' seconds. Recorded as <b>'+
+    (demoted?'Good':'Easy')+'</b> &mdash; back in '+fmtIvl(r.ivl)+'.'+
+    (demoted
+      ? '<br><span class="k">An honest Easy would have sent it '+fmtIvl(easy.ivl)+
+        ' out. The five-second line is the whole rule, and it only ever moves a grade down.</span>'
+      : '<br><span class="k">Under the five-second line, so it stands exactly as pressed.</span>');
+}
+
+/* Twelve presses of Good -- the degenerate question that found the defect.
+   The right column is live. The left reproduces what the two removed layers
+   did to a review card: `requireEasy` replaced Good and Hard with a flat ten
+   minutes, and `drillCap`'s escape counter only ever incremented on a card in
+   learning state, so on a review card nothing could ever release it. The
+   frozen pre-strip engine is kept at tools/sched-extract-2026.08.18.2.js, so
+   this reproduction is checkable rather than merely asserted. */
+function demoTwelve(){
+  // The honest version of the degenerate test, and it took a wrong first
+  // attempt to find: twelve presses in ONE sitting against the live engine
+  // print the same interval twelve times, because a card rated Good goes ten
+  // months out and is never offered again that day. That is not a flat
+  // result -- it is the whole point. The old engine let a person press twelve
+  // times BECAUSE the word kept coming back; the current one does not give
+  // them a second press to make. So the right column shows one real interval
+  // and then nothing, which is what actually happens.
+  const first=schedule(demoFreshCard(),GOOD,Date.now(),DEMO_ST);
+  const oldTape=[]; for(let i=0;i<12;i++) oldTape.push('10m');
+  $('dxTapeOld').innerHTML=oldTape.map(v=>'<span class="flat">'+v+'</span>').join('<br>');
+  $('dxTapeNew').innerHTML='<span class="grow">'+fmtIvl(first.ivl)+'</span>'+
+    '<br><span class="gone">&mdash; no second press &mdash;</span>'+
+    '<br><span class="gone">the word is not due</span>'.repeat(1);
+  $('dxOut3').innerHTML='On the left the word comes back every ten minutes, so twelve presses '+
+    'is something a person can actually do &mdash; and more than half of all ratings, measured '+
+    'afterwards, were exactly this. On the right there is no second press to make: one Good '+
+    'sends it <b>'+fmtIvl(first.ivl)+'</b> out and it is gone for the day.<br>'+
+    '<span class="k">Nothing on the left is a fault in the algorithm. It is two layers sitting '+
+    'on top of it, each overriding what it had just computed. The rule that came out of it: '+
+    'when a feature’s justification is &ldquo;it fixes what X does&rdquo;, the change '+
+    'belongs in X &mdash; prefer deleting a system to adding one that corrects it.</span>';
+}
+
+function renderDemoRelease(){
+  const ready=demoOkDays>=DRILL_RELEASE_DAYS;
+  $('dxOut4').innerHTML=
+    'Good days banked: <b>'+demoOkDays+' of '+DRILL_RELEASE_DAYS+'</b>.<br>'+
+    (ready
+      ? 'The app now says: <b>ready to come back &mdash; bring it back?</b> '+
+        '<span class="k">And waits. It will keep waiting.</span>'
+      : '<span class="k">Still in the pile. A miss sets this back to zero &mdash; three good '+
+        'days scattered among twenty bad ones is not the same word.</span>');
+}
+
+tapZone($('toDemo'),()=>{
+  demoCard=demoFreshCard(); demoShownAt=null; demoOkDays=0;
+  renderDemoCard();
+  $('dxOut2').innerHTML='<span class="k">Press either one.</span>';
+  $('dxTapeOld').innerHTML=''; $('dxTapeNew').innerHTML='';
+  $('dxOut3').innerHTML='<span class="k">Twelve presses of the same button, on a word that is '+
+    'already settled.</span>';
+  renderDemoRelease();
+  show('scDemo');
+});
+tapZone($('demoBack'),()=>{ renderSet(); show('scSet'); });
+tapZone($('dxReveal'),()=>{ demoShownAt=Date.now(); renderDemoCard(); });
+tapZone($('dxA'),()=>demoRate(AGAIN));
+tapZone($('dxH'),()=>demoRate(HARD));
+tapZone($('dxG'),()=>demoRate(GOOD));
+tapZone($('dxE'),()=>demoRate(EASY));
+tapZone($('dxFast'),()=>demoTiming(1000));
+tapZone($('dxSlow'),()=>demoTiming(9000));
+tapZone($('dxTwelve'),demoTwelve);
+tapZone($('dxDay'),()=>{ demoOkDays=Math.min(demoOkDays+1,DRILL_RELEASE_DAYS); renderDemoRelease(); });
+tapZone($('dxMiss'),()=>{ demoOkDays=0; renderDemoRelease(); });
+
 document.addEventListener('gesturestart',e=>e.preventDefault());
 // A rating in the last 6s can leave save()'s debounced gist push still scheduled;
 // backgrounding or closing the tab before it fires would otherwise drop that push

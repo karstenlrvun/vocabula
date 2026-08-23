@@ -427,7 +427,8 @@
    would glow white -- they get an explicit fill-coloured box-shadow below
    instead. */
 [data-palette="neon"] .c-new, [data-palette="neon"] .c-lrn, [data-palette="neon"] .c-due,
-[data-palette="neon"] #bAgain .lbl, [data-palette="neon"] #bGood .lbl, [data-palette="neon"] #bEasy .lbl,
+[data-palette="neon"] #bAgain .lbl, [data-palette="neon"] #bHard .lbl,
+[data-palette="neon"] #bGood .lbl, [data-palette="neon"] #bEasy .lbl,
 [data-palette="neon"] .chip.on, [data-palette="neon"] .stepper button,
 [data-palette="neon"] .drillFeedback.right, [data-palette="neon"] .drillFeedback.wrong,
 [data-palette="neon"] .drillInput.right, [data-palette="neon"] .drillInput.wrong,
@@ -455,6 +456,17 @@
 }
 [data-palette="neon"] #bAgain{box-shadow:0 0 3px color-mix(in srgb, var(--again) var(--glow-alpha-strong), transparent),
   0 0 16px color-mix(in srgb, var(--again) var(--glow-alpha-soft), transparent)}
+/* Hard glows in --warn-ink, not --amber: every other button here glows in
+   the exact var its own .lbl is coloured with (#bAgain/.lbl -> --again, and
+   so on), and #bHard .lbl is --warn-ink. Hard reuses the --warn-* family
+   rather than owning a --hard one -- see #bHard's own rule in deck.html.
+   Missing until 2026.08.23: this list and the text tier above were both
+   written on 2026-08-16, when the rating row had three buttons; Hard became
+   a permanent fourth on 2026-08-19 (decision 3) and neither selector list
+   was revisited. Reported live -- the Hard button was the only one of four
+   not glowing in Neon. */
+[data-palette="neon"] #bHard{box-shadow:0 0 3px color-mix(in srgb, var(--warn-ink) var(--glow-alpha-strong), transparent),
+  0 0 16px color-mix(in srgb, var(--warn-ink) var(--glow-alpha-soft), transparent)}
 [data-palette="neon"] #bGood{box-shadow:0 0 3px color-mix(in srgb, var(--good) var(--glow-alpha-strong), transparent),
   0 0 16px color-mix(in srgb, var(--good) var(--glow-alpha-soft), transparent)}
 [data-palette="neon"] #bEasy{box-shadow:0 0 3px color-mix(in srgb, var(--easy) var(--glow-alpha-strong), transparent),
