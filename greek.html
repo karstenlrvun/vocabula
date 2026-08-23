@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- connect-src names the deployed sync Worker exactly, matching SYNC_ENDPOINT in js/sync.js. It was a wildcard over the whole workers.dev space while the subdomain was still unknown; it is known now, so this is the tighter form. Change both together if the Worker is ever redeployed under another name. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; connect-src https://cotidie-sync.karsten-vun.workers.dev; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cotidie">
+<meta name="theme-color" content="#fbf7ec">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>Cotidie — Greek</title>
+<style>
+:root{
+  --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
+  --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6;
+  --good:#5a6b32; --good-bg:#e6e5d4; --good-br:#c7cab0;
+  --bad:#8c2f26; --bad-bg:#f3ded9; --bad-br:#dcb9ac;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1a160f; --panel:#241f16; --ink:#ece3cf; --muted:#a89a80; --faint:#7a6f5c;
+    --line:#3a3222; --coral:#d4795e; --accent-soft:#3f2a1f; --raise:#2c2519;
+    --good:#a9bd72; --good-bg:#393b25; --good-br:#565c39;
+    --bad:#d4795e; --bad-bg:#3f2a1f; --bad-br:#5c3a2c;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg)}
+body{
+  color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
+  padding:calc(20px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom));
+  max-width:30rem; margin:0 auto;
+}
+h1{font-family:var(--serif);font-weight:400;font-size:1.7rem;margin:0 0 2px}
+h2{font-family:var(--serif);font-weight:400;font-size:1.3rem;margin:0 0 2px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 22px}
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+button.back{background:none;border:none;color:var(--muted);font-size:15px;padding:6px 0;cursor:pointer;font-family:var(--sans)}
+button.back:active{color:var(--coral)}
+
+a.card,button.card{display:block;width:100%;text-align:left;text-decoration:none;color:inherit;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 18px;
+  margin-bottom:10px;font-family:var(--sans);cursor:pointer}
+a.card:active,button.card:active{border-color:var(--coral);background:var(--accent-soft)}
+.card .t{font-family:var(--serif);font-size:1.15rem;margin-bottom:2px}
+.card .d{color:var(--muted);font-size:13px}
+.card.study{border-color:var(--good-br);background:var(--good-bg)}
+.card.study .t{color:var(--good)}
+
+.sect{margin-top:26px}
+.sect h3{font-size:12px;font-weight:500;color:var(--faint);text-transform:uppercase;
+  letter-spacing:.07em;margin:0 0 10px}
+
+.tabs{display:flex;gap:6px;margin:16px 0}
+.tabs button{flex:1;padding:9px 0;border:1px solid var(--line);background:var(--panel);
+  color:var(--muted);border-radius:10px;font-family:var(--sans);font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--coral);border-color:var(--coral);color:var(--raise)}
+
+table.para{width:100%;border-collapse:collapse;margin:14px 0 6px;font-family:var(--serif);font-size:1.02rem}
+table.para th{text-align:left;color:var(--faint);font-family:var(--sans);font-size:11.5px;
+  text-transform:uppercase;letter-spacing:.06em;font-weight:500;padding:0 8px 8px;border-bottom:1px solid var(--line)}
+table.para td{padding:7px 8px;border-bottom:1px solid var(--line)}
+table.para td.case{color:var(--muted);font-family:var(--sans);font-size:12.5px;white-space:nowrap}
+.vtable{margin:18px 0}
+.vtable h4{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px}
+
+.wordlist{margin-top:8px}
+.wordrow{display:flex;justify-content:space-between;align-items:center;padding:11px 4px;
+  border-bottom:1px solid var(--line);cursor:pointer}
+.wordrow:active{background:var(--accent-soft)}
+.wordrow .lemma{font-family:var(--serif);font-size:1.05rem}
+.wordrow .gloss{color:var(--muted);font-size:13px}
+.wordrow .gender{color:var(--faint);font-size:11px;margin-left:6px}
+
+.prompt-box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;margin:18px 0}
+.prompt-head{color:var(--muted);font-size:13px;margin-bottom:4px}
+.prompt-lemma{font-family:var(--serif);font-size:1.6rem;margin-bottom:2px}
+.prompt-cell{color:var(--coral);font-size:14px;font-weight:600;letter-spacing:.02em}
+.answer-row{display:flex;gap:8px;margin-top:16px}
+input.ans{flex:1;font-family:var(--serif);font-size:1.15rem;padding:11px 13px;border-radius:10px;
+  border:1px solid var(--line);background:var(--raise);color:var(--ink)}
+input.ans:focus{outline:none;border-color:var(--coral)}
+button.go{background:var(--coral);color:var(--raise);border:none;border-radius:10px;padding:0 18px;font-size:15px;cursor:pointer}
+button.go:active{opacity:.85}
+
+.feedback{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14.5px}
+.feedback.ok{background:var(--good-bg);border:1px solid var(--good-br);color:var(--good)}
+.feedback.no{background:var(--bad-bg);border:1px solid var(--bad-br);color:var(--bad)}
+.feedback .answer{font-family:var(--serif);font-size:1.05rem;margin-top:2px;color:var(--ink)}
+
+.quietlink{background:none;border:none;color:var(--faint);font-size:13px;cursor:pointer;
+  padding:8px 0;font-family:var(--sans);text-decoration:underline}
+.progress{color:var(--faint);font-size:12.5px;margin-bottom:2px}
+.progress-bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:16px}
+.progress-fill{height:100%;background:var(--coral)}
+
+.empty{color:var(--muted);text-align:center;padding:40px 10px;font-size:15px}
+.note{color:var(--faint);font-size:12.5px;margin-top:10px;line-height:1.5}
+.summary-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+.summary-row .k{color:var(--muted)}
+
+.togglerow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.togglebtn{background:var(--accent-soft);border:1px solid var(--line);color:var(--muted);
+  border-radius:8px;padding:6px 11px;font-size:12.5px;font-family:var(--sans);cursor:pointer}
+.togglebtn.active{background:var(--coral);border-color:var(--coral);color:var(--raise)}
+
+/* ---- Settings form controls (2026-08-21, rollover + new-cell allowance) ---- */
+.faintcell{color:var(--faint)}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.field label{color:var(--muted);font-size:14px}
+.field select,.field input.num{font-family:var(--sans);font-size:15px;padding:9px 11px;border-radius:10px;
+  border:1px solid var(--line);background:var(--raise);color:var(--ink);min-width:8.5rem}
+.field select:focus,.field input.num:focus{outline:none;border-color:var(--coral)}
+
+/* ---- Stats screen + Study-days calendar (ported from vocabula, 2026-08-09) ---- */
+:root{ --amber:#a67c1e; --amber-bg:#efe6cf; }
+@media (prefers-color-scheme: dark){ :root{ --amber:#d9b04c; --amber-bg:#3a3018; } }
+
+.s-unseen{background:var(--line)}
+.s-learning{background:var(--coral)}
+.s-young{background:var(--amber)}
+.s-mature{background:var(--good)}
+.cellDot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle}
+
+.stackbar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--line);margin-top:4px}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.legend .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+.wpart{margin:16px 0}
+.wpart h3{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;
+  font-weight:600;color:var(--muted);margin:0 0 8px;text-transform:none;letter-spacing:0}
+.wpart h3 b{color:var(--faint);font-weight:500;font-size:12px}
+.wgrid{display:flex;flex-wrap:wrap;gap:3px}
+.wbox{width:11px;height:11px;border-radius:2px}
+
+.strip{display:flex;gap:3px;margin-top:6px}
+.dot{flex:1;aspect-ratio:1;border-radius:2px;background:var(--line);max-width:9px}
+.dot.did{background:var(--coral)}
+.dot.today{outline:1.5px solid var(--ink);outline-offset:1px}
+.streakNote{margin-top:8px}
+
+.fold{margin-top:14px}
+.fold summary{cursor:pointer;color:var(--coral);font-size:13px;list-style:none}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::before{content:'\25B8\0020';display:inline-block;transition:transform .15s}
+.fold[open] summary::before{transform:rotate(90deg)}
+
+.calHead{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.calNav{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 10px}
+.calTitle{font-family:var(--serif);font-size:1rem}
+.calDow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--faint);
+  font-size:10.5px;margin-top:10px}
+.calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:4px}
+.calCell{position:relative;aspect-ratio:1;border-radius:6px;background:var(--panel);
+  border:1px solid var(--line);font-size:10px;padding:3px;overflow:hidden}
+.calCell.out{opacity:.35;border-color:transparent;background:none}
+.calCell.did{background:var(--accent-soft);border-color:var(--coral)}
+.calCell.today{border-color:var(--ink);border-width:1.5px}
+.calNum{display:block;color:var(--faint);font-size:9.5px}
+.calCell.did .calNum{color:var(--muted)}
+.calNew,.calWords,.calTot{display:block;font-size:9px;line-height:1.3}
+.calNew{color:var(--good)}
+.calWords{color:var(--coral)}
+.calTot{color:var(--faint)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="data/greek-paradigms.js?v=202608234"></script>
+<script src="data/greek-vocab.js?v=202608234"></script>
+<script src="js/engine.js?v=202608234"></script>
+<script src="js/store.js?v=202608234"></script>
+<script src="js/fsrs.js?v=202608234"></script>
+<script src="js/stats.js?v=202608234"></script>
+<script src="js/sync.js?v=202608234"></script>
+<script src="js/greek.js?v=202608234"></script>
+<script src="js/greek-input.js?v=202608234"></script>
+<script>
+/* ======================================================================
+   Cotidie — Greek engine UI. Same three-mode shape as latin.html (Table
+   -> Recite -> Drill), adapted for what's actually different about Greek:
+     - grading (js/greek.js): breathing always required, accent
+       toggleable (default off, per the real OCR A-level spec -- see
+       data/greek-paradigms.js's header), movable-nu handling.
+     - typing (js/greek-input.js): Karsten's own Hoplite KB scheme
+       reimplemented in-browser, not the OS Greek Polytonic layout --
+       toggleable per input, in case he'd rather paste or use the OS
+       layout for a given session.
+     - every class here is `literal: true` and has exactly one vocab word
+       (see greek-paradigms.js/greek-vocab.js for why) -- so the
+       Table/Recite word list skips the separate "(example)" row
+       latin.html shows, since it would just duplicate the one real entry.
+   ====================================================================== */
+
+// `cmp_` classes are nouns only in the structural sense the engine cares about
+// (their cell is not gender-keyed). They are p.329's irregular comparison and
+// belong in their own group, not among the declensions.
+const NOUN_CLASSES = classesOfKind(GREEK_PARADIGMS, 'noun').filter(k => !k.startsWith('cmp_'));
+const COMPARISON_CLASSES = classesOfKind(GREEK_PARADIGMS, 'noun').filter(k => k.startsWith('cmp_'));
+// Gender-keyed classes: the article now, adjectives, pronouns and the whole
+// participle system later. They get their own home-screen group because they
+// are neither nouns nor verbs and reciting them has its own shape.
+// Participles are gender-keyed like adjectives, but there are enough of them
+// to drown the adjective list, and they are about a quarter of the appendix on
+// their own -- so they get their own group. Same reasoning the buildout plan
+// gives for putting each participle in its own class rather than under λύω.
+const ADJ_CLASSES = classesOfKind(GREEK_PARADIGMS, 'adj').filter(k => !k.startsWith('part_'));
+const PARTICIPLE_CLASSES = classesOfKind(GREEK_PARADIGMS, 'adj').filter(k => k.startsWith('part_'));
+const THEMATIC_CLASSES = classesOfKind(GREEK_PARADIGMS, 'verb').filter(k => !k.startsWith('athematic') && !k.startsWith('athaor_'));
+const ATHEMATIC_CLASSES = classesOfKind(GREEK_PARADIGMS, 'verb').filter(k => k.startsWith('athematic'));
+// βαίνω, γιγνώσκω and ἁλίσκομαι are thematic verbs with an ATHEMATIC AORIST, and
+// that aorist is the only thing the appendix prints for them or the deck drills.
+// They are neither -ω verbs nor -μι verbs, and the appendix gives each its own
+// heading, so they get their own group rather than being filed under a
+// conjugation neither of them belongs to.
+const ATHEMATIC_AORISTS = classesOfKind(GREEK_PARADIGMS, 'verb').filter(k => k.startsWith('athaor_'));
+
+const STORE_KEY = STORE_KEYS.greek;   // defined once in js/sync.js
+const DECK_ID = 'greek';   // folded into the sync-code hash so this deck gets its own KV slot -- see js/sync.js
+// Starts empty and is replaced by boot() below once IndexedDB has answered.
+// Nothing renders before that, so no screen is ever drawn from this placeholder.
+let store = defaultStore();
+// Extra Greek-only settings, layered onto the shared fsrs.js store shape
+// rather than touched inside fsrs.js itself (which stays language-
+// agnostic). Defaults match the real OCR spec finding: breathings are
+// always required (not a setting), accents are not expected to be
+// written so default OFF; Hoplite input defaults ON since that's
+// Karsten's own daily tool.
+//
+// Applied on every store arrival, not once at load: the store is also
+// replaced wholesale by a sync adopt, so a one-shot at boot would leave a
+// pulled store missing whichever of these it had never heard of.
+function applyDeckDefaults(){
+  if (store.settings.requireAccents === undefined) store.settings.requireAccents = false;
+  if (store.settings.hopliteInput === undefined) store.settings.hopliteInput = true;
+  commitRollover(store.settings, Date.now());
+}
+
+// A rollover change scheduled on a previous visit matures at a boundary, not
+// at a moment anything is running -- so it is folded in on load rather than
+// by a timer. No-op until that boundary has passed.
+commitRollover(store.settings, Date.now());
+
+let view = { screen:'home' };
+
+// Study-days calendar's own view state (HANDOFF.md §10c) -- not persisted,
+// resets to the current month each fresh load, same as vocabula's calY/calM.
+let calY=null, calM=null, calOpen=false;
+
+const app = document.getElementById('app');
+let hopliteCtrl = null; // controller for whichever input is currently on screen
+
+function render(){
+  hopliteCtrl = null;
+  if (view.screen==='home') app.innerHTML = renderHome();
+  else if (view.screen==='system') app.innerHTML = renderSystem(view.cls, view.tab||'table');
+  else if (view.screen==='recite') renderRecite();
+  else if (view.screen==='drill') renderDrill();
+  else if (view.screen==='stats') app.innerHTML = renderStats();
+  else if (view.screen==='settings'){ app.innerHTML = renderSettings(); wireSettings(); }
+  else if (view.screen==='lookup'){ app.innerHTML = renderLookup(); wireLookup(); }
+}
+
+function go(next){ view = next; render(); window.scrollTo(0,0); }
+
+function gradeOpts(){ return { accents: store.settings.requireAccents }; }
+
+// ---------------------------------------------------------------- HOME ----
+// capNew, not the raw due list: if a new-cell allowance is set, the number
+// on the home screen has to be the number the drill will really ask for.
+function dueCount(){
+  const now = Date.now();
+  return capNew(store, dueCards(store, GREEK_VOCAB, GREEK_PARADIGMS, now), now).length;
+}
+
+function renderHome(){
+  const n = dueCount();
+  const studyLine = n>0 ? n+' due now' : 'nothing due — practice anytime below';
+  let h = `
+    <h1>Cotidie</h1>
+    <p class="sub">Greek — grammar production practice</p>
+    <button class="card study" data-action="start-drill">
+      <div class="t">Review</div>
+      <div class="d">${studyLine}</div>
+    </button>
+    <button class="card" data-action="open-lookup">
+      <div class="t">Look up a form</div>
+      <div class="d">what is this word?</div>
+    </button>
+    <button class="card" data-action="open-stats">
+      <div class="t">Stats</div>
+      <div class="d">Where you stand, by system</div>
+    </button>
+    <button class="card" data-action="open-settings">
+      <div class="t">Settings</div>
+      <div class="d">Cloud sync</div>
+    </button>
+    <div class="sect">
+      <h3>Study days</h3>
+      <div class="strip">${stripHtml()}</div>
+      <p class="note streakNote">${streakNoteText()}</p>
+      <details class="fold"${calOpen?' open':''}>
+        <summary data-action="toggle-cal">Full calendar</summary>
+        ${calOpen?calendarHtml():''}
+      </details>
+    </div>
+    <div class="sect"><h3>Nouns</h3>`;
+  NOUN_CLASSES.forEach(k=>{
+    const c = GREEK_PARADIGMS[k];
+    h += `<button class="card" data-action="open-system" data-cls="${k}">
+      <div class="t">${c.label}</div><div class="d">${c.subtitle}</div></button>`;
+  });
+  if (ADJ_CLASSES.length){
+    h += `</div><div class="sect"><h3>Article &amp; adjectivals</h3>`;
+    ADJ_CLASSES.forEach(k=>{
+      const c = GREEK_PARADIGMS[k];
+      h += `<button class="card" data-action="open-system" data-cls="${k}">
+        <div class="t">${c.label}</div><div class="d">${c.subtitle}</div></button>`;
+    });
+  }
+  h += `</div><div class="sect"><h3>Thematic (-ω) verbs</h3>`;
+  THEMATIC_CLASSES.forEach(k=>{
+    const c = GREEK_PARADIGMS[k];
+    h += `<button class="card" data-action="open-system" data-cls="${k}">
+      <div class="t">${c.label}</div><div class="d">${c.subtitle}</div></button>`;
+  });
+  h += `</div><div class="sect"><h3>Athematic (-μι) verbs</h3>`;
+  ATHEMATIC_CLASSES.forEach(k=>{
+    const c = GREEK_PARADIGMS[k];
+    h += `<button class="card" data-action="open-system" data-cls="${k}">
+      <div class="t">${c.label}</div><div class="d">${c.subtitle}</div></button>`;
+  });
+  if (ATHEMATIC_AORISTS.length){
+    h += `</div><div class="sect"><h3>Athematic aorists</h3>`;
+    ATHEMATIC_AORISTS.forEach(k=>{
+      const c = GREEK_PARADIGMS[k];
+      h += `<button class="card" data-action="open-system" data-cls="${k}">
+        <div class="t">${c.label}</div><div class="d">${c.subtitle}</div></button>`;
+    });
+  }
+  if (COMPARISON_CLASSES.length){
+    h += `</div><div class="sect"><h3>Irregular comparison</h3>`;
+    COMPARISON_CLASSES.forEach(k=>{
+      const c = GREEK_PARADIGMS[k];
+      h += `<button class="card" data-action="open-system" data-cls="${k}">
+        <div class="t">${c.label}</div><div class="d">${c.subtitle}</div></button>`;
+    });
+  }
+  if (PARTICIPLE_CLASSES.length){
+    h += `</div><div class="sect"><h3>Participles</h3>`;
+    PARTICIPLE_CLASSES.forEach(k=>{
+      const c = GREEK_PARADIGMS[k];
+      h += `<button class="card" data-action="open-system" data-cls="${k}">
+        <div class="t">${c.label}</div><div class="d">${c.subtitle}</div></button>`;
+    });
+  }
+  h += `</div>
+    <p class="note">Table always open; Drill pulled from whatever's actually due. Breathings always graded; accents ${store.settings.requireAccents?'required':'optional'} (change this from any Recite/Drill screen). See Cotidie's HANDOFF.md for the reasoning — nothing here is timed or gamified.</p>`;
+  return h;
+}
+
+// ----------------------------------------------- STUDY DAYS / STATS (§10c) ----
+// All derived on demand from store.log via js/stats.js's computeDayIndex() --
+// no persisted day-aggregate, see that file's own header comment for why.
+function stripHtml(){
+  const idx = computeDayIndex(store.log, store.settings.rollover);
+  const d = dayKey(Date.now(), store.settings.rollover);
+  let h = '';
+  for (let i=34; i>=0; i--){
+    const did = idx[d-i] && idx[d-i].n;
+    h += `<div class="dot${did?' did':''}${i===0?' today':''}"></div>`;
+  }
+  return h;
+}
+function streakNoteText(){
+  const idx = computeDayIndex(store.log, store.settings.rollover);
+  const streak = currentStreak(idx, dayKey(Date.now(), store.settings.rollover));
+  return streak ? (streak+' day'+(streak===1?'':'s')+' running') : 'No streak yet — the first day starts it.';
+}
+function calendarHtml(){
+  if (calY==null){ const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); }
+  const idx = computeDayIndex(store.log, store.settings.rollover);
+  const d0 = dayKey(Date.now(), store.settings.rollover);
+  const sun = new Date(); sun.setDate(sun.getDate()-sun.getDay());
+  const dowHtml = [0,1,2,3,4,5,6].map(i =>
+    `<div>${new Date(sun.getFullYear(),sun.getMonth(),sun.getDate()+i).toLocaleDateString(undefined,{weekday:'narrow'})}</div>`
+  ).join('');
+  let gridHtml = '';
+  monthMatrix(calY,calM).forEach(week => week.forEach(cell => {
+    if (!cell.inMonth){ gridHtml += `<div class="calCell out">${cell.d}</div>`; return; }
+    const dk = dayKeyForDate(cell.y, cell.m, cell.d, store.settings.rollover);
+    const st = dayStatsFor(idx, dk);
+    const cls = ['calCell'];
+    if (st.studied) cls.push('did');
+    if (dk===d0) cls.push('today');
+    const nums = st.studied
+      ? `<span class="calNew">${st.intro}</span><span class="calWords">${st.words}</span><span class="calTot">${st.ratings}</span>`
+      : '';
+    gridHtml += `<div class="${cls.join(' ')}"><span class="calNum">${cell.d}</span>${nums}</div>`;
+  }));
+  return `
+    <div class="calHead">
+      <button class="calNav" data-action="cal-prev" aria-label="Previous month">&lsaquo;</button>
+      <div class="calTitle">${new Date(calY,calM,1).toLocaleDateString(undefined,{month:'long',year:'numeric'})}</div>
+      <button class="calNav" data-action="cal-next" aria-label="Next month">&rsaquo;</button>
+    </div>
+    <div class="calDow">${dowHtml}</div>
+    <div class="calGrid">${gridHtml}</div>`;
+}
+function shiftCalMonth(delta){
+  if (calY==null){ const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); }
+  calM += delta;
+  if (calM<0){ calM=11; calY--; } else if (calM>11){ calM=0; calY++; }
+}
+
+function renderStats(){
+  const { totals, bySystem } = wholeDeckStats(store, GREEK_VOCAB, GREEK_PARADIGMS);
+  const total = STATUS_ORDER.reduce((n,k) => n+totals[k], 0);
+  let barHtml = '';
+  STATUS_ORDER.forEach(k => {
+    const n = totals[k]; if (!n) return;
+    barHtml += `<div class="s-${k}" style="width:${100*n/total}%" title="${STATUS_LABEL[k]}: ${n}"></div>`;
+  });
+  let legendHtml = '';
+  STATUS_ORDER.forEach(k => {
+    const n = totals[k]; if (!n) return;
+    legendHtml += `<span><i class="sw s-${k}"></i>${STATUS_LABEL[k]} — ${n} (${Math.round(100*n/total)}%)</span>`;
+  });
+  const allClasses = [...NOUN_CLASSES, ...ADJ_CLASSES, ...THEMATIC_CLASSES, ...ATHEMATIC_CLASSES, ...PARTICIPLE_CLASSES, ...COMPARISON_CLASSES, ...ATHEMATIC_AORISTS];
+  let gridHtml = '';
+  allClasses.forEach(k => {
+    const sys = bySystem[k]; if (!sys) return;
+    const met = sys.cells.filter(s => s!=='unseen').length;
+    gridHtml += `<div class="wpart"><h3><span>${escHtml(GREEK_PARADIGMS[k].label)}</span><b>${met} / ${sys.cells.length}</b></h3><div class="wgrid">`;
+    sys.cells.forEach(s => { gridHtml += `<div class="wbox s-${s}"></div>`; });
+    gridHtml += `</div></div>`;
+  });
+  return `
+    <div class="topbar"><button class="back" data-action="home">&larr; Cotidie</button></div>
+    <h2>Stats</h2>
+    <p class="sub">Every cell across every system — not just what's due.</p>
+    <div class="sect" style="margin-top:8px">
+      <h3>Where you stand</h3>
+      <div class="stackbar">${barHtml}</div>
+      <div class="legend">${legendHtml}</div>
+    </div>
+    <div class="sect"><h3>By system</h3>${gridHtml || '<p class="empty">No systems to show.</p>'}</div>`;
+}
+
+// ------------------------------------------------------------- SYNC (§10e) ----
+// Credentials live only in js/sync.js's shared key, never duplicated into
+// this deck's own store.settings -- see that file's header comment.
+//
+// Reconciliation is a MERGE as of 2026-08-23, not a choice. What was here
+// before had a silent data-loss path, and it is worth writing down because
+// the shape of it recurs: the three-way split needed a "base" -- the log
+// length both sides last agreed on -- and on a fresh page load there was no
+// such number, so it fell back to `store.log.length`. With base equal to the
+// local length, local can never read as having moved. A genuine fork on a
+// freshly-loaded tab therefore came out as 'take-remote', and this device's
+// reviews were replaced without a prompt. The fallback was the bug, and no
+// amount of care at the call sites would have found it, because every branch
+// was individually correct.
+//
+// There is now no base and no branch: fetch, merge, push back if this side
+// had anything the other lacked. mergeStores() is symmetric and idempotent
+// (tests, section 37), so doing it more often than strictly necessary costs
+// a few milliseconds and can never cost data.
+let saveTimer = null;
+let syncedLogLen = null;   // last log length this device pushed or merged, this session
+let lastRemoteAt = null;   // server-stamped time of the newest write this device has taken in
+let lastSyncNote = null;   // {when, note} -- shown on the Settings screen
+let clockWarned = false;
+
+// Replaces the old bare saveStore(STORE_KEY, store) call sites: saves
+// locally as before, and additionally schedules a debounced push (6s after
+// the last save, same interval as vocabula's own) if a sync code is set.
+function save(){
+  persistStore(STORE_KEY, store);
+  const code = loadSyncCode().syncCode;
+  if (code){
+    clearTimeout(saveTimer);
+    // guardedAutoPush, not doPush: an unattended push looks at the server
+    // first, because pushStore() PUTs whatever is in memory unconditionally
+    // and two devices inside each other's six-second window would otherwise
+    // overwrite one another with no one present to notice.
+    saveTimer = setTimeout(() => { saveTimer = null; guardedAutoPush(); }, 6000);
+  }
+}
+// Deliberately NOT guarded: this fires as the app is being closed or
+// backgrounded, its PUT is built to land via keepalive, and the extra GET a
+// guard would add needs live JS to come back. Guarding it would sometimes
+// cost the catch-up push entirely -- a commoner loss than the race it closes.
+function flushPendingPush(){
+  if (saveTimer){ clearTimeout(saveTimer); saveTimer = null; doPush(); }
+}
+
+// A clock that is badly wrong reorders a merged log silently, because `ts` is
+// what sorts it. Said once a session, and never as a refusal: refusing to
+// sync would only stop the backup.
+function noteClock(){
+  if (clockWarned) return;
+  const msg = clockSkewMessage(syncClockSkew());
+  if (msg){ clockWarned = true; lastSyncNote = { when: Date.now(), note: msg }; }
+}
+
+// `quiet` suppresses the success note only. A FAILURE is always recorded:
+// a push that failed and a push that never happened used to render
+// identically on Settings, which is exactly how a real failure goes unnoticed
+// until the other device comes up empty.
+async function doPush(quiet){
+  const code = loadSyncCode().syncCode;
+  const res = await pushStore(store, code, DECK_ID);
+  if (res.ok){
+    syncedLogLen = store.log.length;
+    if (Number.isFinite(res.now)) lastRemoteAt = res.now;
+    if (!quiet) lastSyncNote = { when: Date.now(), note: 'Pushed' + (res.kept ? ' — the other device’s last copy was kept as a spare' : '') };
+  } else {
+    lastSyncNote = { when: Date.now(), note: 'Push failed ('+res.error+')' };
+  }
+  noteClock();
+  if (view.screen==='settings') render();
+  return res;
+}
+
+// Fold the server's copy into this one, keep the result, and push it back if
+// this side held anything the other did not. storeReplaced() is not optional:
+// the merge builds a NEW log array, and the incremental IndexedDB writer would
+// otherwise append the merged rows onto the rows already stored.
+async function applyMerge(res){
+  const m = mergeStores(store, adoptStore(res.store));
+  store = adoptStore(m.store);
+  applyDeckDefaults();
+  storeReplaced(STORE_KEY);
+  persistStore(STORE_KEY, store);
+  syncedLogLen = store.log.length;
+  if (Number.isFinite(res.at)) lastRemoteAt = res.at;
+  lastSyncNote = { when: Date.now(), note: mergeSummary(m.stats) };
+  const localHadSomething = m.stats.fromLocal > 0 || m.stats.cardsFromLocal > 0 || m.stats.prefsFrom === 'local';
+  if (localHadSomething) await doPush(true);   // quiet: the merge summary is the more useful note
+  noteClock();
+  return m;
+}
+
+// Manual "Pull now". Always merges -- there is no longer a case where one
+// side's reviews are discarded to resolve a disagreement.
+async function doPull(){
+  const code = loadSyncCode().syncCode;
+  const res = await fetchStore(code, DECK_ID);
+  if (!res.ok){
+    // Nothing stored under this code yet is not a failure; it is the normal
+    // state of a device that has just been paired, and the right response is
+    // to put this device's copy there.
+    if (res.missing){ await doPush(); render(); return res; }
+    lastSyncNote = { when: Date.now(), note: 'Pull failed ('+res.error+')' };
+    if (view.screen==='settings') render();
+    return res;
+  }
+  await applyMerge(res);
+  render();
+  return res;
+}
+
+// Runs when the tab becomes visible again on the Home screen. Same merge as
+// doPull(), without the "nothing there yet -> push" branch: a launch should
+// not create a remote copy on its own.
+async function syncOnLaunch(){
+  const code = loadSyncCode().syncCode;
+  if (!code) return;
+  const lenAtStart = store.log.length;
+  const res = await fetchStore(code, DECK_ID);
+  if (!res.ok) return;
+  if (store.log.length !== lenAtStart) return;   // rated while the fetch was in flight; the debounced push will reconcile
+  await applyMerge(res);
+  if (view.screen==='home' || view.screen==='settings') render();
+}
+
+// The look-before-writing wrapper for the AUTOMATIC debounced push. One extra
+// GET per push, already spaced six seconds apart at minimum; a detected race
+// turns the push into a merge, which pushes back itself, so it is still one
+// KV write either way.
+async function guardedAutoPush(){
+  const code = loadSyncCode().syncCode;
+  if (!code) return;
+  if (syncedLogLen == null) return doPush(true);   // nothing taken in yet this session -- syncOnLaunch owns that case
+  const inc = await fetchStore(code, DECK_ID);
+  if (pushRaceDecision(inc, lastRemoteAt) === 'merge-first'){
+    try {
+      await applyMerge(inc);
+      if (view.screen==='home' || view.screen==='settings') render();
+      return;
+    } catch(e){
+      console.error('race-guard merge failed, pushing anyway', e);   // a broken merge must not block the push forever
+    }
+  }
+  return doPush(true);
+}
+
+// The spare copy the Worker keeps whenever the OTHER install pushes over this
+// one's blob. The recovery path for "something went wrong and the good copy
+// has since been overwritten": it is merged in like any other arrival, so
+// using it can only ever add reviews back, never remove any.
+async function restoreFromSpare(){
+  const code = loadSyncCode().syncCode;
+  if (!code){ lastSyncNote = { when: Date.now(), note: 'No sync code set up on this device' }; render(); return; }
+  const res = await fetchPrevStore(code, DECK_ID);
+  if (!res.ok){
+    lastSyncNote = { when: Date.now(), note: res.missing
+      ? 'No spare copy yet — one is kept the first time a second device pushes under this code'
+      : 'Could not read the spare copy ('+res.error+')' };
+    render(); return;
+  }
+  const m = mergeStores(store, adoptStore(res.store));
+  store = adoptStore(m.store);
+  applyDeckDefaults();
+  storeReplaced(STORE_KEY);
+  persistStore(STORE_KEY, store);
+  syncedLogLen = store.log.length;
+  lastSyncNote = { when: Date.now(), note: 'From the spare copy: ' + mergeSummary(m.stats) };
+  if (m.stats.fromRemote) await doPush(true);
+  render();
+}
+
+function rollLabel(h){
+  const ampm = h===0 ? 'midnight' : (h<12 ? h+'am' : (h===12 ? 'noon' : (h-12)+'pm'));
+  return ampm;
+}
+
+/* ---------------------------------------------------------- LOOKUP ----
+   Reverse lookup over every cell in the deck (see buildFormIndex in
+   js/engine.js). Built once, on first use: it is a few thousand entries and
+   costs nothing, but there is no reason to pay for it on a boot that never
+   opens this screen.
+
+   The index is keyed through the SAME normaliser the grader uses, so looking
+   a form up matches exactly what answering it would have matched. */
+let formIndex = null;
+function lookupNormalise(s){ return (s => normalizeGreek(s, gradeOpts()))(s); }
+function ensureFormIndex(){
+  if (!formIndex) formIndex = buildFormIndex(GREEK_PARADIGMS, GREEK_VOCAB, lookupNormalise, expandMovableNu);
+  return formIndex;
+}
+
+function renderLookup(){
+  return `
+    <div class="topbar"><button class="back" data-action="home">&larr; Cotidie</button></div>
+    <h2>Look up a form</h2>
+    <p class="sub">Every form in the deck, backwards.</p>
+    <div class="answer-row">
+      <input class="ans" id="lookupInput" autocapitalize="off" autocomplete="off"
+             autocorrect="off" spellcheck="false" placeholder="type a Greek form — λυθεῖσι, ταύτῃ, ἐτίμων">
+    </div>
+    <div id="lookupResults"></div>`;
+}
+
+function lookupResultsHtml(q){
+  if (!q.trim()) return '<p class="note">Nothing typed yet.</p>';
+  const hits = lookupForm(ensureFormIndex(), lookupNormalise, q);
+  if (!hits.length) return `<p class="empty">No form like that in the deck.</p>`;
+  // One form very often has several answers -- λύω is both indicative and
+  // subjunctive, τρεῖς both nominative and accusative -- so every hit is
+  // listed. Showing only the first would be a confident wrong answer.
+  const rows = hits.map(hit => `
+    <button class="card" data-action="open-system" data-cls="${escHtml(hit.entry.class)}">
+      <div class="t">${escHtml(hit.form)}</div>
+      <div class="d">${escHtml(cellLabel(hit))}</div>
+      <div class="d">${escHtml(GREEK_PARADIGMS[hit.entry.class].label)} &middot; ${escHtml(hit.entry.lemma)}${hit.entry.meaning ? ' — '+escHtml(hit.entry.meaning) : ''}</div>
+    </button>`).join('');
+  return `<p class="note">${hits.length} ${hits.length===1?'match':'matches'}.</p>` + rows;
+}
+
+function wireLookup(){
+  const inp = document.getElementById('lookupInput');
+  if (!inp) return;
+  const out = document.getElementById('lookupResults');
+  const run = () => { out.innerHTML = lookupResultsHtml(inp.value); attachDelegate(); };
+  inp.addEventListener('input', run);
+  inp.focus();
+  run();
+}
+
+function renderSettings(){
+  const code = loadSyncCode().syncCode;
+  const s = store.settings;
+  const shown = (s.rolloverPending!=null) ? s.rolloverPending : (s.rollover!=null ? s.rollover : 4);
+  const rollOptions = [0,1,2,3,4,5,6,7,8,9,10,11,12]
+    .map(h => `<option value="${h}"${h===shown?' selected':''}>${rollLabel(h)}</option>`).join('');
+  const pendingLine = (s.rolloverPending!=null && s.rolloverPendingFrom!=null)
+    ? `<p class="note">Switching to ${rollLabel(s.rolloverPending)} at ${escHtml(new Date(s.rolloverPendingFrom).toLocaleString())}.</p>`
+    : '';
+  const configured = !!code;
+  const noteLine = lastSyncNote ? (lastSyncNote.note+' — '+new Date(lastSyncNote.when).toLocaleTimeString()) : 'Not synced yet this session.';
+  return `
+    <div class="topbar"><button class="back" data-action="home">&larr; Cotidie</button></div>
+    <h2>Settings</h2>
+    <p class="sub">Sync, study day, and daily intake for this deck.</p>
+    <div class="sect" style="margin-top:8px">
+      <h3>Cloud sync</h3>
+      ${configured ? `
+        <p class="note">Sync code set. Pulling MERGES — reviews from both devices are kept, never chosen between.</p>
+        <button class="card" data-action="sync-push"><div class="t">Push now</div><div class="d">send this device's reviews</div></button>
+        <button class="card" data-action="sync-pull"><div class="t">Pull now</div><div class="d">merge in the synced copy</div></button>
+        <button class="card" data-action="sync-spare"><div class="t">Recover from the spare copy</div><div class="d">the server keeps the last copy each other device pushed; merging it back can only add reviews</div></button>
+        <p class="note">${escHtml(noteLine)}</p>
+      ` : `
+        <p class="note">No sync code set up yet. Open the Cotidie launcher and tap "Get a code for this
+        device" (or type in a code from another device) to turn this on.</p>
+      `}
+    </div>
+
+    <div class="sect">
+      <h3>Study day</h3>
+      <p class="note" style="margin-top:0">A new study day begins at this hour. Anything you answer before it counts
+      towards the day before &mdash; which is what stops a session that runs past midnight from being split in two.
+      A change takes effect at the start of your next study day, never immediately, so it can't move reviews
+      you have already done into different days.</p>
+      <div class="field">
+        <label for="fRollover">Day rolls over at</label>
+        <select id="fRollover">${rollOptions}</select>
+      </div>
+      ${pendingLine}
+    </div>
+
+    <div class="sect">
+      <h3>New cells a day</h3>
+      <p class="note" style="margin-top:0">How many cells you have never seen before may be introduced in a day.
+      <strong>0 means no limit</strong>, which is how it ships. Cells already in progress are never held back
+      by this &mdash; only new ones are rationed, because a review put off is a review that comes back bigger.</p>
+      <div class="field">
+        <label for="fNewPerDay">New cells a day</label>
+        <input class="num" type="number" id="fNewPerDay" min="0" max="500" step="1" inputmode="numeric" value="${s.newPerDay|0}">
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>Backup</h3>
+      <p class="note" style="margin-top:0">Both decks are exported and restored together from the Cotidie launcher.
+      Sync keeps a copy on the server under your code; the export file is the copy that doesn't depend on anything.</p>
+    </div>`;
+}
+
+// Settings has real form controls, which the delegated click handler on #app
+// does not cover -- it listens for clicks, and these fire `change`. Attached
+// after each render of the screen rather than once at boot, because the
+// screen's innerHTML is thrown away and rebuilt every time it is opened.
+function wireSettings(){
+  const roll = document.getElementById('fRollover');
+  if (roll) roll.addEventListener('change', e => {
+    setRollover(store.settings, e.target.value|0, Date.now());
+    save();
+    render();
+  });
+  const npd = document.getElementById('fNewPerDay');
+  if (npd) npd.addEventListener('change', e => {
+    const v = Math.max(0, Math.min(500, e.target.value|0));
+    store.settings.newPerDay = v;
+    e.target.value = v;
+    save();
+  });
+}
+
+
+// -------------------------------------------------------------- SYSTEM ----
+function wordsOfClass(clsKey){
+  return GREEK_VOCAB.map((e,i)=>({e,i})).filter(x=>x.e.class===clsKey);
+}
+
+function renderSystem(clsKey, tab){
+  const cls = GREEK_PARADIGMS[clsKey];
+  let h = `
+    <div class="topbar"><button class="back" data-action="home">&larr; Cotidie</button></div>
+    <h2>${cls.label}</h2>
+    <p class="sub">${cls.subtitle}</p>
+    <div class="tabs">
+      <button class="${tab==='table'?'on':''}" data-action="tab" data-tab="table">Table</button>
+      <button class="${tab==='recite'?'on':''}" data-action="tab" data-tab="recite">Recite</button>
+    </div>`;
+
+  if (tab==='table'){
+    h += cls.kind==='noun' ? renderNounTable(cls)
+       : cls.kind==='adj'  ? renderAdjTables(cls)
+       : renderVerbTables(cls);
+    h += `<button class="card" data-action="start-drill" data-cls="${clsKey}" style="margin-top:14px">
+      <div class="t">Drill this system</div><div class="d">${capNew(store, dueCards(store, wordsOfClass(clsKey).map(x=>x.e), GREEK_PARADIGMS, Date.now()), Date.now()).length} due</div>
+    </button>`;
+  } else {
+    h += `<p class="note" style="margin:0 0 12px">Recite the whole paradigm in order, from memory.</p>
+      <div class="wordlist">`;
+    wordsOfClass(clsKey).forEach(({e,i}) => { h += wordRow(e, i, clsKey); });
+    h += `</div>`;
+  }
+  return h;
+}
+
+function wordRow(entry, vocabIndex, clsKey){
+  const g = entry.gender ? `<span class="gender">${entry.gender}.</span>` : '';
+  return `<div class="wordrow" data-action="start-recite" data-cls="${clsKey}" data-idx="${vocabIndex}">
+    <div><span class="lemma">${entry.lemma}</span>${g}</div>
+    <div class="gloss">${entry.meaning}</div>
+  </div>`;
+}
+
+// Per-cell status dots (HANDOFF.md §10d) summarize across the class's real
+// vocab words -- see cellStatusSummary()'s own comment for why this can't
+// just point at cls.example's own cells.
+function dotHtml(st){ return `<i class="cellDot s-${st}" title="${STATUS_LABEL[st]}"></i>`; }
+
+// Columns come from the class's OWN cell keys, the way renderAdjTables already
+// did. The hardcoded Singular/Plural pair this replaces threw the moment a
+// class arrived whose cells are neither: p.329's irregular comparison has a
+// single `cit` column, because the appendix prints citation forms there and
+// not a paradigm. formsFor() throws on a cell that does not exist rather than
+// returning blank, so the guard has to come before the call.
+function renderNounTable(cls){
+  const clsKey = cls.example.class;
+  const keys = cellKeysOf(cls);
+  const rows = cls.categories.map(cat=>{
+    const cells = keys.map(k=>{
+      if (!hasCell(cls, cat, k)) return '<td><span class="faintcell">—</span></td>';
+      const st = cellStatusSummary(store, GREEK_VOCAB, clsKey, cat, k);
+      return `<td>${dotHtml(st)}${formsFor(GREEK_PARADIGMS, cls.example, cat, k).primary}</td>`;
+    }).join('');
+    return `<tr><td class="case">${GREEK_CATEGORY_LABELS[cat]}</td>${cells}</tr>`;
+  }).join('');
+  const heads = keys.map(k=>`<th>${GREEK_CELL_LABELS[k]||k}</th>`).join('');
+  return `<table class="para"><tr><th></th>${heads}</tr>${rows}</table>`;
+}
+
+// One table per gender, cases down the side -- the way the printed tables are
+// laid out, and the same order they are recited in (all the masculine, then
+// the feminine, then the neuter). Cells are gender-keyed ('m.sg'), so this
+// reads the same endings blocks every other kind does.
+const GENDER_NAMES = { m:'Masculine', f:'Feminine', n:'Neuter', mf:'Masculine / Feminine' };
+// Columns come from the class's own cellKeys, not a hardcoded Singular/Plural
+// pair. εἷς has no plural and τρεῖς no singular -- "one" and "three" are
+// single-number words -- and a hardcoded pair would print a whole column of
+// em-dashes beside every real form.
+const NUMBER_NAMES = { sg:'Singular', pl:'Plural' };
+function renderAdjTables(cls){
+  const clsKey = cls.example.class;
+  const nums = cls.cellKeys;
+  let h = '';
+  (cls.genders || ['m','f','n']).forEach(g => {
+    const rows = cls.categories.map(cat=>{
+      const cells = nums.map(num=>{
+        const k = g+'.'+num;
+        const has = cls.endings[cat] && cls.endings[cat][k]!==undefined;
+        return '<td>' + (has
+          ? dotHtml(cellStatusSummary(store, GREEK_VOCAB, clsKey, cat, k)) + formsFor(GREEK_PARADIGMS, cls.example, cat, k).primary
+          : '<span class="faintcell">—</span>') + '</td>';
+      }).join('');
+      return `<tr><td class="case">${GREEK_CATEGORY_LABELS[cat]}</td>${cells}</tr>`;
+    }).join('');
+    const heads = nums.map(n=>`<th>${NUMBER_NAMES[n]||n}</th>`).join('');
+    h += `<div class="vtable"><h4>${GENDER_NAMES[g]||g}</h4>
+      <table class="para"><tr><th></th>${heads}</tr>${rows}</table></div>`;
+  });
+  return h;
+}
+
+// Builds each row from the cells that EXIST rather than from a fixed six-person
+// grid. The imperative has no first person, so the old version -- which called
+// formsFor() for 1sg through 3pl unconditionally -- threw
+// `No ending for thematic pres.act.imper/1sg` and took the whole Table screen
+// with it, on the very class the ragged-paradigm work was built for. Drill and
+// Recite were already going through orderedCellsFor(); this was the last
+// caller still assuming a rectangle.
+function renderVerbTables(cls){
+  const clsKey = cls.example.class;
+  const rowFor = (cat, n) => ['sg','pl'].map(num => {
+    const cell = n + num;
+    if (cls.endings[cat] === undefined || cls.endings[cat][cell] === undefined)
+      return '<td><span class="faintcell">—</span></td>';
+    const dot = dotHtml(cellStatusSummary(store, GREEK_VOCAB, clsKey, cat, cell));
+    return `<td>${dot}${formsFor(GREEK_PARADIGMS, cls.example, cat, cell).primary}</td>`;
+  }).join('');
+  let h = '';
+  cls.categories.forEach(cat=>{
+    const keys = Object.keys(cls.endings[cat] || {});
+    // A category with no person cells at all is an infinitive: one form, no
+    // person and no number. Rendering it through the person grid produced a
+    // three-by-two table of em-dashes with the actual form nowhere in it.
+    const hasPersons = keys.some(k => /^[123](sg|pl)$/.test(k));
+    if (!hasPersons){
+      const rows = keys.map(k=>{
+        const dot = dotHtml(cellStatusSummary(store, GREEK_VOCAB, clsKey, cat, k));
+        return `<tr><td>${dot}${formsFor(GREEK_PARADIGMS, cls.example, cat, k).primary}</td></tr>`;
+      }).join('');
+      h += `<div class="vtable"><h4>${GREEK_CATEGORY_LABELS[cat]}</h4>
+        <table class="para">${rows}</table></div>`;
+      return;
+    }
+    h += `<div class="vtable"><h4>${GREEK_CATEGORY_LABELS[cat]}</h4>
+      <table class="para"><tr><th></th><th>Singular</th><th>Plural</th></tr>
+      <tr><td class="case">1st</td>${rowFor(cat,'1')}</tr>
+      <tr><td class="case">2nd</td>${rowFor(cat,'2')}</tr>
+      <tr><td class="case">3rd</td>${rowFor(cat,'3')}</tr>
+      </table></div>`;
+  });
+  return h;
+}
+
+// ---------------------------------------------------------- input setup ----
+// Wires the Hoplite scheme onto #ansInput (if enabled) and returns the
+// toggle-row HTML for the two settings (Greek keys, accent grading) --
+// shared by both Recite and Drill prompts.
+function setupAnswerInput(){
+  const inp = document.getElementById('ansInput');
+  inp.focus();
+  hopliteCtrl = attachHopliteInput(inp);
+  if (!store.settings.hopliteInput) hopliteCtrl.disable();
+}
+
+function toggleRowHtml(){
+  return `<div class="togglerow">
+    <button class="togglebtn ${store.settings.hopliteInput?'active':''}" data-action="toggle-hoplite">Greek keys: ${store.settings.hopliteInput?'on':'off'}</button>
+    <button class="togglebtn ${store.settings.requireAccents?'active':''}" data-action="toggle-accents">Accents: ${store.settings.requireAccents?'required':'optional'}</button>
+  </div>`;
+}
+
+// -------------------------------------------------------------- RECITE ----
+// Recitation is deliberately NOT logged to the FSRS review store -- see
+// latin.html's identical note, same reasoning applies here.
+let reciteState = null;
+
+function renderRecite(){
+  const { entry, cells } = reciteState;
+  if (reciteState.pos >= cells.length){
+    app.innerHTML = `
+      <div class="topbar"><button class="back" data-action="back-to-system">&larr; ${GREEK_PARADIGMS[reciteState.clsKey].label}</button></div>
+      <h2>Recited in full</h2>
+      <p class="sub">${entry.lemma} — ${entry.meaning}</p>
+      <button class="card study" data-action="start-drill" data-cls="${reciteState.clsKey}">
+        <div class="t">Drill this system now</div><div class="d">random cells, auto-graded</div>
+      </button>
+      <button class="card" data-action="back-to-system"><div class="t">Back to ${GREEK_PARADIGMS[reciteState.clsKey].label}</div></button>`;
+    attachDelegate(); return;
+  }
+  const cell = cells[reciteState.pos];
+  const label = cellLabel(cell);
+  reciteState.promptShownAt = Date.now();
+  app.innerHTML = `
+    <div class="topbar"><button class="back" data-action="back-to-system">&larr; ${GREEK_PARADIGMS[reciteState.clsKey].label}</button></div>
+    <div class="progress">Reciting ${entry.lemma} — ${reciteState.pos+1} of ${cells.length}</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${100*reciteState.pos/cells.length}%"></div></div>
+    <div class="prompt-box">
+      <div class="prompt-head">${entry.meaning}</div>
+      <div class="prompt-lemma">${entry.lemma}</div>
+      <div class="prompt-cell">${label}</div>
+      <div class="answer-row">
+        <input class="ans" id="ansInput" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="type the form">
+        <button class="go" data-action="recite-submit">&rarr;</button>
+      </div>
+      <div id="reciteFeedback"></div>
+      ${toggleRowHtml()}
+    </div>
+    <button class="quietlink" data-action="recite-reveal">show answer</button>`;
+  attachDelegate();
+  setupAnswerInput();
+  document.getElementById('ansInput').addEventListener('keydown', e => { if (e.key==='Enter') submitRecite(); });
+}
+
+function cellLabel(cell){
+  const cat = GREEK_CATEGORY_LABELS[cell.category];
+  const one = GREEK_CELL_LABELS[cell.cell];
+  // An infinitive has no person or number, so its cell label is a dash -- and
+  // "Present Active Infinitive · —" is worse than saying nothing.
+  return (!one || one === '—') ? cat : (cat + ' · ' + one);
+}
+
+function submitRecite(){
+  const inp = document.getElementById('ansInput');
+  const cell = reciteState.cells[reciteState.pos];
+  const forms = formsFor(GREEK_PARADIGMS, reciteState.entry, cell.category, cell.cell);
+  const correct = checkAnswerGreek(inp.value, forms.accepted, gradeOpts());
+  showReciteFeedback(correct, forms.primary);
+}
+function showReciteFeedback(correct, primary){
+  const fb = document.getElementById('reciteFeedback');
+  fb.innerHTML = correct
+    ? `<div class="feedback ok">Right.</div>`
+    : `<div class="feedback no">Not quite. <div class="answer">${primary}</div></div>`;
+  document.getElementById('ansInput').disabled = true;
+  const goBtn = document.querySelector('[data-action="recite-submit"]');
+  if (goBtn) goBtn.disabled = true;
+  setTimeout(() => { reciteState.pos++; renderRecite(); }, correct ? 550 : 1600);
+}
+
+// --------------------------------------------------------------- DRILL ----
+// Same fixed-snapshot-per-session design as latin.html -- see its note.
+let drillState = null;
+
+function startDrill(clsKeyOrNull){
+  const pool = clsKeyOrNull ? wordsOfClass(clsKeyOrNull).map(x=>x.e) : GREEK_VOCAB;
+  const now = Date.now();
+  // buildQueue, not the raw due list: it shuffles (the raw list is pool order
+  // x recitation order, i.e. the same march through every paradigm each
+  // session -- the shuffle used to exist only on the "drill anyway" path
+  // below) and it applies the day's new-cell allowance if one is set.
+  const due = buildQueue(store, dueCards(store, pool, GREEK_PARADIGMS, now), now);
+  drillState = { clsKey:clsKeyOrNull, queue:due, pos:0, correct:0, total:due.length };
+  go({ screen:'drill' });
+}
+
+function renderDrill(){
+  if (!drillState || drillState.total===0){
+    app.innerHTML = `
+      <div class="topbar"><button class="back" data-action="home">&larr; Cotidie</button></div>
+      <h2>Nothing due</h2>
+      <p class="empty">No cards are due${drillState&&drillState.clsKey?' in '+GREEK_PARADIGMS[drillState.clsKey].label:''} right now.<br>Come back later, or drill anyway if you want the extra practice.</p>
+      <button class="card" data-action="start-drill-anyway" data-cls="${drillState&&drillState.clsKey?drillState.clsKey:''}">
+        <div class="t">Drill anyway</div><div class="d">practice ahead of schedule</div></button>
+      <button class="card" data-action="home"><div class="t">Back to Cotidie</div></button>`;
+    attachDelegate(); return;
+  }
+  if (drillState.pos >= drillState.queue.length){
+    app.innerHTML = `
+      <div class="topbar"><button class="back" data-action="home">&larr; Cotidie</button></div>
+      <h2>Session done</h2>
+      <div class="summary-row"><span class="k">Reviewed</span><span>${drillState.total}</span></div>
+      <div class="summary-row"><span class="k">Correct</span><span>${drillState.correct} / ${drillState.total}</span></div>
+      <button class="card" data-action="home" style="margin-top:16px"><div class="t">Back to Cotidie</div></button>`;
+    attachDelegate(); return;
+  }
+  const item = drillState.queue[drillState.pos];
+  const label = cellLabel(item);
+  drillState.promptShownAt = Date.now();
+  app.innerHTML = `
+    <div class="topbar"><button class="back" data-action="home">&larr; Cotidie</button></div>
+    <div class="progress">Review — ${drillState.pos+1} of ${drillState.queue.length}</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${100*drillState.pos/drillState.queue.length}%"></div></div>
+    <div class="prompt-box">
+      <div class="prompt-head">${item.entry.meaning}</div>
+      <div class="prompt-lemma">${item.entry.lemma}</div>
+      <div class="prompt-cell">${label}</div>
+      <div class="answer-row">
+        <input class="ans" id="ansInput" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="type the form">
+        <button class="go" data-action="drill-submit">&rarr;</button>
+      </div>
+      <div id="drillFeedback"></div>
+      ${toggleRowHtml()}
+    </div>
+    <p class="note">Breathing marks always graded. Movable ν always accepted either way.</p>`;
+  attachDelegate();
+  setupAnswerInput();
+  const dInp = document.getElementById('ansInput');
+  dInp.addEventListener('keydown', e => { if (e.key==='Enter') submitDrill(); });
+  wireDrillTiming(dInp);
+}
+
+// ---- the timing split recorded against every rep (2026-08-21) ----
+// Measured, logged, and deliberately NOT graded on -- see gradeToRating() in
+// js/fsrs.js for why speed stopped deciding anything. The split matters more
+// than the total: prompt-to-first-keystroke is recall time and does not grow
+// with how long the answer is, whereas the total does, which is what made a
+// single latency number unusable across forms of 4 and 13 keystrokes.
+//
+// Nothing here is shown during a drill. The ground rule says "nothing is
+// timed or gamified", and a visible clock would both contradict that and
+// introduce exactly the time pressure that turns a typo into an Again.
+function wireDrillTiming(inp){
+  drillState.firstKeyAt = null;
+  drillState.keyCount = 0;
+  inp.addEventListener('keydown', e => {
+    if (e.key==='Shift'||e.key==='Alt'||e.key==='Control'||e.key==='Meta') return;
+    if (drillState.firstKeyAt==null && e.key!=='Enter') drillState.firstKeyAt = Date.now();
+    if (e.key!=='Enter') drillState.keyCount++;
+  });
+}
+
+// What the answer was graded under, and on what kind of device -- a latency
+// figure fitted across a mixture of Mac and phone sessions would be fitted to
+// nothing, so the mixture has to be recorded at the time.
+function drillFlags(){
+  let f = 0;
+  if (store.settings.requireAccents) f |= FL_ACCENTS;
+  if (store.settings.hopliteInput) f |= FL_SCHEME;
+  try { if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) f |= FL_TOUCH; } catch(e){}
+  return f;
+}
+
+// The three timing fields, assembled at submit. toFirstKey is null when the
+// answer was submitted without a keystroke (an empty Enter), which is a real
+// event and must not be logged as "recalled instantly".
+function drillTiming(now){
+  const t = { keys: drillState.keyCount|0, flags: drillFlags() };
+  if (drillState.firstKeyAt!=null){
+    t.toFirstKey = drillState.firstKeyAt - drillState.promptShownAt;
+    t.typing = now - drillState.firstKeyAt;
+  }
+  return t;
+}
+
+function submitDrill(){
+  const inp = document.getElementById('ansInput');
+  if (inp.disabled) return;
+  const item = drillState.queue[drillState.pos];
+  const forms = formsFor(GREEK_PARADIGMS, item.entry, item.category, item.cell);
+  const latency = Date.now() - drillState.promptShownAt;
+  const correct = checkAnswerGreek(inp.value, forms.accepted, gradeOpts());
+  if (correct) drillState.correct++;
+
+  const meta = { wordId: item.entry.id, category:item.category, cell:item.cell, lemma:item.entry.lemma };
+  const submittedAt = Date.now();
+  const result = recordReview(store, meta, correct, latency, submittedAt, drillTiming(submittedAt));
+  save();
+
+  const fb = document.getElementById('drillFeedback');
+  // No rating word any more: with two grades, "Right" and the grade say the
+  // same thing, and the old line ("Right — Hard.") was the app telling you
+  // off for being slow while claiming nothing here is timed.
+  fb.innerHTML = correct
+    ? `<div class="feedback ok">Right.</div>`
+    : `<div class="feedback no">Not quite. <div class="answer">${forms.primary}</div></div>`;
+  inp.disabled = true;
+  const goBtn = document.querySelector('[data-action="drill-submit"]');
+  if (goBtn) goBtn.disabled = true;
+  setTimeout(() => { drillState.pos++; renderDrill(); }, correct ? 550 : 1800);
+}
+
+// ------------------------------------------------------------ delegation ----
+function attachDelegate(){
+  app.onclick = e => {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.dataset.action;
+    if (action==='home') go({screen:'home'});
+    else if (action==='open-stats') go({screen:'stats'});
+    else if (action==='open-settings') go({screen:'settings'});
+    else if (action==='open-lookup') go({screen:'lookup'});
+    else if (action==='sync-push') doPush();
+    else if (action==='sync-pull') doPull();
+    else if (action==='sync-spare') restoreFromSpare();
+    else if (action==='toggle-cal'){ e.preventDefault(); calOpen=!calOpen; render(); }
+    else if (action==='cal-prev'){ shiftCalMonth(-1); render(); }
+    else if (action==='cal-next'){ shiftCalMonth(1); render(); }
+    else if (action==='open-system') go({screen:'system', cls:el.dataset.cls, tab:'table'});
+    else if (action==='tab') go({screen:'system', cls:view.cls, tab:el.dataset.tab});
+    else if (action==='back-to-system') go({screen:'system', cls:reciteState?reciteState.clsKey:view.cls, tab:'recite'});
+    else if (action==='start-drill') startDrill(null);
+    else if (action==='start-drill-anyway') startDrillAnyway(el.dataset.cls||null);
+    else if (action==='start-recite'){
+      const clsKey = el.dataset.cls;
+      const idx = parseInt(el.dataset.idx,10);
+      const entry = GREEK_VOCAB[idx];
+      // orderedCellsFor, not orderedCells: Recite walks a real WORD, and a word
+      // may lack cells its class defines. Walking the class asked faciō for its
+      // passive and formsFor() happily returned `facior` -- the class does
+      // define that ending -- so Recite would have quietly taught back the
+      // exact non-words the verification pass removed. Silently wrong, not a
+      // crash, which is why it needed looking for.
+      reciteState = { entry, clsKey, cells: orderedCellsFor(GREEK_PARADIGMS, entry), pos:0 };
+      go({ screen:'recite' });
+    }
+    else if (action==='recite-submit') submitRecite();
+    else if (action==='recite-reveal'){
+      const cell = reciteState.cells[reciteState.pos];
+      const forms = formsFor(GREEK_PARADIGMS, reciteState.entry, cell.category, cell.cell);
+      showReciteFeedback(false, forms.primary);
+    }
+    else if (action==='drill-submit') submitDrill();
+    else if (action==='toggle-hoplite'){
+      store.settings.hopliteInput = !store.settings.hopliteInput;
+      save();
+      if (hopliteCtrl) { store.settings.hopliteInput ? hopliteCtrl.enable() : hopliteCtrl.disable(); }
+      render();
+    }
+    else if (action==='toggle-accents'){
+      store.settings.requireAccents = !store.settings.requireAccents;
+      save();
+      render();
+    }
+  };
+}
+
+function startDrillAnyway(clsKeyOrNull){
+  const pool = clsKeyOrNull ? wordsOfClass(clsKeyOrNull).map(x=>x.e) : GREEK_VOCAB;
+  const queue = [];
+  pool.forEach(entry => orderedCells(GREEK_PARADIGMS, entry.class).forEach(({category,cell}) =>
+    queue.push({ wordId: entry.id, entry, category, cell })));
+  for (let i=queue.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [queue[i],queue[j]]=[queue[j],queue[i]]; }
+  drillState = { clsKey:clsKeyOrNull, queue, pos:0, correct:0, total:queue.length };
+  go({ screen:'drill' });
+}
+
+// Boot. The one asynchronous step in the whole app: a deck cannot draw a
+// screen until its store has been read out of IndexedDB. attachDelegate() is
+// safe to wire first -- it delegates from #app, which innerHTML swaps never
+// replace -- and there is nothing on screen to click until render() runs.
+attachDelegate();
+bootStore(STORE_KEY).then(loaded => {
+  store = loaded;
+  applyDeckDefaults();
+  render();
+}).catch(() => {
+  // Never leave a blank page: an unreadable store is worth showing an empty
+  // deck for, not nothing at all.
+  applyDeckDefaults();
+  render();
+});
+
+// Flush a pending debounced push immediately on tab-hide/close rather than
+// dropping it silently; check for remote changes when coming back to Home.
+// Same pattern as vocabula's own visibilitychange/pagehide hooks.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) flushPendingPush();
+  else if (view.screen==='home') syncOnLaunch();
+});
+window.addEventListener('pagehide', flushPendingPush);
+</script>
+</body>
+</html>
