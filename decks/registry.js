@@ -29,6 +29,6 @@
 const REGISTRY=[
   {id:'latin', key:'vocabula.latin.v2', title:'Latin', script:'latin', words:3034,
    blurb:'3,034 words, Parts I–VIII, both directions', archived:false},
-  {id:'greek', key:'vocabula.greek.v1', title:'Greek', script:'greek', words:983,
-   blurb:'983 words, both directions', archived:false}
+  {id:'greek', key:'vocabula.greek.v1', title:'Greek', script:'greek', words:1031,
+   blurb:'1,031 words, freshers + agon, both directions', archived:false}
 ];

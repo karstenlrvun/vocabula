@@ -94,6 +94,10 @@
   --easy:#755992; --easy-bg:#ebe3e2; --easy-br:#d3c6d2; --amber:#9a7318; --warn-bg:#eee6d0;
   --warn-br:#dccda8; --warn-ink:#7b5d18; --bad-bg:#f0ded3; --bad-br:#dfb9ae; --bad-ink:#812f25;
   --toast:#2a2318;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ca7400; --flag3:#009f2a; --flag4:#0077fe; --flag5:#ff0699; --flag6:#009a9a; --flag7:#a200fe;
 }
 [data-palette="vellum"][data-theme="dark"]{
   --bg:#1a160f; --panel:#241f16; --ink:#ece3cf; --muted:#a89a80; --faint:#7a6f5c;
@@ -102,6 +106,10 @@
   --easy:#c3a3e0; --easy-bg:#3f353d; --easy-br:#615167; --amber:#d4a24a; --warn-bg:#43351c;
   --warn-br:#685128; --warn-ink:#d7ab5d; --bad-bg:#462c23; --bad-br:#6d4036; --bad-ink:#e28879;
   --toast:#241f16;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }
 [data-palette="catppuccin"][data-theme="light"]{
   --bg:#eff1f5; --panel:#e6e9ef; --ink:#4c4f69; --muted:#66687d; --faint:#8a8d9b;
@@ -110,6 +118,10 @@
   --easy:#7a1cf5; --easy-bg:#e1d7f6; --easy-br:#d0bdec; --amber:#be7208; --warn-bg:#e9e1d7;
   --warn-br:#e3cba9; --warn-ink:#8b5817; --bad-bg:#edd2dd; --bad-br:#e6a9b9; --bad-ink:#b40836;
   --toast:#4c4f69;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#c47000; --flag3:#009b29; --flag4:#0077fe; --flag5:#ff0699; --flag6:#009495; --flag7:#a200fe;
 }
 [data-palette="catppuccin"][data-theme="dark"]{
   --bg:#1e1e2e; --panel:#181825; --ink:#cdd6f4; --muted:#a6adc8; --faint:#6c7086;
@@ -118,6 +130,10 @@
   --easy:#cba2fb; --easy-bg:#43395d; --easy-br:#665386; --amber:#fce3ac; --warn-bg:#4e494a;
   --warn-br:#7c7062; --warn-ink:#fce3b0; --bad-bg:#4f344a; --bad-br:#7b4861; --bad-ink:#fa8eb1;
   --toast:#181825;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }
 [data-palette="rosepine"][data-theme="light"]{
   --bg:#faf4ed; --panel:#fffaf3; --ink:#575279; --muted:#6b6782; --faint:#8f8a9b;
@@ -126,6 +142,10 @@
   --easy:#77579d; --easy-bg:#ede3e3; --easy-br:#d9ccd8; --amber:#c1760e; --warn-bg:#f4e4d0;
   --warn-br:#e7cdac; --warn-ink:#8c5b26; --bad-bg:#f3e0dc; --bad-br:#e7c3c5; --bad-ink:#a45379;
   --toast:#575279;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#d77b00; --flag3:#00a82d; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00a2a2; --flag7:#a200fe;
 }
 [data-palette="rosepine"][data-theme="dark"]{
   --bg:#191724; --panel:#1f1d2e; --ink:#e0def4; --muted:#908caa; --faint:#6e6a86;
@@ -134,6 +154,10 @@
   --easy:#c6a2f3; --easy-bg:#3e3551; --easy-br:#60507a; --amber:#f9c274; --warn-bg:#4c3b34;
   --warn-br:#7b5e42; --warn-ink:#fac681; --bad-bg:#4a273d; --bad-br:#763751; --bad-ink:#f9739c;
   --toast:#1f1d2e;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }
 [data-palette="gruvbox"][data-theme="light"]{
   --bg:#fbf1c7; --panel:#f2e5bc; --ink:#3c3836; --muted:#665c54; --faint:#928374;
@@ -142,6 +166,10 @@
   --easy:#9d3174; --easy-bg:#efdaba; --easy-br:#dcb6a6; --amber:#b97408; --warn-bg:#eedfb4;
   --warn-br:#e0c893; --warn-ink:#8a5708; --bad-bg:#edd2b0; --bad-br:#dda489; --bad-ink:#840609;
   --toast:#3c3836;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#c16f00; --flag3:#009828; --flag4:#0077fe; --flag5:#fb0096; --flag6:#009191; --flag7:#a200fe;
 }
 [data-palette="gruvbox"][data-theme="dark"]{
   --bg:#282828; --panel:#32302f; --ink:#ebdbb2; --muted:#bdae93; --faint:#928374;
@@ -150,6 +178,10 @@
   --easy:#e797ac; --easy-bg:#503b40; --easy-br:#734c56; --amber:#f7bf3b; --warn-bg:#5a4b26;
   --warn-br:#856926; --warn-ink:#f8c651; --bad-bg:#5a2c27; --bad-br:#873127; --bad-ink:#f75e48;
   --toast:#32302f;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#aa3cff;
 }
 [data-palette="legacy"][data-theme="light"]{
   --bg:#ffffff; --panel:#faf8f5; --ink:#1b1a18; --muted:#77746e; --faint:#928f89;
@@ -158,6 +190,10 @@
   --easy:#6a59c9; --easy-bg:#eeecf9; --easy-br:#d4d0f0; --amber:#b07715; --warn-bg:#f5ede1;
   --warn-br:#e6d3b4; --warn-ink:#865d16; --bad-bg:#f5e6e4; --bad-br:#e6c0bc; --bad-ink:#863228;
   --toast:#1b1a18;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#d27900; --flag3:#00a62c; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00a0a1; --flag7:#a200fe;
 }
 [data-palette="legacy"][data-theme="dark"]{
   --bg:#0e1230; --panel:#181d47; --ink:#e9ecf8; --muted:#a3abd0; --faint:#7780ab;
@@ -166,6 +202,10 @@
   --easy:#b0a4ff; --easy-bg:#32325e; --easy-br:#524f87; --amber:#e0aa4a; --warn-bg:#3c3336;
   --warn-br:#66523b; --warn-ink:#e1b362; --bad-bg:#432a3f; --bad-br:#73414d; --bad-ink:#fc9087;
   --toast:#181d47;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }
 /* Two bold, high-contrast additions (2026-08-15, his request: "contrast
    well / are different from the existing seven... be bold"). Dracula is a
@@ -185,6 +225,10 @@
   --easy:#7647cf; --easy-bg:#e9e0fb; --easy-br:#cfc0f2; --amber:#b5690a; --warn-bg:#f7e6cf;
   --warn-br:#e9c896; --warn-ink:#8a570f; --bad-bg:#f7dde3; --bad-br:#eab8c7; --bad-ink:#b31940;
   --toast:#282a36;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ca7400; --flag3:#009f2a; --flag4:#0077fe; --flag5:#ff0699; --flag6:#009a9a; --flag7:#a200fe;
 }
 [data-palette="dracula"][data-theme="dark"]{
   --bg:#282a36; --panel:#343746; --ink:#f8f8f2; --muted:#b6b8d1; --faint:#6272a4;
@@ -193,6 +237,10 @@
   --easy:#bd93f9; --easy-bg:#33294f; --easy-br:#4a3d72; --amber:#ffb86c; --warn-bg:#453421;
   --warn-br:#6b5030; --warn-ink:#f0c78a; --bad-bg:#4a2530; --bad-br:#6b3542; --bad-ink:#ff6e6e;
   --toast:#343746;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff1724; --flag2:#ff9404; --flag3:#00ff49; --flag4:#177cff; --flag5:#ff0699; --flag6:#00ffff; --flag7:#af50ff;
 }
 [data-palette="amphora"][data-theme="light"]{
   --bg:#f0dcc3; --panel:#e6cca8; --ink:#241a10; --muted:#5c4530; --faint:#8a6f4f;
@@ -201,6 +249,10 @@
   --easy:#4a3a7a; --easy-bg:#ddd6ef; --easy-br:#c0b4e0; --amber:#9c6b0a; --warn-bg:#ecdcb4;
   --warn-br:#d6bc80; --warn-ink:#6b4808; --bad-bg:#e8c9b8; --bad-br:#d4a488; --bad-ink:#6e130a;
   --toast:#241a10;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#e8001a; --flag2:#ab6100; --flag3:#008622; --flag4:#006eed; --flag5:#df0084; --flag6:#008181; --flag7:#a200fe;
 }
 [data-palette="amphora"][data-theme="dark"]{
   --bg:#100c08; --panel:#1c140d; --ink:#f0dcc3; --muted:#c4a37e; --faint:#8a6f4f;
@@ -209,6 +261,10 @@
   --easy:#a08ce0; --easy-bg:#332a52; --easy-br:#4c3f78; --amber:#e0a83a; --warn-bg:#3f3018;
   --warn-br:#5e4826; --warn-ink:#e8c477; --bad-bg:#3f2019; --bad-br:#5e3226; --bad-ink:#f0684a;
   --toast:#1c140d;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }
 /* Five new palettes (2026-08-16), replacing Kanagawa/Everforest -- see the
    comment above PALETTES. Each was grounded in real research (written up in
@@ -306,6 +362,10 @@
   --texture:linear-gradient(103deg,transparent 41%,rgba(169,122,31,.10) 42%,rgba(169,122,31,.04) 43%,transparent 45%),
     linear-gradient(66deg,transparent 58%,rgba(43,36,28,.05) 59%,transparent 61%),
     linear-gradient(18deg,transparent 27%,rgba(169,122,31,.07) 28%,transparent 30%);
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#bf6d00; --flag3:#009828; --flag4:#0077fe; --flag5:#f80094; --flag6:#009191; --flag7:#a200fe;
 }
 [data-palette="marble"][data-theme="dark"]{
   --bg:#151109; --panel:#211a10; --ink:#ede3c8; --muted:#b8a67a; --faint:#7d6f4c;
@@ -317,6 +377,10 @@
   --texture:linear-gradient(103deg,transparent 41%,rgba(217,165,63,.09) 42%,rgba(217,165,63,.03) 43%,transparent 45%),
     linear-gradient(66deg,transparent 58%,rgba(237,227,200,.04) 59%,transparent 61%),
     linear-gradient(18deg,transparent 27%,rgba(217,165,63,.06) 28%,transparent 30%);
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }
 [data-palette="steel"][data-theme="light"]{
   --bg:#eef0f1; --panel:#e2e5e7; --ink:#23282b; --muted:#5c6569; --faint:#8b9296;
@@ -327,6 +391,10 @@
   --toast:#23282b;
   --texture:repeating-linear-gradient(95deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.05) 1px,
     rgba(35,40,43,.035) 1px,rgba(35,40,43,.035) 2px,transparent 2px,transparent 3px);
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#bf6d00; --flag3:#009828; --flag4:#0077fe; --flag5:#f80094; --flag6:#009191; --flag7:#a200fe;
 }
 [data-palette="steel"][data-theme="dark"]{
   --bg:#16191b; --panel:#202426; --ink:#dfe3e5; --muted:#a7aeb2; --faint:#6c7377;
@@ -337,6 +405,10 @@
   --toast:#202426;
   --texture:repeating-linear-gradient(95deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 1px,
     rgba(0,0,0,.05) 1px,rgba(0,0,0,.05) 2px,transparent 2px,transparent 3px);
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a407ff;
 }
 [data-palette="glass"][data-theme="light"]{
   --bg:#eef2f6; --panel:rgba(225,232,240,.62); --ink:#1d2733; --muted:#54626f; --faint:#8996a3;
@@ -350,6 +422,10 @@
   --glass-blur:blur(16px) saturate(170%);
   --glass-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 0 0 1px rgba(255,255,255,.25),
     0 3px 14px rgba(20,40,60,.12);
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#cc7500; --flag3:#00a12a; --flag4:#0077fe; --flag5:#ff0699; --flag6:#009b9c; --flag7:#a200fe;
 }
 [data-palette="glass"][data-theme="dark"]{
   --bg:#12181f; --panel:rgba(27,35,44,.55); --ink:#e6edf3; --muted:#a7b4bf; --faint:#66727d;
@@ -363,6 +439,10 @@
   --glass-blur:blur(16px) saturate(170%);
   --glass-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 0 0 1px rgba(255,255,255,.06),
     0 3px 16px rgba(0,0,0,.4);
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }
 /* Glass's ~25 existing panel/raise-tier surfaces, listed once so
    --glass-blur/--glass-shadow (above) don't need duplicating per element.
@@ -399,6 +479,10 @@
      this stays two thin layers instead of three reaching further out. */
   --glow-text:0 0 4px currentColor,0 0 10px currentColor;
   --glow-alpha-strong:55%; --glow-alpha-soft:32%;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#c67100; --flag3:#009b29; --flag4:#0077fe; --flag5:#ff0699; --flag6:#009696; --flag7:#a200fe;
 }
 [data-palette="neon"][data-theme="dark"]{
   /* Retuned 2026-08-16 (his call: "neon is too dark") -- `--bg` was #0a0a12,
@@ -417,6 +501,10 @@
   --toast:#221c3d;
   --glow-text:0 0 4px currentColor,0 0 11px currentColor,0 0 20px currentColor;
   --glow-alpha-strong:65%; --glow-alpha-soft:42%;
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }
 /* Neon glow, text tier: every element below already sets `color` to one of
    the accent vars via its own existing rule -- this just adds
@@ -491,6 +579,10 @@
   --toast:#2e2013;
   --texture:repeating-linear-gradient(0deg,rgba(46,32,19,.055) 0,rgba(46,32,19,.055) 1px,transparent 1px,transparent 5px),
     repeating-linear-gradient(0deg,rgba(46,32,19,.03) 2px,rgba(46,32,19,.03) 3px,transparent 3px,transparent 11px);
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#d80017; --flag2:#9f5a00; --flag3:#007c1f; --flag4:#0066dd; --flag5:#d0007b; --flag6:#007777; --flag7:#a200fe;
 }
 [data-palette="wood"][data-theme="dark"]{
   --bg:#1c130a; --panel:#291c10; --ink:#e8d2a0; --muted:#b89361; --faint:#7d6440;
@@ -501,4 +593,8 @@
   --toast:#291c10;
   --texture:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0,rgba(0,0,0,.10) 1px,transparent 1px,transparent 5px),
     repeating-linear-gradient(0deg,rgba(232,210,160,.035) 2px,rgba(232,210,160,.035) 3px,transparent 3px,transparent 11px);
+  /* flag 1-7: fixed hues (Anki's own order), lightness solved per
+     palette so each clears 3:1 on this block's --panel. See
+     in-progress/TYING_AND_BROWSE_RESEARCH.md for the measurements. */
+  --flag1:#ff001e; --flag2:#ff9404; --flag3:#00ff49; --flag4:#0077fe; --flag5:#ff0699; --flag6:#00ffff; --flag7:#a200fe;
 }

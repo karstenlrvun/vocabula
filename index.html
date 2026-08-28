@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.23.0">
+<link rel="stylesheet" href="palettes.css?v=2026.08.28.3">
 <!-- Phase 2 (PHASE2_PLAN.md §2.1): the deck list itself, read by the script
      below instead of a hand-written DECKS array. 'self' added to script-src
      above for this -- the old 'unsafe-inline'-only policy blocks a real
@@ -30,7 +30,7 @@
      the version text you see has only ever been the hardcoded fallback,
      manually kept in step. Neither is new; both were just never caught
      because nothing before this session read this page's own console. -->
-<script src="decks/registry.js"></script>
+<script src="decks/registry.js?v=2026.08.28.3"></script>
 <!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
      number must be bumped with BUILD (sec95c pins that it matches).
      Why: these two are the only files both pages load by a fixed name, and a
@@ -42,7 +42,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.23.0"></script>
+<script src="shared.js?v=2026.08.28.3"></script>
 <script>
 // The launcher's own chrome is always Vellum (fixed, not switchable -- see the
 // :root comment below); only light/dark follows the system. Stamped on <html>
@@ -164,10 +164,6 @@ a.card .d{color:var(--muted);font-size:13.5px}
    throughout, same guarantee as the per-card strips above -- everything here
    only ever reads state[KEY], nothing is written back to any deck. ---------- */
 .streakLine{font-size:13.5px;color:var(--muted);margin-bottom:10px;min-height:1.4em}
-.calToggleRow{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px}
-.calToggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);
-  -webkit-user-select:none;user-select:none}
-.calToggle input{margin:0;accent-color:var(--coral)}
 /* One shared horizontal scroll for every visible deck's row, so scrolling is
    a single action across all of them at once (PLATFORM_PLAN.md §6a) rather
    than N independently-scrolling strips that drift out of alignment. */
@@ -202,7 +198,6 @@ a.card .d{color:var(--muted);font-size:13.5px}
 <div class="sect">
   <h2>Activity</h2>
   <div class="streakLine" id="streakLine"></div>
-  <div class="calToggleRow" id="calToggleRow"></div>
   <div class="calAllScroll" id="calAllScroll"></div>
 </div>
 <div class="sect">
@@ -236,7 +231,7 @@ a.card .d{color:var(--muted);font-size:13.5px}
   </div>
 </div>
 
-<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.23.0</a>
+<a class="verlink" id="verLink" href="deck.html?deck=latin#changelog">Version 2026.08.28.3</a>
 
 <script>
 // ---------- shared sync settings: the ONE place the sync code and this device's
@@ -691,20 +686,14 @@ function renderStreakLine(datasById){
 // which this page never loads) and read-only with no click-through detail,
 // unlike deck.html's own per-deck calendar -- "the launcher stays a reader"
 // (§2.2).
-let calHiddenIds=new Set();
+// Every non-archived deck always draws a row. The per-deck show/hide
+// checkboxes that used to sit above this were removed on the owner's call
+// (2026-08-26): with two decks the control was one tap to hide half of a
+// read-only summary and one more to bring it back, and nothing else on the
+// page reads the choice. Archiving a deck is still the way to take it off
+// the launcher, and that route already exists in the registry.
 function renderCalStack(datasById){
-  const toggleRow=$('calToggleRow');
-  toggleRow.innerHTML=DECKS.map(d=>
-    '<label class="calToggle"><input type="checkbox" data-deck-id="'+esc(d.id)+'"'+
-    (calHiddenIds.has(d.id)?'':' checked')+'> '+esc(d.title)+'</label>'
-  ).join('');
-  toggleRow.querySelectorAll('input[data-deck-id]').forEach(cb=>{
-    cb.addEventListener('change',()=>{
-      if(cb.checked) calHiddenIds.delete(cb.dataset.deckId); else calHiddenIds.add(cb.dataset.deckId);
-      renderCalStack(datasById);
-    });
-  });
-  const visible=DECKS.filter(d=>!calHiddenIds.has(d.id));
+  const visible=DECKS;
   if(!visible.length){ $('calAllScroll').innerHTML=''; return; }
   const d0=dayKey(Date.now(),CAL_REF_ROLL);
   let startKey=d0;
@@ -750,6 +739,16 @@ function openDeckDb(){
       r.onsuccess=()=>res(r.result);
       r.onerror=()=>res(null);
       r.onblocked=()=>res(null);
+      // WebKit has shipped states in which indexedDB.open() fires none of the
+      // four handlers above and the request simply never settles. Every caller
+      // here awaits this promise, so an open that never answers is not one
+      // missing statistic -- it is a button that dims and stays dim with
+      // nothing written anywhere to say why. Giving up after eight seconds
+      // lands on the null path, which every caller already handles, and which
+      // now falls back to the legacy copy rather than to nothing (see
+      // fullLocalData below). First settle wins, so a late real answer is
+      // simply ignored rather than racing anything.
+      setTimeout(()=>res(null),8000);
     }catch(e){ res(null); }
   });
 }
@@ -831,6 +830,11 @@ renderAll(); // straight from this device's stores -- the page is correct
 // ============================================================
 const IDX_SYNC_MIN=60000;
 const IDX_LAST_CHECK_KEY='vocabula.indexLastCheck.v1';
+// The synced copies this page last pulled down, by deck id -- set by
+// checkSync() below, read by Export all. Deliberately a plain variable and
+// not storage: it is a cache of something the network can always re-answer,
+// and it must not outlive the page that fetched it.
+let lastFetched={};
 function syncKeyMaterial(code,deckKey){ return {kvInput:'kv:'+code+':'+deckKey, encInput:'enc:'+code+':'+deckKey}; }
 async function syncKeys(code,deckKey){
   const enc=new TextEncoder(), mat=syncKeyMaterial(code,deckKey);
@@ -908,7 +912,16 @@ function idbGetLog(db,key){
   });
 }
 async function fullLocalData(db,key){
-  if(!db) return null;
+  // "No database" is not "no data". localData() above has always fallen back
+  // to the pre-cutover localStorage blob; this one -- which feeds Export all
+  // and the launcher's own push -- returned null outright instead, so the
+  // very same page could draw a deck's card from the legacy copy and, in the
+  // same breath, call that deck empty when asked to back it up. Same
+  // fallback, same order, one rule for both.
+  if(!db){
+    let ls=null; try{ ls=JSON.parse(localStorage.getItem(key)); }catch(e){}
+    return (ls&&typeof ls==='object'&&!Array.isArray(ls))?ls:null;
+  }
   const st=await idbGet(db,'state',key);
   if(st){ const core=Object.assign({},st); core.log=await idbGetLog(db,key); return core; }
   const kv=await idbGet(db,'kv',key);
@@ -1004,6 +1017,11 @@ async function checkSync(force){
   const results=await Promise.allSettled(DECKS.map(d=>fetchDeck(syncCode,d.key)));
   const fetched={}; let failed=null;
   results.forEach((r,i)=>{ if(r.status==='fulfilled') fetched[DECKS[i].id]=r.value; else failed=r.reason; });
+  // Kept, not just rendered: Export all needs exactly what this page is
+  // showing, and re-fetching it on the press would be two more downloads of
+  // data already in hand. Whatever this check pulled down stands until the
+  // next one replaces it.
+  lastFetched=fetched;
   await renderAll(fetched);
   if(force){
     if(failed) setRefreshStatus('Sync check failed ('+(failed.message||failed)+') — showing what’s on this device',true);
@@ -1049,23 +1067,73 @@ function backupFileFor(full,deckKey){
   if(!obj.deck) obj.deck=deckKey;
   return obj;
 }
+// Which copy of a deck this button saves (2026-08-26, the bug he reported).
+// It used to read this device's own storage and nothing else, and to call a
+// deck that wasn't there "nothing to save yet -- open a deck and study a
+// little first". Every other thing on this page renders from local OR the
+// synced copy (fresherData, above), so a launcher could sit there showing two
+// full decks, today's counts, the streak and the calendar, and refuse in the
+// same breath to back either of them up -- with a message telling him to go
+// and do the one thing that would not have helped.
+//
+// That is the normal case on his devices, not an edge one. A web app added to
+// the Dock or Home Screen "shares no browsing history, cookies, website data,
+// or settings with Safari" (Apple, HT104996), and no more shares it with
+// another web app: a deck opened from its OWN icon writes to its OWN storage,
+// where this launcher can never see it, however often he syncs or however
+// many times he opens the deck. Reproduced exactly in WebKit 26.5 -- empty
+// local stores, a synced copy in hand, cards and calendar drawn correctly,
+// and the button reporting nothing to save.
+//
+// So: local first (a backup should be of what is on this device where there
+// is one), the synced copy where there is not. That copy is the same
+// sanitised state a deck itself pushed, and fetchDeck() has already refused
+// anything not stamped for the deck it was asked for, so a file written from
+// it restores exactly like one written here. The network is touched only for
+// a deck with no local copy at all whose synced copy this page has not
+// already pulled down -- a healthy device still saves offline, with no
+// request made.
 async function exportAllBackups(){
   const note=$('exportNote'), btn=$('btnExportAll');
   btn.disabled=true; note.classList.remove('bad');
+  note.textContent='Looking for your decks\u2026';   // the press is never silent, whatever follows
   try{
     if(!dbPromise) dbPromise=openDeckDb();
     const db=await dbPromise;
-    const found=[];
+    const {syncCode}=loadShared();
+    const found=[], fromSync=[], missing=[];
     for(const d of mergeRegistry(REGISTRY,loadUserDecks())){
-      const full=await fullLocalData(db,d.key);
-      if(!full||typeof full!=='object') continue;
-      found.push({id:d.id,title:d.title,obj:backupFileFor(full,d.key)});
+      const local=await fullLocalData(db,d.key);
+      let remote=lastFetched[d.id]||null;
+      if(!local&&!remote&&syncCode){
+        try{ remote=await fetchDeck(syncCode,d.key); }catch(e){ remote=null; }
+      }
+      const best=fresherData(local,remote);
+      if(!best||typeof best!=='object'){ missing.push(d.title); continue; }
+      if(best!==local) fromSync.push(d.title);
+      found.push({id:d.id,title:d.title,obj:backupFileFor(best,d.key)});
     }
-    if(!found.length){ note.textContent='Nothing to save yet \u2014 open a deck and study a little first.'; return; }
+    if(!found.length){
+      note.textContent=syncCode
+        ? 'Nothing to save \u2014 no copy of '+missing.join(' or ')+' on this device, and nothing under your sync code either.'
+        : 'Nothing to save \u2014 no copy of '+missing.join(' or ')+' on this device. Open a deck and study a little, or set a sync code below and try again.';
+      note.classList.add('bad');
+      return;
+    }
     note.textContent='Saving '+found.length+' file'+(found.length===1?'':'s')+'\u2026';
     found.forEach((f,i)=>{ setTimeout(()=>downloadOneBackup(f.id,f.obj), i*600); });
     await new Promise(r=>setTimeout(r,found.length*600));
-    note.textContent='Saved '+found.map(f=>f.title).join(' and ')+' \u2014 one dated file each, stamped for its own deck.';
+    // Says where each file came from. A backup taken from the synced copy is
+    // a real backup, but it is the copy some other device last pushed, not
+    // this one's -- and on a device whose own storage is empty that is worth
+    // knowing before the day he needs the file.
+    let msg='Saved '+found.map(f=>f.title).join(' and ')+(found.length===1
+      ? ' \u2014 one dated file, stamped for its own deck.'
+      : ' \u2014 one dated file each, stamped for its own deck.');
+    if(fromSync.length) msg+=' '+fromSync.join(' and ')+' came from the synced copy \u2014 this app\u2019s own storage holds none.';
+    if(missing.length) msg+=' Nothing found anywhere for '+missing.join(' or ')+'.';
+    note.textContent=msg;
+    if(missing.length) note.classList.add('bad');
   }catch(e){
     note.textContent='Could not save the backups ('+((e&&e.message)||e)+')'; note.classList.add('bad');
   }finally{ btn.disabled=false; }
