@@ -123,7 +123,7 @@ td, th{overflow-wrap:break-word}
 
 <div class="rule">
 <p><strong>The two rules everyone drifts from.</strong> They are the two worth rereading in a month.</p>
-<p><strong>1. If you are not sure you recalled it, it is Again.</strong> Hard is not "I want to see this sooner", and not "I recognised it once I saw the answer" — that second one is Again. The line between Hard and Good is how hard you had to dig, not whether you got there. Both got there.</p>
+<p><strong>1. If you are not sure you recalled it, it is Again.</strong> Hard is not "I want to see this sooner", and not "I recognised it once I saw the answer" — that second one is Again. The line between Hard and Good is how hard you had to dig, not whether you got there. Both got there. A meaning you worked out &mdash; from the word's shape, from a cognate, from the parts &mdash; counts exactly the same as one you simply remembered, as long as it arrived before you looked. Grade the production, not the route.</p>
 <p><strong>2. Recall every meaning listed, or it's Again.</strong> The list was assigned to be known whole, and "I know one of the four" is not knowing the word. That holds whether the meanings are separate senses (<em>found, establish, store up, hide</em>), several English attempts at one sense (<em>thing, affair, matter</em>), or two words that only mark a range together (<em>by, from</em>) — the app does not tell these apart, so the card is the unit.</p>
 </div>
 
@@ -160,9 +160,9 @@ td, th{overflow-wrap:break-word}
 <p>Once "Again" has landed on the same word twice in one day, two small buttons appear on the card. They are the two ways out, and the app never takes either of them for you.</p>
 <table>
   <tr><td style="white-space:nowrap"><strong>&#10710; Bury</strong></td><td>Hides the word — both directions — until tomorrow. It comes back on its own at the start of the next study day, with nothing for you to remember. For "not this word, not right now".</td></tr>
-  <tr><td style="white-space:nowrap"><strong>&#9873;&#65038; Suspend</strong></td><td>Takes the word out of review until it is brought back. For "I need to deal with this properly first". Suspended words gather in their own list on the front screen, and a few of the longest-rested are offered back each day — nothing returns on its own.</td></tr>
+  <tr><td style="white-space:nowrap"><strong>&#9790; Suspend</strong></td><td>Takes the word out of review until it is brought back. For "I need to deal with this properly first". Suspended words gather in their own list on the front screen, and a few of the longest-rested are offered back each day — nothing returns on its own.</td></tr>
 </table>
-<p>On a keyboard, <code>-</code> is Bury and <code>@</code> (or <code>F</code>) is Suspend — Anki's own two keys, so anything you read there transfers. The keys work on any card; the icons wait for that second Again.</p>
+<p>On a keyboard, <code>-</code> is Bury and <code>@</code> is Suspend — Anki's own two keys, so anything you read there transfers. The keys work on any card; the icons wait for that second Again.</p>
 <p>A word cannot be both at once, and bringing a suspended word back clears both, so it genuinely returns.</p>
 <p><strong>Nothing here happens automatically.</strong> The app counts your failures and shows you the count; it does not act on it. If a word is fighting you, the answer usually isn't more repetitions — it's learning the word some other way, or fixing the card, and then bringing it back when you're ready. That is a judgement about the word, and it stays yours.</p>
 
@@ -209,6 +209,7 @@ td, th{overflow-wrap:break-word}
   <tr><td><span class="key k-easy">Easy</span></td><td>Graduates at once, skipping the steps.</td><td>Graduates back to review, stronger.</td><td>A longer interval than Good.</td></tr>
 </table>
 <p><strong>Every button except Again moves the word forward.</strong> No word can get stuck circling the same short step. This is a deliberate departure from Anki, where Hard on a learning step <em>repeats</em> the step — so a single-step deck there can never graduate a card its user honestly rates Hard, an open request on the Anki forums since 2024. It is also why there is no "after N Hards, do X" rule anywhere: such a rule would only be needed if a button could fail to advance, and none can.</p>
+<p><strong>A second Again on the same look isn't a free pass, even though the step doesn't move.</strong> Relearning has one step, so failing it twice shows the same "back in 10 minutes" both times — the screen looks identical either way. Underneath, each fail still cuts the word's stored strength again, by roughly two thirds. The step stays put; what the app believes about the word keeps dropping.</p>
 
 <h3>Hard, in order of when you'll meet it</h3>
 <ul>
@@ -219,7 +220,7 @@ td, th{overflow-wrap:break-word}
   <li><strong>What it never does:</strong> repeat a step, send a word back to one minute, or count towards anything. It is also never rewritten by the timing rule in §2 — a Hard you press is a Hard that's recorded.</li>
   <li><strong>When it comes back, grade it afresh.</strong> A word that was Hard last time and comes easily this time is Good or Easy now; the app already remembers the struggle.</li>
 </ul>
-<p>One thing worth knowing so it doesn't look like a bug: on the second learning press of the same day, Hard and Good often show the <em>same</em> first interval. That is the scheduler's own rule for same-day repeats — a pass never <em>lowers</em> its belief in a memory, so neither grade changes it much minutes after the first look — and it is what every reference version of the scheduler does. The difference is real, it just shows up from the second review on.</p>
+<p>One thing worth knowing so it doesn't look like a bug: on the second learning press of the same day, Hard and Good give you the exact same next date, not just "often." A pass never <em>lowers</em> its belief in a memory, so a same-day Hard leaves the word's stored strength only a hair below what Good would have left it at — too small a gap to ever move the day you're shown, checked across the whole range these presses actually reach. The difference is real, it just shows up from the second review on.</p>
 
 <h2 id="timing">2. The timing rule, and quick rate</h2>
 <p>Part One has the five-second rule: take more than five seconds and an Easy is recorded as Good. Two details for reference. It is the <em>only</em> thing that ever changes a press before the scheduler sees it — the <em>Calibration</em> panel (§5) says so under <em>Diagnostics</em>, and counts how often it has fired. If a second line ever appears there, something has been put back in between. And a reading over 300 seconds is treated as you having looked away, and discarded rather than counted.</p>
@@ -257,6 +258,7 @@ td, th{overflow-wrap:break-word}
 
 <h3>When you fail a word you'd learned</h3>
 <p>A word due every month, failed, drops back to about two days' worth of strength and returns in ten minutes. Getting back to a month takes several sessions. That's the real cost of a lapse, and the real argument for grading honestly the first time.</p>
+<p>On the way back up, only one grade meaningfully speeds things. Press Easy on that first look back, wait for a real day to pass, and it earns a longer next date than Hard or Good would have. Clear the look in the very same sitting, though, and Hard, Good and Easy all land you on the same next date regardless — the gap is too short for any grade's extra credit to show up yet. And press Easy slowly (over five seconds) and the timing rule above turns it into Good anyway, so the speed-up only ever comes from a genuinely quick, honest Easy.</p>
 
 <h2 id="aside">4. Words that fight you</h2>
 <p>Part One introduces the two exits. Here is the rest of it.</p>
@@ -265,8 +267,8 @@ td, th{overflow-wrap:break-word}
 <p>Both appear on the study card once "Again" has landed on that word twice in one study day, side by side, as real tap targets rather than fiddly glyphs. Both are also keys, and the keys are not gated the way the icons are — they work on any card, because there is no reason a deliberate keypress should be refused on a word you have already decided about.</p>
 <table>
   <tr><th></th><th>Bury</th><th>Suspend</th></tr>
-  <tr><td>Icon</td><td>&#10710; hourglass</td><td>&#9873;&#65038; flag</td></tr>
-  <tr><td>Key</td><td><code>-</code></td><td><code>@</code> or <code>F</code></td></tr>
+  <tr><td>Icon</td><td>&#10710; hourglass</td><td>&#9790; crescent</td></tr>
+  <tr><td>Key</td><td><code>-</code></td><td><code>@</code></td></tr>
   <tr><td>How long</td><td>Until the next study day</td><td>Until you bring it back</td></tr>
   <tr><td>Other direction</td><td>Goes with it</td><td>Stays as it is</td></tr>
   <tr><td>To reverse</td><td>Nothing — it returns on its own</td><td>Press the flag again, or bring it back from the front screen or Browse — or take the daily offer</td></tr>
@@ -435,7 +437,10 @@ Rules:
 <p>Just start again. Overdue words are handled properly — the app knows how long it's been, and getting one right after a long gap counts for more than getting it right on time.</p>
 
 <h3>A word keeps beating me</h3>
-<p>§4 is the whole answer. In short: two Agains on the same word in one day put two buttons on the card — <em>Bury</em>, which hides it until tomorrow, and the flag, which sets it aside until you fetch it back. Neither ever happens on its own.</p>
+<p>§4 is the whole answer. In short: two Agains on the same word in one day put two buttons on the card — <em>Bury</em>, which hides it until tomorrow, and <em>Suspend</em>, which sets it aside until you fetch it back. Neither ever happens on its own.</p>
+
+<h3>I failed a word, came back the next day, and its gap looked longer than I expected</h3>
+<p>That's not a bug — the app is rewarding real evidence. Clear a failed word's ten-minute look in the same sitting and the app only has a few minutes of "you still know this" to go on. Come back the next day instead and clear it then, and a genuine day has passed with the word still holding — stronger proof, so the date it gives you next is further out, not closer. Waiting a day for that look genuinely banks more strength than clearing it there and then.</p>
 
 <h3>A word I brought back has disappeared again</h3>
 <p>It shouldn't: bringing a word back clears both exits, so it returns to normal review outright. If a word is genuinely missing, check the part chips — a part switched off hides words you've already begun.</p>
@@ -452,13 +457,14 @@ Rules:
 <h3>Studying</h3>
 <table>
   <tr><th>Key</th><th>What it does</th></tr>
-  <tr><td><code>Space</code> / <code>Enter</code></td><td>Reveal the answer — or, once it's showing, rate Easy.</td></tr>
+  <tr><td><code>Space</code> / <code>Enter</code></td><td>Reveal the answer — or, once it's showing, rate Good. Anki's own key and its own grade.</td></tr>
   <tr><td><code>1</code> <code>2</code> <code>3</code> <code>4</code></td><td>Rate the word: 1 Again, 2 Hard, 3 Good, 4 Easy — the same four keys on every word, whatever state it is in. Each button prints its own number.</td></tr>
   <tr><td><code>4</code> (before revealing)</td><td>Only with <em>Quick rate</em> on (§2, §8), and only on a word past its first learning steps: grades it Easy from the question side, with no reveal. 1, 2 and 3 do nothing there.</td></tr>
   <tr><td><code>Z</code> / <code>0</code></td><td>Undo the last rating. <code>Shift</code>+<code>Z</code> does the same. Straight after a quick-rate press, <code>Z</code> corrects that word to Again instead.</td></tr>
   <tr><td><code>-</code></td><td><strong>Bury</strong> — hide this word, both directions, until tomorrow, and move on. Anki's own bury key.</td></tr>
   <tr><td><code>Ctrl</code>/<code>&#8984;</code> + <code>1</code>–<code>7</code></td><td><strong>Flag this word</strong> in one of seven colours — Anki's own keys. Pressing the colour a word already carries clears it. A flag changes nothing about when the word comes back. See §4b.</td></tr>
-  <tr><td><code>@</code> or <code>F</code></td><td><strong>Suspend</strong> — take this word out of review until you bring it back; press again to bring it back. Anki's own suspend key, plus the app's older <code>F</code>. Both do the same thing.</td></tr>
+  <tr><td><code>F</code></td><td>Opens the same flag menu, named — a card showing all seven colours by whatever you have called them, with a digit under each. Press <code>1</code>–<code>7</code> while it is open to choose, <code>0</code> for no flag. This app's own key, not Anki's; nothing is bound to plain <code>F</code> there.</td></tr>
+  <tr><td><code>@</code></td><td><strong>Suspend</strong> — take this word out of review until you bring it back; press again to bring it back. Anki's own suspend key.</td></tr>
   <tr><td><code>S</code></td><td><strong>End the session</strong> — back to the front screen, exactly as tapping <span class="key">‹</span> does: the clock stops, the sitting closes, and anything not yet synced is sent on its way. Anki's own key for this. From the front screen the same <code>S</code> starts studying again. Not <code>Esc</code> — the browser keeps that one for leaving full screen and will not give it up.</td></tr>
 </table>
 

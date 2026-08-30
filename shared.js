@@ -174,14 +174,27 @@ function heatRec(days,dk){
 // A CSS background string for one day cell/dot, or '' for a day with no
 // data (left to the plain --panel base). color-mix() with a `var(--x)`
 // reference is resolved by the browser at paint time, not here -- this never
-// reads an actual colour, so the exact same string is correct across every
-// palette and both light/dark modes automatically.
+// reads an actual colour, so the same string paints correctly under any
+// palette and either mode with no re-render.
+//
+// That was never the same as the RAMP meaning the same thing under any
+// palette, though (2026-08-30, in-progress/FOUR_QUIRKS_FINDINGS.md §3):
+// --good/--again/--coral/--easy/--amber all vary BY palette, and --good
+// alone spans hue 57 (a yellow) to 198 (a cyan) and lightness 22 to 76 across
+// the file's 24 blocks, so the exact same 82%-recall day rendered olive in
+// one palette and violet in another -- worse under daily rotation, which
+// hands you a new scale each morning. Retention now reads --heat-good/
+// --heat-again (palettes.css), fixed pairs, one per mode, not per palette --
+// a day means the same colour every day. Volume's FAR end (the accent) is
+// fixed the same way, via --heat-<accent>; its near end still mixes into
+// --panel on purpose, so a quiet day still disappears into whatever ground
+// the palette is wearing -- only the scale's far end needed to stop moving.
 function heatCellBg(rec,avg,mode,accent){
   if(!rec||!rec.ratings) return '';
   if(mode==='retention'&&rec.tot){
     const p=retentionPct(rec.ok,rec.tot);
-    return 'background:color-mix(in '+HEAT_SPACE+', var(--good) '+p+'%, var(--again) '+(100-p)+'%)';
+    return 'background:color-mix(in '+HEAT_SPACE+', var(--heat-good) '+p+'%, var(--heat-again) '+(100-p)+'%)';
   }
   const p=volumePct(rec.ratings,avg);
-  return 'background:color-mix(in '+HEAT_SPACE+', var(--'+accent+') '+p+'%, var(--panel))';
+  return 'background:color-mix(in '+HEAT_SPACE+', var(--heat-'+accent+') '+p+'%, var(--panel))';
 }

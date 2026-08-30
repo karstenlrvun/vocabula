@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.28.3">
+<link rel="stylesheet" href="palettes.css?v=2026.08.30.6">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -35,7 +35,7 @@
   stays HERE, synchronous, so it still halts the parser before the app
   skeleton can flash -- it never depended on content at all.
 -->
-<script src="decks/registry.js?v=2026.08.28.3"></script>
+<script src="decks/registry.js?v=2026.08.30.6"></script>
 <!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
      number must be bumped with BUILD (sec95c pins that it matches).
      Why: these two are the only files both pages load by a fixed name, and a
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.28.3"></script>
+<script src="shared.js?v=2026.08.30.6"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -136,6 +136,44 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
 .c-eta{color:var(--muted);font-weight:400}
 .studyTimer{margin-top:3px;text-align:center;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 
+/* ---------- keyboard-shortcuts reference (2026.08.30.5) ----------
+   A third bar icon, same .icon styling #toHome/#undoBtn already use, so it
+   reads as one more native control rather than a new widget vocabulary --
+   in-progress/shortcuts-on-screen-demo.html demoed three shapes (a corner
+   badge, a bottom strip, this one); this is the one he picked.
+
+   Laptop-only, as asked -- and "laptop" is deliberately NOT the same test
+   html[data-layout="landscape"] uses elsewhere on this page. That attribute
+   requires BOTH a wide landscape viewport AND settings.layout==='new' (see
+   its own block below), so gating on it would hide this on a full-width
+   laptop screen for anyone still on the default "Legacy" card layout --
+   an unrelated setting silently swallowing an unrelated feature. This
+   button reuses just the viewport half of that test, unconditionally: a
+   laptop, or an iPad turned sideways, never a phone in hand, regardless of
+   which card layout is chosen. */
+.icon.shortcutsBtn{display:none}
+@media (min-width:700px) and (orientation:landscape){
+  .icon.shortcutsBtn{display:flex}
+}
+/* Visually echoes .dayDetail's own card (panel/line/13px radius) rather
+   than reusing that class outright -- .dayDetail assumes inline flow
+   (margin-top, no positioning of its own), and this one has to anchor
+   under a bar icon instead. */
+.shortcutsCard{position:fixed;display:none;width:300px;max-width:calc(100vw - 24px);
+  background:var(--raise);border:1px solid var(--line);border-radius:13px;
+  box-shadow:0 14px 34px rgba(0,0,0,.22);padding:14px 16px;z-index:40}
+.shortcutsCard.on{display:block}
+.shortcutsCard .ddTitle{font-family:var(--serif);font-size:15px;margin-bottom:8px}
+.shortcutsCard .refGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 20px}
+.shortcutsCard .refCat{grid-column:1/-1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);font-weight:600;margin:9px 0 3px}
+.shortcutsCard .refCat:first-child{margin-top:0}
+.shortcutsCard .refRow{display:flex;align-items:baseline;gap:9px;padding:3px 0;font-size:12.5px}
+.shortcutsCard .refRow .rk{font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo,monospace;font-size:10.5px;
+  color:var(--coral);background:var(--accent-soft);border-radius:5px;padding:1px 6px;flex:0 0 auto;
+  min-width:60px;text-align:center}
+.shortcutsCard .refRow .rd{color:var(--muted)}
+
 /* ---------- card ---------- */
 .cardarea{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
   padding:16px 22px;min-height:0;position:relative;overflow:hidden}
@@ -207,7 +245,14 @@ html[data-layout="landscape"][data-study-card="replace"] #gradeNote,
 html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3;margin:14px 0 0}
 /* .suspBtn is shared with the Browse and Home struggling-word rows (their
    own small inline glyph, unaffected below) -- keep this base rule as it
-   was, and enlarge only the study-screen's own instance underneath. */
+   was, and enlarge only the study-screen's own instance underneath.
+   The glyph is a crescent, not the U+2691 flag it carried until
+   2026.08.30.0. That flag predates the coloured markers: it was drawn when
+   "flag" WAS this app's word for setting a word aside, and once the markers
+   took the name in 2026.08.28.0 the suspend control was left wearing the
+   icon of a different feature. Inline SVG rather than U+263E for the reason
+   the bury hourglass is one too -- see .buryBtn: a text codepoint has to be
+   in a font on every device, and the near ones are emoji-presentation. */
 .suspBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;font-size:16px;line-height:1;color:var(--faint)}
 /* ---------- flags (2026.08.28.0) ----------
    Seven colours, and the digit ALWAYS shown beside the colour rather than
@@ -222,8 +267,25 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .cardFlagBtn.on{color:var(--flagNow)}
 .cardFlagBtn .fnum{position:absolute;right:5px;bottom:4px;font-size:9.5px;font-weight:600;
   line-height:1;color:var(--flagNow)}
-.flagGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0 4px}
-@media(min-width:520px){.flagGrid{grid-template-columns:repeat(4,1fr)}}
+/* On the card, not the bar (2026-08-30) -- see the markup's own comment.
+   .cardFlagBtn is already its own positioning context (position:relative,
+   for .fnum just above), so this only adds where IT sits, same as .multi
+   does for its own top-right corner just below in the file. Landscape gets
+   its own variant right after .multi's landscape rule: #cardarea switches to
+   display:contents there, which erases it as a containing block, so a plain
+   position:absolute here would look straight past it for the next positioned
+   ancestor up the tree -- exactly the problem .multi's own landscape rule
+   already solves, mirrored here at the opposite corner. */
+.cardFlagBtn.onCard{position:absolute;bottom:10px;right:14px;z-index:1}
+/* auto-fit, NOT a width media query. This grid lives inside a dialog capped at
+   380px (.wordNoteOverlay .dayDetail), but the rule here used to be
+   @media(min-width:520px){...repeat(4,1fr)} -- which asks the WINDOW, not the
+   box the grid is actually in. On any Mac window that resolved to four columns
+   inside 380px, and since a grid item cannot shrink below its own content, Blue
+   and No flag hung off the right edge; an iPhone never hit 520px, so it looked
+   correct everywhere it was tested. auto-fit measures the container, so the
+   count follows the dialog and the same bug cannot come back at a new width. */
+.flagGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px;margin:10px 0 4px}
 .flagPick{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;
   border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:13.5px;
   font-family:inherit;text-align:left}
@@ -231,6 +293,14 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .flagPick .fkey{margin-left:auto;font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
 .flagPick.on{border-color:var(--coral);background:var(--accent-soft)}
 .flagPick.none .fsw{background:none;border:1px dashed var(--line-strong,var(--line))}
+/* The rename face. One column at every width on purpose: these are sentences
+   about what a colour means, not labels, so they want the room. */
+.flagNames{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}
+.flagNameRow{display:flex;align-items:center;gap:8px}
+.flagNameRow .fsw{width:14px;height:14px;border-radius:4px;flex:0 0 auto}
+.flagNameIn{flex:1 1 auto;min-width:0;font:inherit;font-size:14px;color:var(--ink);
+  background:var(--panel,transparent);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.flagNameIn:focus{outline:none;border-color:var(--accent,var(--line-strong))}
 /* the dot on a Browse row -- colour plus its digit, never colour alone */
 .tiedChip.on{background:var(--accent-soft);border-color:var(--coral);color:var(--coral)}
 /* One card per tie. The gloss is shown OUTRIGHT here, unlike an ordinary
@@ -1012,6 +1082,7 @@ html[data-layout="landscape"] #scStudy.on{
 html[data-layout="landscape"] #scStudy>.bar{grid-area:bar}
 html[data-layout="landscape"] .cardarea{display:contents}
 html[data-layout="landscape"] #multi{grid-area:prompt;position:static;align-self:start;justify-self:end;margin:14px 14px 0 0;z-index:1}
+html[data-layout="landscape"] #cardFlagBtn.onCard{grid-area:prompt;position:static;align-self:end;justify-self:end;margin:0 14px 14px 0;z-index:1}
 html[data-layout="landscape"] #prompt{grid-area:prompt;align-self:stretch;justify-self:stretch;
   display:flex;align-items:center;justify-content:center;padding:32px;margin:16px 8px 16px 16px;
   border:1px solid var(--line);border-radius:20px;background:var(--panel);
@@ -1759,7 +1830,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="bulkBar" id="bulkBar">
         <b id="bulkCount">0 selected</b>
         <div class="bulkBtns">
-          <button id="bulkSusp">&#9873;&#65038; Suspend</button>
+          <button id="bulkSusp"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M14.8,3.2 a9.2,9.2 0 1 0 6.4,14.4 A10.6,10.6 0 0 1 14.8,3.2 Z"/></svg> Suspend</button>
           <button id="bulkBury"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M4,2.5 h16 a1,1 0 0 1 0,2 L12.9,12 L20,19.5 a1,1 0 0 1 0,2 H4 a1,1 0 0 1 0,-2 L11.1,12 L4,4.5 a1,1 0 0 1 0,-2 Z"/></svg> Not today</button>
           <button id="bulkGroup">&#128279; Tie</button>
           <button id="bulkClear">Clear</button>
@@ -1789,14 +1860,27 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
     <div class="bar">
       <button class="icon" id="toHome" aria-label="Back">&#8249;<span class="keycap iconKeycap">S</span></button>
       <div class="title"><div class="counts" id="counts"></div><div class="studyTimer" id="studyTimer"></div></div>
-      <button class="cardFlagBtn" id="cardFlagBtn" aria-label="Flag this word"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V4h11l-1 3h6l-1.5 4L20 15h-9l-1-3H4"/></svg><span class="fnum" id="cardFlagNum"></span></button>
+      <button class="icon shortcutsBtn" id="shortcutsBtn" aria-label="Keyboard shortcuts" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M6 14h.01M18 14h.01M9.5 14h5"/></svg></button>
       <button class="icon" id="undoBtn" aria-label="Undo">&#8630;<span class="keycap iconKeycap">0 / Z</span></button>
     </div>
+    <div class="shortcutsCard" id="shortcutsCard" role="dialog" aria-label="Keyboard shortcuts"></div>
     <!-- Grade reminder (2026.08.19.4, STUDY_SYSTEM.md 5.9.1). Sibling of
          #cardArea on purpose -- see .gradeNote's CSS comment and C3. -->
     <div class="gradeNote hidden" id="gradeNote" role="status"><span class="gnText" id="gradeNoteText"></span><button class="gnX" id="gradeNoteX" aria-label="Dismiss">&times;</button></div>
     <div class="cardarea" id="cardArea">
       <div class="multi" id="multi">2</div>
+      <!-- Moved off the bar and onto the card (2026-08-30, the owner's
+           choice after the top-bar demo -- in-progress/FOUR_QUIRKS_FINDINGS.md
+           §4): a fourth bar child pushed .counts 27px off centre and past its
+           own width. Same id, same wiring (tapZone/renderCardFlag both go by
+           #cardFlagBtn regardless of parent), just a different home -- and a
+           deliberately less-reached-for one: bottom-right, away from .multi's
+           own top-right corner and out of the primary reveal/rate flow, so
+           it reads as the occasional act it actually is. .onCard carries the
+           positioning; see its own CSS for the landscape-grid variant, since
+           #cardarea is display:contents there and a plain absolute position
+           has no containing block left to measure against. -->
+      <button class="cardFlagBtn onCard" id="cardFlagBtn" aria-label="Flag this word"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V4h11l-1 3h6l-1.5 4L20 15h-9l-1-3H4"/></svg><span class="fnum" id="cardFlagNum"></span></button>
       <div class="prompt" id="prompt"></div>
       <div class="rule"></div>
       <div class="answer" id="answer"></div>
@@ -1809,7 +1893,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       <div class="answer quickFlash" id="quickFlash" aria-hidden="true"></div>
       <div class="leechtag hidden" id="leechTag">
         <button class="notTodayBtn" id="notTodayBtn" aria-label="Bury — bring this word back tomorrow"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M4,2.5 h16 a1,1 0 0 1 0,2 L12.9,12 L20,19.5 a1,1 0 0 1 0,2 H4 a1,1 0 0 1 0,-2 L11.1,12 L4,4.5 a1,1 0 0 1 0,-2 Z"/></svg></button>
-        <button class="suspBtn" id="suspBtn" aria-label="Suspend this word">&#9873;&#65038;</button>
+        <button class="suspBtn" id="suspBtn" aria-label="Suspend this word"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M14.8,3.2 a9.2,9.2 0 1 0 6.4,14.4 A10.6,10.6 0 0 1 14.8,3.2 Z"/></svg></button>
       </div>
       <div class="hintline" id="hintline"></div>
       <div class="cardMeta" id="cardMeta"></div>
@@ -2984,7 +3068,7 @@ const CALIBRATION_DUE_DEFAULT=new Date(2026,8,2,9,0,0).getTime();   // 2 Sept 20
 function calibrationDue(s,now){ return !!(s&&s.calibrationDueAt!=null&&Number.isFinite(s.calibrationDueAt)&&now>=s.calibrationDueAt); }
 function makeDefaults(){ return {
   version:2, created:Date.now(), calibrationDueAt:CALIBRATION_DUE_DEFAULT,
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, returnPerDay:5, topBarStyle:'counts'},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, returnPerDay:5, topBarStyle:'counts', flagNames:null},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, sinceExport:0, lastExport:null, lastPushBytes:0,
   deck:KEY, lastSync:null, syncedLogLen:null, lastRemoteAt:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
   // Phase 3 §C (PHASE3_4_HANDOFF.md): user-added words. Rides backup/sync/
@@ -3486,6 +3570,13 @@ function normalise(o){
   // anything that is not one falls back to the default (on), so a hand-edited
   // 'yes' or a missing key cannot read as off by accident.
   if(typeof s.settings.gradeReminder!=='boolean') s.settings.gradeReminder=defaults.settings.gradeReminder;
+  // flagNames: seven display labels, or null for "all still the colours".
+  // Coerced to exactly FLAG_COUNT trimmed, capped strings so a hand-edited or
+  // half-merged array cannot leave flagName() reading past its end; an entry
+  // equal to its own colour is stored empty, so the default keeps tracking
+  // FLAG_NAMES. All-empty collapses back to null rather than persisting seven
+  // blanks, which keeps prefsSnapshot() from carrying a key that means nothing.
+  s.settings.flagNames=Array.isArray(s.settings.flagNames)?flagNamesFrom(s.settings.flagNames):null;
   // applyTheme() already falls back for an unknown palette, but it does that
   // without writing the fallback down, so a junk value survives in S and
   // renderSet() prints it back out. Settled here instead, once, where every
@@ -3715,6 +3806,13 @@ function normalise(o){
       // Coerced like every other counter here rather than repaired: a
       // junk value means no flag, which loses a label and nothing else.
       c.flag=(Number.isFinite(c.flag)&&c.flag>=1&&c.flag<=FLAG_COUNT)?Math.round(c.flag):0;
+      // flagAt: when that flag was set. Written only by applyFlag(), and only
+      // meaningful while a flag is on, so it is cleared with one. A card
+      // flagged before 2026.08.30.2 carries no stamp and lands on null --
+      // "flagged, date unknown" -- rather than being backdated to today:
+      // manufacturing a date is exactly the false precision this field exists
+      // to remove, and null is readable as unknown where a wrong number is not.
+      c.flagAt=(c.flag&&Number.isFinite(c.flagAt))?Math.round(c.flagAt):null;
       if(typeof c.note==='string'&&c.note.trim()) c.note=c.note.slice(0,CAP_NOTE);
       else c.note=null;
       // confuseGroups: which manual groups (registry sanitized just above)
@@ -3825,7 +3923,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.28.3';
+const BUILD='2026.08.30.6';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -3913,7 +4011,7 @@ function buildQueue(dir){
   return {learn,due,intro,seededTotal:seeded.length,freshTotal:fresh.length};
 }
 
-let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, undoStack=[], donePoll=null, cardDirty=false;
+let Q=null, current=null, revealAt=0, shownAt=0, thinkMs=null, pressAt=null, undoStack=[], donePoll=null, cardDirty=false;
 let lastRated=null; // {q,rating,ivl} for the card rate() just graded -- read by renderCard()'s recap card, cleared by undo() and by anything that wipes undoStack alongside it
 let calY=null, calM=null, calSelectedDay=null;   // calendar fold's own state -- not persisted, not S.dir-linked
 let noteEditId=null;   // which word's note panel is open (openWordNote/#wordNoteOverlay) -- not persisted, same shape as calSelectedDay above
@@ -3938,6 +4036,12 @@ let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseFl
 // just below) or scStudy is not the screen on screen, so backgrounded time
 // and time spent elsewhere in the app is never counted as study time.
 let studyTickStart=null, studyTimerIv=null, sessionMs=0;
+// The study screen's "~N min left" text, recomputed once per card by
+// renderCounts() (studyEta() there does the arithmetic) and read every
+// second by tickStudyTimer() below -- cached rather than recomputed on every
+// tick, since the queue and the trailing-window rates behind it only change
+// once per rating, not once per second. '' means nothing is shown at all.
+let studyEtaText='';
 // The sitting log (2026.08.19.5, STUDY_SYSTEM.md 7.10 / CONSISTENCY_PLAN.md
 // 7, B5-B7): each running segment of the study clock -- from the moment it
 // starts to the moment it stops -- becomes one row [startMs, endMs, ratings,
@@ -4065,7 +4169,14 @@ function fmtStopwatch(ms){
 }
 function tickStudyTimer(){
   const el=$('studyTimer');
-  if(el) el.textContent=fmtStopwatch(sessionMs+(studyTickStart!=null?Date.now()-studyTickStart:0));
+  // "~N min left" moved onto this line from the counts line (2026-08-30, the
+  // owner's call after the top-bar demo -- he flags rarely enough that he
+  // didn't want it costing bar width every session, and it belongs beside
+  // the clock it's estimating against anyway): studyEtaText is cached by
+  // renderCounts(), not recomputed here, so a tick that runs between cards
+  // just reprints the same suffix onto a fresh stopwatch reading.
+  if(el) el.textContent=fmtStopwatch(sessionMs+(studyTickStart!=null?Date.now()-studyTickStart:0))
+                        +(studyEtaText?' · '+studyEtaText:'');
 }
 // fresh=true is "the user just walked into the study screen" (resets the
 // on-screen session clock to zero); fresh=false is "the tab came back to the
@@ -4389,19 +4500,86 @@ function hardPassNoteDue(settings,pressed,preState,toastDay,todayKey){
 // Calmer top bar (2026-08-20, DEVELOPMENT_IDEAS.md §A3/§A4): a setting
 // (S.settings.topBarStyle) for whether the study screen's header shows the
 // raw new/learning/due split (the original, still the default), a single
-// "done of today's total" progress line, or neither -- plus an honest
-// "~N min left" estimate, shown alongside whichever style is picked. The
-// estimate degrades to nothing rather than guessing: avgMsPerRating()
-// (shared.js) already refuses to answer off too little data, same gate the
-// Stats page's own per-review timing uses.
+// "done of today's total" progress line, or neither. "~N min left" is a
+// separate concern from style -- see studyEta() and tickStudyTimer() -- and
+// no longer lives on this line at all (2026-08-30).
+//
+// Expected presses to graduate through a `steps.length`-step chain, each
+// press either restarting to step 0 (probability p, an Again) or advancing
+// (probability 1-p), graduating on an advance from the last step -- exactly
+// the branching schedule() itself runs against LEARN_STEPS/RELEARN_STEPS.
+// Solved by writing each step's own expected remaining presses as a linear
+// function of the step-0 figure and back-substituting from the last step,
+// rather than a duration mined from history: k=1 (RELEARN_STEPS) reduces to
+// 1/(1-p), k=2 (LEARN_STEPS) to (2-p)/(1-p)^2, both checked against this
+// general form before use (in-progress/FOUR_QUIRKS_FINDINGS.md §2). Written
+// generically, off steps.length rather than hardcoding either count, so it
+// keeps working if either step list is ever retuned.
+function expectedPresses(k,p){
+  let a=1,b=p;                          // a_(k-1), b_(k-1)
+  for(let i=k-2;i>=0;i--){ a=1+(1-p)*a; b=p+(1-p)*b; }
+  return a/(1-b);
+}
+// Trailing-window Again rate for one rating population, INCLUDING today --
+// unlike avgMsPerRating()'s own window, which stops short of today on
+// purpose. That exclusion is right for a still-running studyMs tally; it
+// would defeat the entire point here, which is to let tonight's own emerging
+// rate pull the estimate as it comes in (the owner's ask, 2026-08-30): early
+// in a sitting today's few ratings barely move the sum, and by the end of a
+// heavy one they can dominate it -- no separate blend weight needed, that
+// falls straight out of summing raw counts over a window that happens to
+// include an still-accumulating day.
+//
+// 'review' reads the existing rec.tot/rec.ok pair (cs.st R or X at rating
+// time, tracked since before this feature existed, so it already has real
+// history the day this ships). 'learn' reads the new rec.learnTot/rec.learnOk
+// pair (cs.st==='L' specifically -- see rate()'s own comment on why that's
+// kept apart from learnStageOf()'s 'learning' stage); that pair has NO
+// history before this ships, so {ready:false} is the expected, ordinary
+// answer for its first handful of days, not a fault. Gated on a plain
+// sample-size floor rather than avgMsPerRating()'s day-count leg too: the
+// whole design is that one big session can satisfy this on its own.
+function liveAgainRate(pop,windowDays,todayKey){
+  const okKey=pop==='learn'?'learnOk':'ok', totKey=pop==='learn'?'learnTot':'tot';
+  let ok=0,tot=0;
+  for(let k=todayKey-windowDays;k<=todayKey;k++){
+    const r=S.days[k]; if(r){ ok+=r[okKey]|0; tot+=r[totKey]|0; }
+  }
+  return tot>=10?{ready:true,p:1-(ok/tot)}:{ready:false,p:null};
+}
+// The study screen's "~N min left", now priced in presses rather than cards
+// (2026-08-30, in-progress/FOUR_QUIRKS_FINDINGS.md §2 -- Q.due/intro/learn
+// count CARDS, but a new or pile-returning word costs two-plus presses to
+// graduate, not one, so the old avgMsPerRating()*total undercounted by
+// 22-62% depending how much of tonight is new/returning). avgMsPerRating()
+// is unchanged -- still ms per single press, still refuses to answer off too
+// little data -- only what it gets MULTIPLIED by has changed: due cards cost
+// 1 press plus a lapse's relearn cost at the live review Again rate,
+// intro/learn cards cost a live-rate graduation. Degrades in two honest
+// stages rather than one: '' when there isn't enough of ANY kind of data yet
+// (a genuinely fresh install -- matches how this has always behaved), or a
+// short, visible placeholder when there's enough to show the OLD kind of
+// estimate but the new learnTot/learnOk pair hasn't gated in yet (every
+// install, for a handful of days after this ships) -- so that gap reads as
+// "still arriving" rather than as a removed feature going quiet.
+function studyEta(n,l,r,todayKey){
+  const total=n+l+r;
+  const avg=avgMsPerRating(S.days,todayKey,14);
+  if(!avg||total<=0) return '';
+  const pr=liveAgainRate('review',14,todayKey), pl=liveAgainRate('learn',14,todayKey);
+  if(!pr.ready) return '';
+  if(!pl.ready) return 'learning your pace';
+  const presses=r*(1+pr.p*expectedPresses(RELEARN_STEPS.length,pr.p))
+               +(n+l)*expectedPresses(LEARN_STEPS.length,pl.p);
+  return '~'+fmtActiveTime(avg*presses)+' left';
+}
 function renderCounts(){
   const n=Q.intro.length, l=Q.learn.length, r=Q.due.length, total=n+l+r;
   const style=S.settings.topBarStyle||'counts';
-  const avg=avgMsPerRating(S.days,today(),14);
-  const eta=(avg&&total>0)?('~'+fmtActiveTime(avg*total)+' left'):'';
-  const etaHtml=eta?' <span class="c-eta">'+eta+'</span>':'';
+  studyEtaText=studyEta(n,l,r,today());
+  tickStudyTimer();   // refresh the timer line now rather than waiting up to 1s for its own interval
   if(style==='none'){
-    $('counts').innerHTML=eta?'<span class="c-eta">'+eta+'</span>':'';
+    $('counts').innerHTML='';
     return;
   }
   if(style==='progress'){
@@ -4420,12 +4598,12 @@ function renderCounts(){
     const d=today();
     let done=0; for(const e of S.log){ if(dayKey(e[2])===d&&String(e[0])[0]===S.dir) done++; }
     const whole=done+total;
-    $('counts').innerHTML='<span class="c-prog"><b>'+done+'</b> of '+whole+' today</span>'+etaHtml;
+    $('counts').innerHTML='<span class="c-prog"><b>'+done+'</b> of '+whole+' today</span>';
     return;
   }
   $('counts').innerHTML='<span class="c-new"><b>'+n+'</b> new</span>'+
                         '<span class="c-lrn"><b>'+l+'</b> learning</span>'+
-                        '<span class="c-due"><b>'+r+'</b> due</span>'+etaHtml;
+                        '<span class="c-due"><b>'+r+'</b> due</span>';
 }
 // Pure: the most recent log entry for one card, or null if it's never been
 // rated -- feeds the optional study-screen stats panel (studyStats setting)
@@ -4681,7 +4859,7 @@ function renderCard(){
   $('revealRow').classList.remove('hidden');
   $('rateRow').classList.add('hidden');
   syncQuickBtn();   // after current is set and the row is showing: the button is per-card, not per-session
-  shownAt=Date.now(); thinkMs=null; cardDirty=false;
+  shownAt=Date.now(); thinkMs=null; pressAt=null; cardDirty=false;
   renderCounts();
 }
 // The study card's two exits: "Not today" (bury until tomorrow) and the flag
@@ -4743,7 +4921,20 @@ function reveal(){
   $('revealRow').classList.add('hidden');
   $('rateRow').classList.remove('hidden');
   revealAt=Date.now();
-  const t=revealAt-shownAt;
+  // Measured from CONTACT, not from this click -- armPressStamp() below
+  // stamps pressAt on pointerdown, before the card even starts to move, so
+  // thinkMs stops including the tap's own dwell (the gap between touching
+  // the button and lifting off it, which a phone spends dimming the button
+  // under your finger before this click ever fires -- 2026-08-30, the owner
+  // noticed the app only ever acts on release). Zero change to WHEN this
+  // fires: reveal() is still only ever called from a real click, exactly as
+  // tapZone() has always required -- this only changes what number thinkMs
+  // computes from. pressAt>=shownAt rules out a stray stamp left over from
+  // the previous card (renderCard() also clears it fresh on every draw);
+  // without a live one -- most commonly a keyboard reveal (Space), which has
+  // no contact to measure from at all -- this falls back to revealAt exactly
+  // as it always did.
+  const t=(pressAt!=null&&pressAt>=shownAt)?(pressAt-shownAt):(revealAt-shownAt);
   thinkMs=(cardDirty||t<120||t>300000)?null:t;    // discard if you looked away
   const cs=previewCard(current), now=Date.now(), st=S.settings;
   // Each button computes its own preview independently -- one grade's
@@ -5120,6 +5311,19 @@ function rate(pressed){
   if(first||dayKey(cs.last)!==d) rec.words=(rec.words|0)+1;
   // relearning cards are real reviews too, and were being left out of the rate
   if(cs.st==='R'||cs.st==='X'){ rec.tot++; if(r!==AGAIN) rec.ok++; }
+  // A fresh or pile-returning word working its first LEARN_STEPS (2026-08-30,
+  // studyEta() below). Deliberately NOT learnStageOf()'s own 'learning' stage
+  // just above (rec.stageN) -- that stage also folds in a lapsed review's
+  // RELEARN_STEPS presses (cs.st==='X'), and those already belong with
+  // rec.tot/rec.ok above: a due card and the relearn step it can trigger are
+  // one cost model, a fresh/returning word working its own steps is another,
+  // and this pair has to isolate the second from the first for that estimate
+  // to price them apart. resetOnReturn() (setAside()) puts a word straight
+  // back into cs.st==='L' on the way out of the pile, same as any brand-new
+  // word, so a rough night on the pile shows up here exactly like a rough
+  // night learning -- which is the point: this feeds a rate the estimate
+  // reads LIVE, not a figure from yesterday.
+  if(cs.st==='L'){ rec.learnTot=(rec.learnTot|0)+1; if(r!==AGAIN) rec.learnOk=(rec.learnOk|0)+1; }
   // the burn-up sample for today (throttled inside; see stampDayStatus)
   stampDayStatus(rec,now);
   // bury the same word in the other direction until tomorrow
@@ -5542,17 +5746,69 @@ const FLAG_COUNT=7;
 // suspend/bury pair. The colours themselves live in palettes.css as
 // --flag1..7, solved per palette (TYING_AND_BROWSE_RESEARCH.md).
 const FLAG_NAMES=['Red','Orange','Green','Blue','Pink','Turquoise','Purple'];
+// 48, not the ~20 a colour name needs: these are short sentences about what a
+// colour MEANS, not labels. Measured against the three the owner actually
+// wrote -- "look-alike in Latin" (19), "English-similar, several senses" (30),
+// "English-similar, one sense" (25) -- a 24-cap silently truncated two of the
+// three, one of them mid-word. Still far short of CAP_TIE_LABEL's 120, because
+// this has to stay readable inside a 380px picker button.
+const CAP_FLAG_NAME=48;
+// A colour name says which flag; it cannot say what the flag MEANS, and the
+// meanings here are a real taxonomy rather than decoration -- look-alikes in
+// the language being learned; English-similar with several senses;
+// English-similar with one. Measured 2026-08-30, those categories separate
+// populations that behave differently (the one-sense group is 3.3x enriched
+// for words sharing an IDENTICAL English gloss with another deck word, the
+// several-senses group is not enriched at all), so they are worth keeping
+// apart and worth writing down. Anki reached the same conclusion: 2.1.45
+// added renaming in the same release that took flags from four to seven.
+// Display only -- nothing reads a name, 1-7 stays the stored value, and an
+// empty or missing entry falls back to the colour so the default keeps
+// tracking FLAG_NAMES if that list ever changes.
+function flagName(n){
+  if(!(n>=1&&n<=FLAG_COUNT)) return '';
+  const custom=S.settings&&S.settings.flagNames;
+  const v=Array.isArray(custom)?custom[n-1]:null;
+  return (typeof v==='string'&&v.trim())?v.trim():FLAG_NAMES[n-1];
+}
+// THE one place a flag value is written. Both callers -- setFlag() from the
+// keyboard and the picker overlay -- come through here, because the stamp
+// below has to happen on every path or the data it exists to make readable
+// is only half present. This file already carries two recorded instances of
+// a per-item list updated in one place and not its twin (Neon's two glow
+// lists; the theme picker's preview dots): same trap, timestamp instead of
+// colour.
+function applyFlag(cs,want){
+  const was=cs.flag|0;
+  cs.flag=want;
+  // WHEN a flag was set, not merely that it is set. Without this a flag is
+  // undateable, so every measurement scores a card's WHOLE history against a
+  // label applied at some unknown later point -- which is precisely what made
+  // the 2026-08-30 flag analysis unreadable in BOTH directions: an apparent
+  // +9.0pp recovery advantage that vanished under controls, and an apparent
+  // -21.8pp calibration deficit, neither separable from the selection effect
+  // of having flagged recently-missed words (MISS_ATTRIBUTION_RESEARCH.md 3).
+  // Same argument log column 13 (install) and column 14 (revealed) already
+  // won here: unrecoverable afterwards, one field now.
+  //
+  // null means EITHER no flag OR flagged before this was recorded; cs.flag
+  // itself tells the two apart, and neither case is guessed at. Re-picking
+  // the colour a word already carries keeps the original date -- the label
+  // did not change -- while re-affirming an undated one finally dates it.
+  if(!cs.flag) cs.flagAt=null;
+  else if(cs.flag!==was||cs.flagAt==null) cs.flagAt=Date.now();
+  touchCard(cs);
+  return cs.flag;
+}
 // Sets, clears or replaces a word's flag. Pressing the flag a word already
 // carries clears it, which is what Anki's own Ctrl+N does.
 function setFlag(id,n){
   const cs=cardState(id);
   const want=(Number.isFinite(n)&&n>=1&&n<=FLAG_COUNT)?Math.round(n):0;
-  cs.flag=(cs.flag===want)?0:want;
-  touchCard(cs);
-  return cs.flag;
+  return applyFlag(cs,(cs.flag===want)?0:want);
 }
 function flagOf(id){ const cs=S.cards[id]; return (cs&&cs.flag)|0; }
-// The bar button wears the current word's flag. --flagNow is set inline on
+// The card's own flag button wears the current word's flag. --flagNow is set inline on
 // the button rather than by seven CSS classes: the colours already live in
 // palettes.css as --flag1..7, and reading one back through a var() keeps the
 // per-palette solve as the single source of truth.
@@ -5562,7 +5818,7 @@ function renderCardFlag(){
   btn.classList.toggle('on',!!n);
   btn.style.setProperty('--flagNow', n?('var(--flag'+n+')'):'var(--faint)');
   $('cardFlagNum').textContent = n?String(n):'';
-  btn.setAttribute('aria-label', n?('Flagged '+FLAG_NAMES[n-1]+' — change or clear'):'Flag this word');
+  btn.setAttribute('aria-label', n?('Flagged '+flagName(n)+' — change or clear'):'Flag this word');
 }
 // One control, then pick a colour -- which is how BOTH of Anki's mobile
 // clients do it (AnkiDroid's app-bar "Flag Card", AnkiMobile's "Flag 1-4"),
@@ -5576,16 +5832,137 @@ function openFlagPicker(){
   for(let i=1;i<=FLAG_COUNT;i++){
     html+='<button class="flagPick'+(now===i?' on':'')+'" data-flag="'+i+'">'+
       '<span class="fsw" style="background:var(--flag'+i+')"></span>'+
-      escHtml(FLAG_NAMES[i-1])+'<span class="fkey">'+i+'</span></button>';
+      escHtml(flagName(i))+'<span class="fkey">'+i+'</span></button>';
   }
   html+='<button class="flagPick none'+(now===0?' on':'')+'" data-flag="0">'+
     '<span class="fsw"></span>No flag<span class="fkey">0</span></button></div>'+
     '<div class="note">A flag changes nothing about when this word comes back — it is a bookmark, and Browse is where you find it again.</div>'+
-    '<div class="ddBtns"><button class="small" id="fpClose">Close</button></div>';
+    '<div class="ddBtns"><button class="small" id="fpRename">Rename…</button><button class="small" id="fpClose">Close</button></div>';
   $('flagPickerDetail').innerHTML=html;
   $('flagPickerOverlay').classList.add('on');
 }
-function closeFlagPicker(){ $('flagPickerOverlay').classList.remove('on'); }
+// The second face of the same overlay. Renaming lives here rather than in
+// Settings because this is the one screen that already shows all seven
+// together, which is where you notice that two of them mean the same thing.
+function renderFlagNameEditor(){
+  let html='<div class="ddTitle">What each flag means</div><div class="flagNames">';
+  for(let i=1;i<=FLAG_COUNT;i++){
+    const cur=(S.settings.flagNames&&S.settings.flagNames[i-1])||'';
+    html+='<label class="flagNameRow"><span class="fsw" style="background:var(--flag'+i+')"></span>'+
+      '<input type="text" class="flagNameIn" data-flag="'+i+'" maxlength="'+CAP_FLAG_NAME+'"'+
+      ' value="'+escHtml(cur)+'" placeholder="'+escHtml(FLAG_NAMES[i-1])+'"'+
+      ' aria-label="Name for flag '+i+', '+escHtml(FLAG_NAMES[i-1])+'"></label>';
+  }
+  html+='</div>'+
+    '<div class="note">A name is display only — nothing reads it, and the digit is still what gets stored, so renaming cannot disturb a word you have already flagged. Leave one empty to keep its colour.</div>'+
+    '<div class="ddBtns"><button class="small" id="fpNamesDone">Done</button></div>';
+  $('flagPickerDetail').innerHTML=html;
+  $('flagPickerOverlay').classList.add('on');
+  const first=$('flagPickerDetail').querySelector('.flagNameIn');
+  if(first) first.focus();
+}
+// Read straight out of the inputs rather than tracked per keystroke, so
+// closing the overlay by any route -- Done, the backdrop, a tap outside --
+// keeps whatever is on screen. The coercion is the same rule normalise()
+// applies on load and is deliberately repeated here rather than reached by
+// running normalise() over a synthetic state: that walks every card and the
+// whole registry to settle one seven-string array.
+function flagNamesFrom(values){
+  const names=[]; let any=false;
+  for(let i=0;i<FLAG_COUNT;i++){
+    const v=values[i];
+    const t=(typeof v==='string')?v.trim().slice(0,CAP_FLAG_NAME):'';
+    names.push(t===FLAG_NAMES[i]?'':t);
+    if(names[i]) any=true;
+  }
+  return any?names:null;
+}
+function saveFlagNames(){
+  const box=$('flagPickerDetail'); if(!box) return;
+  if(!box.querySelector('.flagNameIn')) return;   // the picker face, not the editor
+  const values=[];
+  for(let i=1;i<=FLAG_COUNT;i++){
+    const el=box.querySelector('.flagNameIn[data-flag="'+i+'"]');
+    values.push(el?el.value:'');
+  }
+  S.settings.flagNames=flagNamesFrom(values);
+  save();
+}
+function closeFlagPicker(){ saveFlagNames(); $('flagPickerOverlay').classList.remove('on'); }
+
+/* ---------- keyboard-shortcuts reference (2026.08.30.5) ----------
+   Third face of the bar, not a fourth overlay pattern: no backdrop, no
+   trap-focus modal -- it is a dropdown anchored under its own button, closed
+   by the same click-away every native menu on this page already uses (see
+   the document-level 'click' listener near the wiring below). The list
+   itself is one array read by nothing else, so it cannot drift from what
+   the keys actually do the way Neon's two glow lists once did (sec138's own
+   history) -- if a binding changes, this is the one place to touch. */
+const SHORTCUTS_REF=[
+  ['Studying',[
+    ['Space / Enter','Reveal — then rate Good'],
+    ['1 – 4','Again · Hard · Good · Easy'],
+    ['Z / 0','Undo the last rating'],
+  ]],
+  ['Set aside',[
+    ['-','Not today (bury)'],
+    ['@','Suspend'],
+  ]],
+  ['Flag',[
+    ['F','Open the flag menu'],
+    ['⌃/⌘ + 1–7','Flag this colour directly'],
+  ]],
+  ['Session',[
+    ['S','End — or start — a session'],
+  ]],
+];
+function renderShortcutsCard(){
+  const html=SHORTCUTS_REF.map(([cat,rows])=>'<div class="refCat">'+escHtml(cat)+'</div>'+
+    rows.map(([k,d])=>'<div class="refRow"><span class="rk">'+escHtml(k)+'</span><span class="rd">'+escHtml(d)+'</span></div>').join('')
+  ).join('');
+  $('shortcutsCard').innerHTML='<div class="ddTitle">Keys on this screen</div><div class="refGrid">'+html+'</div>';
+}
+// Positioned in JS, not pure CSS, because it anchors to a button that moves
+// with the bar's own flex layout rather than a fixed corner -- read the
+// button's real rect each time it opens rather than assuming where the bar
+// put it this render.
+function openShortcuts(){
+  renderShortcutsCard();
+  const btn=$('shortcutsBtn'), card=$('shortcutsCard'), r=btn.getBoundingClientRect();
+  card.style.top=(r.bottom+8)+'px';
+  card.style.right=Math.max(12,innerWidth-r.right)+'px';
+  card.style.left='auto';
+  card.classList.add('on');
+  btn.setAttribute('aria-expanded','true');
+}
+function closeShortcuts(){
+  $('shortcutsCard').classList.remove('on');
+  $('shortcutsBtn').setAttribute('aria-expanded','false');
+}
+// Sets exactly the colour chosen, from either input the picker's grid
+// accepts -- a mouse click on a .flagPick button, or a digit typed while
+// the grid is open (see the F-menu below). Deliberately NOT setFlag(): that
+// toggles a repeat press back to 0, which is right from the bare keyboard
+// shortcut (Ctrl+N) and wrong here, where a specific colour has just been
+// named -- pressing the button or key for the flag a word already carries
+// should re-affirm it, not clear it.
+function pickCurrentFlag(want){
+  if(!current) return;
+  const cs=cardState(current);
+  applyFlag(cs,(want>=1&&want<=FLAG_COUNT)?want:0);
+  save(); renderCardFlag(); closeFlagPicker();
+  toast(cs.flag?('Flagged '+flagName(cs.flag)):'Flag cleared',1200);
+}
+// Holding F is the demoed gesture, and pressing it briefly reaches the same
+// place: on a real keyboard "held" and "tapped" only differ by how long a
+// key stays down before its keyup, which OS repeat-rate settings make an
+// unreliable thing to gate a UI on. So this opens on the plain keydown
+// (guarded below against isTyping()/modifiers/repeat), the same target
+// openFlagPicker() already builds for the mouse -- one grid, however it was
+// reached, rather than a second flag surface that could say something
+// different from the first. Whether you keep F down while you pick a
+// digit, or let go and pick with a second tap, both land here the same way.
+function openFlagMenu(){ openFlagPicker(); }
 function setAside(id,on,now){
   const cs=cardState(id), t=(now!=null)?now:Date.now(), wasSusp=!!cs.susp;
   // The moment it entered the pile. Load-bearing since 2026.08.27.1: the
@@ -6416,11 +6793,11 @@ function wordRowHtml(c){
   return '<div class="wordRow'+(buried?' buried':'')+'" data-id="'+escHtml(c.id)+'"><div class="wrTop">'+
     '<input type="checkbox" class="wrCheck" data-id="'+escHtml(c.id)+'"'+checked+'>'+
     '<i class="stDot s-'+st+'"></i>'+
-    (fl?('<span class="flagDot" style="background:var(--flag'+fl+')" title="'+escHtml(FLAG_NAMES[fl-1])+'">'+fl+'</span>'):'')+
+    (fl?('<span class="flagDot" style="background:var(--flag'+fl+')" title="'+escHtml(flagName(fl))+'">'+fl+'</span>'):'')+
     '<span class="term">'+escHtml(c.q)+'</span>'+
     inspectBtn+
     groupBtn+
-    '<button class="suspBtn'+(isSusp?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(isSusp?'Unsuspend':'Suspend')+'">&#9873;&#65038;</button>'+
+    '<button class="suspBtn'+(isSusp?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(isSusp?'Unsuspend':'Suspend')+'"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M14.8,3.2 a9.2,9.2 0 1 0 6.4,14.4 A10.6,10.6 0 0 1 14.8,3.2 Z"/></svg></button>'+
     '<button class="buryBtn'+(buried?' on':'')+'" data-id="'+escHtml(c.id)+'" aria-label="'+(buried?'Unbury':'Bury')+'"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M4,2.5 h16 a1,1 0 0 1 0,2 L12.9,12 L20,19.5 a1,1 0 0 1 0,2 H4 a1,1 0 0 1 0,-2 L11.1,12 L4,4.5 a1,1 0 0 1 0,-2 Z"/></svg></button>'+
     '</div>'+
     '<div class="gloss">'+escHtml(gloss)+'</div>'+learn+note+'</div>';
@@ -6474,7 +6851,7 @@ function renderBrowseFlagChips(){
     b.className='flagChip'+(browseFlag===i?' on':'');
     b.style.setProperty('--fc','var(--flag'+i+')');
     b.textContent=String(i);
-    b.setAttribute('aria-label',FLAG_NAMES[i-1]+(browseFlag===i?' (showing)':''));
+    b.setAttribute('aria-label',flagName(i)+(browseFlag===i?' (showing)':''));
     b.addEventListener('click',e=>{ e.preventDefault(); browseFlag=(browseFlag===i?0:i); browseSelected.clear(); renderBrowse(); });
     box.appendChild(b);
   }
@@ -6491,7 +6868,14 @@ function renderTiedView(){
     .filter(x=>x.ids.length>=2 && BY_ID[x.ids[0]] && BY_ID[x.ids[0]].dir===browseDir)
     .sort((a,b)=>(b.g.created|0)-(a.g.created|0));
   if(!mine.length){
-    return '<div class="note">Nothing tied together in this direction yet. Tie two words from the list \u2014 tick them and press Tie, or use the link button on a word\u2019s row \u2014 and they show up here with the line that tells them apart.</div>';
+    // Names only the route that can actually MAKE a tie. It used to offer the
+    // row's own link button as an alternative, which cannot: that button opens
+    // openGroupManager(), and the manager only ever JOINS a word to a group
+    // that already exists -- so on the first tie in a direction it renders
+    // "Not tied to anything yet" and a Close button, i.e. the exact dead end
+    // this line was sending people to. Restore the second route here once the
+    // row button can create a tie on its own.
+    return '<div class="note">Nothing tied together in this direction yet. Tick two words in the list and press &#128279; Tie \u2014 they show up here with the line that tells them apart.</div>';
   }
   return mine.map(x=>{
     const label=x.g.label
@@ -6778,9 +7162,17 @@ function renderCalGear(){
 // the words "lower to higher".
 function renderCalLegend(){
   const ret=S.settings.heatmapColourMode==='retention';
+  // --heat-* (palettes.css, 2026-08-30) rather than --again/--good/--coral
+  // etc directly: those vary by palette (and, under daily rotation, by day)
+  // -- measured, --good alone spans hue 57 to 198 and lightness 22 to 76
+  // across the file's 24 blocks -- so the same 82%-recall day used to paint
+  // olive in one palette and violet in another. heatCellBg() (shared.js)
+  // reads the same fixed pair, so the legend and the cells still agree
+  // exactly, same guarantee this ramp always had -- it just no longer
+  // depends on which palette happens to be on screen.
   const ramp=ret
-    ? 'var(--again), var(--good)'
-    : 'var(--panel), var(--'+S.settings.heatmapAccent+')';
+    ? 'var(--heat-again), var(--heat-good)'
+    : 'var(--panel), var(--heat-'+S.settings.heatmapAccent+')';
   const ends=ret ? ['Struggled','Recalled'] : ['Quiet day','Busiest'];
   $('calLegend').innerHTML=
     '<div class="calScale">'+
@@ -8516,7 +8908,7 @@ function suspRow(r,dueSet){
     : '';
   return '<div class="suspRow'+((dueSet&&dueSet.has(r.id))?' isReady':'')+'"><div class="suspTop"><span class="term">'+escHtml(c.q)+'</span><span class="cnt">'+r.n+'</span>'+
     noteBtn+
-    '<button class="suspBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="'+(r.susp?'Unsuspend':'Suspend')+'">&#9873;&#65038;</button></div>'+
+    '<button class="suspBtn'+(r.susp?' on':'')+'" data-id="'+r.id+'" aria-label="'+(r.susp?'Unsuspend':'Suspend')+'"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M14.8,3.2 a9.2,9.2 0 1 0 6.4,14.4 A10.6,10.6 0 0 1 14.8,3.2 Z"/></svg></button></div>'+
     '<div class="gloss">'+escHtml(answerText(c))+'</div></div>';
 }
 function renderStruggling(){
@@ -9024,6 +9416,19 @@ function renderSync(){
       : 'A sync code is set but nothing has been pushed yet.';
     return;
   }
+  // 2026-08-30 (Ledger `syncstall`): this used to be reachable only above,
+  // before a device's first-ever successful sync -- once S.lastSync was set
+  // even once, a LATER failed push had nowhere to surface: pushSync()'s catch
+  // still recorded S.lastPushError correctly, but nothing here ever read it
+  // again, so a real, ongoing failure rendered identically to an unsynced
+  // backlog that just hasn't been pushed yet. pushSync()'s own success branch
+  // clears S.lastPushError, so its presence here always means the MOST RECENT
+  // attempt failed, regardless of how long ago the last successful one was.
+  if(S.lastPushError){
+    el.className='note bad';
+    el.textContent='Last push failed (' + S.lastPushError + ') — tap Sync now to retry.';
+    return;
+  }
   const age=Date.now()-S.lastSync;
   const txt = age<MIN? 'just now'
             : age<HOUR? Math.round(age/MIN)+'m ago'
@@ -9239,6 +9644,16 @@ const SYNC_SHARED_KEY='vocabula.sync.v1';       // {syncCode, deviceName}, share
 const SYNC_MIN_GAP=60*1000;                     // never more than one automatic push a minute mid-sitting -- see save()
 const SYNC_MAX_BYTES=20*1024*1024;              // matches the Worker's own cap; KV values top out at 25 MiB
 const SYNC_KEEPALIVE_MAX=60*1024;               // see shouldKeepalive()'s own comment -- a keepalive fetch over ~64KiB is a spec-level network error, not just a dropped flag
+// 2026-08-30 (Ledger `syncstall`, recurred twice same morning): none of the
+// three sync fetch()s below used to carry a timeout, so a connection that
+// goes quiet without actually closing (a laptop sleep/wake, a Wi-Fi handoff)
+// could hang forever -- never resolving, never rejecting, so the catch block
+// that records S.lastPushError never ran, while every further rating quietly
+// armed another attempt on top of the one already stuck. AbortSignal.timeout()
+// turns that into a bounded, visible, retriable failure instead. 15s is well
+// above the ~0.4-0.5s first-byte time measured live against this Worker, so
+// it should never fire on an ordinary connection.
+const SYNC_FETCH_TIMEOUT_MS=15*1000;
 // Pure, so the boundary is provable without a real fetch -- see tests.js.
 // keepalive lets a PUT survive the tab closing/backgrounding a beat after it
 // fires (exactly the gap newSyncCode() found itself exposed in,
@@ -9508,7 +9923,7 @@ async function pushSync(quiet){
     bytes=body.length;
     S.lastPushBytes=bytes;
     if(bytes>SYNC_MAX_BYTES) throw new Error('too large ('+fmtBytes(bytes)+')');
-    const opts={method:'PUT',headers:{'Content-Type':'application/json'},body:body};
+    const opts={method:'PUT',headers:{'Content-Type':'application/json'},body:body,signal:AbortSignal.timeout(SYNC_FETCH_TIMEOUT_MS)};
     if(shouldKeepalive(bytes)) opts.keepalive=true;
     const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey,opts);
     if(!r.ok) throw new Error('HTTP '+r.status);
@@ -9578,7 +9993,7 @@ async function fetchSync(quiet){
   const code=loadSyncCode();
   try{
     const {kvKey,cryptoKey}=await syncKeys(code,KEY);
-    const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey);
+    const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey,{signal:AbortSignal.timeout(SYNC_FETCH_TIMEOUT_MS)});
     if(r.status===404) return 'missing';
     if(!r.ok) throw new Error('HTTP '+r.status);
     let parsed;
@@ -9599,7 +10014,7 @@ async function fetchSyncPrev(){
   const code=loadSyncCode();
   try{
     const {kvKey,cryptoKey}=await syncKeys(code,KEY);
-    const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey+'/prev');
+    const r=await fetch(SYNC_ENDPOINT+'/sync/'+kvKey+'/prev',{signal:AbortSignal.timeout(SYNC_FETCH_TIMEOUT_MS)});
     if(r.status===404) return 'missing';
     if(!r.ok) throw new Error('HTTP '+r.status);
     const pkt=await r.json();
@@ -10515,6 +10930,13 @@ function renderSet(){
         : !S.lastSync ? (S.lastPushError
             ? 'Last push failed (' + S.lastPushError + ') \u2014 tap Push now to retry.'
             : 'Code set \u2014 nothing synced yet.')
+        // 2026-08-30 (Ledger `syncstall`): same fix as renderSync() -- a
+        // failed push after this device's first-ever success used to have no
+        // branch here at all, so it fell straight into "Last synced ..." as
+        // if nothing were wrong. S.lastPushError is only ever non-null when
+        // the MOST RECENT attempt failed (pushSync()'s success branch clears
+        // it), so this is safe to check unconditionally.
+        : S.lastPushError ? 'Last push failed (' + S.lastPushError + ') \u2014 tap Push now to retry.'
         : 'Last synced '+new Date(S.lastSync).toLocaleString()+(S.lastDevice?' (last pushed by '+S.lastDevice+')':'')+
           (S.lastPushBytes?' \u00b7 '+fmtBytes(S.lastPushBytes)+' encrypted':'')+'.'+
           (clockSkewMs!=null&&Math.abs(clockSkewMs)>CLOCK_SKEW_WARN?' This device\u2019s clock is '+clockSkewLabel(clockSkewMs)+' \u2014 sync orders ratings by the clock.':''); } }
@@ -10577,6 +10999,20 @@ function renderSet(){
 function tapZone(el,fn){
   el.addEventListener('click',e=>{e.preventDefault();fn();});
 }
+// Stamps pressAt on CONTACT, for reveal()'s own thinkMs to read -- see that
+// function's comment. Deliberately its own listener, not folded into
+// tapZone(): tapZone acts on the tap (click, i.e. release), and this must
+// keep acting on contact, so the two need to stay two different event types
+// on the same element rather than one handler doing both jobs. pointerdown
+// where it exists (mouse and touch alike, one listener); a plain
+// touchstart/mousedown pair covers a browser without it. Never preventDefault
+// here -- this only records a moment, it must not be able to swallow the
+// click that tapZone's own listener is still waiting for.
+function armPressStamp(el){
+  const stamp=()=>{ pressAt=Date.now(); };
+  if(window.PointerEvent) el.addEventListener('pointerdown',stamp);
+  else{ el.addEventListener('touchstart',stamp); el.addEventListener('mousedown',stamp); }
+}
 // The per-deck chrome that used to sit right here at the wiring's own top
 // level (document.title / the apple-mobile-web-app-title meta / the Browse
 // search placeholder / the initial renderKbdToggle) now runs inside
@@ -10584,6 +11020,7 @@ function tapZone(el,fn){
 // longer exist at parse time (Phase 2 §2.5, async content).
 tapZone($('cardArea'),()=>{ if($('rateRow').classList.contains('hidden')) reveal(); });
 tapZone($('revealBtn'),reveal);
+armPressStamp($('cardArea')); armPressStamp($('revealBtn'));   // both lead to reveal() -- see its own comment
 // Quick rate's touch entry (2026.08.20.1). Re-tests quickRateReady() rather
 // than trusting the button's own visibility: the button is hidden by class,
 // and a stale click landing on a card that is no longer eligible must grade
@@ -10612,6 +11049,23 @@ $('notTodayBtn').addEventListener('click',e=>{
   notToday();
 });
 tapZone($('undoBtn'),undo);
+// No backdrop, unlike every other overlay on this page (flagPickerOverlay,
+// confuseGroupOverlay, ...) -- those close a card the size of the screen's
+// attention; this is a small reference dropdown, so a native-menu dismiss
+// (click elsewhere, Escape) reads right where a modal-style backdrop would
+// not. Toggles rather than only opening, so the same button that reveals it
+// also puts it away.
+tapZone($('shortcutsBtn'),()=>{
+  $('shortcutsCard').classList.contains('on') ? closeShortcuts() : openShortcuts();
+});
+document.addEventListener('click',e=>{
+  if(!$('shortcutsCard').classList.contains('on')) return;
+  if(e.target.closest('#shortcutsCard')||e.target.closest('#shortcutsBtn')) return;
+  closeShortcuts();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$('shortcutsCard').classList.contains('on')) closeShortcuts();
+});
 // seven buttons across six screens, all "go back to the front screen".
 // Also flushes any still-debounced gist push right here, while the page is
 // fully foregrounded -- "go back to Home" is the natural pause point right
@@ -11068,7 +11522,7 @@ $('browseResults').addEventListener('change',e=>{
 tapZone($('bulkSusp'),()=>{
   browseSelected.forEach(id=>setAside(id,true));
   save(); const n=browseSelected.size; browseSelected.clear(); renderBrowse();
-  toast(n+' word'+(n===1?'':'s')+' flagged',1400);
+  toast(n+' word'+(n===1?'':'s')+' suspended',1400);
 });
 tapZone($('bulkBury'),()=>{
   // Counts what actually moved, not what was selected: buryToday() refuses an
@@ -11084,16 +11538,14 @@ tapZone($('bulkClear'),()=>{ browseSelected.clear(); renderBrowse(); });
 tapZone($('cardFlagBtn'),()=>{ openFlagPicker(); });
 $('flagPickerOverlay').addEventListener('click',e=>{
   if(e.target.id==='flagPickerOverlay'||e.target.id==='fpClose'){ closeFlagPicker(); return; }
+  // Both faces of the overlay, handled before the colour lookup below: in the
+  // editor there are no .flagPick buttons at all, so the pick path is inert
+  // there rather than needing a mode flag to guard it.
+  if(e.target.id==='fpRename'){ renderFlagNameEditor(); return; }
+  if(e.target.id==='fpNamesDone'){ saveFlagNames(); openFlagPicker(); return; }
   const pick=e.target.closest('.flagPick');
   if(!pick||!current) return;
-  const want=+pick.dataset.flag;
-  // setFlag() toggles a repeat press back to 0, which is right from the
-  // keyboard and wrong from a picker where a named colour has just been
-  // tapped -- so the picker sets exactly what was chosen.
-  const cs=cardState(current);
-  cs.flag=(want>=1&&want<=FLAG_COUNT)?want:0; touchCard(cs);
-  save(); renderCardFlag(); closeFlagPicker();
-  toast(cs.flag?('Flagged '+FLAG_NAMES[cs.flag-1]):'Flag cleared',1200);
+  pickCurrentFlag(+pick.dataset.flag);
 });
 tapZone($('browseTiedBtn'),()=>{ browseTied=!browseTied; browseSelected.clear(); renderBrowse(); });
 // The label editor is the overlay's third flow, alongside create and manage.
@@ -11427,20 +11879,56 @@ document.addEventListener('keydown',e=>{
       e.preventDefault();
       const n=setFlag(current,+e.key);
       save(); renderCardFlag();
-      toast(n?('Flagged '+FLAG_NAMES[n-1]):'Flag cleared',1200);
+      toast(n?('Flagged '+flagName(n)):'Flag cleared',1200);
+      return;
+    }
+    // The flag menu, checked here rather than near @/- below: it has to run
+    // AHEAD of the grading branches further down, not just alongside the
+    // other single-letter keys, or a bare digit typed while the grid is open
+    // would grade the card the grid is covering before ever reaching the
+    // pick logic -- "3" would rate Good, not choose flag 3. Two halves:
+    //
+    // (1) F opens it. "Held" and "tapped" are not actually distinguished --
+    // see openFlagMenu()'s own comment for why a keyboard makes that
+    // distinction unreliable to build on -- so this fires on the plain
+    // keydown, once per press (e.repeat excluded so holding the key does not
+    // reopen/re-render the grid on every OS auto-repeat tick).
+    //
+    // (2) Once open, a bare digit 0-7 picks straight off the grid instead of
+    // falling through to whatever that digit would otherwise do -- returns
+    // either way, so no other branch below ever sees a keystroke meant for
+    // the menu sitting on top of it.
+    if($('flagPickerOverlay').classList.contains('on')){
+      if(/^[0-7]$/.test(e.key)){ e.preventDefault(); pickCurrentFlag(+e.key); }
+      return;
+    }
+    if((e.key==='f'||e.key==='F')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!e.repeat&&!isTyping()&&current){
+      e.preventDefault();
+      openFlagMenu();
       return;
     }
     const isUndoKey=e.key==='z'||e.key==='Z'||e.key==='0';
     const wasQuickRated=lastQuickRateId;
     if(!isUndoKey) lastQuickRateId=null;
     if(e.key===' '||e.key==='Enter'){e.preventDefault();
-      // Space/Enter reveals when the answer is hidden, then doubles as Easy
-      // once it's showing -- changed 2026.08.13 from Good (Anki's own
-      // convention for Space) at the owner's request, so the fastest path
-      // through the deck -- reveal, Space, reveal, Space -- is also the
-      // honest one: a word you didn't need to think about at all.
+      // Space/Enter reveals when the answer is hidden, then doubles as Good
+      // once it's showing -- Anki's own convention for Space, restored
+      // 2026-08-30 on the owner's explicit instruction ("follow anki").
+      // Between 2026.08.13 and today this pressed Easy instead, on his own
+      // request at the time, reasoning that reveal-Space-reveal-Space should
+      // be the honest fast path for a word needing no thought at all. That
+      // reasoning did not survive contact with the grade-signal research the
+      // same night this reverted: Easy turned out to be functionally EXTINCT
+      // regardless (12 presses in 12,102 logged ratings, 0.10%) -- Mac
+      // sessions, where this binding lived, pressed it no more than the
+      // iPhone, which has no such shortcut at all. So the fast lane this key
+      // built was not being used for what it was built for; reverting it
+      // loses nothing measured and gains exact parity with Anki's own key.
+      // Quick-rate's OWN Space-equivalent is untouched by this: quickRate()
+      // below still grades Easy specifically, because that is a distinct,
+      // deliberately Easy-only feature (2026.08.20.1), not this key.
       if($('rateRow').classList.contains('hidden')) reveal();
-      else rate(EASY);
+      else rate(GOOD);
     }
     else if(!$('rateRow').classList.contains('hidden')){
       // The number keys run left to right along the buttons themselves, in
@@ -11492,31 +11980,45 @@ document.addEventListener('keydown',e=>{
       else if(wasQuickRated!=null) quickCorrectToAgain();
       else undo();
     }
-    // The two exits, by key. Anki's own bindings (docs.ankiweb.net/studying)
-    // -- `-` buries until tomorrow, `@` suspends until brought back -- adopted
-    // deliberately with the model itself, so anything read in Anki's manual or
-    // forums transfers without translation. f is kept alongside @ because it
-    // is what this app has always used and it is in the owner's fingers; both
-    // do exactly the same thing, through the same call.
+    // The two exits, by key. Anki's own bindings (docs.ankiweb.net/studying,
+    // cross-checked 2026.08.30 against Anki's reviewer source and a third-
+    // party shortcut reference so this comment states what Anki actually
+    // does rather than what an earlier session assumed) -- `-` buries a card
+    // until tomorrow, `@` suspends it until brought back -- adopted
+    // deliberately with the model itself, so anything read in Anki's manual
+    // or forums transfers without translation.
     //
-    // Ungated, unlike the icons. Until 2026.08.20.5 f fired only once a word
-    // had drawn EXITS_KEY Agains today, matching the icon's own gate so the key
-    // never ran "early" relative to what was visible. That gate is dropped
-    // here: the icons still wait for two same-day Agains, because a permanent
-    // pair of glyphs on 1,500 clean cards a day is chrome nobody reads -- but
-    // there is no reason a deliberate keypress should be refused on a word the
-    // user has already decided about. One rule, easy to hold: the keys always
-    // work, the icons appear when a word is fighting you. On a phone, where
-    // there is no keyboard, the icons ARE the whole interface, which is why
-    // their gate is the one that had to stay defensible.
+    // f/F used to be bound here too, alongside @, on the belief that it was
+    // "the app's own older key" doing the same job as Anki's. It never was:
+    // Anki binds no bare F anywhere in the reviewer, so f was never a second
+    // path INTO Anki's convention, it was a private one sitting next to it --
+    // and it collided with nothing only because nothing else wanted the
+    // letter, not because the two keys agreed on anything. Removed
+    // 2026.08.30 on the owner's own catch, once the two shortcut sources
+    // above were actually read rather than assumed. @ is untouched and does
+    // everything f used to. F itself is reclaimed the same day, for the
+    // flag menu below -- see openFlagMenu()'s own comment for why "held"
+    // and "tapped" are not actually distinguished.
+    //
+    // Ungated, unlike the icons. Until 2026.08.20.5 this fired only once a
+    // word had drawn EXITS_KEY Agains today, matching the icon's own gate so
+    // the key never ran "early" relative to what was visible. That gate is
+    // dropped here: the icons still wait for two same-day Agains, because a
+    // permanent pair of glyphs on 1,500 clean cards a day is chrome nobody
+    // reads -- but there is no reason a deliberate keypress should be
+    // refused on a word the user has already decided about. One rule, easy
+    // to hold: the keys always work, the icons appear when a word is
+    // fighting you. On a phone, where there is no keyboard, the icons ARE
+    // the whole interface, which is why their gate is the one that had to
+    // stay defensible.
     //
     // Both self-gate on the state that actually matters instead: notToday()
     // no-ops on an already-set-aside word (the two exits are mutually
     // exclusive), and the flag toggles either way, which is how a word gets
     // brought back from the card it is sitting on.
     //
-    // f used to be silent, on the reasoning that the icon turning red was
-    // confirmation enough. Ungating the key is what makes a toast necessary:
+    // The key used to be silent, on the reasoning that the icon turning red
+    // was confirmation enough. Ungating it is what makes a toast necessary:
     // on a card below the icon gate there is no icon to turn red, so without
     // a line of text a press would change whether a word stays in the deck
     // with nothing at all on screen to say so. It now toasts on every path --
@@ -11528,7 +12030,7 @@ document.addEventListener('keydown',e=>{
     // hand-rolled exit here would silently skip all three.
     if(isExitKey(e)){ e.preventDefault(); flushPendingPush(); renderHome(); show('scHome'); return; }
     if(e.key==='-' && current!=null) notToday();
-    if((e.key==='@'||e.key==='f'||e.key==='F') && current!=null){
+    if(e.key==='@' && current!=null){
       const cs=setAside(current,!cardState(current).susp); save(); renderLeech();
       toast(cs.susp?'Suspended':'Brought back',1400);
     }

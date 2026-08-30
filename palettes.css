@@ -87,6 +87,39 @@
    sec108 in tests/tests.js now sweeps every pair on every run and fails by
    name. Add a palette, or retune one, and it will tell you before a person
    has to notice. */
+/* ---- fixed heat-ramp tokens (2026-08-30) ----
+   The calendar heatmap used to read --good/--again (retention) and
+   --coral/--good/--easy/--amber (volume's accent picker) straight off
+   whichever palette -- and, under daily rotation, whichever DAY -- happened
+   to be active. Measured across the 24 palette/theme blocks above and below:
+   --good alone spans hue 57 (Gruvbox light, a yellow) to 198 (Rose Pine
+   light, a cyan) and lightness 22 to 76, so one 82%-recall day rendered
+   olive in Vellum, bright yellow in Gruvbox dark, violet in Rose Pine
+   (in-progress/FOUR_QUIRKS_FINDINGS.md §3). These five are fixed instead --
+   the same colour every palette, every day the rotation lands on -- so the
+   ramp is a scale learned once, not relearned every morning.
+   Scoped to :root/html (this document's own root element carries
+   data-theme, set by applyTheme()) rather than [data-palette][data-theme]
+   like the blocks above: these do NOT vary by palette, only by mode, so they
+   don't need that per-subtree re-declaration mechanism -- and being ordinary
+   custom properties with their own distinct names, they cannot collide with
+   anything a palette block defines regardless of cascade order.
+   Retention mixes directly between --heat-again and --heat-good now (both
+   ends fixed -- see shared.js's heatCellBg() and its own comment). Volume
+   still mixes its accent into --panel, which DOES still vary by palette, on
+   purpose: a quiet day should still read as "this palette's own empty", only
+   the busy end needed to stop moving. --heat-coral/--heat-good/--heat-easy/
+   --heat-amber match the gear panel's own four accent options one for one. */
+:root{
+  --heat-again:oklch(56% 0.19 25); --heat-good:oklch(72% 0.17 145);
+  --heat-coral:oklch(62% 0.17 35); --heat-easy:oklch(52% 0.14 305);
+  --heat-amber:oklch(64% 0.15 78);
+}
+html[data-theme="dark"]{
+  --heat-again:oklch(66% 0.17 25); --heat-good:oklch(80% 0.15 145);
+  --heat-coral:oklch(72% 0.15 35); --heat-easy:oklch(68% 0.13 305);
+  --heat-amber:oklch(76% 0.14 80);
+}
 [data-palette="vellum"][data-theme="light"]{
   --bg:#fbf7ec; --panel:#f5efdf; --ink:#2a2318; --muted:#6f6350; --faint:#988c75;
   --line:#e3d9c1; --coral:#8c2f26; --accent-soft:#f0e3d8; --raise:#fffdf6; --again:#a3342a;
