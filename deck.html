@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.30.6">
+<link rel="stylesheet" href="palettes.css?v=2026.08.30.7">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -35,7 +35,7 @@
   stays HERE, synchronous, so it still halts the parser before the app
   skeleton can flash -- it never depended on content at all.
 -->
-<script src="decks/registry.js?v=2026.08.30.6"></script>
+<script src="decks/registry.js?v=2026.08.30.7"></script>
 <!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
      number must be bumped with BUILD (sec95c pins that it matches).
      Why: these two are the only files both pages load by a fixed name, and a
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.30.6"></script>
+<script src="shared.js?v=2026.08.30.7"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -142,15 +142,21 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
    in-progress/shortcuts-on-screen-demo.html demoed three shapes (a corner
    badge, a bottom strip, this one); this is the one he picked.
 
-   Laptop-only, as asked -- and "laptop" is deliberately NOT the same test
-   html[data-layout="landscape"] uses elsewhere on this page. That attribute
-   requires BOTH a wide landscape viewport AND settings.layout==='new' (see
-   its own block below), so gating on it would hide this on a full-width
-   laptop screen for anyone still on the default "Legacy" card layout --
-   an unrelated setting silently swallowing an unrelated feature. This
-   button reuses just the viewport half of that test, unconditionally: a
-   laptop, or an iPad turned sideways, never a phone in hand, regardless of
-   which card layout is chosen. */
+   Laptop-only, as asked -- a plain, unconditional copy of the viewport
+   test html[data-layout="landscape"] itself uses (applyLayout(), further
+   down), rather than keying off that attribute directly. CORRECTION
+   (2026.08.30, found while building the Browse detail panel below): the
+   comment this one used to carry claimed data-layout also requires
+   settings.layout==='new', with "Legacy" the un-gated default -- checked
+   directly against applyLayout()'s actual source for this pass, and that
+   settings field does not exist anywhere in the file; the attribute is
+   set from the viewport query alone, unconditionally, on every window.
+   Left as its own plain media query anyway rather than switched to keying
+   off data-layout: one less indirection, and it means the same thing
+   either way now that the reason to keep them apart has turned out not
+   to be real. Whether the STALE comment or the CODE is the one that
+   should change is a separate, larger question -- flagged, not fixed,
+   here. */
 .icon.shortcutsBtn{display:none}
 @media (min-width:700px) and (orientation:landscape){
   .icon.shortcutsBtn{display:flex}
@@ -651,6 +657,17 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .cgAddRow{display:flex;gap:8px;margin-top:10px}
 .cgAddRow select{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;
   background:var(--raise);color:var(--ink);font:inherit;font-size:13px;padding:8px 9px}
+/* Decision 4A's own search-to-tie, the second face of this same modal. */
+.cgTiePick{margin-top:10px}
+.cgTiePick #cgSearch{margin:0}
+.cgPickList{max-height:200px;overflow-y:auto;margin-top:8px;border:1px solid var(--line);border-radius:10px}
+.cgPickRow{display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;
+  padding:9px 11px;font-size:14px;border-bottom:1px solid var(--line)}
+.cgPickRow:last-child{border-bottom:none}
+.cgPickRow:active{background:var(--panel)}
+.cgPickRow .pt{font-family:var(--serif);flex:0 0 auto}
+.cgPickRow .pg{color:var(--faint);font-size:12.5px;flex:1;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
 .statRow{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .statRow:last-child{border-bottom:none}
 .statRow span{color:var(--muted)}
@@ -691,6 +708,102 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .wordRow.revealed .wrLearn{display:block}
 .wordRow .wrNote{display:none;margin:5px 0 0 25px;color:var(--warn-ink);font-size:12px}
 .wordRow.buried .wrNote{display:block}
+
+/* ---------- Liquid Browse, 2026.08.30: 1B+1A layout, 2A rows, 4A ties,
+   5B bring-back (FLAGS_BROWSE_TIES_UX_RESEARCH.md). The owner's own
+   synthesis of 1A vs 1B: a STICKY, LABELLED toolbar (1A's legibility --
+   .browseRail keeps its old name, but is a horizontal bar now, not a side
+   rail) plus 1B's detail panel, docked right, only where a wide window has
+   the room for it; unchanged single-column stack below 860px. ---------- */
+.browseLbl{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  font-weight:600;margin:0 0 5px}
+.browseFilterGroup{margin-bottom:14px}
+.browseFilterGroup.hidden{display:none}
+.browseSortRow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.browseSortRow .browseLbl{margin:0}
+#browseSort{font:inherit;font-size:13.5px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:9px;padding:6px 10px}
+.browseSummary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;
+  color:var(--faint);padding:8px 0 12px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.browseSummary b{color:var(--ink);font-variant-numeric:tabular-nums}
+.browseClearAll{color:var(--coral);text-decoration:underline}
+/* Sticky only once there's real scrolling room to stick over -- a narrow
+   phone stacks the toolbar and the list in one flow instead, same as today. */
+@media (min-width:860px){
+  .browseRail{position:sticky;top:0;background:var(--bg);z-index:5;
+    padding-top:4px;margin-top:-4px}
+}
+.wordRow .wrTop{position:relative}
+/* Persistent state (the checkbox, the status dot, a flag already set) is
+   never hover-gated -- only the ACTIONS are, exactly what the original
+   complaint named ("every row wears four buttons all the time"). A flag
+   not yet set is itself an action (the whole point of this pass: Browse
+   could not set one before today), so .flagBtn.empty joins the hover set;
+   .flagDot (an existing flag) stays visible the way the status dot does. */
+.wordRow .inspectBtn,.wordRow .groupBtn,.wordRow .suspBtn,.wordRow .buryBtn,
+.wordRow .flagBtn.empty{opacity:0;pointer-events:none;transition:opacity .1s}
+.wordRow:hover .inspectBtn,.wordRow:hover .groupBtn,.wordRow:hover .suspBtn,.wordRow:hover .buryBtn,
+.wordRow:hover .flagBtn.empty,
+.wordRow.menuOpen .inspectBtn,.wordRow.menuOpen .groupBtn,.wordRow.menuOpen .suspBtn,.wordRow.menuOpen .buryBtn,
+.wordRow.menuOpen .flagBtn.empty{opacity:1;pointer-events:auto}
+/* A touch screen has no hover state to reveal them with, so nothing would
+   ever be reachable -- same escape hatch the demo used. */
+@media (hover:none){
+  .wordRow .inspectBtn,.wordRow .groupBtn,.wordRow .suspBtn,.wordRow .buryBtn,
+  .wordRow .flagBtn.empty{opacity:1;pointer-events:auto}
+}
+.wordRow .flagBtn{flex:0 0 auto;background:none;border:none;padding:2px 4px;
+  display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+  border-radius:4px;color:var(--faint)}
+.wordRow .flagBtn svg{width:11px;height:11px}
+.wordRow .flagDotBtn{background:none;border:none;padding:0;cursor:pointer}
+/* Right-click / long-press menu: the flag grid up top (reuses .flagGrid's
+   own look), then the row's other actions -- one surface instead of four
+   hover targets for anyone who'd rather not aim. */
+.rowMenu{position:fixed;z-index:70;background:var(--raise);border:1px solid var(--line);
+  border-radius:13px;box-shadow:0 14px 34px rgba(0,0,0,.22);padding:10px;min-width:220px;display:none}
+.rowMenu.on{display:block}
+.rowMenu .rmFlags{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.rowMenu .rmFlag{width:100%;aspect-ratio:1;border-radius:8px;border:2px solid transparent;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff}
+.rowMenu .rmFlag.none{background:none;border:1.5px dashed var(--faint);color:var(--faint)}
+.rowMenu .rmFlag.cur{border-color:var(--ink)}
+.rowMenu hr{border:none;border-top:1px solid var(--line);margin:6px 2px}
+.rowMenu .rmi{display:flex;align-items:center;gap:9px;width:100%;text-align:left;font-size:13.5px;
+  padding:8px 8px;border-radius:9px;color:var(--ink)}
+.rowMenu .rmi:active{background:var(--panel)}
+.rowMenu .rmi .ic{width:18px;text-align:center;color:var(--faint);flex:0 0 auto}
+
+/* ---- 1B's detail panel: cardInspectorOverlay stays a centred modal on a
+   phone (unchanged), and docks to the right edge on a wide window -- same
+   overlay, same renderCardInspector(), just where it sits, so the note box,
+   the tie section, Suspend and Delete all keep working with no new code. ---- */
+@media (min-width:860px){
+  #scBrowse .home{padding-right:404px}
+  /* html[data-layout="landscape"] already carries its OWN padding rule for
+     Browse (declared much further down, in the landscape block proper) at
+     the SAME specificity as the equivalent line here -- and it sits LATER
+     in source order, so without !important it would simply win the tie
+     and the panel would dock over the list instead of beside it, on any
+     window wide enough to be landscape (nearly all of them, since that
+     attribute needs only 700px -- see the correction on the shortcuts
+     icon's own comment above regarding what does and doesn't gate it).
+     !important only on padding-right, so that rule's own top/bottom/left
+     values still stand. */
+  html[data-layout="landscape"] #scBrowse .home{padding-right:404px!important}
+  /* html.onBrowse is set/cleared by show() -- the one place that already
+     knows which screen is active -- rather than reached in CSS from
+     #cardInspectorOverlay, which sits elsewhere in the DOM and has no
+     ancestor relationship to #scBrowse to select through. Forces it open
+     (ignoring its own .on toggle) so the panel is always THERE once Browse
+     is, showing the empty state below until a row's ⓘ is pressed. */
+  html.onBrowse #cardInspectorOverlay{display:flex;background:none;pointer-events:none;
+    justify-content:flex-end;align-items:stretch;padding:0}
+  html.onBrowse #cardInspectorOverlay .dayDetail{pointer-events:auto;margin:0;max-width:380px;width:380px;
+    border-radius:0;border-width:0 0 0 1px;box-shadow:-8px 0 24px rgba(0,0,0,.12);
+    height:100%;overflow-y:auto;display:flex!important;flex-direction:column}
+}
+.ciEmpty{color:var(--faint);font-size:13.5px;padding:40px 16px;text-align:center}
 
 /* ---- Browse bulk-action bar (multi-select) + the active-date filter bar
    (click-a-day, Home's calendar -> here). Bulk bar animates open/closed by
@@ -985,7 +1098,14 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .pileStep{display:flex;align-items:center;gap:2px;flex:0 0 auto}
 .pileStep button{width:30px;height:30px;border:1px solid var(--line);background:var(--raise);
   border-radius:9px;color:var(--ink);font-size:16px;line-height:1}
-.pileStep .sv{min-width:2ch;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+.pileStep .sv{min-width:3.4em;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;cursor:text}
+.pileStep .sv small{color:var(--faint);font-weight:400;font-size:11px;margin-left:1px}
+/* 5B: the allowance quiet by default, a plain link to reveal the stepper --
+   see pileRowInnerHtml()'s own comment for why this hides at all. */
+.quietEdit{font-size:13px;color:var(--faint)}
+.quietEdit u{text-decoration-color:var(--line-strong);text-underline-offset:3px;cursor:pointer}
+.pileTypeIn{width:3.4em;text-align:center;background:var(--raise);border:1px solid var(--coral);
+  border-radius:9px;color:var(--ink);font:inherit;font-weight:600;font-variant-numeric:tabular-nums;padding:5px 2px}
 
 /* ---------- settings ---------- */
 .set{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 40px}
@@ -1817,10 +1937,20 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
         <input type="text" class="searchInput" id="browseSearch" placeholder="Search…" autocapitalize="off" autocorrect="off" spellcheck="false">
         <button class="kbdToggle hidden" id="browseKbd" title="Greek letters from a Latin keyboard (Hoplite scheme): a→α, digits 1–9 add breathings and accents to the last letter">αβγ</button>
       </div>
-      <div class="chips" id="browseParts"></div>
-      <div class="chips" id="browseStatusChips"></div>
-      <div class="chips flagChips hidden" id="browseFlagChips"></div>
-      <div class="chips"><button class="chip tiedChip" id="browseTiedBtn">&#128279; Tied words</button></div>
+      <div class="browseFilterGroup"><div class="browseLbl">Part</div><div class="chips" id="browseParts"></div></div>
+      <div class="browseFilterGroup"><div class="browseLbl">Progress</div><div class="chips" id="browseStatusChips"></div></div>
+      <div class="browseFilterGroup hidden" id="browseFlagGroup"><div class="browseLbl">Flag</div><div class="chips flagChips" id="browseFlagChips"></div></div>
+      <div class="browseSortRow">
+        <div class="chips"><button class="chip tiedChip" id="browseTiedBtn">&#128279; Tied words</button></div>
+        <span><label class="browseLbl" for="browseSort">Sort</label>
+        <select id="browseSort">
+          <option value="alpha">Deck order</option>
+          <option value="hard">Hardest first</option>
+          <option value="weak">Weakest first</option>
+          <option value="due">Due soonest</option>
+        </select></span>
+      </div>
+      <div class="browseSummary" id="browseSummary"></div>
       </div>
       <div>
       <div class="browseDateBar hidden" id="browseDateBar">
@@ -1840,6 +1970,7 @@ html[data-layout="landscape"] #scBrowse #browseResults{flex:1;min-width:0}
       </div>
       </div>
     </div>
+    <div class="rowMenu" id="rowMenu"></div>
   </section>
 
 
@@ -3923,7 +4054,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.30.6';
+const BUILD='2026.08.30.7';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -4021,6 +4152,20 @@ let noteEditId=null;   // which word's note panel is open (openWordNote/#wordNot
 // groups. Neither persisted.
 let groupCreateIds=null, groupManageId=null;
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseFlag=0, browseTied=false, browseDate=null, browseSelected=new Set();   // browse screen's own state
+// 2026.08.30 Liquid Browse pass (1B+1A, 2A, 4A, 5B). browseSort: 'alpha'
+// (deck order, the only order before this) | 'hard' (difficulty desc) | 'weak'
+// (stability asc) | 'due' (due date asc, undated/new pushed to the end so
+// they don't masquerade as most-overdue). browseHoverId: which row the
+// pointer sits over, read only by the bare-digit flag keys below -- a
+// keyboard has no "selected row" otherwise. flagTargetId: which card the
+// (now shared) flag picker is open for -- current on the study screen, an
+// explicit id from a Browse row -- so one grid and one applyFlag() path
+// serves both without current ever meaning two different things.
+let browseSort='alpha', browseHoverId=null, flagTargetId=null;
+// Search-to-tie (4A): whether the group manager's own "+ tie to a new word"
+// search is open, and what's typed into it. Neither survives closing the
+// overlay -- reopened fresh is a fresh search, same as the demo's sheet.
+let tieSearchOpen=false, tieSearchQuery='';
 
 // ---- study-session timer ----
 // Wall-clock time actually spent in the study screen, distinct from thinkMs
@@ -4395,6 +4540,11 @@ let almostThereWait=false;
 const show=(name,keepTiming)=>{
   const wasActive=$('scStudy').classList.contains('on')||almostThereWait;
   ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scExtract','scDemo'].forEach(s=>$(s).classList.toggle('on',s===name));
+  // Read by the wide-window detail-panel CSS, which can't reach #scBrowse's
+  // own class from #cardInspectorOverlay -- they aren't ancestor/descendant,
+  // and this is the one place that already knows which screen is live.
+  document.documentElement.classList.toggle('onBrowse',name==='scBrowse');
+  if(name==='scBrowse'){ inspectId=null; renderCardInspector(); }
   // The quick-rate Z/0 correction is armed for exactly ONE keydown (see
   // quickRate()/quickCorrectToAgain()), and the keydown listener that clears
   // it only runs while scStudy is on -- so leaving the study screen used to
@@ -5824,10 +5974,18 @@ function renderCardFlag(){
 // clients do it (AnkiDroid's app-bar "Flag Card", AnkiMobile's "Flag 1-4"),
 // rather than seven separate targets on a phone-sized screen. The keys below
 // are the fast path for anyone at a keyboard, exactly as they are there.
-function openFlagPicker(){
-  if(!current) return;
-  const now=flagOf(current);
-  let html='<div class="ddTitle">Flag '+escHtml(BY_ID[current]?BY_ID[current].q:'')+'</div>'+
+// id: an explicit card to flag -- the study screen passes current itself
+// now (openFlagMenu/cardFlagBtn below), a Browse row/menu/hovered-row key
+// passes its own id. Called with NO argument at all (only from "Done" on
+// the rename face, below), flagTargetId is left exactly as it was: renaming
+// closes over whichever picker was open, Browse's or the study screen's,
+// and must reopen the SAME one, not silently retarget to current. One grid,
+// one applyFlag() path, however it was reached.
+function openFlagPicker(id){
+  if(id!==undefined) flagTargetId=id;
+  if(!flagTargetId) return;
+  const now=flagOf(flagTargetId);
+  let html='<div class="ddTitle">Flag '+escHtml(BY_ID[flagTargetId]?BY_ID[flagTargetId].q:'')+'</div>'+
     '<div class="flagGrid">';
   for(let i=1;i<=FLAG_COUNT;i++){
     html+='<button class="flagPick'+(now===i?' on':'')+'" data-flag="'+i+'">'+
@@ -5947,10 +6105,14 @@ function closeShortcuts(){
 // named -- pressing the button or key for the flag a word already carries
 // should re-affirm it, not clear it.
 function pickCurrentFlag(want){
-  if(!current) return;
-  const cs=cardState(current);
+  const id=flagTargetId||current;
+  if(!id) return;
+  const cs=cardState(id);
   applyFlag(cs,(want>=1&&want<=FLAG_COUNT)?want:0);
-  save(); renderCardFlag(); closeFlagPicker();
+  save();
+  if(id===current) renderCardFlag();   // the study screen's own on-card button
+  patchBrowseRowFlag(id);              // a no-op if that row isn't on screen
+  closeFlagPicker();
   toast(cs.flag?('Flagged '+flagName(cs.flag)):'Flag cleared',1200);
 }
 // Holding F is the demoed gesture, and pressing it briefly reaches the same
@@ -5962,7 +6124,7 @@ function pickCurrentFlag(want){
 // reached, rather than a second flag surface that could say something
 // different from the first. Whether you keep F down while you pick a
 // digit, or let go and pick with a second tap, both land here the same way.
-function openFlagMenu(){ openFlagPicker(); }
+function openFlagMenu(){ openFlagPicker(current); }
 function setAside(id,on,now){
   const cs=cardState(id), t=(now!=null)?now:Date.now(), wasSusp=!!cs.susp;
   // The moment it entered the pile. Load-bearing since 2026.08.27.1: the
@@ -6746,6 +6908,60 @@ function renderHistogram(entries){
   });
   $('histBody').innerHTML = out || '<div class="note">Not enough data yet.</div>';
 }
+// Decision 2 (FLAGS_BROWSE_TIES_UX_RESEARCH.md): Browse could show a flag
+// but never SET one. Flagged keeps today's always-visible dot, now a button
+// that reopens the picker on the same word; unflagged gets a hover-gated
+// outline in the identical slot, so pointing at a row and clicking either
+// one always means "flag this word" -- there is no separate empty state to
+// learn. .flagBtn.empty is what the hover/touch CSS above keys on.
+function browseFlagHtml(id,fl){
+  if(fl) return '<button class="flagDot flagDotBtn" data-id="'+escHtml(id)+'" style="background:var(--flag'+fl+')" aria-label="Flagged '+escHtml(flagName(fl))+' — change or clear">'+fl+'</button>';
+  return '<button class="flagBtn empty" data-id="'+escHtml(id)+'" aria-label="Flag this word">'+
+    '<svg viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18M5 4h11l-2.5 4L16 12H5"/></svg></button>';
+}
+// Surgical patch, same convention as the suspBtn handler's own groupBtn
+// insert/remove just below: a flag pick from Browse (row button, right-click
+// menu, or a hovered row's own 1-7) never needs the fold-collapsing cost of
+// a full renderBrowse() -- only this one row's own flag slot changed.
+function patchBrowseRowFlag(id){
+  const row=document.querySelector('#browseResults .wordRow[data-id="'+CSS.escape(id)+'"]');
+  if(!row) return;
+  const wrTop=row.querySelector('.wrTop'); if(!wrTop) return;
+  const old=wrTop.querySelector('.flagDot,.flagBtn');
+  const html=browseFlagHtml(id,flagOf(id));
+  if(old) old.outerHTML=html; else wrTop.insertAdjacentHTML('afterbegin',html);
+}
+// Right-click / long-press row menu (decision 2A): the flag grid inline,
+// then the same three actions the row's own hover buttons reach, for anyone
+// who'd rather not aim at a 15px target. rowMenuId is read by the click
+// delegate below and by closeRowMenu(), so both know which word a pick or
+// an action applies to without re-deriving it from the (by-then-closed) menu.
+let rowMenuId=null;
+function renderRowMenu(id,x,y){
+  const c=BY_ID[id]; if(!c) return;
+  rowMenuId=id;
+  const cs=S.cards[id], fl=flagOf(id), susp=!!(cs&&cs.susp);
+  const m=$('rowMenu');
+  let html='<div class="rmFlags">';
+  for(let i=1;i<=FLAG_COUNT;i++) html+='<button class="rmFlag'+(fl===i?' cur':'')+'" data-flag="'+i+'" style="background:var(--flag'+i+')" aria-label="'+escHtml(flagName(i))+'">'+i+'</button>';
+  html+='<button class="rmFlag none'+(fl===0?' cur':'')+'" data-flag="0" aria-label="No flag">&empty;</button></div><hr>'+
+    '<button class="rmi" data-a="tie"><span class="ic">\u{1F517}</span>'+((cs&&cs.confuseGroups&&cs.confuseGroups.length)?'Manage tied words':'Tie to another word…')+'</button>'+
+    '<button class="rmi" data-a="susp"><span class="ic"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M14.8,3.2 a9.2,9.2 0 1 0 6.4,14.4 A10.6,10.6 0 0 1 14.8,3.2 Z"/></svg></span>'+(susp?'Unsuspend':'Suspend')+'</button>'+
+    '<button class="rmi" data-a="bury"><span class="ic"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M4,2.5 h16 a1,1 0 0 1 0,2 L12.9,12 L20,19.5 a1,1 0 0 1 0,2 H4 a1,1 0 0 1 0,-2 L11.1,12 L4,4.5 a1,1 0 0 1 0,-2 Z"/></svg></span>Not today</button>'+
+    '<button class="rmi" data-a="details"><span class="ic">ⓘ</span>Details</button>';
+  m.innerHTML=html;
+  m.classList.add('on');
+  const mw=240,pad=8;
+  m.style.left=Math.min(x,innerWidth-mw-pad)+'px';
+  m.style.top=Math.min(y,innerHeight-260)+'px';
+  const row=document.querySelector('#browseResults .wordRow[data-id="'+CSS.escape(id)+'"]');
+  if(row) row.classList.add('menuOpen');   // keeps the hover-gated actions lit while the menu they mirror is open
+}
+function closeRowMenu(){
+  $('rowMenu').classList.remove('on');
+  document.querySelectorAll('#browseResults .wordRow.menuOpen').forEach(r=>r.classList.remove('menuOpen'));
+  rowMenuId=null;
+}
 function wordRowHtml(c){
   const cs=S.cards[c.id], st=statusOf(cs), gloss=(c.dir==='E')?c.a.join(', '):c.a;
   // .wrLearn is left empty (not pre-filled) even for a rated word -- see the
@@ -6793,7 +7009,7 @@ function wordRowHtml(c){
   return '<div class="wordRow'+(buried?' buried':'')+'" data-id="'+escHtml(c.id)+'"><div class="wrTop">'+
     '<input type="checkbox" class="wrCheck" data-id="'+escHtml(c.id)+'"'+checked+'>'+
     '<i class="stDot s-'+st+'"></i>'+
-    (fl?('<span class="flagDot" style="background:var(--flag'+fl+')" title="'+escHtml(flagName(fl))+'">'+fl+'</span>'):'')+
+    browseFlagHtml(c.id,fl)+
     '<span class="term">'+escHtml(c.q)+'</span>'+
     inspectBtn+
     groupBtn+
@@ -6844,7 +7060,8 @@ function renderBrowseStatusChips(){
 function renderBrowseFlagChips(){
   const box=$('browseFlagChips'); if(!box) return;
   const n=CARDS.filter(c=>c.dir===browseDir&&flagOf(c.id)).length;
-  box.classList.toggle('hidden',n===0&&!browseFlag);   // no flags anywhere yet: no row
+  const grp=$('browseFlagGroup');
+  if(grp) grp.classList.toggle('hidden',n===0&&!browseFlag);   // no flags anywhere yet: no row
   box.innerHTML='';
   for(let i=1;i<=FLAG_COUNT;i++){
     const b=document.createElement('button');
@@ -6868,14 +7085,11 @@ function renderTiedView(){
     .filter(x=>x.ids.length>=2 && BY_ID[x.ids[0]] && BY_ID[x.ids[0]].dir===browseDir)
     .sort((a,b)=>(b.g.created|0)-(a.g.created|0));
   if(!mine.length){
-    // Names only the route that can actually MAKE a tie. It used to offer the
-    // row's own link button as an alternative, which cannot: that button opens
-    // openGroupManager(), and the manager only ever JOINS a word to a group
-    // that already exists -- so on the first tie in a direction it renders
-    // "Not tied to anything yet" and a Close button, i.e. the exact dead end
-    // this line was sending people to. Restore the second route here once the
-    // row button can create a tie on its own.
-    return '<div class="note">Nothing tied together in this direction yet. Tick two words in the list and press &#128279; Tie \u2014 they show up here with the line that tells them apart.</div>';
+    // Both real routes now, since 2026.08.30 (decision 4A): the row's own
+    // "+ tie" button opens straight into the search-and-pick flow on a word
+    // with no ties yet (renderGroupManager's own searchOpen), so it is no
+    // longer the dead end this line used to warn away from.
+    return '<div class="note">Nothing tied together in this direction yet. Press + tie on a word to search for its partner, or tick two in the list and press &#128279; Tie \u2014 they show up here with the line that tells them apart.</div>';
   }
   return mine.map(x=>{
     const label=x.g.label
@@ -6895,15 +7109,42 @@ function renderTiedView(){
       '</div>';
   }).join('');
 }
+// Hardest/weakest/due-soonest read S.cards directly rather than groupByPart's
+// implicit alphabetical-within-Part order, because the whole point (his own
+// framing, FLAGS_BROWSE_TIES_UX_RESEARCH.md: "read down, stop, flag each
+// into a named category") is a ranking that crosses every Part -- a fold per
+// Part would just re-hide the words this exists to surface. A word never
+// studied (reps===0) has no d/s/due worth ranking it by in any of the three,
+// so it sorts last rather than colonising the top of "weakest" with the
+// entire unseen deck.
+function sortedForBrowse(cards){
+  if(browseSort==='alpha') return cards;
+  const END=Number.MAX_SAFE_INTEGER;
+  const key=c=>{
+    const cs=S.cards[c.id];
+    if(!cs||cs.reps===0) return END;
+    if(browseSort==='hard') return -(cs.d||0);
+    if(browseSort==='weak') return cs.s||0;
+    return cs.due||0;   // 'due'
+  };
+  return cards.slice().sort((a,b)=>key(a)-key(b)||a.q.localeCompare(b.q));
+}
+function renderBrowseSummary(n,total){
+  const box=$('browseSummary'); if(!box) return;
+  const on=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null||!!browseFlag;
+  box.innerHTML='<span><b>'+n+'</b> of '+total+' words</span>'+
+    (on?'<button class="browseClearAll" id="browseClearAll">Clear all filters</button>':'<span>&mdash; the whole deck</span>');
+}
 function renderBrowse(){
   $('browseDirL').classList.toggle('sel',browseDir==='L');
   $('browseDirE').classList.toggle('sel',browseDir==='E');
   $('bdtL').textContent=DECK.fwd; $('bdtE').textContent=DECK.rev;
-  $('bddL').textContent=CARDS.filter(c=>c.dir==='L').length+' words';
-  $('bddE').textContent=CARDS.filter(c=>c.dir==='E').length+' words';
+  const totalL=CARDS.filter(c=>c.dir==='L').length, totalE=CARDS.filter(c=>c.dir==='E').length;
+  $('bddL').textContent=totalL+' words'; $('bddE').textContent=totalE+' words';
   renderBrowsePartChips();
   renderBrowseStatusChips();
   renderBrowseFlagChips();
+  if($('browseSort')) $('browseSort').value=browseSort;
   let cards=CARDS.filter(c=>c.dir===browseDir);
   if(browsePart) cards=cards.filter(c=>c.sec===browsePart);
   if(browseStatus!=='all') cards=cards.filter(c=>statusOf(S.cards[c.id])===browseStatus);
@@ -6924,13 +7165,20 @@ function renderBrowse(){
     renderBulkBar();
     return;
   }
-  const groups=groupByPart(cards);
-  const openAll=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null||!!browseFlag;
+  renderBrowseSummary(cards.length,browseDir==='L'?totalL:totalE);
   let html='';
-  groups.forEach(g=>{
-    html+='<details class="fold"'+(openAll?' open':'')+'><summary>'+escHtml(g.sec)+' ('+g.cards.length+')</summary><div>'+
-      g.cards.map(wordRowHtml).join('')+'</div></details>';
-  });
+  if(browseSort==='alpha'){
+    const groups=groupByPart(cards);
+    const openAll=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null||!!browseFlag;
+    groups.forEach(g=>{
+      html+='<details class="fold"'+(openAll?' open':'')+'><summary>'+escHtml(g.sec)+' ('+g.cards.length+')</summary><div>'+
+        g.cards.map(wordRowHtml).join('')+'</div></details>';
+    });
+  } else {
+    // A ranked sort crosses every Part on purpose (see sortedForBrowse's own
+    // comment) -- one flat list, no fold to re-hide it behind.
+    html=sortedForBrowse(cards).map(wordRowHtml).join('');
+  }
   $('browseResults').innerHTML = html || '<div class="note">No words match.</div>';
   $('browseDateBar').classList.toggle('hidden',browseDate==null);
   if(browseDate!=null){
@@ -7400,6 +7648,11 @@ function closeCardInspector(){
   document.querySelectorAll('#browseResults details.fold summary').forEach(s=>{
     if(openSecs.has(s.textContent)) s.parentElement.open=true;
   });
+  // On a wide window the panel is a permanent dock (CSS forces it open
+  // regardless of the .on class just cleared above), so removing .on alone
+  // would leave the LAST word's details showing, stale, forever -- this is
+  // the one line that actually clears it back to the empty state.
+  renderCardInspector();
 }
 // WaniKani's model, and the safest of the three surfaces the tying research
 // named: the pair is visible when you come looking at a word, and never
@@ -7425,7 +7678,14 @@ function confusedWithHtml(id){
     }).join('')+'</div>';
 }
 function renderCardInspector(){
-  const id=inspectId; if(!id) return;
+  const id=inspectId;
+  if(!id){
+    // The 1B dock's own empty state (STUDY_SYSTEM.md n/a -- FLAGS_BROWSE_TIES_UX_RESEARCH.md
+    // Part 2, decision 1). Harmless when the overlay is a plain hidden
+    // modal too: nothing pays for content nobody can see.
+    $('cardInspectorDetail').innerHTML='<div class="ciEmpty">Press &#9432; on a word — its details open here.</div>';
+    return;
+  }
   const c=BY_ID[id];
   if(!c){ closeCardInspector(); return; }   // deleted (or suspended then its group dissolved) out from under an open panel
   const cs=S.cards[id], susp=!!(cs&&cs.susp);
@@ -8834,8 +9094,31 @@ function openConfirmGroup(ids){
 // re-selecting everyone from scratch via the bulk flow above).
 function openGroupManager(id){
   groupManageId=id; groupCreateIds=null;
+  tieSearchOpen=false; tieSearchQuery='';
   $('confuseGroupOverlay').classList.add('on');
   renderGroupManager();
+}
+// Decision 4A: search the deck, pick a partner, write the line, Tie --
+// reusing openConfirmGroup() unchanged for that last step, so this is the
+// only genuinely new code the decision needed. Fixes the dead end the
+// original bug report named ("+ tie" on a word with none opened this same
+// panel showing only "Not tied to anything yet" and a Close button): that
+// text is still true when there is nothing else to do, but there is now
+// always something else to do.
+function renderTiePick(id){
+  const c=BY_ID[id];
+  const q=searchKey(tieSearchQuery);
+  const cands=q ? CARDS.filter(x=>x.dir===c.dir&&x.id!==id&&
+    (searchKey(x.q).includes(q)||searchKey(answerText(x)).includes(q))).slice(0,40) : [];
+  return '<div class="cgTiePick">'+
+    '<input type="text" id="cgSearch" placeholder="Search the deck…" value="'+escHtml(tieSearchQuery)+'">'+
+    (q
+      ? '<div class="cgPickList">'+(cands.length
+          ? cands.map(x=>'<button class="cgPickRow" data-tiepick="'+escHtml(x.id)+'"><span class="pt">'+escHtml(x.q)+
+              '</span><span class="pg">'+escHtml(answerText(x))+'</span></button>').join('')
+          : '<div class="note">No match.</div>')+'</div>'
+      : '')+
+    '</div>';
 }
 function renderGroupManager(){
   const id=groupManageId; if(!id) return;
@@ -8863,8 +9146,20 @@ function renderGroupManager(){
       return '<option value="'+escHtml(gid)+'">'+escHtml(label)+'</option>';
     }).join('')+'</select><button class="small" id="cgAddBtn">Add</button></div>';
   }
+  // A word with no ties has nothing else useful to show, so the search
+  // opens by itself; one already tied gets a button first (its own existing
+  // ties, and the join-an-existing-group dropdown just above, are usually
+  // the more useful screen).
+  const searchOpen=tieSearchOpen||gids.length===0;
+  html += searchOpen
+    ? renderTiePick(id)
+    : '<div class="ddBtns"><button class="small" id="cgSearchOpen">+ Tie to another word…</button></div>';
   html+='<div class="ddBtns"><button class="small" id="cgManagerClose">Close</button></div>';
   $('confuseGroupDetail').innerHTML=html;
+  if(searchOpen){
+    const box=$('cgSearch');
+    if(box){ box.focus(); box.setSelectionRange(box.value.length,box.value.length); }
+  }
 }
 // Third flow on the shared overlay. Its own id rather than reusing
 // groupManageId: that one means "this word's ties", this one means "this
@@ -8892,6 +9187,7 @@ function closeConfuseGroupOverlay(){
   const back=tieLabelReturnId; tieLabelReturnId=null;
   if(back) openCardInspector(back);
   groupCreateIds=null; groupManageId=null;
+  tieSearchOpen=false; tieSearchQuery='';
   $('confuseGroupOverlay').classList.remove('on');
 }
 // dueSet: the ids in today's return offer, passed in by renderStruggling so
@@ -9478,17 +9774,7 @@ function renderWarn(qE){
     h+='<div class="warn pile"><span data-act="pile">'+pile.n+' word'+(pile.n===1?'':'s')+' suspended'+
        (pile.oldest>=1?' · oldest has rested '+pile.oldest+' day'+(pile.oldest===1?'':'s'):'')+
        '. Tap to see them.</span>'+
-       '<div class="pileRow">'+
-         '<div class="pileStep"><button data-act="fewer" aria-label="Fewer">&minus;</button>'+
-         '<span class="sv">'+perDay+'</span>'+
-         '<button data-act="more" aria-label="More">+</button></div>'+
-         (dueBack.length
-           ? '<button class="chip pileBack" data-act="back">Bring back '+dueBack.length+
-             ' word'+(dueBack.length===1?'':'s')+' &#8594;</button>'
-           : '<span class="fh">'+(perDay
-               ? 'Today&rsquo;s return is spent — the allowance it shares with new words is used up. More tomorrow.'
-               : 'Switched off. Raise the number to turn it back on.')+'</span>')+
-       '</div></div>';
+       '<div class="pileRow" id="pileRow">'+pileRowInnerHtml(perDay,dueBack)+'</div></div>';
   }
   w.innerHTML=h;
 }
@@ -9501,6 +9787,41 @@ function renderWarn(qE){
 // moment it stopped being studied, which is the thing the line claims to say.
 // A word with neither (flagged from Browse before it was ever seen) counts
 // toward n and simply contributes no age.
+// Decision 5B (FLAGS_BROWSE_TIES_UX_RESEARCH.md): the two 15s were never a
+// duplicate, they were the allowance and the ready-count agreeing until the
+// pile ran down -- but a setting you touch once a term does not need to sit
+// on the line every day at the same size as the number you act on. The
+// allowance now hides behind a quiet "change" until asked for; asking
+// reveals BOTH of 5A's faster paths at once (his own ask, verbatim: "should
+// be able to type in a number, or some other solution" for the one-at-a-
+// time stepper) -- click the number to type it, or hold +/- to accelerate.
+// pileEditOpen is session-only and deliberately not reset by an ordinary
+// renderHome() (rated a card, pile.n changed elsewhere) -- only closing
+// Settings' own identical control, or navigating right away, would ever
+// need to re-hide it, and neither costs anything by leaving it open.
+let pileEditOpen=false;
+function pileRowInnerHtml(perDay,dueBack){
+  const backHtml=dueBack.length
+    ? '<button class="chip pileBack" data-act="back">Bring back '+dueBack.length+
+      ' word'+(dueBack.length===1?'':'s')+' &#8594;</button>'
+    : '<span class="fh">'+(perDay
+        ? 'Today&rsquo;s return is spent — the allowance it shares with new words is used up. More tomorrow.'
+        : 'Switched off. Raise the number to turn it back on.')+'</span>';
+  const editHtml=pileEditOpen
+    ? '<div class="pileStep" id="pileStep"><button data-act="fewer" aria-label="Fewer">&minus;</button>'+
+      '<span class="sv" data-act="typeIn" title="Click to type">'+perDay+'<small>/day</small></span>'+
+      '<button data-act="more" aria-label="More">+</button></div>'
+    : '<span class="quietEdit">up to '+perDay+' a day — <u data-act="openEdit">change</u></span>';
+  return editHtml+backHtml;
+}
+// Re-derives both halves fresh (dueBack depends on perDay, which just
+// changed) and patches #pileRow alone -- renderHome() is a big function and
+// calling it on every hold-repeat tick would fight the hold for the frame.
+function patchPileRow(){
+  const row=$('pileRow'); if(!row) return;
+  const perDay=S.settings.returnPerDay|0, dueBack=returnCandidates(S.dir);
+  row.innerHTML=pileRowInnerHtml(perDay,dueBack);
+}
 function pileWait(dir,now){
   const t=(now!=null)?now:Date.now();
   let n=0, oldest=null;
@@ -11271,15 +11592,34 @@ $('homeWarn').addEventListener('click',e=>{
   const t=e.target&&e.target.closest?e.target.closest('[data-act]'):null;
   if(!t) return;
   const act=t.getAttribute('data-act');
-  if(act!=='calib'&&act!=='pile'&&act!=='back'&&act!=='more'&&act!=='fewer') return;   // the plain warnings in this box stay plain text
+  // +/- moved to their own pointerdown/hold handler below (5A folded into
+  // 5B's reveal) -- a click ALSO fires after pointerdown on an ordinary
+  // tap, so leaving them dispatched from both places would double-count
+  // every single press. openEdit/typeIn are new (5B); the rest is unchanged.
+  if(act!=='calib'&&act!=='pile'&&act!=='back'&&act!=='openEdit'&&act!=='typeIn') return;   // the plain warnings in this box stay plain text
   e.preventDefault();
   if(act==='calib'){ openCalibration(); return; }
   if(act==='pile'){ openPile(); return; }
-  if(act==='more'||act==='fewer'){
-    // Clamped exactly as SETTINGS_BOUNDS clamps it, so the stepper and a
-    // hand-edited save can never disagree about the range.
-    const v=Math.min(Math.max((S.settings.returnPerDay|0)+(act==='more'?1:-1),0),20);
-    S.settings.returnPerDay=v; save(); renderHome();
+  if(act==='openEdit'){ pileEditOpen=true; patchPileRow(); return; }
+  if(act==='typeIn'){
+    // Click the number, type a value -- his own ask, verbatim: "should be
+    // able to type in a number, or some other solution" for the one-at-a-
+    // time stepper this replaces. Swapped for a real <input> only on
+    // demand, same trick the stepper elsewhere on this page never needed
+    // because it was never the SLOW path -- this one specifically was.
+    const cur=S.settings.returnPerDay|0;
+    const inp=document.createElement('input');
+    inp.type='number'; inp.min=0; inp.max=20; inp.value=cur; inp.className='pileTypeIn';
+    t.replaceWith(inp); inp.focus(); inp.select();
+    const commit=()=>{
+      const v=Math.min(Math.max(Math.round(+inp.value||0),0),20);
+      S.settings.returnPerDay=v; save(); patchPileRow();
+    };
+    inp.addEventListener('blur',commit);
+    inp.addEventListener('keydown',ev=>{
+      if(ev.key==='Enter'){ ev.preventDefault(); inp.blur(); }
+      if(ev.key==='Escape'){ inp.value=cur; inp.blur(); }
+    });
     return;
   }
   // The daily return. bringBackDue() reads returnCandidates() itself rather
@@ -11292,6 +11632,30 @@ $('homeWarn').addEventListener('click',e=>{
     ? n+' word'+(n===1?'':'s')+' back in review'
     : 'Nothing due back right now',1600);
 });
+// Hold-to-accelerate on the revealed stepper's own +/-, the other half of
+// 5A folded into 5B: a bare tap still moves the allowance by exactly one
+// (tick() fires once, synchronously, before the repeat timer is even set),
+// holding down speeds up the same way the demo's did. Ticks patch #pileRow
+// directly rather than calling save()/renderHome() every ~40ms -- the
+// commit (save, then one real renderHome() for full consistency) happens
+// once, on release, in the pointerup/pointercancel listener below.
+let pileHoldT=null;
+$('homeWarn').addEventListener('pointerdown',e=>{
+  const b=e.target.closest('.pileStep [data-act]'); if(!b) return;
+  e.preventDefault();
+  const d=b.getAttribute('data-act')==='more'?1:-1;
+  let step=0;
+  const tick=()=>{
+    S.settings.returnPerDay=Math.min(Math.max((S.settings.returnPerDay|0)+d,0),20);
+    patchPileRow();
+  };
+  tick();
+  pileHoldT=setTimeout(function rep(){ tick(); step++; pileHoldT=setTimeout(rep,Math.max(40,180-step*14)); },420);
+});
+addEventListener('pointerup',()=>{
+  if(pileHoldT){ clearTimeout(pileHoldT); pileHoldT=null; save(); renderHome(); }
+});
+addEventListener('pointercancel',()=>{ if(pileHoldT){ clearTimeout(pileHoldT); pileHoldT=null; } });
 tapZone($('calibRemind'),()=>{
   S.calibrationDueAt=Date.now()+14*DAY; save(); renderCalibration();
   toast('Reminder set for '+new Date(S.calibrationDueAt).toLocaleDateString(undefined,{day:'numeric',month:'long'}),2200);
@@ -11439,6 +11803,10 @@ $('browseResults').addEventListener('click',e=>{
   // a checkbox click also bubbles here first, so it's guarded out before
   // anything below can mistake it for a row-reveal tap
   if(e.target.closest('.wrCheck')) return;
+  // The row's own flag control (decision 2): opens the same grid the study
+  // screen and the keyboard both use, targeted at this word specifically.
+  const flagBtn=e.target.closest('.flagDotBtn,.flagBtn');
+  if(flagBtn){ e.preventDefault(); e.stopPropagation(); openFlagPicker(flagBtn.dataset.id); return; }
   // guarded first, same shape as the Struggling-words list's own suspBtn
   // handler just below -- must never also toggle this row's reveal
   const suspBtn=e.target.closest('.suspBtn');
@@ -11535,7 +11903,7 @@ tapZone($('bulkBury'),()=>{
 });
 tapZone($('bulkGroup'),()=>{ openConfirmGroup(Array.from(browseSelected)); });
 tapZone($('bulkClear'),()=>{ browseSelected.clear(); renderBrowse(); });
-tapZone($('cardFlagBtn'),()=>{ openFlagPicker(); });
+tapZone($('cardFlagBtn'),()=>{ openFlagPicker(current); });
 $('flagPickerOverlay').addEventListener('click',e=>{
   if(e.target.id==='flagPickerOverlay'||e.target.id==='fpClose'){ closeFlagPicker(); return; }
   // Both faces of the overlay, handled before the colour lookup below: in the
@@ -11544,10 +11912,64 @@ $('flagPickerOverlay').addEventListener('click',e=>{
   if(e.target.id==='fpRename'){ renderFlagNameEditor(); return; }
   if(e.target.id==='fpNamesDone'){ saveFlagNames(); openFlagPicker(); return; }
   const pick=e.target.closest('.flagPick');
-  if(!pick||!current) return;
+  if(!pick||!flagTargetId) return;
   pickCurrentFlag(+pick.dataset.flag);
 });
 tapZone($('browseTiedBtn'),()=>{ browseTied=!browseTied; browseSelected.clear(); renderBrowse(); });
+$('browseSort').addEventListener('change',e=>{ browseSort=e.target.value; renderBrowse(); });
+$('browseSummary').addEventListener('click',e=>{
+  if(!e.target.closest('#browseClearAll')) return;
+  browsePart=null; browseStatus='all'; browseFlag=0; browseDate=null; browseQuery=''; $('browseSearch').value='';
+  browseSelected.clear(); renderBrowse();
+});
+// Which row the pointer sits over, for the bare-digit flag keys above --
+// pointerover/pointerout bubble (unlike mouseenter/mouseleave), so one pair
+// of delegated listeners covers every row without being wired per-row.
+$('browseResults').addEventListener('pointerover',e=>{
+  const row=e.target.closest('.wordRow'); if(row) browseHoverId=row.dataset.id;
+});
+$('browseResults').addEventListener('pointerout',e=>{
+  if(e.target.closest('.wordRow')) browseHoverId=null;
+});
+// Right-click (long-press on a touch device fires the same contextmenu
+// event) opens the same flag grid plus the row's own three actions in one
+// surface -- decision 2A's second path in, for anyone who'd rather not aim
+// at a 15px hover target.
+$('browseResults').addEventListener('contextmenu',e=>{
+  const row=e.target.closest('.wordRow'); if(!row) return;
+  e.preventDefault();
+  renderRowMenu(row.dataset.id,e.clientX,e.clientY);
+});
+$('rowMenu').addEventListener('click',e=>{
+  const id=rowMenuId; if(!id) return;
+  const f=e.target.closest('.rmFlag');
+  if(f){
+    const cs=cardState(id);
+    applyFlag(cs,+f.dataset.flag);
+    save(); patchBrowseRowFlag(id); closeRowMenu();
+    toast(cs.flag?('Flagged '+flagName(cs.flag)):'Flag cleared',1200);
+    return;
+  }
+  const mi=e.target.closest('.rmi'); if(!mi) return;
+  const a=mi.dataset.a;
+  closeRowMenu();
+  if(a==='tie') openGroupManager(id);
+  if(a==='susp'){ const cs=setAside(id,!cardState(id).susp); save(); renderBrowse(); toast(cs.susp?'Suspended':'Brought back',1400); }
+  if(a==='bury'){
+    const wasBuried=isBuriedToday(cardState(id));
+    const nowBuried=isBuriedToday(buryToday(id,!wasBuried));
+    if(nowBuried===wasBuried){ toast('That word is suspended — bring it back first',2200); return; }
+    save(); renderBrowse();
+    toast(nowBuried?'Buried — back tomorrow':'Brought back',1400);
+  }
+  if(a==='details') openCardInspector(id);
+});
+document.addEventListener('click',e=>{
+  if(!$('rowMenu').classList.contains('on')) return;
+  if(e.target.closest('#rowMenu')) return;
+  closeRowMenu();
+});
+addEventListener('scroll',()=>{ if($('rowMenu').classList.contains('on')) closeRowMenu(); },{passive:true,capture:true});
 // The label editor is the overlay's third flow, alongside create and manage.
 $('browseResults').addEventListener('click',e=>{
   const ed=e.target.closest('[data-tielabel]');
@@ -11591,7 +12013,19 @@ $('confuseGroupOverlay').addEventListener('click',e=>{
   if(e.target.id==='cgAddBtn'){
     const sel=$('cgAddSelect');
     if(sel&&sel.value){ addToConfuseGroup(groupManageId,sel.value); save(); renderGroupManager(); renderBrowse(); }
+    return;
   }
+  if(e.target.id==='cgSearchOpen'){ tieSearchOpen=true; renderGroupManager(); return; }
+  const pick=e.target.closest('[data-tiepick]');
+  if(pick){ openConfirmGroup([groupManageId,pick.dataset.tiepick]); return; }
+});
+$('confuseGroupOverlay').addEventListener('input',e=>{
+  if(e.target.id!=='cgSearch') return;
+  tieSearchQuery=e.target.value;
+  // Re-rendering the whole manager (rather than just the pick-list) is
+  // cheap here -- the list itself is capped at 40 rows -- and keeps this
+  // one code path instead of a second, narrower render function.
+  renderGroupManager();
 });
 function toggleSuspFromList(id){
   const cs=setAside(id,!cardState(id).susp);
@@ -11900,6 +12334,13 @@ document.addEventListener('keydown',e=>{
     // the menu sitting on top of it.
     if($('flagPickerOverlay').classList.contains('on')){
       if(/^[0-7]$/.test(e.key)){ e.preventDefault(); pickCurrentFlag(+e.key); }
+      // F is the same key that opened this, so it closes it too -- one key,
+      // both directions, the same convention S already uses for Home/study.
+      // Guarded by isTyping() because this overlay's other face (renaming)
+      // holds real text inputs an "f" typed there must reach, not close on.
+      else if((e.key==='f'||e.key==='F')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!e.repeat&&!isTyping()){
+        e.preventDefault(); closeFlagPicker();
+      }
       return;
     }
     if((e.key==='f'||e.key==='F')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!e.repeat&&!isTyping()&&current){
@@ -12059,6 +12500,24 @@ document.addEventListener('keydown',e=>{
     // convention outlived it.
     if(e.key==='1') triageDecide('bin');
     else if(e.key==='2'||e.key===' '){ e.preventDefault(); triageDecide('keep'); }
+  }
+  else if($('scBrowse').classList.contains('on')){
+    // Decision 2A: point at a row, press a digit -- Browse's own equivalent
+    // of the study screen's Ctrl+digit above, so it toggles the same way
+    // (setFlag, not pickCurrentFlag's explicit-pick-never-clears) rather
+    // than introducing a second flag convention on the same page. No
+    // modifier (Ctrl/Cmd+digit stays the study screen's binding, reserved
+    // rather than reused here), never while typing (the search box, a tie
+    // label, a rename field, the note textarea, an add-word field all live
+    // on this screen), and only while the pointer is actually over a row --
+    // there is no "selected row" for a keyboard otherwise.
+    if(/^[0-7]$/.test(e.key)&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!isTyping()&&browseHoverId){
+      e.preventDefault();
+      const n=setFlag(browseHoverId,+e.key);
+      save(); patchBrowseRowFlag(browseHoverId);
+      toast(n?('Flagged '+flagName(n)):'Flag cleared',1200);
+    }
+    else if(e.key==='Escape'&&$('rowMenu').classList.contains('on')) closeRowMenu();
   }
 });
 /* ======================= the exhibit screen ======================= */
