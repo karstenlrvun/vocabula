@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.30.8">
+<link rel="stylesheet" href="palettes.css?v=2026.08.30.10">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -35,7 +35,7 @@
   stays HERE, synchronous, so it still halts the parser before the app
   skeleton can flash -- it never depended on content at all.
 -->
-<script src="decks/registry.js?v=2026.08.30.8"></script>
+<script src="decks/registry.js?v=2026.08.30.10"></script>
 <!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
      number must be bumped with BUILD (sec95c pins that it matches).
      Why: these two are the only files both pages load by a fixed name, and a
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.30.8"></script>
+<script src="shared.js?v=2026.08.30.10"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -338,6 +338,11 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .cwLine .cwl{flex:1}
 .cwLine.empty .cwl{color:var(--faint);font-style:italic}
 .cwLine .cwEdit{flex:0 0 auto;background:none;border:none;color:var(--muted);font-size:12px;padding:0 2px}
+/* Untie (word panel) and Delete (Tied view) both destroy something the
+   owner wrote, so they read as the quietest thing on their row until
+   pointed at -- never coral, which in this app means "current". */
+.cwLine .cwUntie,.tieLabel .tieDel{color:var(--faint)}
+.cwLine .cwUntie:hover,.tieLabel .tieDel:hover{color:var(--again,var(--ink))}
 .cwWord{font-size:13px;padding:2px 0}
 .cwWord b{font-weight:500}
 .cwWord span{color:var(--muted)}
@@ -477,6 +482,14 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
   font-size:17px;font-weight:500;margin-bottom:18px}
 .startBtn::before{content:"";position:absolute;top:-16px;bottom:-12px;left:-6px;right:-6px}
 .startBtn:disabled{background:var(--panel);color:var(--faint);border:1px solid var(--line)}
+/* Same box as .startBtn above (it sets its own 18px bottom margin, which this
+   inherits by sitting in the same column), minus the accent -- panel fill and
+   the ordinary hairline, the colours it wore as a chip. The ::before is the
+   same touch-target bleed every other button on this screen carries. */
+.browseBtn{position:relative;width:100%;height:58px;border-radius:15px;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  font-size:16px;font-weight:500;margin:-6px 0 18px}
+.browseBtn::before{content:"";position:absolute;top:-8px;bottom:-8px;left:-6px;right:-6px}
 .toast{color:#fff}
 .sect{margin-top:26px}
 .stepper{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);
@@ -531,7 +544,7 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 /* ---- heatmap stat chips: current/longest streak, days learned, daily
    average (the last with its own inline week/month/year/all-time window
    picker -- see windowedDailyAverage()). Fresh classes rather than reusing
-   .statChip (scoped to .cardMeta/.recapCard, a different, smaller single-
+   .statChip (scoped to .recapCard, a different, smaller single-
    line badge) or .chip (a filter toggle, not a label+value display). ---- */
 .hmStats{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .hmStat{padding:8px 12px;border:1px solid var(--line);border-radius:13px;background:var(--raise);
@@ -812,6 +825,11 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 .rowMenu .rmi .ic{width:18px;text-align:center;color:var(--faint);flex:0 0 auto}
 .rowMenu .rmi .rmn{flex:1 1 auto;min-width:0}
 .rowMenu .rmi .rmc{flex:0 0 auto;color:var(--faint);font-size:11.5px;font-variant-numeric:tabular-nums}
+/* The flag menu's colour chip. .ddSw is styled for the toolbar BUTTON, whose
+   rule is scoped .ddBtn .ddSw and so does not reach inside this popover --
+   the swatch needs its own size here, sitting where .ic sits in the rows
+   that carry an icon instead. */
+.rowMenu .rmi .ddSw{flex:0 0 auto;width:11px;height:11px;border-radius:3px;display:block}
 .rowMenu .rmHead{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
   font-weight:600;padding:2px 8px 6px}
 .rowMenu .rmScroll{max-height:min(52vh,340px);overflow-y:auto}
@@ -827,6 +845,10 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 #cardInspectorDetail .ciTerm{font-family:var(--serif);font-size:21px;line-height:1.25;color:var(--ink)}
 #cardInspectorDetail .ciGloss{color:var(--muted);font-size:14.5px;margin:3px 0 10px;line-height:1.45}
 #cardInspectorDetail .ciStats{font-size:12.5px;color:var(--faint);line-height:1.5;margin:0}
+/* The timeline half of the panel's numbers, one step quieter than the miss
+   count above it -- see renderCardInspector()'s own comment for why the
+   figures are split this way rather than run into one wrapping sentence. */
+#cardInspectorDetail .ciStats2{opacity:.78;margin-top:1px}
 #cardInspectorDetail .ciLbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--faint);font-weight:600;margin:18px 0 7px}
 #cardInspectorDetail textarea{width:100%;margin:0;background:var(--bg,var(--panel));border:1px solid var(--line);
@@ -1301,14 +1323,16 @@ html[data-layout="landscape"] #scStudy .rate .ivl{font-size:13px}
    None of the three touch #answer's own opacity mechanism -- see the
    comments at reveal()/renderCard()'s own call sites for why that stays
    off-limits regardless of how tempting a CSS transition looks here. */
-.cardMeta{display:none}
-html[data-layout="landscape"][data-study-stats] .cardMeta{
-  grid-area:prompt; align-self:end; justify-self:center; z-index:1;
-  display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
-  margin-bottom:22px; padding:0 24px; max-width:100%;
-}
-html[data-layout="landscape"][data-study-stats] .cardMeta:empty{display:none}
-.cardMeta .statChip, .recapCard .statChip{
+/* .cardMeta -- the pre-answer review-history chips (reviewed N x, streak N,
+   last rating and when) -- was REMOVED in 2026.08.30.10, along with the
+   settings that gated it. It printed a word's failure history on the study
+   screen while the prompt was still unanswered, and the owner reported using
+   it to work the answer out: a recognition cue standing in front of a recall
+   test, and the one measurement FSRS most needs to be clean. The element,
+   its render block in renderCard(), and the whole studyStats setting are all
+   gone; only this shared chip rule survives, for the recap card below, which
+   describes the PREVIOUS card and so cannot cue the one on screen. */
+.recapCard .statChip{
   font-size:11.5px; color:var(--muted); background:var(--raise); border:1px solid var(--line);
   border-radius:100px; padding:4px 11px; font-variant-numeric:tabular-nums;
 }
@@ -1318,10 +1342,11 @@ html[data-layout="landscape"][data-study-stats] .cardMeta:empty{display:none}
    allowed to sit in it) shows the card rate() *just graded*, not the one
    on screen now -- lastRated is set at the end of rate(), read here, and
    cleared by undo() so it can never describe a rating that's since been
-   reverted. Same studyStats switch as .cardMeta on purpose (see its own
-   comment in renderCard()). display:none by default, same pattern as
-   .cardMeta and .keycap below, so portrait layouts never see it regardless
-   of the setting. */
+   reverted. Always on since 2026.08.16.1, and the only survivor of the
+   three study-screen extras retired in .30.10 -- it describes the PREVIOUS
+   card, so unlike the review-history chips it cannot cue the one on screen.
+   display:none by default, same pattern as .keycap below, so portrait
+   layouts never see it. */
 .recapCard{display:none}
 html[data-layout="landscape"] .recapCard.on{
   grid-area:recap; display:flex; flex-direction:column; gap:6px;
@@ -1367,41 +1392,42 @@ html:not([data-layout="landscape"]) .recapCard.on .recapRow{flex:0 0 auto; flex-
 .recapCard .rc-rating.rc-good{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
 .recapCard .rc-rating.rc-easy{background:var(--easy-bg);border-color:var(--easy-br);color:var(--easy)}
 .keycap{display:none}
-html[data-layout="landscape"][data-study-hints] .keycap{
+html[data-layout="landscape"] .keycap{
   display:inline-flex; align-items:center; justify-content:center; margin-top:4px;
   font-family:var(--sans); font-size:10.5px; font-weight:500; color:var(--faint);
   background:var(--raise); border:1px solid var(--line); border-radius:6px;
   padding:1px 7px; min-width:16px; letter-spacing:.01em;
 }
-html[data-layout="landscape"][data-study-hints] #revealBtn .keycap,
-html[data-layout="landscape"][data-study-hints] #quickBtn .keycap{
+html[data-layout="landscape"] #revealBtn .keycap,
+html[data-layout="landscape"] #quickBtn .keycap{
   position:absolute; right:18px; top:50%; transform:translateY(-50%); margin:0;
 }
-html[data-layout="landscape"][data-study-hints] #undoBtn,
-html[data-layout="landscape"][data-study-hints] #toHome{position:relative}
-html[data-layout="landscape"][data-study-hints] .iconKeycap{
+html[data-layout="landscape"] #undoBtn,
+html[data-layout="landscape"] #toHome{position:relative}
+html[data-layout="landscape"] .iconKeycap{
   position:absolute; bottom:-3px; right:-6px; margin:0; font-size:9px; padding:0 5px;
 }
 /* #toHome is the LEFT-hand icon in the bar, so its cap hangs off the left
    edge -- the shared rule above is written for #undoBtn, which sits at the
    right and hangs its own cap outward, away from the counts in the middle.
    Unmirrored, this one would hang inward and crowd them. */
-html[data-layout="landscape"][data-study-hints] #toHome .iconKeycap{right:auto; left:-6px}
-html[data-layout="landscape"][data-study-hints] .rate,
-html[data-layout="landscape"][data-study-hints] .revealBtn,
-html[data-layout="landscape"][data-study-hints] .quickBtn{
+html[data-layout="landscape"] #toHome .iconKeycap{right:auto; left:-6px}
+html[data-layout="landscape"] .rate,
+html[data-layout="landscape"] .revealBtn,
+html[data-layout="landscape"] .quickBtn{
   transition:transform .15s ease, box-shadow .15s ease;
 }
-html[data-layout="landscape"][data-study-hints] .rate:hover,
-html[data-layout="landscape"][data-study-hints] .revealBtn:hover,
-html[data-layout="landscape"][data-study-hints] .quickBtn:hover{
+html[data-layout="landscape"] .rate:hover,
+html[data-layout="landscape"] .revealBtn:hover,
+html[data-layout="landscape"] .quickBtn:hover{
   transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.10);
 }
 
 /* ============================================================
    Study card shape: Replace / Swap (LAYOUT_PLAN.md §6-9; "F1"/"F2" there).
-   A fourth setting alongside studyStats/studyHints/studyMotion, keyed on
-   its own data-study-card attribute -- never a third value on data-layout
+   Once a fourth setting alongside studyStats/studyHints/studyMotion (all
+   three retired in .30.10); it is now the only one of the family left, and
+   is keyed on its own data-study-card attribute -- never a third value on data-layout
    itself (§3.4/§9.2: 54 rules key on that one, only 20 of them study-
    scoped, and one of the other 34 is the negated
    html:not([data-layout="landscape"]) .quickFlash selector a few screens
@@ -1535,23 +1561,11 @@ html[data-layout="landscape"][data-study-card="replace"] #answer.lat,
 html[data-layout="landscape"][data-study-card="swap"] #answer.lat{
   font-size:clamp(28px,calc(18px + 1.4vw),42px);
 }
-/* SHIP_NOW.md Fix 3: .cardMeta's base rule (above) puts it in grid-area
-   "prompt" at align-self:end, which is harmless in spread -- there,
-   "prompt" is the tall left column, so the chips just drop to its unused
-   bottom edge, well clear of the separate "answer" column. Here, "prompt"
-   is a single shared row that #prompt/#answer/#quickFlash all occupy at
-   once (this file's own stacking trick, a few rules up) -- align-self:end
-   inside that ONE short row lands the chips on top of whichever of the
-   three is opaque, i.e. on top of the answer once revealed. Its own
-   dedicated "meta" row (added to the template above, between "prompt" and
-   "leech") gets it out of that cell entirely, same fix shape as leech/hint
-   already get their own rows rather than sharing "prompt". */
-html[data-layout="landscape"][data-study-card="replace"] .cardMeta,
-html[data-layout="landscape"][data-study-card="swap"] .cardMeta,
-html[data-layout="landscape"][data-study-card="column"] .cardMeta{
-  grid-area:meta; align-self:center; justify-self:stretch;
-  margin-bottom:0; padding:8px 32px 0; z-index:1;
-}
+/* The grid's "meta" row once held .cardMeta, the pre-answer review-history
+   chips, kept out of the shared prompt/answer cell so they could not paint on
+   top of a revealed answer. Both the element and the row's occupant are gone
+   (.30.10); the row itself stays in the template above, empty and collapsed,
+   because leech/hint still key off the rows around it. */
 html[data-layout="landscape"][data-study-card="replace"] #leechTag,
 html[data-layout="landscape"][data-study-card="swap"] #leechTag{
   grid-area:leech; justify-content:center; padding:10px 32px 0; z-index:1;
@@ -1679,7 +1693,7 @@ html[data-layout="landscape"][data-study-card="swap"] #cardArea.revealed #prompt
 
    Structure is deliberately replace/swap's grid, not the base spread's: the
    same 1fr / 720px / 1fr centred column, so all three chosen shapes share one
-   measured content width and the recap card, .cardMeta and the keycaps all
+   measured content width and the recap card and the keycaps all
    keep the treatments already written for them (this shape is added to those
    selector lists above rather than given copies of the rules). It differs in
    one way, and it is the point of the shape: prompt and answer get their own
@@ -1815,6 +1829,13 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
         </div>
       </div>
       <button class="startBtn" id="startBtn">Start</button>
+      <!-- Browse used to be a small pill buried in "The whole syllabus", from
+           when it was a list of words and nothing else. It now carries the
+           filters, the flags, the ties and the word panel, so it is the second
+           thing this screen does and sits where the second thing goes. Start's
+           width, Start's shape, deliberately NOT Start's colour: one coral
+           button per screen is what makes it read as the thing to press. -->
+      <button class="browseBtn" id="toBrowse">Word list &#8594;</button>
       </div>
 
       <div class="sect">
@@ -1876,7 +1897,6 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
       <div class="sect">
         <h2>The whole syllabus</h2>
         <div id="syllabus"></div>
-        <button class="chip" id="toBrowse" style="margin-top:12px">Browse the full list &#8594;</button>
         <details class="fold" id="partFold">
           <summary>By part</summary>
           <div id="partBody"></div>
@@ -2000,7 +2020,7 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
         <button class="ddBtn" id="bddPart" data-dd="part">Part</button>
         <button class="ddBtn" id="bddStatus" data-dd="status">Progress</button>
         <button class="ddBtn" id="bddFlag" data-dd="flag">Flag</button>
-        <button class="ddBtn" id="browseTiedBtn">&#128279; Tied</button>
+        <button class="ddBtn" id="browseTiedBtn" data-dd="tied">&#128279; Tied</button>
         <button class="ddBtn" id="bddSort" data-dd="sort">Sort</button>
       </div>
       <div class="browseSummary" id="browseSummary"></div>
@@ -2080,7 +2100,6 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
         <button class="suspBtn" id="suspBtn" aria-label="Suspend this word"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M14.8,3.2 a9.2,9.2 0 1 0 6.4,14.4 A10.6,10.6 0 0 1 14.8,3.2 Z"/></svg></button>
       </div>
       <div class="hintline" id="hintline"></div>
-      <div class="cardMeta" id="cardMeta"></div>
       <div class="recapCard" id="recapCard">
         <div class="recapLbl">Last card</div>
         <div class="recapWord" id="recapWord"></div>
@@ -2162,10 +2181,10 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
         <div class="fh">Capped separately per direction — raising one no longer raises the other. 0 stops new words entirely and leaves you reviewing what you already have.</div>
       </div>
       <div class="field">
-        <label for="fReturn">Suspended words brought back a day — <b id="fReturnVal">5</b></label>
+        <label for="fReturn">Suspended words brought back at a time — <b id="fReturnVal">5</b></label>
         <input type="range" id="fReturn" min="0" max="20" step="1">
-        <div class="fh">Suspended words don't come back on their own. Each day the app offers you the ones that have rested longest, and nothing moves until you tap the line on the front page.</div>
-        <div class="fh" style="margin-top:10px">They're paid for out of the new-words allowance above rather than added on top, so a day that brings back five words is a day with five fewer new ones and your total workload never changes. Two words you've tied together are never offered on the same day. 0 switches the offer off and leaves the pile where it is.</div>
+        <div class="fh">Suspended words don't come back on their own. Each day the app offers you the ones that have rested longest; tap the line on the front page and they're back, and you can tap again for another batch as long as there's room left.</div>
+        <div class="fh" style="margin-top:10px">They're paid for out of the new-words allowance above rather than added on top, so bringing back five words is five fewer new ones that day — once that allowance is spent, the pile simply waits regardless of how many are still queued. Two words you've tied together are never offered on the same day. 0 switches the offer off and leaves the pile where it is.</div>
       </div>
       <div class="field">
         <label for="fRet">Target retention — <b id="fRetVal">90%</b></label>
@@ -2189,14 +2208,6 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
         </select>
         <button class="act" id="surpriseBtn">Surprise me</button>
         <div class="fh" id="palNote"> — </div>
-      </div>
-      <div class="field">
-        <label for="fSimple">Study screen, wide layout</label>
-        <select id="fSimple" class="sel">
-          <option value="0">Full — review history, keyboard hints, animation</option>
-          <option value="1">Simplified — the card and nothing else</option>
-        </select>
-        <div class="fh">Only affects a screen wide enough for the two-column study card. The last card you rated is always shown either way.</div>
       </div>
       <div class="field">
         <label for="fCardShape">Study card shape</label>
@@ -3252,7 +3263,7 @@ const CALIBRATION_DUE_DEFAULT=new Date(2026,8,2,9,0,0).getTime();   // 2 Sept 20
 function calibrationDue(s,now){ return !!(s&&s.calibrationDueAt!=null&&Number.isFinite(s.calibrationDueAt)&&now>=s.calibrationDueAt); }
 function makeDefaults(){ return {
   version:2, created:Date.now(), calibrationDueAt:CALIBRATION_DUE_DEFAULT,
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, studyStats:true, studyHints:true, studyMotion:true, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, returnPerDay:5, topBarStyle:'counts', flagNames:null},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, returnPerDay:5, topBarStyle:'counts', flagNames:null},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, sinceExport:0, lastExport:null, lastPushBytes:0,
   deck:KEY, lastSync:null, syncedLogLen:null, lastRemoteAt:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
   // Phase 3 §C (PHASE3_4_HANDOFF.md): user-added words. Rides backup/sync/
@@ -3515,9 +3526,7 @@ let BOOT_KEY=null;
 function saveBoot(){
   try{
     localStorage.setItem(BOOT_KEY, JSON.stringify({
-      theme:S.theme, palette:S.palette, rotate:S.rotate, rotDay:S.rotDay,
-      studyStats:S.settings.studyStats, studyHints:S.settings.studyHints,
-      studyMotion:S.settings.studyMotion
+      theme:S.theme, palette:S.palette, rotate:S.rotate, rotDay:S.rotDay
     }));
   }catch(e){}
 }
@@ -3754,6 +3763,18 @@ function normalise(o){
   // anything that is not one falls back to the default (on), so a hand-edited
   // 'yes' or a missing key cannot read as off by accident.
   if(typeof s.settings.gradeReminder!=='boolean') s.settings.gradeReminder=defaults.settings.gradeReminder;
+  // studyStats / studyHints / studyMotion, retired 2026.08.30.10 with the one
+  // dropdown that drove all three ("Study screen, wide layout"). Review
+  // history is gone from the study screen outright, keyboard hints are now
+  // unconditional in landscape, and the two prompt animations went with them.
+  // Deleted BY NAME rather than left inert: Ground rule 3 keeps a field whose
+  // retirement was never *decided* (S.layout, unflagDay), and deletes one
+  // whose retirement was (the five drill fields above). This is the second
+  // kind. Deleting also matters for the merge -- prefsSnapshot() walks
+  // whatever keys the settings object actually has, so a device still
+  // carrying these would sign its preferences differently from one that had
+  // dropped them, and the two would churn against each other for ever.
+  for(const k of ['studyStats','studyHints','studyMotion']) delete s.settings[k];
   // flagNames: seven display labels, or null for "all still the colours".
   // Coerced to exactly FLAG_COUNT trimmed, capped strings so a hand-edited or
   // half-merged array cannot leave flagName() reading past its end; an entry
@@ -4107,7 +4128,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.30.8';
+const BUILD='2026.08.30.10';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -4204,7 +4225,15 @@ let noteEditId=null;   // which word's note panel is open (openWordNote/#wordNot
 // a bulk selection, groupManageId while viewing/editing one word's existing
 // groups. Neither persisted.
 let groupCreateIds=null, groupManageId=null;
-let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseFlag=0, browseTied=false, browseDate=null, browseSelected=new Set();   // browse screen's own state
+let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseFlag=0, browseTied='all', browseDate=null, browseSelected=new Set();   // browse screen's own state
+// browseTied was a boolean until 2026.08.30.10 -- on meant "replace the list
+// with the pairs view", which is why it had to ignore every other filter: a
+// view cannot be ANDed with a filter. It is now four values. 'all' is off;
+// 'tied' and 'untied' are ordinary filters that combine with Part, Progress,
+// Flag and the search box like any other (Flag 1 + untied is the worklist of
+// flagged words with no partner yet, which is what this change exists for);
+// 'pairs' is the old view, unchanged, still deliberately filter-free.
+const BROWSE_TIED_LABEL={all:'Tied', tied:'Tied only', untied:'Not tied', pairs:'The pairs list'};
 // 2026.08.30 Liquid Browse pass (1B+1A, 2A, 4A, 5B). browseSort: 'alpha'
 // (deck order, the only order before this) | 'hard' (difficulty desc) | 'weak'
 // (stability asc) | 'due' (due date asc, undated/new pushed to the end so
@@ -4505,12 +4534,13 @@ const layoutMQ=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedi
 function applyLayout(){
   const now=(layoutMQ && layoutMQ.matches) ? 'landscape' : 'portrait';
   document.documentElement.dataset.layout=now;
-  // Study-screen extras below are independent of layout *and* of each other
-  // -- each just no-ops outside landscape, since that's the only place any
-  // of their CSS/JS hooks do anything (see the settings field's own note).
-  document.documentElement.toggleAttribute('data-study-stats', !!S.settings.studyStats);
-  document.documentElement.toggleAttribute('data-study-hints', !!S.settings.studyHints);
-  document.documentElement.toggleAttribute('data-study-motion', !!S.settings.studyMotion);
+  // The three study-screen extras that used to be toggled here -- review
+  // history (data-study-stats), keyboard hints (data-study-hints) and the
+  // prompt animations (data-study-motion) -- are gone as of 2026.08.30.10.
+  // History was removed outright (see the .cardMeta comment in the CSS);
+  // hints are now unconditional in landscape, so their rules ask about the
+  // layout alone; the animations were removed with them. Nothing keys on any
+  // of the three attributes any more, and nothing writes them.
   // A fourth member of the family above, but a three-way *value* rather than
   // a boolean, so dataset assignment rather than toggleAttribute -- LAYOUT_PLAN.md
   // §3.4/§9.2: deliberately its own attribute, never a third value on
@@ -4820,8 +4850,8 @@ function renderCounts(){
                         '<span class="c-due"><b>'+r+'</b> due</span>';
 }
 // Pure: the most recent log entry for one card, or null if it's never been
-// rated -- feeds the optional study-screen stats panel (studyStats setting)
-// and nothing else. Scans backward so a recently-studied card, the common
+// rated. Fed the study screen's pre-answer chips until .30.10 removed them;
+// its one caller now is Browse's word panel (renderCardInspector). Scans backward so a recently-studied card, the common
 // case, returns quickly without ever walking the whole log.
 function lastRatingFor(id,log){
   for(let i=log.length-1;i>=0;i--){
@@ -4850,16 +4880,26 @@ function agoLabel(ms,now){
 // every row of a few-thousand-word list; see the browse click handler for
 // why this is computed lazily rather than baked into wordRowHtml.
 function timeToLearnFor(id,log,now){
-  let firstAt=null, activeMs=0, timed=0, untimed=0, reps=0;
+  let firstAt=null, activeMs=0, timed=0, untimed=0, reps=0, agains=0;
   for(const e of log){
     if(e[0]!==id) continue;
     reps++;
+    // agains: every Again ever pressed on this word, counted from the log
+    // itself and NOT from cs.lapses, which only counts failures in review
+    // state and understates the real number about threefold at the median
+    // (1 against 3, measured over 3,034 studied Latin forward cards on
+    // 2026-08-30). This is the figure that actually separates one word from
+    // another -- quartiles 1/3/6/8, maximum 27 -- where reps and streak do
+    // not: three reps-band x streak cells alone cover 55.7% of the deck.
+    // Free here because this loop already walks the whole log for the two
+    // timing figures; no second pass, no new stored field.
+    if(e[1]===1) agains++;
     if(firstAt==null) firstAt=e[2];
     const ms=e[4];
     if(ms!=null&&ms<=ACTIVE_CAP){ activeMs+=ms; timed++; } else untimed++;
   }
   if(reps===0) return null;
-  return {reps,firstAt,calendarMs:now-firstAt,activeMs,timed,untimed};
+  return {reps,firstAt,calendarMs:now-firstAt,activeMs,timed,untimed,agains};
 }
 // Pure: seconds/minutes/hours for a duration that can genuinely be a
 // handful of seconds -- fmtIvl()'s minimum unit is minutes (right for a
@@ -4874,9 +4914,14 @@ function fmtActiveTime(ms){
 // active-thinking clause entirely if every reading was untimed (useTiming
 // off throughout, or every reading discarded) rather than claiming ~0s.
 function learnStatsLine(t,now){
-  const bits=[t.reps+' review'+(t.reps===1?'':'s')+' since '+agoLabel(t.firstAt,now)];
+  // No longer opens with the review count: its one caller (the word panel)
+  // already prints that on the line above, and printing it twice in one
+  // breath is exactly the fault .30.10 was fixing. What is left is the two
+  // things only this function knows -- how long the word has been in the
+  // deck, and how much thinking has actually gone into it.
+  const bits=['first seen '+agoLabel(t.firstAt,now)];
   if(t.timed>0){
-    bits.push('~'+fmtActiveTime(t.activeMs)+' active thinking'+
+    bits.push('~'+fmtActiveTime(t.activeMs)+' thinking'+
       (t.untimed>0?' ('+t.timed+' of '+(t.timed+t.untimed)+' timed)':''));
   }
   return bits.join(' · ');
@@ -5015,36 +5060,23 @@ function renderCard(){
   renderLeech();
   renderCardFlag();
   $('hintline').textContent = cs.reps===0 ? (cs.s!=null?'carried over from the audit':'first time') : '';
-  // Optional study-screen extras, each independent and each a no-op unless
-  // its own setting is on -- see the "Study screen, wide layout" field.
-  // Skipped entirely when off rather than computed-and-hidden, since
-  // lastRatingFor() walks the log and there's no reason to pay for that on
-  // every single card when nothing will show it (§4b's standing concern
-  // about wasted per-rating work applies here just as much as anywhere else
-  // in this file).
-  if(S.settings.studyStats){
-    const meta=$('cardMeta');
-    if(cs.reps>0){
-      const last=lastRatingFor(current,S.log);
-      const bits=['reviewed '+cs.reps+'×','streak '+(cs.streak|0)];
-      if(last) bits.push((RATING_LABEL[last.rating]||'?')+' · '+agoLabel(last.at,Date.now()));
-      // Every bit is an internally-generated number or fixed label, never
-      // anything from DATA or user input, so building this via innerHTML
-      // carries no injection risk -- unlike, say, escHtml()'s call sites.
-      meta.innerHTML=bits.map(b=>'<span class="statChip">'+b+'</span>').join('');
-    } else {
-      meta.innerHTML='';                         // hintline above already covers a brand-new card
-    }
-  }
+  // The pre-answer review-history chips that used to be built here are gone
+  // (2026.08.30.10). They walked the log via lastRatingFor() to print
+  // "reviewed N x / streak N / last Again, 15d ago" beside a prompt that had
+  // not been answered yet -- and the owner reported reading them to work the
+  // word out, which is a recognition cue standing in front of a recall test.
+  // The same figures are still available, better ordered and with the real
+  // Again count, in Browse's word panel (renderCardInspector), where no
+  // retrieval attempt is in flight and they cannot contaminate one.
   // Recap of the card rate() just graded, not this one -- top-right corner
   // of the landscape grid (the "recap" area, previously an unnamed spacer;
   // see the CSS comment at .recapCard). ALWAYS on as of 2026.08.16.1: it used
   // to share the studyStats switch, but when those three flags collapsed into
   // one Simplified-layout toggle this was the one piece worth keeping in both
-  // states, so it was decoupled instead (his call). Costs nothing to leave on
-  // -- unlike cardMeta just above, it reads the in-memory lastRated rather
-  // than walking the log via lastRatingFor(), so there is no per-card work to
-  // skip. Cleared (lastRated=null) by undo() and by anything that wipes
+  // states, so it was decoupled instead (his call) -- which is why it survived
+  // .30.10, where the switch and the other two extras were removed outright.
+  // It reads the in-memory lastRated rather than walking the log, so it costs
+  // nothing, and it names the card just graded rather than the one on screen. Cleared (lastRated=null) by undo() and by anything that wipes
   // undoStack alongside it, so it never shows a rating that's since been
   // reverted or import/erase.
   {
@@ -5059,18 +5091,7 @@ function renderCard(){
       rc.classList.remove('on');
     }
   }
-  if(S.settings.studyMotion && document.documentElement.dataset.layout==='landscape'
-     && typeof $('prompt').animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
-    // A brief arrival for the new card's own prompt, played the same way
-    // reveal()'s fade-in is (Web Animations API, not a CSS transition) --
-    // deliberately not a CSS transition on anything renderCard() touches
-    // directly above, for the same reason .answer's own transition was
-    // removed outright rather than re-timed a fourth time: nothing here
-    // should be able to race a synchronous content swap ever again.
-    $('prompt').animate([{transform:'translateX(-14px)',opacity:.5},{transform:'translateX(0)',opacity:1}],
-      {duration:220,easing:'ease-out'});
-  }
-  $('revealRow').classList.remove('hidden');
+$('revealRow').classList.remove('hidden');
   $('rateRow').classList.add('hidden');
   syncQuickBtn();   // after current is set and the row is showing: the button is per-card, not per-session
   shownAt=Date.now(); thinkMs=null; pressAt=null; cardDirty=false;
@@ -5124,15 +5145,7 @@ function reveal(){
   if(typeof ans.animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
     ans.animate([{opacity:0},{opacity:1}],{duration:130,easing:'ease-out'});
   }
-  if(S.settings.studyMotion && document.documentElement.dataset.layout==='landscape'
-     && typeof $('prompt').animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches)){
-    // Same WAAPI-not-CSS-transition reasoning as renderCard()'s arrival
-    // animation just above it in the file -- a small settle on the prompt
-    // card itself, nothing touching .answer's own mechanism.
-    $('prompt').animate([{transform:'scale(1.015)'},{transform:'scale(1)'}],
-      {duration:260,easing:'cubic-bezier(.2,.7,.3,1)'});
-  }
-  $('revealRow').classList.add('hidden');
+$('revealRow').classList.add('hidden');
   $('rateRow').classList.remove('hidden');
   revealAt=Date.now();
   // Measured from CONTACT, not from this click -- armPressStamp() below
@@ -5543,7 +5556,7 @@ function rate(pressed){
   // bury the same word in the other direction until tomorrow
   burySiblings(current,c,d,now,frame);
   S.sinceExport=(S.sinceExport||0)+1;
-  // Captured for the recap card (top-right, landscape, studyStats setting)
+  // Captured for the recap card (top-right, landscape; always on since .16.1)
   // so a glance answers "what did I just do" without reaching for undo() --
   // r is the grade actually recorded (post-adjustGrade), matching the
   // interval that follows it; pressed alone would mismatch res.ivl whenever
@@ -5880,6 +5893,20 @@ function addToConfuseGroup(id,gid){
   if(!cs.confuseGroups) cs.confuseGroups=[];
   if(cs.confuseGroups.length>=5||cs.confuseGroups.includes(gid)) return;
   cs.confuseGroups=cs.confuseGroups.concat(gid); touchCard(cs);
+}
+// Deletes a whole tie outright, however many words are in it -- the Tied
+// view's own Delete button (2026.08.30.10), where you are looking at the pair
+// as one object rather than at one word's memberships. Deliberately separate
+// from dissolveConfuseGroupIfThin(), which is a tidy-up that only ever fires
+// on a group that has ALREADY fallen below two members and must never delete
+// a healthy one; this is the deliberate act, and it is the only function that
+// removes a group that still has members. Strips the gid from every member so
+// no card is left pointing at a registry entry that no longer exists.
+function deleteConfuseGroup(gid){
+  if(!S.confuseGroups[gid]) return;
+  const members=wordsInConfuseGroup(gid);
+  delete S.confuseGroups[gid];
+  members.forEach(id=>{ const cc=S.cards[id]; if(cc&&cc.confuseGroups){ cc.confuseGroups=cc.confuseGroups.filter(g=>g!==gid); touchCard(cc); } });
 }
 // Removes one word from one specific group (the group manager's per-group
 // "remove" action) -- leaves any of the word's other groups untouched, then
@@ -6429,15 +6456,20 @@ function returnAllowance(dir,d){
   const dk=d||today(), rec=S.days[dk]||{};
   const introduced=(rec['intro'+dir]!=null)?rec['intro'+dir]:(dir==='L'?(rec.intro||0):0);
   const returned=rec['drillGrad'+dir]|0;
-  // Two separate ceilings, and the day's returns come off BOTH. room is what
-  // is left of the shared new-word allowance; left is what is left of the
-  // return setting itself. Subtracting `returned` from only the first was a
-  // real bug caught live: with the allowance at 50 and the setting at 5, the
-  // button simply reappeared after every tap and drained the whole pile five
-  // at a time in one sitting.
+  // One real ceiling, not two (his correction, 2026-08-30). room is what is
+  // left of the shared new-word allowance today -- introduced words AND
+  // already-returned words both come off it, so a day already full of new
+  // material still makes the pile wait, exactly as it always has (his call,
+  // 2026.08.27.1: a returning word costs what a new word costs). returnPerDay
+  // used to be subtracted a second time here, turning it into its OWN daily
+  // total on top of room -- so the button went quiet for the day the moment
+  // that smaller number was spent, however much of the shared allowance was
+  // left over. That was never the intent: the setting sizes ONE release, and
+  // pressing again should offer another full one the instant there is room,
+  // not wait for tomorrow. It no longer does -- returnPerDay is read flat
+  // here, never diminished by what has already gone out today.
   const room=Math.max(dailyCap(dk,dir)-introduced-returned,0);
-  const left=Math.max((S.settings.returnPerDay|0)-returned,0);
-  return Math.min(left,room);
+  return Math.min(S.settings.returnPerDay|0,room);
 }
 // The words actually offered today: longest-rested first, never two tied
 // words in the same batch, capped by returnAllowance(). Derived fresh every
@@ -6854,8 +6886,13 @@ function renderStatsSusp(dir){
     out += row('Longest rested', oldestDays!=null ? (oldestDays+' day'+(oldestDays===1?'':'s')) : '—');
     out += row('With a note', notesN+' of '+n);
     out += row('Waiting a second time', repeatN+' of '+n);
-    out += row('Time to drain the pile',
-      perDay ? ('about '+Math.ceil(n/perDay)+' day'+(Math.ceil(n/perDay)===1?'':'s')+' at '+perDay+' a day')
+    // No longer a day count: returnPerDay sizes one release, not a daily
+    // total, so how many CALENDAR days this takes depends on how often the
+    // Home button gets pressed (and on how much of the shared new-word
+    // allowance a day's studying leaves for it) -- neither of which this
+    // figure can see. Taps is the number that's actually knowable from here.
+    out += row('Taps to clear the pile',
+      perDay ? ('about '+Math.ceil(n/perDay)+' tap'+(Math.ceil(n/perDay)===1?'':'s')+' at '+perDay+' at a time')
              : 'the daily return is switched off');
   }
   out += row('Today\'s return', perDay ? (returnCandidates(dir).length+' of '+perDay+' still available') : 'Switched off');
@@ -7141,7 +7178,9 @@ function renderBrowseBar(){
   // order is the default, so spelling it out would be the one button on the
   // bar shouting a value nobody chose.
   setBtn('bddSort',browseSort==='alpha'?'Sort':('Sort<span class="cv">'+escHtml(BROWSE_SORT_LABEL[browseSort]||'')+'</span>'),browseSort!=='alpha');
-  const tied=$('browseTiedBtn'); if(tied) tied.classList.toggle('on',browseTied);
+  setBtn('browseTiedBtn',
+    browseTied==='all'?'&#128279; Tied':('&#128279; '+escHtml(BROWSE_TIED_LABEL[browseTied]||'')),
+    browseTied!=='all');
 }
 // One popover, four contents. #browseDD borrows .rowMenu's own look rather
 // than growing a second dropdown style, and is positioned under the button
@@ -7166,15 +7205,48 @@ function openBrowseDD(kind,btn){
       STATUS_ORDER.map(k=>'<button class="rmi'+(browseStatus===k?' cur':'')+'" data-v="'+esc(k)+'"><span class="rmn">'+esc(STATUS_LABEL[k])+'</span><span class="rmc">'+
         pool.filter(c=>statusOf(S.cards[c.id])===k).length+'</span></button>').join('');
   } else if(kind==='flag'){
-    // The grid, not a list: seven colours read as a palette and as a list of
-    // seven near-identical lines. Names sit underneath, since a colour is not
-    // a name -- the same reason the dot on a row carries its digit.
-    let g='<div class="rmFlags">';
-    for(let i=1;i<=FLAG_COUNT;i++) g+='<button class="rmFlag'+(browseFlag===i?' cur':'')+'" data-flag="'+i+'" style="background:var(--flag'+i+')" aria-label="'+esc(flagName(i))+'">'+i+'</button>';
-    g+='<button class="rmFlag none'+(browseFlag===0?' cur':'')+'" data-flag="0" aria-label="Any flag">&empty;</button></div>';
-    const n=CARDS.filter(c=>c.dir===browseDir&&flagOf(c.id)).length;
-    html='<div class="rmHead">Show only</div>'+g+
-      '<div class="rmHead" style="padding-top:8px">'+(n?(n+' word'+(n===1?'':'s')+' flagged'):'Nothing flagged yet')+'</div>';
+    // A list, not the seven-swatch grid this used to be (2026.08.30.10). The
+    // grid's whole visible text was "Show only 1 2 3 4 5 6 7 0" -- the names
+    // he had taken the trouble to write lived in aria-label alone, where only
+    // a screen reader ever saw them, while Part and Progress a button away
+    // both name every choice AND count it. Same row shape as those two now,
+    // so the three menus read alike: swatch, name, count. It also makes two
+    // flags sharing one name visible the moment the menu opens, which is how
+    // the duplicated "Confusable (En)" was found.
+    const pool=CARDS.filter(c=>c.dir===browseDir);
+    const nFlagged=pool.filter(c=>flagOf(c.id)).length;
+    html='<div class="rmHead">Show only</div>'+
+      '<button class="rmi'+(browseFlag===0?' cur':'')+'" data-flag="0"><span class="rmn">Any flag</span><span class="rmc">'+pool.length+'</span></button>'+
+      '<div class="rmScroll">'+
+      Array.from({length:FLAG_COUNT},(_,k)=>{
+        const i=k+1, n=pool.filter(c=>flagOf(c.id)===i).length;
+        return '<button class="rmi'+(browseFlag===i?' cur':'')+'" data-flag="'+i+'">'+
+          '<span class="ddSw" style="background:var(--flag'+i+')"></span>'+
+          '<span class="rmn">'+esc(flagName(i))+'</span><span class="rmc">'+n+'</span></button>';
+      }).join('')+'</div>'+
+      '<div class="rmHead" style="padding-top:8px">'+(nFlagged?(nFlagged+' word'+(nFlagged===1?'':'s')+' flagged'):'Nothing flagged yet')+'</div>'+
+      '<button class="rmi" data-flagrename="1"><span class="rmn">Rename\u2026</span></button>';
+  } else if(kind==='tied'){
+    // Filter states and the pairs view in one menu, because they are one
+    // idea seen two ways -- and because the toolbar has six buttons already.
+    // The separator is the honest bit: the three above it narrow the word
+    // list, the one below it replaces it.
+    const pool=CARDS.filter(c=>c.dir===browseDir);
+    const isTied=c=>{ const cs=S.cards[c.id], gids=(cs&&cs.confuseGroups)||[];
+                      return gids.some(gid=>S.confuseGroups[gid]&&wordsInConfuseGroup(gid).length>=2); };
+    const nTied=pool.filter(isTied).length;
+    const row=(v,label,count)=>'<button class="rmi'+(browseTied===v?' cur':'')+'" data-tiedv="'+v+'"><span class="rmn">'+label+'</span>'+
+      (count==null?'':'<span class="rmc">'+count+'</span>')+'</button>';
+    const nPairs=Object.keys(S.confuseGroups).filter(gid=>{
+      const ids=wordsInConfuseGroup(gid);
+      return ids.length>=2 && BY_ID[ids[0]] && BY_ID[ids[0]].dir===browseDir;
+    }).length;
+    html='<div class="rmHead">Ties</div>'+
+      row('all','Any',pool.length)+
+      row('tied','Tied only',nTied)+
+      row('untied','Not tied',pool.length-nTied)+
+      '<div class="rmHead" style="padding-top:8px">Or</div>'+
+      row('pairs','The pairs list',nPairs);
   } else {
     html='<div class="rmHead">Sort</div>'+
       Object.keys(BROWSE_SORT_LABEL).map(k=>'<button class="rmi'+(browseSort===k?' cur':'')+'" data-v="'+esc(k)+'"><span class="rmn">'+esc(BROWSE_SORT_LABEL[k])+'</span></button>').join('');
@@ -7212,7 +7284,12 @@ function renderTiedView(){
       : '<span class="tl">No note yet \u2014 what tells these apart?</span>';
     return '<div class="tieCard">'+
       '<div class="tieLabel'+(x.g.label?'':' empty')+'">'+label+
-        '<button class="tieEdit" data-tielabel="'+escHtml(x.gid)+'">'+(x.g.label?'Edit':'Add')+'</button></div>'+
+        '<button class="tieEdit" data-tielabel="'+escHtml(x.gid)+'">'+(x.g.label?'Edit':'Add')+'</button>'+
+        // Right beside Add, his own placement. Deletes the whole tie, not one
+        // member -- on this screen a tie IS the object you are looking at,
+        // where in the word panel the same relation is one of that word's
+        // memberships and Untie removes only that word from it.
+        '<button class="tieEdit tieDel" data-tiedel="'+escHtml(x.gid)+'">Delete</button></div>'+
       x.ids.map(id=>{
         const c=BY_ID[id], fl=flagOf(id);
         return '<div class="tieMember">'+
@@ -7246,7 +7323,7 @@ function sortedForBrowse(cards){
 }
 function renderBrowseSummary(n,total){
   const box=$('browseSummary'); if(!box) return;
-  const on=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null||!!browseFlag;
+  const on=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null||!!browseFlag||browseTied!=='all';
   box.innerHTML='<span><b>'+n+'</b> of '+total+' words</span>'+
     (on?'<button class="browseClearAll" id="browseClearAll">Clear all filters</button>':'<span>&mdash; the whole deck</span>');
 }
@@ -7267,13 +7344,24 @@ function renderBrowse(){
     const touched=new Set(wordsTouchedOnDay(browseDate));
     cards=cards.filter(c=>touched.has(c.id));
   }
+  // 'tied'/'untied' are ordinary filters and belong here with the rest, ANDed
+  // with whatever else is set -- which is the whole point of the change: Flag
+  // 1 + Not tied is the list of flagged words still waiting for a partner,
+  // and it shrinks as they get tied. A tie with only one live member does not
+  // count as tied; the registry can hold one briefly between edits, and
+  // wordsInConfuseGroup() is the same test every other tie surface uses.
+  if(browseTied==='tied'||browseTied==='untied'){
+    const isTied=c=>{ const cs=S.cards[c.id], gids=(cs&&cs.confuseGroups)||[];
+                      return gids.some(gid=>S.confuseGroups[gid]&&wordsInConfuseGroup(gid).length>=2); };
+    cards=cards.filter(c=>isTied(c)===(browseTied==='tied'));
+  }
   cards=filterWords(cards,browseQuery);
-  $('browseTiedBtn').classList.toggle('on',browseTied);
-  if(browseTied){
-    // The tied view answers "which words do I keep confusing", which the
+  if(browseTied==='pairs'){
+    // The pairs view answers "which words do I keep confusing", which the
     // part/status/flag filters cannot narrow meaningfully -- a tie is a
     // relation, not a property -- so it deliberately ignores them rather
-    // than quietly returning nothing.
+    // than quietly returning nothing. The two filter states above are the
+    // way to ask that question WITH the other filters applied.
     $('browseResults').innerHTML=renderTiedView();
     // The summary line is outside this branch's early return, so without
     // this it kept whatever the last ordinary render left there -- a word
@@ -7283,7 +7371,7 @@ function renderBrowse(){
       return ids.length>=2 && BY_ID[ids[0]] && BY_ID[ids[0]].dir===browseDir;
     }).length;
     $('browseSummary').innerHTML='<span><b>'+nTies+'</b> tie'+(nTies===1?'':'s')+' in this direction</span>'+
-      '<span>&mdash; press &#128279; Tied again for the full list</span>';
+      '<span>&mdash; every filter is off in this view</span>';
     $('browseDateBar').classList.toggle('hidden',true);
     renderBulkBar();
     return;
@@ -7292,7 +7380,7 @@ function renderBrowse(){
   let html='';
   if(browseSort==='alpha'){
     const groups=groupByPart(cards);
-    const openAll=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null||!!browseFlag;
+    const openAll=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null||!!browseFlag||browseTied!=='all';
     groups.forEach(g=>{
       html+='<details class="fold"'+(openAll?' open':'')+'><summary>'+escHtml(g.sec)+' ('+g.cards.length+')</summary><div>'+
         g.cards.map(wordRowHtml).join('')+'</div></details>';
@@ -7834,6 +7922,13 @@ function confusedWithHtml(id){
         '<div class="cwLine'+(g.label?'':' empty')+'">'+
           '<span class="cwl">'+escHtml(g.label||'No note yet \u2014 what tells these apart?')+'</span>'+
           '<button class="cwEdit" data-tielabel="'+escHtml(gid)+'">'+(g.label?'Edit':'Add')+'</button>'+
+          // Untying was reachable only by right-clicking the row and walking
+          // into the group manager -- a long-press on a phone, and the one
+          // per-word action .30.8's "the row shows, the panel does" rule had
+          // left behind. It removes THIS word from THIS tie; a tie left with
+          // one member dissolves itself, which is why the confirm below is
+          // worded by what actually disappears rather than by the verb.
+          '<button class="cwEdit cwUntie" data-untie="'+escHtml(gid)+'">Untie</button>'+
         '</div>'+
         others.map(o=>'<div class="cwWord"><b>'+escHtml(o.q)+'</b> \u2014 <span>'+
           escHtml(o.dir==='E'?o.a.join(', '):o.a)+'</span></div>').join('')+
@@ -7865,9 +7960,24 @@ function renderCardInspector(){
   const isCustom=isRow&&typeof rid==='string';
   const t=timeToLearnFor(id,S.log,Date.now());
   const last=(cs&&cs.reps>0)?lastRatingFor(id,S.log):null;
-  const statsLine = (!cs||cs.reps===0) ? 'Not studied yet.'
-    : 'Reviewed '+cs.reps+'\u00d7 \u00b7 streak '+(cs.streak|0)+(last?' \u00b7 '+(RATING_LABEL[last.rating]||'?')+' '+agoLabel(last.at,Date.now()):'')
-      +(t?' \u00b7 '+learnStatsLine(t,Date.now()):'');
+  // Two lines, hardest fact first (2026.08.30.10, his "most important figures
+  // first"). What shipped before opened with "Reviewed 24x" and then appended
+  // learnStatsLine(), which opens with the SAME number -- every studied word
+  // printed its review count twice in one sentence. It also led with reps and
+  // streak, the two figures that separate his words least (three
+  // reps-band x streak cells cover 55.7% of the deck), and never showed the
+  // one that separates them most. So: the miss count leads, the timeline
+  // drops to a second, quieter line, and the review count appears once.
+  const statLines = (!cs||cs.reps===0) ? ['Not studied yet.','']
+    : [
+        [ t ? (t.agains ? t.agains+' Again'+(t.agains===1?'':'s') : 'never missed') : null,
+          cs.reps+' review'+(cs.reps===1?'':'s'),
+          'streak '+(cs.streak|0)
+        ].filter(Boolean).join(' \u00b7 '),
+        [ last ? 'last '+(RATING_LABEL[last.rating]||'?')+', '+agoLabel(last.at,Date.now()) : null,
+          t ? learnStatsLine(t,Date.now()) : null
+        ].filter(Boolean).join(' \u00b7 ')
+      ];
   const buried=isBuriedToday(cs);
   let flags='<div class="ciFlags">';
   for(let i=1;i<=FLAG_COUNT;i++) flags+='<button class="cif'+(fl===i?' cur':'')+'" data-cif="'+i+'" style="background:var(--flag'+i+')" aria-label="'+escHtml(flagName(i))+'">'+i+'</button>';
@@ -7875,7 +7985,8 @@ function renderCardInspector(){
     '<div class="ciFlagName">'+(fl?escHtml(flagName(fl))+' \u00b7 ':'')+'<button id="ciRename">Rename\u2026</button></div>';
   let html='<div class="ciTerm">'+escHtml(c.q)+'</div>'
     +'<div class="ciGloss">'+escHtml(c.dir==='E'?c.a.join(', '):c.a)+'</div>'
-    +'<div class="ciStats">'+escHtml(statsLine)+'</div>'
+    +'<div class="ciStats">'+escHtml(statLines[0])+'</div>'
+    +(statLines[1]?'<div class="ciStats ciStats2">'+escHtml(statLines[1])+'</div>':'')
     +'<div class="ciLbl">Flag</div>'+flags
     // The placeholder used to offer "the word it gets confused with" as a
     // thing to write in prose here, because until ties existed there was
@@ -9989,9 +10100,9 @@ function pileRowInnerHtml(perDay,dueBack){
         : 'Switched off. Raise the number to turn it back on.')+'</span>';
   const editHtml=pileEditOpen
     ? '<div class="pileStep" id="pileStep"><button data-act="fewer" aria-label="Fewer">&minus;</button>'+
-      '<span class="sv" data-act="typeIn" title="Click to type">'+perDay+'<small>/day</small></span>'+
+      '<span class="sv" data-act="typeIn" title="Click to type">'+perDay+'<small>/tap</small></span>'+
       '<button data-act="more" aria-label="More">+</button></div>'
-    : '<span class="quietEdit">up to '+perDay+' a day — <u data-act="openEdit">change</u></span>';
+    : '<span class="quietEdit">up to '+perDay+' at a time — <u data-act="openEdit">change</u></span>';
   return editHtml+backHtml;
 }
 // Re-derives both halves fresh (dueBack depends on perDay, which just
@@ -10472,8 +10583,8 @@ function adopt(inc,opts){
   noteInstall();
   storeReplaced();   // the structured stores must be rewritten in full, not appended to
   save();
-  // S.theme/S.palette and S.settings.studyStats/studyHints/studyMotion only
-  // ever take visual effect via applyTheme()/applyLayout() -- normally run
+  // S.theme/S.palette only ever take visual effect via applyTheme()/
+  // applyLayout() -- normally run
   // once at boot and again from each setting's own change listener. adopt()
   // swaps the whole S object (sync pull/restore/conflict-resolution/import),
   // so a value can change here with no change listener ever firing for it.
@@ -11456,11 +11567,6 @@ function renderSet(){
   $('fTiming').value=s.useTiming?'1':'0';
   $('fTheme').value=S.theme||'light';
   renderPalGrid();
-  // One switch over three independent flags (2026.08.16.1). "Simplified"
-   // means all three off; anything else reads as Full, so a state carrying an
-   // old mixed combination lands on Full rather than silently losing whichever
-   // extras it had turned on.
-  $('fSimple').value=(s.studyStats||s.studyHints||s.studyMotion)?'0':'1';
   $('fTopBar').value=s.topBarStyle||'counts';
   $('fCardShape').value=s.cardShape||'spread';
   $('fCardNotes').value=s.cardNotes?'1':'0';
@@ -11821,7 +11927,14 @@ $('homeWarn').addEventListener('click',e=>{
 // once, on release, in the pointerup/pointercancel listener below.
 let pileHoldT=null;
 $('homeWarn').addEventListener('pointerdown',e=>{
-  const b=e.target.closest('.pileStep [data-act]'); if(!b) return;
+  // Scoped to button[data-act], not just [data-act] -- the number span
+  // between the two buttons carries its own data-act="typeIn" for the
+  // click-to-type handler below, and the bare descendant selector this
+  // used to be matched it too. Since its value is never 'more', that bug
+  // routed every press of the NUMBER itself into the "fewer" branch --
+  // the number decremented the pile like a second - button, and did it
+  // before the click handler could swap it for a real <input>.
+  const b=e.target.closest('.pileStep button[data-act]'); if(!b) return;
   e.preventDefault();
   const d=b.getAttribute('data-act')==='more'?1:-1;
   let step=0;
@@ -12026,9 +12139,9 @@ tapZone($('browseKbd'),()=>{ greekKbdOn=!greekKbdOn; renderKbdToggle($('browseKb
 $('browseResults').addEventListener('click',e=>{
   if(e.target.closest('.wrCheck')) return;
   // The tied view (renderTiedView) shares this container and has its own
-  // label-edit buttons, handled by their own delegate further down; a press
-  // on one must not also be read as a press on a word.
-  if(e.target.closest('[data-tielabel]')) return;
+  // label-edit and delete buttons, handled by their own delegates further
+  // down; a press on one must not also be read as a press on a word.
+  if(e.target.closest('[data-tielabel],[data-tiedel]')) return;
   const row=e.target.closest('.wordRow'); if(!row) return;
   openBrowseRow(row.dataset.id);
 });
@@ -12082,7 +12195,6 @@ $('flagPickerOverlay').addEventListener('click',e=>{
   if(!pick||!flagTargetId) return;
   pickCurrentFlag(+pick.dataset.flag);
 });
-tapZone($('browseTiedBtn'),()=>{ browseTied=!browseTied; browseSelected.clear(); closeBrowseDD(); renderBrowse(); });
 // The toolbar's four dropdowns. One delegated listener on the bar opens the
 // right popover; one on the popover applies the pick. Pressing the button
 // that is already open closes it, so a mis-aimed press is undoable by the
@@ -12097,10 +12209,26 @@ $('browseBar').addEventListener('click',e=>{
 });
 $('browseDD').addEventListener('click',e=>{
   const kind=$('browseDD').dataset.kind;
-  const f=e.target.closest('.rmFlag');
+  // Renaming reached from the filter menu, not only from inside a word
+  // (2026.08.30.10). It opens the SAME editor the panel's own Rename button
+  // opens -- renderFlagNameEditor() is the one implementation, and closing it
+  // saves by any route. flagTargetId is deliberately left alone: the editor
+  // is about the seven names, not about a word, and the picker it shares an
+  // overlay with must reopen wherever it was.
+  if(e.target.closest('[data-flagrename]')){ closeBrowseDD(); renderFlagNameEditor(); return; }
+  // Rows in this menu carry data-flag (the flag list) rather than data-v.
+  // .rmFlag is still matched first because the row-menu and the picker both
+  // use that class for their swatch grids and share this handler's shape.
+  const f=e.target.closest('.rmFlag,[data-flag]');
   if(f){
     const n=+f.dataset.flag;
     browseFlag=(browseFlag===n)?0:n;
+    browseSelected.clear(); closeBrowseDD(); renderBrowse();
+    return;
+  }
+  const tv=e.target.closest('[data-tiedv]');
+  if(tv){
+    browseTied=tv.dataset.tiedv;
     browseSelected.clear(); closeBrowseDD(); renderBrowse();
     return;
   }
@@ -12122,6 +12250,10 @@ addEventListener('scroll',()=>{ if($('browseDD').classList.contains('on')) close
 $('browseSummary').addEventListener('click',e=>{
   if(!e.target.closest('#browseClearAll')) return;
   browsePart=null; browseStatus='all'; browseFlag=0; browseDate=null; browseQuery=''; $('browseSearch').value='';
+  // The tie filter clears with the rest -- but 'pairs' is a view, not a
+  // filter, and Clear all filters is never reachable from it anyway (that
+  // branch returns before renderBrowseSummary draws the button).
+  if(browseTied==='tied'||browseTied==='untied') browseTied='all';
   browseSelected.clear(); renderBrowse();
 });
 // Which row the pointer sits over, for the bare-digit flag keys above --
@@ -12185,6 +12317,46 @@ $('browseResults').addEventListener('click',e=>{
   if(!ed) return;
   e.preventDefault(); e.stopPropagation();
   openTieLabelEditor(ed.dataset.tielabel);
+});
+// Deleting a whole tie from the Tied view (2026.08.30.10). Confirmed rather
+// than undoable: the only thing a tie really holds is the line the owner
+// wrote about what separates the words, there is no undo stack for it, and
+// re-typing that line is the expensive half of making the tie. The words
+// themselves are untouched -- nothing about their scheduling or history lives
+// in a tie -- and the confirm says so, so the press is not scarier than it is.
+$('browseResults').addEventListener('click',e=>{
+  const del=e.target.closest('[data-tiedel]');
+  if(!del) return;
+  e.preventDefault(); e.stopPropagation();
+  const gid=del.dataset.tiedel, g=S.confuseGroups[gid];
+  if(!g) return;
+  const words=wordsInConfuseGroup(gid).map(x=>BY_ID[x]&&BY_ID[x].q).filter(Boolean).join(' and ');
+  if(!confirm('Delete the tie between '+words+'?'+(g.label?'\n\nThe line you wrote about them goes with it. ':'\n\n')+'Both words stay in the deck exactly as they are.')) return;
+  deleteConfuseGroup(gid); save();
+  renderBrowseKeepingFolds();
+  if(inspectId) renderCardInspector();
+  toast('Tie deleted',1300);
+});
+// Untie, from the panel (2026.08.30.10). Removes just this word from just
+// this tie; dissolveConfuseGroupIfThin() inside removeFromConfuseGroup()
+// then drops a tie left with one member. The confirm only appears when that
+// is what will happen -- leaving a three-word tie is not destructive and
+// should not stop to ask.
+$('cardInspectorOverlay').addEventListener('click',e=>{
+  const un=e.target.closest('[data-untie]');
+  if(!un) return;
+  e.preventDefault(); e.stopPropagation();
+  const gid=un.dataset.untie, g=S.confuseGroups[gid], id=inspectId;
+  if(!g||!id) return;
+  if(wordsInConfuseGroup(gid).length<=2 && g.label &&
+     !confirm('Untying leaves nothing to contrast, so the tie goes \u2014 and the line you wrote about the pair goes with it.\n\nBoth words stay in the deck exactly as they are.')) return;
+  removeFromConfuseGroup(id,gid); save();
+  renderCardInspector();
+  patchBrowseRowMarks(id);
+  // The partner's own row loses its link mark too, and the Tied view is a
+  // list of ties -- both need the wholesale redraw a patch cannot give.
+  if(browseTied!=='all') renderBrowseKeepingFolds();
+  toast('Untied',1200);
 });
 $('cardInspectorOverlay').addEventListener('click',e=>{
   const ed=e.target.closest('[data-tielabel]');
@@ -12384,14 +12556,6 @@ $('btnBulkResched').addEventListener('click',()=>{
   toast(done.plan.length+' word'+(done.plan.length===1?'':'s')+' rescheduled',1800);
 });
 $('fTheme').addEventListener('change',e=>{S.theme=e.target.value;save();applyTheme();renderSet();});
-// The three flags are still three flags in the schema (Ground rule 3: never
-// remove a settings field) -- only the UI collapsed. Simplified clears all
-// three at once; Full sets all three.
-$('fSimple').addEventListener('change',e=>{
-  const full=e.target.value!=='1';
-  S.settings.studyStats=full; S.settings.studyHints=full; S.settings.studyMotion=full;
-  save(); applyLayout();
-});
 // Pure geometry, deliberately not bundled with any other behaviour --
 // LAYOUT_PLAN.md §5.3. Independent of layout and of every other
 // study-screen switch, same as the three above.
@@ -12955,9 +13119,6 @@ function paintBootTheme(){
   el.dataset.theme=t;
   el.dataset.palette=PALETTES[b.palette]?b.palette:'vellum';
   el.style.background=getComputedStyle(el).getPropertyValue('--bg').trim()||'';
-  el.toggleAttribute('data-study-stats', !!b.studyStats);
-  el.toggleAttribute('data-study-hints', !!b.studyHints);
-  el.toggleAttribute('data-study-motion', !!b.studyMotion);
 }
 
 /* Phase 2 (PHASE2_PLAN.md §2.5): the async boot. The head boot script has
