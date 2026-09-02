@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.08.30.10">
+<link rel="stylesheet" href="palettes.css?v=2026.09.02.0">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -35,7 +35,7 @@
   stays HERE, synchronous, so it still halts the parser before the app
   skeleton can flash -- it never depended on content at all.
 -->
-<script src="decks/registry.js?v=2026.08.30.10"></script>
+<script src="decks/registry.js?v=2026.09.02.0"></script>
 <!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
      number must be bumped with BUILD (sec95c pins that it matches).
      Why: these two are the only files both pages load by a fixed name, and a
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.08.30.10"></script>
+<script src="shared.js?v=2026.09.02.0"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -205,31 +205,55 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
    recalled from. */
 .answer .cardNote{display:block;margin-top:14px;font-size:13px;line-height:1.4;color:var(--muted);font-style:italic}
 .answer.lat{font-family:var(--serif);font-size:clamp(25px,calc(21.2px + 0.97vw),28px)}
-/* quickFlash: never takes up layout space or eats a tap -- it floats over
-   whatever's already there. Legacy/portrait: a fixed banner below the bar,
-   since there's no stable "answer" position to sit over without measuring
-   (a phone-width column reflows with prompt length). Landscape gets a
-   cheaper, exact placement below instead (grid-area:answer, stacking on the
-   real #answer's own cell -- CSS grid allows two items in one named area,
-   later DOM order painting on top -- see html[data-layout="landscape"]
-   #quickFlash further down). */
-.quickFlash{pointer-events:none;z-index:40}
+/* THE RECEIPT, base + portrait (2026.09.02.0; the landscape rule is further
+   down, with the shapes). One line naming the word you last rated, its answer,
+   the grade recorded and the interval it bought. It never takes up layout
+   space and never eats a tap.
+
+   Portrait takes the position the recap card already held and that the owner
+   already lived with -- absolute along the bottom of the card, not the fixed
+   banner under the bar the old flash used. Three reasons, and the first is the
+   point of the whole change: the banner was 300px above the word, this is
+   inside the card; the receipt now persists rather than flashing, and a
+   permanent strip under the top bar is a different proposition from a 480ms
+   one; and it is one element in one place on both paths, which is what
+   retiring the recap card requires. position:relative is already on .cardarea,
+   so this needs no new containing block, and bottom:0 means the word above it
+   does not move between the first card of a sitting (nothing rated yet, so
+   nothing shown) and every card after it.
+
+   A tap on it falls through to #cardArea's own reveal handler, which is the
+   documented behaviour for tapping anywhere on the card -- deliberately not
+   special-cased. */
+.quickFlash{pointer-events:none;z-index:40;display:none}
+.quickFlash.on{display:flex}
 html:not([data-layout="landscape"]) .quickFlash{
-  position:fixed;top:calc(52px + env(safe-area-inset-top) + 14px);left:16px;right:16px;max-width:none}
-/* The grade the press actually recorded, under the answer on the receipt
-   (2026.08.20.1). Sized and coloured like the recap card's own rating chip
-   rather than like the answer above it -- it is a note about the press, not
-   part of the word -- and it reuses that chip's rc-* colour classes, so
-   "Good" here and "Good" on the recap card are the same colour in all 24
-   palettes. display:block so it always takes its own line: the answer above
-   it may be a single word or a merged list of alternatives. */
-.qfAns{display:block}
-.qfTag{display:block;width:fit-content;margin:10px auto 0;font-family:var(--sans);font-size:12px;
-  font-weight:500;letter-spacing:.01em;border:1px solid var(--line);border-radius:6px;padding:1px 7px}
-.qfTag.rc-again{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
-.qfTag.rc-hard{background:var(--warn-bg);border-color:var(--warn-br);color:var(--warn-ink)}
-.qfTag.rc-good{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
-.qfTag.rc-easy{background:var(--easy-bg);border-color:var(--easy-br);color:var(--easy)}
+  position:absolute; left:22px; right:22px; bottom:58px; max-width:none;
+  align-items:center; justify-content:center; gap:6px 8px; flex-wrap:wrap;
+  padding:7px 12px; box-sizing:border-box;
+  border:1px solid var(--line); border-radius:14px; background:var(--panel);
+  font-size:13.5px; line-height:1.2; text-align:center;
+}
+/* Two things this rule has to get right that the landscape one does not, both
+   found by running it on a real 390px screen rather than by reading it:
+
+   bottom:58px, not 0. The card's flag button is absolutely placed at
+   bottom:10px/right:14px and is 44px square, so a full-width line at bottom:0
+   sits straight on top of it. (The recap card this replaced had the same
+   geometry and the same collision; it is fixed here rather than inherited.)
+   58px clears the button and still moves nothing, since both are out of flow.
+
+   flex-wrap, and an answer that wraps rather than ellipsises. On a phone the
+   demotion chip -- "Good, that took a moment", the longest thing this line can
+   carry -- takes most of 346px on its own, and with the answer held to one
+   line it ellipsised "to, towards, at" down to "t.". Landscape cannot wrap
+   (its row is a fixed 34px and the word must not move), but portrait's line is
+   anchored to the bottom, so a second line grows upward into empty space and
+   moves nothing either. The answer is what the quick path exists to show, so
+   on the one screen where it can have the room, it gets it. */
+html:not([data-layout="landscape"]) .qfAns{
+  white-space:normal; overflow:visible; text-overflow:clip;
+}
 .hintline{margin-top:22px;font-size:13px;color:var(--faint);height:16px}
 /* The grade-reminder line (2026.08.19.4, STUDY_SYSTEM.md 5.9.1): a short
    reminder of what the four buttons mean, shown at the start of a sitting
@@ -247,8 +271,7 @@ html:not([data-layout="landscape"]) .quickFlash{
 .gradeNote .gnText{flex:1}
 .gradeNote .gnX{flex:0 0 auto;font-size:18px;line-height:1;padding:0 4px;color:var(--warn-ink);opacity:.8}
 html[data-layout="landscape"] #gradeNote{grid-row:-2/-1;grid-column:-2/-1;align-self:start;margin:14px 32px 0}
-html[data-layout="landscape"][data-study-card="replace"] #gradeNote,
-html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3;margin:14px 0 0}
+html[data-layout="landscape"][data-study-card="replace"] #gradeNote{grid-column:2/3;margin:14px 0 0}
 /* .suspBtn is shared with the Home struggling-word rows (their own small
    inline glyph, unaffected below) -- keep this base rule as it was, and
    enlarge only the study-screen's own instance underneath. Browse rows used
@@ -544,8 +567,9 @@ html[data-layout="landscape"][data-study-card="swap"] #gradeNote{grid-column:2/3
 /* ---- heatmap stat chips: current/longest streak, days learned, daily
    average (the last with its own inline week/month/year/all-time window
    picker -- see windowedDailyAverage()). Fresh classes rather than reusing
-   .statChip (scoped to .recapCard, a different, smaller single-
-   line badge) or .chip (a filter toggle, not a label+value display). ---- */
+   .statChip (a smaller single-line badge scoped to the recap card, itself
+   retired in 2026.09.02.0) or .chip (a filter toggle, not a label+value
+   display). ---- */
 .hmStats{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .hmStat{padding:8px 12px;border:1px solid var(--line);border-radius:13px;background:var(--raise);
   font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:1px;min-width:80px}
@@ -1328,69 +1352,18 @@ html[data-layout="landscape"] #scStudy .rate .ivl{font-size:13px}
    settings that gated it. It printed a word's failure history on the study
    screen while the prompt was still unanswered, and the owner reported using
    it to work the answer out: a recognition cue standing in front of a recall
-   test, and the one measurement FSRS most needs to be clean. The element,
-   its render block in renderCard(), and the whole studyStats setting are all
-   gone; only this shared chip rule survives, for the recap card below, which
-   describes the PREVIOUS card and so cannot cue the one on screen. */
-.recapCard .statChip{
-  font-size:11.5px; color:var(--muted); background:var(--raise); border:1px solid var(--line);
-  border-radius:100px; padding:4px 11px; font-variant-numeric:tabular-nums;
-}
-/* Recap card: the top-right cell of the study grid (named "recap" above,
-   previously an unnamed "." spacer -- naming it doesn't change how much
-   space grid-template-rows' matching 1fr track reserves, only what's
-   allowed to sit in it) shows the card rate() *just graded*, not the one
-   on screen now -- lastRated is set at the end of rate(), read here, and
-   cleared by undo() so it can never describe a rating that's since been
-   reverted. Always on since 2026.08.16.1, and the only survivor of the
-   three study-screen extras retired in .30.10 -- it describes the PREVIOUS
-   card, so unlike the review-history chips it cannot cue the one on screen.
-   display:none by default, same pattern as .keycap below, so portrait
-   layouts never see it. */
-.recapCard{display:none}
-html[data-layout="landscape"] .recapCard.on{
-  grid-area:recap; display:flex; flex-direction:column; gap:6px;
-  align-self:start; justify-self:end; margin:16px 16px 0 8px;
-  padding:12px 14px; max-width:200px; box-sizing:border-box;
-  border:1px solid var(--line); border-radius:14px; background:var(--panel);
-}
-/* The same card in portrait, as a single line along the bottom of the card
-   area (2026.08.20.4, the owner's call after seeing it demonstrated). Until
-   this build the recap existed only in landscape, so a phone -- the device he
-   actually studies on -- had no answer to "what did I just do" except Undo.
-   Measured before building: the portrait card area is 708px at 390x844 and
-   the word uses about 160px of it, centred, so there is ~270px going spare
-   below it. This is a placement decision, not a fitting one.
-   WHY THE BOTTOM, and not the top: the band 66px below the bar is
-   #quickFlash's (see its own portrait rule above) -- a permanent panel there
-   is covered by the quick-rate receipt for up to 1.4s after every "Knew it".
-   The bottom is also where the thumb already is.
-   WHY ABSOLUTE, and not an ordinary flex child: #cardArea centres its
-   contents, so a child at the end would shift the word up by half this
-   panel's height -- and the word would then sit in a different place on the
-   first card of a sitting (nothing rated yet, no recap) than on every card
-   after it. The word must not move. position:relative is already on
-   .cardarea, so this needs no new containing block.
-   A tap on it falls through to #cardArea's own reveal handler, which is the
-   documented behaviour for tapping anywhere on the card -- deliberately not
-   special-cased. */
-html:not([data-layout="landscape"]) .recapCard.on{
-  position:absolute; left:22px; right:22px; bottom:0;
-  display:flex; align-items:center; gap:8px;
-  padding:7px 12px; box-sizing:border-box;
-  border:1px solid var(--line); border-radius:14px; background:var(--panel);
-}
-html:not([data-layout="landscape"]) .recapCard.on .recapLbl{display:none}
-html:not([data-layout="landscape"]) .recapCard.on .recapWord{flex:1 1 auto; min-width:0}
-html:not([data-layout="landscape"]) .recapCard.on .recapRow{flex:0 0 auto; flex-wrap:nowrap}
-.recapLbl{font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.04em}
-.recapWord{font-size:14px; font-weight:600; color:var(--ink);
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.recapRow{display:flex; gap:6px; flex-wrap:wrap}
-.recapCard .rc-rating.rc-again{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
-.recapCard .rc-rating.rc-hard{background:var(--warn-bg);border-color:var(--warn-br);color:var(--warn-ink)}
-.recapCard .rc-rating.rc-good{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
-.recapCard .rc-rating.rc-easy{background:var(--easy-bg);border-color:var(--easy-br);color:var(--easy)}
+   test, and the one measurement FSRS most needs to be clean.
+
+   The recap card, which outlived it and inherited its .statChip rule, is gone
+   too as of 2026.09.02.0 -- element, markup, CSS and all. It was a fixed panel
+   in the top-right corner naming the word just rated, its grade and its new
+   interval; the receipt line in the card now says all three, next to the word
+   rather than 717px away from it, and persists in exactly the same way. Its
+   rc-* chip colours moved onto .qfTag/.qfIvl so "Good" reads the same colour
+   it always did, in all 24 palettes. lastRated, which fed the card, feeds the
+   receipt unchanged -- including its clearing by undo(), which is what stops
+   either of them ever describing a rating that has since been reverted. */
+
 .keycap{display:none}
 html[data-layout="landscape"] .keycap{
   display:inline-flex; align-items:center; justify-content:center; margin-top:4px;
@@ -1459,14 +1432,13 @@ html[data-layout="landscape"] .quickBtn:hover{
    than clip. Same "min-height over hard height" reasoning the plan
    recommends for Column's own panel, applied here instead of a rule that
    was never built. */
-html[data-layout="landscape"][data-study-card="replace"] #scStudy.on,
-html[data-layout="landscape"][data-study-card="swap"] #scStudy.on{
+html[data-layout="landscape"][data-study-card="replace"] #scStudy.on{
   grid-template-columns:1fr minmax(0,720px) 1fr;
   grid-template-rows:auto 1fr minmax(34px,auto) 1fr auto auto auto auto 1fr;
   grid-template-areas:
     "bar bar bar"
     ".   .        ."
-    ".   promptSm ."
+    ".   receipt  ."
     ".   prompt   ."
     ".   meta     ."
     ".   leech    ."
@@ -1482,69 +1454,87 @@ html[data-layout="landscape"][data-study-card="swap"] #scStudy.on{
    LAYOUT_PLAN.md's own Column prototype used. Controls sit below it,
    unpaneled, matching how spread's own #prompt border never wrapped its
    reveal/rate row either. */
-html[data-layout="landscape"][data-study-card="replace"] #scStudy.on::before,
-html[data-layout="landscape"][data-study-card="swap"] #scStudy.on::before{
+html[data-layout="landscape"][data-study-card="replace"] #scStudy.on::before{
   content:"";
-  grid-row:promptSm-start / hint-end; grid-column:2 / 3;
+  grid-row:receipt-start / hint-end; grid-column:2 / 3;
   margin:-18px -8px -8px;
   border:1px solid var(--line); border-radius:20px; background:var(--panel);
 }
-html[data-layout="landscape"][data-study-card="replace"] #multi,
-html[data-layout="landscape"][data-study-card="swap"] #multi{margin:14px 14px 0 0}
+html[data-layout="landscape"][data-study-card="replace"] #multi{margin:14px 14px 0 0}
 html[data-layout="landscape"][data-study-card="replace"] #prompt,
-html[data-layout="landscape"][data-study-card="swap"] #prompt,
-html[data-layout="landscape"][data-study-card="replace"] #answer,
-html[data-layout="landscape"][data-study-card="swap"] #answer{
+html[data-layout="landscape"][data-study-card="replace"] #answer{
   grid-area:prompt; align-self:center; justify-self:stretch; z-index:1;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   text-align:center; margin:0; padding:0 32px; border:none; background:none; max-width:none;
 }
-/* #quickFlash used to be in that selector list too, and it is the one
-   element that could not stay there (2026.08.20.1 -- the collision the
-   quick-rate ledger's section 4 recorded, live in this file since the shapes
-   shipped and dormant only because the feature was pinned off).
-   #prompt/#answer share the cell safely because they are the SAME card and
-   only ever one of them is opaque; the receipt is the PREVIOUS card, drawn
-   while the next word is already on screen -- so sharing put a transparent
-   (background:none) receipt directly on top of a fully visible new word, and
-   the shared rule's own z-index:1 outranked .quickFlash's z-index:40 on
-   specificity into the bargain. Fixed by taking it out of the grid entirely
-   rather than by finding it another cell: any cell can be occupied by
-   something later, and a receipt for a card that is gone should not be
-   competing for the live card's layout at all. Same technique, same top
-   offset and the same reasoning as this shape's own .recapCard.on rule a few
-   rules down -- the two sit in opposite top corners and are capped so they
-   cannot meet in the middle. It also reads as a receipt now rather than as
-   the card: a bordered panel like the recap card, not bare text at answer
-   size. Portrait has always done exactly this (the fixed banner below the
-   bar, a few screens above); this brings the wide layout's two other shapes
-   into line with it. */
+/* THE RECEIPT (2026.09.02.0). One line, in the card, directly above the word,
+   saying what you last rated: the word, its answer, the grade recorded and the
+   interval it bought. It replaces two things at once -- the fixed top-left
+   flash panel and the fixed top-right recap card -- which between them put the
+   answer 726px from the word you are reading and the word it belongs to 717px
+   away in the opposite corner, 1,240px apart from each other, both inside
+   480ms. Measured on the running app at 1440x900; this line sits 133px from
+   the word, straight up, and does not expire.
+
+   It lives in the row Swap used to demote its prompt into. That row was always
+   reserved (minmax(34px,auto), so nothing reflows when the line appears) and
+   under Replace it was never occupied by anything -- the file called it "a
+   known cosmetic asymmetry, accepted". Retiring Swap is what makes it safe to
+   put something permanent there: Replace's reveal leaves #prompt in the prompt
+   cell at opacity:0 and fades #answer in over it, so this row is free in every
+   state, revealed or not. That is the whole reason the receipt can persist
+   rather than flash, and the reason the recap card could be removed without
+   losing the persistent "what did I just press".
+
+   Column gets the same row, added to its own grid for this, and for the same
+   reason: its prompt keeps its own row after a reveal, so a row above the word
+   is never contested there either. One rule, both shapes, no contention.
+
+   Typography is set explicitly on every part rather than inherited (the owner
+   reported the old flash "looked like it wasn't the same font", and it was
+   right to: .answer carries no font-family, so the flash rendered the gloss in
+   the UI sans while the card's own words are Palatino). The word takes the
+   serif #prompt uses; its answer takes whichever family the card itself would
+   render that answer in -- sans for an English gloss, serif when the answer is
+   itself a headword (.lat, dir==='E') -- so the receipt echoes the card's own
+   rules instead of inventing a third voice. The grade and interval are chips
+   and stay in the UI sans, which is what they are. */
 html[data-layout="landscape"][data-study-card="replace"] #quickFlash,
-html[data-layout="landscape"][data-study-card="swap"] #quickFlash{
-  position:fixed; top:calc(52px + env(safe-area-inset-top) + 14px); left:16px; right:auto;
-  max-width:min(38vw,22em); box-sizing:border-box; margin:0; padding:12px 14px; text-align:left;
-  border:1px solid var(--line); border-radius:14px; background:var(--panel);
-  font-size:clamp(19px,calc(15px + 0.55vw),25px);
+html[data-layout="landscape"][data-study-card="column"] #quickFlash{
+  grid-area:receipt; position:static; z-index:3;
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  margin:0; padding:0 32px; max-width:none; box-sizing:border-box;
+  border:none; background:none; text-align:center;
+  max-height:34px; overflow:hidden;
+  font-size:14.5px; line-height:1.2;
 }
-/* A phone in landscape is about 390px tall and this shape already spends
-   every band of it. Measured on the real deck at 844x390: the headword's own
-   glyphs start at y=144 for 3,033 of the 3,034 Latin prompts (and at y=127
-   for the sixteen English ones long enough to wrap to two lines), so there
-   are ~92px between the bar and the word for a floating panel to live in.
-   The receipt fits that easily -- until the answer is a merged list of
-   alternatives, which is what grows it down into the word. So on a screen
-   that short the answer is held to one line and the panel tightens; the
-   grade tag is never what gets clipped, because on this path it is the only
-   thing that reports a demoted press (see rate()'s suppressed toast). A
-   laptop or an iPad in landscape is 700px+ tall and keeps the full receipt.
-   The threshold is a height, not a width: the same 844px width on a taller
-   screen has no problem at all. */
-html[data-layout="landscape"][data-study-card="replace"] #prompt,
-html[data-layout="landscape"][data-study-card="swap"] #prompt{
+/* The answer is the flexible part and the grade chip is not, deliberately: a
+   merged list of alternatives is the only thing here that can outgrow the row,
+   and the grade is the one piece that can be news (a press over the five-second
+   line is silently recorded as Good), so the answer ellipses and the chip never
+   does. Same rule the old panel followed on a short screen, made unconditional
+   now that the line is one row tall everywhere. */
+.qfWord{flex:0 0 auto; font-family:var(--serif); color:var(--muted); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; max-width:38%}
+.qfArrow{flex:0 0 auto; color:var(--faint)}
+.qfAns{flex:0 1 auto; min-width:0; font-family:var(--sans); color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.qfAns.lat{font-family:var(--serif)}
+.qfTag{flex:0 0 auto; font-family:var(--sans); font-size:11.5px; font-weight:500;
+  letter-spacing:.01em; border:1px solid var(--line); border-radius:6px; padding:1px 7px;
+  white-space:nowrap}
+.qfIvl{flex:0 0 auto; font-family:var(--sans); font-size:11.5px; color:var(--muted);
+  background:var(--raise); border:1px solid var(--line); border-radius:100px;
+  padding:1px 9px; font-variant-numeric:tabular-nums; white-space:nowrap}
+.qfTag.rc-again{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
+.qfTag.rc-hard{background:var(--warn-bg);border-color:var(--warn-br);color:var(--warn-ink)}
+.qfTag.rc-good{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
+.qfTag.rc-easy{background:var(--easy-bg);border-color:var(--easy-br);color:var(--easy)}
+
+html[data-layout="landscape"][data-study-card="replace"] #prompt{
   font-size:clamp(36px,calc(18px + 2.1vw),60px);
 }
-html[data-layout="landscape"][data-study-card="replace"] #prompt.eng,
-html[data-layout="landscape"][data-study-card="swap"] #prompt.eng{
+html[data-layout="landscape"][data-study-card="replace"] #prompt.eng{
   font-size:clamp(30px,calc(16px + 1.8vw),48px);
 }
 /* Answer sizing is independent of the prompt's clamp on purpose -- an
@@ -1553,12 +1543,10 @@ html[data-layout="landscape"][data-study-card="swap"] #prompt.eng{
    .lat variant (dir==='E': the "answer" is itself a Latin/Greek headword)
    gets a step back up, same relationship the spread layout's own
    #answer/.answer.lat pair already has. */
-html[data-layout="landscape"][data-study-card="replace"] #answer,
-html[data-layout="landscape"][data-study-card="swap"] #answer{
+html[data-layout="landscape"][data-study-card="replace"] #answer{
   font-size:clamp(24px,calc(15px + 1.1vw),36px);
 }
-html[data-layout="landscape"][data-study-card="replace"] #answer.lat,
-html[data-layout="landscape"][data-study-card="swap"] #answer.lat{
+html[data-layout="landscape"][data-study-card="replace"] #answer.lat{
   font-size:clamp(28px,calc(18px + 1.4vw),42px);
 }
 /* The grid's "meta" row once held .cardMeta, the pre-answer review-history
@@ -1566,98 +1554,39 @@ html[data-layout="landscape"][data-study-card="swap"] #answer.lat{
    top of a revealed answer. Both the element and the row's occupant are gone
    (.30.10); the row itself stays in the template above, empty and collapsed,
    because leech/hint still key off the rows around it. */
-html[data-layout="landscape"][data-study-card="replace"] #leechTag,
-html[data-layout="landscape"][data-study-card="swap"] #leechTag{
+html[data-layout="landscape"][data-study-card="replace"] #leechTag{
   grid-area:leech; justify-content:center; padding:10px 32px 0; z-index:1;
 }
-html[data-layout="landscape"][data-study-card="replace"] #hintline,
-html[data-layout="landscape"][data-study-card="swap"] #hintline{
+html[data-layout="landscape"][data-study-card="replace"] #hintline{
   grid-area:hint; text-align:center; padding:6px 32px 0; margin-top:0; z-index:1;
 }
-/* Recap: what rating a word got last time and how long ago -- genuinely
-   useful, not decorative chrome, so this deliberately does NOT repeat B4's
-   demote-the-salience treatment the way the *spread* layout's own recap
-   got in LAYOUT_PLAN.md -- that call was about a bordered panel reading as
-   the second most prominent thing on an otherwise busy two-pane screen;
-   replace/swap's whole screen is quiet already, so the same panel doesn't
-   fight for attention here, and the owner's own report is that this is
-   exactly the piece he was worried a redesign would quietly drop. Kept
-   pixel-for-pixel as it already renders -- border, background, full
-   opacity, same corner spread uses -- only repositioned, since this
-   template has no "recap" grid area for it to land in. Position:fixed
-   takes it out of grid flow entirely regardless of any grid-area value, so
-   nothing about grid-area itself needs resetting; the top offset matches
-   the one other fixed-below-the-bar element in the file (quickFlash's own
-   portrait rule, a few screens above) rather than a new hand-picked
-   number. */
-html[data-layout="landscape"][data-study-card="replace"] .recapCard.on,
-html[data-layout="landscape"][data-study-card="swap"] .recapCard.on,
-html[data-layout="landscape"][data-study-card="column"] .recapCard.on{
-  position:fixed; top:calc(52px + env(safe-area-inset-top) + 14px); right:16px;
-  margin:0;
-  /* z-index, added 2026.08.20.1 off a settings sweep, and it is a fix rather
-     than a tidy-up: #prompt in these two shapes carries z-index:1 (a grid
-     item takes z-index with no positioning at all), the fixed recap card
-     carried z-index:auto, so on a screen short enough for the two boxes to
-     meet -- a phone in landscape, where a long headword wraps to two lines --
-     the WORD painted on top of the card, not behind it. Hit-testing a point
-     inside the recap returned #prompt. Two lots of text superimposed, both
-     unreadable, where the panel is opaque and should simply have covered
-     what was under it. Exactly the defect the quick-rate receipt had in this
-     same block (its own z-index:40 lost to the shared rule's z-index:1 on
-     specificity) -- same cause, different element, found by looking for the
-     first one's siblings. 2, not 40: above the card's own layer, and still
-     below the receipt, which is transient and should win if they ever meet. */
-  z-index:2;
-}
+/* The recap card lived here -- a fixed panel in the top-right corner naming
+   the word just rated, its grade and its new interval. Removed in
+   2026.09.02.0, on the owner's call, because the receipt above now says all
+   three in the card itself and says them 133px from the word instead of 717px
+   away in a corner. Nothing it carried is lost: the word, the grade chip (same
+   rc-* colours) and the interval all moved onto that one line, and because the
+   receipt persists until the next rating rather than flashing, the persistent
+   "what did I just press" the card existed for came with them. The element,
+   its markup and its own base CSS are gone too; lastRated, which fed it, now
+   feeds the receipt. */
 
-/* Short screens -- a phone in landscape. MUST sit after the two base rules
-   it narrows (#quickFlash's and .recapCard.on's, both just above): a media
-   query adds no specificity, so at equal weight the LATER rule wins and this
-   block placed earlier would silently lose its `top` and `padding` to them.
-   That is not hypothetical -- it happened while building 2026.08.20.3, and
-   the suite did not catch it because the CSS was present and correct, just
-   outranked. Only measuring the rendered panel found it, which is why
-   sec109 now pins the ORDER as well as the text. Same reasoning as the
-   two "placed last in the stylesheet deliberately" blocks further up. */
+/* Short screens -- a phone in landscape, about 390px tall, where this shape
+   already spends every band it has. The receipt is one row of text now rather
+   than a floating panel, so what it needs here is a size, not a reposition:
+   the row itself is already reserved and already one line, and nothing can
+   grow it. MUST still sit after the base rule it narrows -- a media query adds
+   no specificity, so at equal weight the LATER rule wins, and this block
+   placed earlier would silently lose to it. That is not hypothetical: it
+   happened while building 2026.08.20.3 and the suite did not catch it, because
+   the CSS was present and correct, just outranked. sec109 pins the ORDER as
+   well as the text for exactly that reason. */
 @media (max-height:560px){
   html[data-layout="landscape"][data-study-card="replace"] #quickFlash,
-  html[data-layout="landscape"][data-study-card="swap"] #quickFlash{
-    padding:8px 12px; font-size:17px; max-width:min(34vw,18em);
+  html[data-layout="landscape"][data-study-card="column"] #quickFlash{
+    font-size:13px; gap:7px; padding:0 20px;
   }
-  html[data-layout="landscape"][data-study-card="replace"] .qfAns,
-  html[data-layout="landscape"][data-study-card="swap"] .qfAns{
-    max-height:1.35em; overflow:hidden;
-  }
-  html[data-layout="landscape"][data-study-card="replace"] .qfTag,
-  html[data-layout="landscape"][data-study-card="swap"] .qfTag{margin-top:6px; font-size:11px}
-  /* The recap card gives way on the same screens, and for the same reason
-     (2026.08.20.3, owner's decision after seeing the demo). Measured on the
-     real deck at 844x390: the headword's glyphs start at y=144, the full
-     90px card reaches y=156, and so it took a 12px-tall strip off the tops
-     of the last letters of 342 of the 3,034 Latin headwords -- 116px wide at
-     worst. Not the letters, just their tops, which is why this was a
-     cosmetic call and not a bug. Tightened, the card is 57px and ends at
-     y=115: nothing is clipped in ANY of the four shape x review-history
-     combinations, with 6px of air left on the worst word.
-     What goes is the "Last card" label only -- the context already says what
-     the panel is -- plus a point off the word and a few pixels of padding
-     and top offset. What stays is everything the card exists to tell you:
-     which word, what you pressed, how far it jumped. The alternative
-     considered and rejected was dropping the word too (39px, 16px of air):
-     more margin, but it loses the one thing he built the card for. */
-  html[data-layout="landscape"][data-study-card="replace"] .recapCard.on,
-  html[data-layout="landscape"][data-study-card="swap"] .recapCard.on,
-  html[data-layout="landscape"][data-study-card="column"] .recapCard.on{
-    padding:6px 11px; gap:4px;
-    top:calc(52px + env(safe-area-inset-top) + 6px);
-  }
-  html[data-layout="landscape"][data-study-card="replace"] .recapLbl,
-  html[data-layout="landscape"][data-study-card="swap"] .recapLbl,
-  html[data-layout="landscape"][data-study-card="column"] .recapLbl{display:none}
-  html[data-layout="landscape"][data-study-card="replace"] .recapWord,
-  html[data-layout="landscape"][data-study-card="swap"] .recapWord,
-  html[data-layout="landscape"][data-study-card="column"] .recapWord{font-size:13px}
+  .qfTag,.qfIvl{font-size:10.5px; padding:0 6px}
 }
 /* Replace (F1): the prompt just disappears on reveal -- #answer, already
    sharing its cell, is the only thing left opaque via its own .on class.
@@ -1668,17 +1597,15 @@ html[data-layout="landscape"][data-study-card="column"] .recapCard.on{
 html[data-layout="landscape"][data-study-card="replace"] #cardArea.revealed #prompt{
   opacity:0; pointer-events:none;
 }
-/* Swap (F2): the prompt relocates into the reserved small row and shrinks
-   -- #answer stays put in the cell it was already sharing, so the answer
-   itself needs no rule here at all; it was always going to end up exactly
-   where the prompt just was. */
-html[data-layout="landscape"][data-study-card="swap"] #cardArea.revealed #prompt{
-  grid-area:promptSm; padding:0; font-weight:500; color:var(--muted);
-  font-size:15px;
-}
-html[data-layout="landscape"][data-study-card="swap"] #cardArea.revealed #prompt.eng{
-  font-size:15px;
-}
+/* Swap (F2) lived here: on reveal it moved the prompt into the reserved row
+   above and shrank it, leaving the answer where the word had been. The shape
+   was retired in 2026.09.02.0 and its rules went with it, because that row is
+   now the receipt's -- a shape whose reveal wants the row and a receipt that
+   sits in it permanently cannot both have it, and the receipt is the thing
+   the owner asked for. Replace, which never touched the row, is what the
+   setting migrates Swap's users to; pre-reveal the two were pixel-identical,
+   so the only thing anyone loses is seeing the word shrink rather than fade.
+   Column keeps the word on screen after a reveal for anyone who wants that. */
 
 /* Column (F3, LAYOUT_PLAN.md's third shape) -- built 2026.08.21.2, and worth
    recording why it took this long and what it actually is. It was written up
@@ -1709,10 +1636,11 @@ html[data-layout="landscape"][data-study-card="swap"] #cardArea.revealed #prompt
    in the spread layout, with no fixed positioning at all. */
 html[data-layout="landscape"][data-study-card="column"] #scStudy.on{
   grid-template-columns:1fr minmax(0,720px) 1fr;
-  grid-template-rows:auto 1fr auto auto auto auto auto auto 1fr;
+  grid-template-rows:auto 1fr minmax(34px,auto) auto auto auto auto auto auto 1fr;
   grid-template-areas:
     "bar bar bar"
     ".   .        ."
+    ".   receipt  ."
     ".   prompt   ."
     ".   rule     ."
     ".   answer   ."
@@ -1735,10 +1663,18 @@ html[data-layout="landscape"][data-study-card="column"] #prompt{
 html[data-layout="landscape"][data-study-card="column"] .cardarea>.rule{
   display:block; grid-area:rule; justify-self:center; margin:22px 0 0;
 }
-/* Both answer nodes centre under the word and lose the spread's left border,
-   which existed only to divide two side-by-side panes. */
-html[data-layout="landscape"][data-study-card="column"] #answer,
-html[data-layout="landscape"][data-study-card="column"] #quickFlash{
+/* The answer centres under the word and loses the spread's left border, which
+   existed only to divide two side-by-side panes. #quickFlash used to share
+   this rule -- Column's answer had a row to itself, so the receipt could sit
+   in it with no fixed positioning, which is why this shape never needed the
+   floating panel replace/swap were given. It cannot stay now that the receipt
+   PERSISTS (2026.09.02.0): this cell holds the live answer for as long as a
+   card is revealed, and a permanent line for the previous word cannot share it
+   with the current word's answer. Column is given its own reserved row above
+   the prompt instead -- the same row Replace has, so one rule serves both --
+   and because Column's prompt keeps its own row after a reveal, that row is
+   never contested here either. */
+html[data-layout="landscape"][data-study-card="column"] #answer{
   grid-area:answer; justify-self:center; text-align:center;
   border-left:none; padding:22px 32px 0; max-width:100%;
 }
@@ -2088,26 +2024,24 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
       <div class="prompt" id="prompt"></div>
       <div class="rule"></div>
       <div class="answer" id="answer"></div>
-      <!-- Decorative-only receipt for quick-rate's "flash" variant (quickFlash()
-           in the script below) -- never the live #answer node above, which
-           renderCard() overwrites immediately for the next card the instant a
-           grade lands. Shares the .answer class purely for its typography/
-           opacity mechanics (own opacity/.on toggle, no CSS transition -- see
-           that rule's own comment for why), not because it IS the answer. -->
-      <div class="answer quickFlash" id="quickFlash" aria-hidden="true"></div>
+      <!-- The receipt: one line naming the word you LAST rated, its answer, the
+           grade recorded and the interval it bought. Never the live #answer
+           node above, which renderCard() overwrites for the next card the
+           instant a grade lands; this describes the card that is gone.
+           It no longer carries the .answer class it shared until
+           2026.09.02.0 -- it borrowed that purely for opacity mechanics and
+           typography, and both are now its own (renderReceipt() below toggles
+           .on; .qfWord/.qfAns set their families explicitly, which is what
+           fixes the receipt rendering the gloss in the UI sans while the card
+           itself is in Palatino). aria-hidden stays: it is a restatement of
+           something a screen reader has already been given, and it changes
+           under the user rather than on their action. -->
+      <div class="quickFlash" id="quickFlash" aria-hidden="true"></div>
       <div class="leechtag hidden" id="leechTag">
         <button class="notTodayBtn" id="notTodayBtn" aria-label="Bury — bring this word back tomorrow"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M4,2.5 h16 a1,1 0 0 1 0,2 L12.9,12 L20,19.5 a1,1 0 0 1 0,2 H4 a1,1 0 0 1 0,-2 L11.1,12 L4,4.5 a1,1 0 0 1 0,-2 Z"/></svg></button>
         <button class="suspBtn" id="suspBtn" aria-label="Suspend this word"><svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true" style="vertical-align:-0.125em"><path d="M14.8,3.2 a9.2,9.2 0 1 0 6.4,14.4 A10.6,10.6 0 0 1 14.8,3.2 Z"/></svg></button>
       </div>
       <div class="hintline" id="hintline"></div>
-      <div class="recapCard" id="recapCard">
-        <div class="recapLbl">Last card</div>
-        <div class="recapWord" id="recapWord"></div>
-        <div class="recapRow">
-          <span class="statChip" id="recapRating"></span>
-          <span class="statChip" id="recapIvl"></span>
-        </div>
-      </div>
     </div>
     <!-- "Knew it" (2026.08.20.1, STUDY_SYSTEM.md 5.8): quick rate's touch
          entry point, and the only one there has ever been -- the keyboard
@@ -2212,12 +2146,10 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
       <div class="field">
         <label for="fCardShape">Study card shape</label>
         <select id="fCardShape" class="sel">
-          <option value="spread">Two panes — the word on the left, the answer on the right</option>
           <option value="replace">Replace — the answer takes the word's place</option>
-          <option value="swap">Swap &mdash; the word shrinks above, the answer takes its place</option>
           <option value="column">Column &mdash; the answer appears under the word, both stay visible</option>
         </select>
-        <div class="fh">Only affects a screen wide enough for the two-column study card. A phone is never affected by this setting because it already stacks: the word, a divider, then the answer underneath &mdash; which is what Column is, made available on a wide screen too. Replace and Swap both put the answer where your eye already is instead of off to the side &mdash; Swap keeps the word visible in small type above it, Replace does not.</div>
+        <div class="fh">Only affects a screen wide enough for the two-column study card. A phone is never affected by this setting because it already stacks: the word, a divider, then the answer underneath &mdash; which is what Column is, made available on a wide screen too. Replace puts the answer exactly where your eye already is; Column keeps the word above it. Both keep a line about the word you last rated in the space above the card.</div>
       </div>
       <div class="field">
         <label for="fTopBar">Study screen, top bar</label>
@@ -3263,7 +3195,7 @@ const CALIBRATION_DUE_DEFAULT=new Date(2026,8,2,9,0,0).getTime();   // 2 Sept 20
 function calibrationDue(s,now){ return !!(s&&s.calibrationDueAt!=null&&Number.isFinite(s.calibrationDueAt)&&now>=s.calibrationDueAt); }
 function makeDefaults(){ return {
   version:2, created:Date.now(), calibrationDueAt:CALIBRATION_DUE_DEFAULT,
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'spread', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, returnPerDay:5, topBarStyle:'counts', flagNames:null},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'replace', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, returnPerDay:5, topBarStyle:'counts', flagNames:null},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, sinceExport:0, lastExport:null, lastPushBytes:0,
   deck:KEY, lastSync:null, syncedLogLen:null, lastRemoteAt:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
   // Phase 3 §C (PHASE3_4_HANDOFF.md): user-added words. Rides backup/sync/
@@ -3759,6 +3691,19 @@ function normalise(o){
   // blacklisted, for the original reason: quickRateReady() once tested for
   // 'off', so a missing or junk key read as ON.
   if(s.settings.quickRate!=='on') s.settings.quickRate='off';
+  // cardShape: 'spread' (the old default) and 'swap' were retired in
+  // 2026.09.02.0, when the receipt moved off the corners and into the card.
+  // Unlike quickRate above these ARE migrated rather than left to fall back,
+  // and the difference is that C7's "nobody's screen changes without them
+  // picking" cannot apply: the two shapes no longer exist, so there is no
+  // version of this that leaves the screen as it was. Replace is the honest
+  // landing for both -- it is exactly what Swap already looked like BEFORE a
+  // reveal (the two were pixel-identical there by design, which is why the
+  // quick-rate path is unaffected by the migration), and it is the shape whose
+  // receipt row is free in every state. Whitelisted rather than blacklisted,
+  // same reasoning as quickRate's own line above: a junk or missing value must
+  // land on a shape that exists, not read as one that does not.
+  if(s.settings.cardShape!=='column') s.settings.cardShape='replace';
   // gradeReminder (2026.08.19.4, STUDY_SYSTEM.md 5.9.1) is a plain boolean;
   // anything that is not one falls back to the default (on), so a hand-edited
   // 'yes' or a missing key cannot read as off by accident.
@@ -4128,7 +4073,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.08.30.10';
+const BUILD='2026.09.02.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -5068,29 +5013,20 @@ function renderCard(){
   // The same figures are still available, better ordered and with the real
   // Again count, in Browse's word panel (renderCardInspector), where no
   // retrieval attempt is in flight and they cannot contaminate one.
-  // Recap of the card rate() just graded, not this one -- top-right corner
-  // of the landscape grid (the "recap" area, previously an unnamed spacer;
-  // see the CSS comment at .recapCard). ALWAYS on as of 2026.08.16.1: it used
-  // to share the studyStats switch, but when those three flags collapsed into
-  // one Simplified-layout toggle this was the one piece worth keeping in both
-  // states, so it was decoupled instead (his call) -- which is why it survived
-  // .30.10, where the switch and the other two extras were removed outright.
+  // The receipt for the card rate() just graded, not this one -- one line in
+  // the row above the word (2026.09.02.0). It replaced two elements that said
+  // overlapping things from opposite corners of the screen: the quick-rate
+  // flash panel top-left and the recap card top-right. renderReceipt() is the
+  // single place that decides, and it runs on EVERY card, so the quick path
+  // and the reveal path now report identically -- which is what let the flash,
+  // its two timers and rate()'s own demotion toast all go.
+  //
   // It reads the in-memory lastRated rather than walking the log, so it costs
-  // nothing, and it names the card just graded rather than the one on screen. Cleared (lastRated=null) by undo() and by anything that wipes
-  // undoStack alongside it, so it never shows a rating that's since been
-  // reverted or import/erase.
-  {
-    const rc=$('recapCard');
-    if(lastRated){
-      $('recapWord').textContent=lastRated.q;
-      $('recapRating').textContent=RATING_LABEL[lastRated.rating]||'?';
-      $('recapRating').className='statChip rc-rating rc-'+(RATING_CLASS[lastRated.rating]||'good');
-      $('recapIvl').textContent=(lastRated.due!=null)?fmtDue(lastRated.due,lastRated.at):fmtIvl(lastRated.ivl);
-      rc.classList.add('on');
-    } else {
-      rc.classList.remove('on');
-    }
-  }
+  // nothing, and it names the card just graded rather than the one on screen.
+  // Cleared (lastRated=null) by undo() and by anything that wipes undoStack
+  // alongside it, so it can never show a rating that has since been reverted,
+  // nor survive an import or an erase.
+  renderReceipt();
 $('revealRow').classList.remove('hidden');
   $('rateRow').classList.add('hidden');
   syncQuickBtn();   // after current is set and the row is showing: the button is per-card, not per-session
@@ -5240,8 +5176,8 @@ function syncQuickBtn(){
 // like a reveal-then-rate press does -- no more waiting out a flash first
 // (that used to be how long you'd wait between one card and the next; see
 // HANDOFF for the owner's own read on why that pause cost more than it
-// bought). quickFlash() below is purely decorative: a floating receipt of
-// what you just graded, playing on its own element (#quickFlash), never
+// bought). renderReceipt() below is purely a record: a line naming what you
+// just graded, drawn on its own element (#quickFlash) by renderCard(), never
 // blocking or gating this. Undo (Z/0) therefore works the ordinary way too
 // -- see undo()/revertLast() -- rather than the old "cancel before it
 // commits" trick, since there's no longer a window where it hasn't
@@ -5265,21 +5201,15 @@ function quickRate(pressed){
   revealAt=shownAt;   // satisfies rate()'s own tooSoonAfter guard without weakening it, same as a real reveal() would
   quickPathPending=true;
   rate(pressed);
-  // The receipt plays AFTER the grade lands, not before it (it used to run
-  // first, when it was gated on the retired 'flash' mode). Two reasons, and
-  // the second is the whole point of the 2026.08.20.1 change: rate() is what
-  // knows the grade actually RECORDED -- adjustGrade() turns a slow Easy into
-  // a Good inside it -- and the receipt now has to show that, not just the
-  // answer (memo R4). A press over the five-second line silently recorded as
-  // Good, with no reveal to anchor it and no recap card in portrait, was the
-  // one genuinely invisible thing on this path. Read back off the log row
-  // rate() just wrote rather than by calling adjustGrade() a second time
-  // here: two predicates answering the same question must be one predicate,
-  // and the log is where the answer already lives. Guarded on the row really
-  // being this card's, so a rate() that returned early (its own 260ms guard)
-  // shows the press rather than the previous card's grade.
-  const row=S.log[S.log.length-1];
-  quickFlash(c, (row&&row[0]===id)?row[1]:pressed);
+  // Nothing is drawn from here any more (2026.09.02.0). This path used to
+  // fire its own flash, reading the grade back off the log row rate() had just
+  // written; the receipt is now rendered by renderCard() from lastRated, on
+  // every card and every path, so the quick path and the reveal path cannot
+  // disagree about what they report. rate() sets lastRated with the grade
+  // actually RECORDED (post-adjustGrade) and whether it was demoted, which is
+  // the fact this path most needs on screen -- a press over the five-second
+  // line is silently recorded as Good -- and it is now stated the same way
+  // wherever it happens rather than by a flash here and a toast there.
   // Armed for exactly one keydown -- see the keydown listener. Only if we are
   // still ON the study screen: rate() above may have emptied the queue and
   // pushed scDone, and this assignment runs after it, so an unguarded re-arm
@@ -5291,68 +5221,45 @@ function quickRate(pressed){
   // hands over to renderDone() precisely when there is no next card.
   if(current!=null){ lastQuickRateId=id; lastQuickRateGrade=pressed; }
 }
-// The decorative flash itself. Deliberately never touches #answer -- that
-// element belongs to whichever card is now on screen (rate() above has
-// already called next()/renderCard() by the time this plays out), and
-// renderCard() rewrites it unconditionally on every card. #quickFlash is a
-// separate node (shares the .answer class purely for its opacity/.on
-// mechanics and typography, see that rule's own comment) so the two can
-// never fight over the same content. Content mirrors renderCard()'s own
-// answer-building logic exactly (same c.dir==='E' multi-alt branch), since
-// this is showing the same data, just as a receipt rather than the record.
-// At most one flash on screen at a time -- a second quick-rate landing
-// before the first has faded cancels it outright and starts fresh, rather
-// than queuing or overlapping, so it's always showing the most recent grade.
-let quickFlashOutTimer=null, quickFlashClearTimer=null;
-function quickFlash(c,recorded){
+// The receipt. One line, built from lastRated, drawn by renderCard() on every
+// card -- so it reports a quick-rated Easy and a reveal-path Again in exactly
+// the same words, in the same place, and stays put until the next rating
+// replaces it. It replaced three things at once in 2026.09.02.0: quickFlash()
+// and its two fade timers, the recap card's own render block, and rate()'s
+// demotion toast.
+//
+// Never touches #answer -- that element belongs to whichever card is now on
+// screen, and renderCard() rewrites it unconditionally. This is a separate
+// node for the card that is GONE, which is why it can persist over the live
+// one without ever fighting it for content.
+//
+// The answer's markup mirrors renderCard()'s own answer-building logic (the
+// same c.dir==='E' branch), because it is showing the same data -- but joined
+// with a comma rather than stacked, since this is one line and the card's
+// answer is a block. .lat rides along for the same reason it does on #answer:
+// when dir==='E' the "answer" is itself a Latin or Greek headword and belongs
+// in the serif, not the UI sans. Setting the family explicitly on both parts
+// is the fix for the receipt not looking like the card it describes.
+function renderReceipt(){
   const el=$('quickFlash');
-  clearTimeout(quickFlashOutTimer); clearTimeout(quickFlashClearTimer);
-  el.className='answer quickFlash'+(c.dir==='E'?' lat':'');
+  if(!lastRated){ el.classList.remove('on'); el.innerHTML=''; return; }
   el.innerHTML='';
-  // The answer goes in its own wrapper rather than straight into the element
-  // (2026.08.20.1): the receipt is a floating panel now under two of the
-  // three card shapes, and a floating panel has to be able to bound the part
-  // that varies -- a merged list of alternatives is several lines -- without
-  // bounding the grade tag underneath it, which must never be the thing that
-  // gets clipped. See .qfAns in the CSS for the measurement that sets the
-  // bound on a phone in landscape.
-  const ans=document.createElement('span'); ans.className='qfAns';
-  if(c.dir==='E') c.a.forEach((x,i)=>{
-    const s=document.createElement('span'); s.className=i?'alt':''; s.textContent=x; ans.appendChild(s);
-  });
-  else ans.textContent=c.a;
-  el.appendChild(ans);
-  // The grade actually recorded, in the same words and the same colours the
-  // recap card uses for it (RATING_LABEL/RATING_CLASS, one map for both) --
-  // 2026.08.20.1, memo R4. Under Easy-only quick rate there are exactly two
-  // possible values: Easy, or Good when adjustGrade() demoted a press that
-  // took more than five seconds. The demotion is the one this exists for, so
-  // it says why in as many words rather than leaving "Good" to be read as a
-  // button that was never pressed. Landscape's recap card says the same thing
-  // a moment later and portrait has no recap card at all -- which is exactly
-  // the layout the phone button lands on.
-  if(recorded!=null){
-    const tag=document.createElement('span');
-    tag.className='qfTag rc-'+(RATING_CLASS[recorded]||'easy');
-    tag.textContent=recorded===GOOD?'Good — that took a moment':(RATING_LABEL[recorded]||'');
-    el.appendChild(tag);
-  }
+  const add=(cls,txt)=>{ const n=document.createElement('span'); n.className=cls; n.textContent=txt; el.appendChild(n); return n; };
+  add('qfWord', lastRated.q);
+  add('qfArrow', '\u2192');
+  const a=add('qfAns'+(lastRated.dir==='E'?' lat':''), lastRated.a);
+  // The grade recorded, in the same words and the same colours the recap card
+  // used for it (RATING_LABEL/RATING_CLASS, one map for both), so "Good" here
+  // is the "Good" that has always been that colour in all 24 palettes. The
+  // demotion is spelled out rather than left as a bare "Good" that could be
+  // read as a button nobody pressed -- it is the one thing on this line the
+  // user did not choose, and on the quick path it is the only report of it.
+  const tag=add('qfTag rc-'+(RATING_CLASS[lastRated.rating]||'good'),
+                lastRated.demoted?'Good \u2014 that took a moment':(RATING_LABEL[lastRated.rating]||''));
+  // ...and how far the word jumped, said the way the buttons themselves said
+  // it a moment ago (fmtDue off the real due date, not a re-derived interval).
+  add('qfIvl', (lastRated.due!=null)?fmtDue(lastRated.due,lastRated.at):fmtIvl(lastRated.ivl));
   el.classList.add('on');
-  const canAnimate=typeof el.animate==='function' && !(reduceMotionMQ&&reduceMotionMQ.matches);
-  if(canAnimate) el.animate([{opacity:0},{opacity:1}],{duration:100,easing:'ease-out'});
-  quickFlashOutTimer=setTimeout(()=>{
-    if(canAnimate){
-      el.animate([{opacity:1},{opacity:0}],{duration:180,easing:'ease-in'});
-      quickFlashClearTimer=setTimeout(()=>el.classList.remove('on'),180);
-    } else el.classList.remove('on');
-    // 480ms is the hold the old blocking flash used, and it is right for a
-    // receipt that only confirms what you already believed. A DEMOTED grade
-    // is the opposite -- news, and the one thing on this path you cannot see
-    // any other way in portrait -- so it holds long enough to be read
-    // (2026.08.20.1, and it is why the adjustGrade toast is not also fired
-    // on this path; see rate()). Still nothing waits on either number: the
-    // next card is already on screen and interactive, which is C5.
-  },recorded===GOOD?1400:480);
 }
 const BRACKETS=[['instant',0,2000],['under 10s',2000,10000],['10 to 30s',10000,30000],['over 30s',30000,Infinity]];
 function bracketOf(ms){ return ms==null?-1:BRACKETS.findIndex(b=>ms>=b[1]&&ms<b[2]); }
@@ -5508,7 +5415,13 @@ function rate(pressed){
   // it is the ONLY channel in portrait, which has no recap card), so it is
   // the one that stays; quickFlash() holds it longer when it has a demotion
   // to report, so nothing is lost by dropping the toast.
-  if(r!==pressed && path!=='q') toast('Recorded as Good — that one took a while',1600);
+  // The demotion toast lived here, on the reveal path only -- the quick path
+  // suppressed it because its own flash said the same thing. Removed in
+  // 2026.09.02.0 now that the receipt says it on BOTH paths, persistently and
+  // in the same words: a 1.6s toast at the foot of the screen and a permanent
+  // line above the word are two answers to one question, and the line is the
+  // one that survives long enough to be read. The fact itself is carried on
+  // lastRated.demoted just below, not re-derived.
   // The grade reminder (5.9.1): the first rating of the sitting dismisses the
   // line; and once a day, the first Hard that passes a word still on its
   // steps says so at the moment it happens. cs is the pre-rating card.
@@ -5561,7 +5474,16 @@ function rate(pressed){
   // r is the grade actually recorded (post-adjustGrade), matching the
   // interval that follows it; pressed alone would mismatch res.ivl whenever
   // the hesitation toast above just fired.
-  lastRated={q:c.q, rating:r, ivl:res.ivl, due:res.card.due, at:now};   // due/at: so the recap says the gap the same way the buttons did (fmtDue)
+  // Everything the receipt draws, captured here in one place, at the one
+  // moment all of it is known. `rating` is the grade actually RECORDED
+  // (post-adjustGrade), matching the interval that follows it -- `pressed`
+  // alone would mismatch res.ivl on exactly the presses the receipt exists to
+  // report. `demoted` is that mismatch, recorded rather than inferred: the
+  // receipt must not have to ask adjustGrade() a second question the answer to
+  // which is already sitting here. `a`/`dir` are the answer and its direction,
+  // so the receipt can render it in the family the card itself would use.
+  lastRated={q:c.q, a:(Array.isArray(c.a)?c.a.join(', '):c.a), dir:c.dir,
+             rating:r, demoted:(r!==pressed), ivl:res.ivl, due:res.card.due, at:now};   // due/at: so the receipt says the gap the same way the buttons did (fmtDue)
   save();          // save() schedules the sync push; nothing else fires per rating
   next();
 }
@@ -11568,7 +11490,7 @@ function renderSet(){
   $('fTheme').value=S.theme||'light';
   renderPalGrid();
   $('fTopBar').value=s.topBarStyle||'counts';
-  $('fCardShape').value=s.cardShape||'spread';
+  $('fCardShape').value=s.cardShape||'replace';
   $('fCardNotes').value=s.cardNotes?'1':'0';
   $('fGradeRem').value=s.gradeReminder?'1':'0';
   $('fQuickRate').value=s.quickRate==='on'?'1':'0';
