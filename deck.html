@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.09.02.0">
+<link rel="stylesheet" href="palettes.css?v=2026.09.02.1">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -35,7 +35,7 @@
   stays HERE, synchronous, so it still halts the parser before the app
   skeleton can flash -- it never depended on content at all.
 -->
-<script src="decks/registry.js?v=2026.09.02.0"></script>
+<script src="decks/registry.js?v=2026.09.02.1"></script>
 <!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
      number must be bumped with BUILD (sec95c pins that it matches).
      Why: these two are the only files both pages load by a fixed name, and a
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.09.02.0"></script>
+<script src="shared.js?v=2026.09.02.1"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -227,32 +227,82 @@ button{font-family:inherit;font-size:inherit;color:inherit;background:none;borde
    special-cased. */
 .quickFlash{pointer-events:none;z-index:40;display:none}
 .quickFlash.on{display:flex}
+/* PORTRAIT: two rows by design (2026.09.02.1). The flat wrapping line this
+   replaced was measured against every prompt-answer pair in both decks --
+   8,130 of them, at 390px -- and 36.9% of them pushed it past one row, 98.4%
+   once the five-second note was showing. So the wrap was not an edge case to
+   tune; it was the normal case, and the fix is to stop treating a second row
+   as a failure. The prompt goes on top, clipped to one line because it is the
+   least valuable thing here (you saw that word a moment ago); the answer sits
+   underneath with the width to itself.
+
+   Everything about the GRADE moves up beside the prompt: the name, the
+   interval, the five-second note. That is what buys the answer its room, and
+   it means the longest thing this line can carry no longer sits on the same
+   row as the longest thing it has to show.
+
+   The grade is said twice, in colour and in words, and the words are not
+   redundant: this line is drawn on the QUESTION side of the next card, where
+   #rateRow is hidden and #revealRow is showing -- so the four coloured
+   buttons that would teach the mapping are not on screen to be read against.
+   Colour here is a glance for someone who already knows it. (Contrast the
+   hold indicator on #bEasy, which shows only while the grade row IS up, and
+   can therefore be colour alone.) Measured before choosing: across all 22
+   palette-and-theme combinations the closest two grade INKS sit 15.1 apart on
+   CIEDE2000, so a saturated rule reads everywhere -- but the pale -bg tints
+   the chips use fall to 2.7 (3.4 in Vellum), which is why the whole panel is
+   not painted in the grade's colour instead.
+
+   bottom:58px, not 0, unchanged and still load-bearing: the card's flag
+   button is absolutely placed at bottom:10px/right:14px and is 44px square,
+   so a full-width line at bottom:0 sits straight on top of it. Both are out
+   of flow, so clearing it moves nothing. */
 html:not([data-layout="landscape"]) .quickFlash{
   position:absolute; left:22px; right:22px; bottom:58px; max-width:none;
-  align-items:center; justify-content:center; gap:6px 8px; flex-wrap:wrap;
-  padding:7px 12px; box-sizing:border-box;
+  padding:8px 12px 9px; box-sizing:border-box;
   border:1px solid var(--line); border-radius:14px; background:var(--panel);
-  font-size:13.5px; line-height:1.2; text-align:center;
+  font-size:13.5px; line-height:1.2; text-align:left;
 }
-/* Two things this rule has to get right that the landscape one does not, both
-   found by running it on a real 390px screen rather than by reading it:
-
-   bottom:58px, not 0. The card's flag button is absolutely placed at
-   bottom:10px/right:14px and is 44px square, so a full-width line at bottom:0
-   sits straight on top of it. (The recap card this replaced had the same
-   geometry and the same collision; it is fixed here rather than inherited.)
-   58px clears the button and still moves nothing, since both are out of flow.
-
-   flex-wrap, and an answer that wraps rather than ellipsises. On a phone the
-   demotion chip -- "Good, that took a moment", the longest thing this line can
-   carry -- takes most of 346px on its own, and with the answer held to one
-   line it ellipsised "to, towards, at" down to "t.". Landscape cannot wrap
-   (its row is a fixed 34px and the word must not move), but portrait's line is
-   anchored to the bottom, so a second line grows upward into empty space and
-   moves nothing either. The answer is what the quick path exists to show, so
-   on the one screen where it can have the room, it gets it. */
+html:not([data-layout="landscape"]) .quickFlash.on{
+  display:grid;
+  grid-template-columns:3px minmax(0,1fr) auto auto;
+  grid-template-areas:"bar word tag ivl"
+                      "bar ans  ans ans";
+  column-gap:8px; row-gap:1px; align-items:baseline;
+}
+html:not([data-layout="landscape"]) .quickFlash::before{
+  content:""; grid-area:bar; align-self:stretch; border-radius:2px;
+  background:var(--line);
+}
+/* One rule per grade, keyed on the class renderReceipt() puts on the
+   container -- the same RATING_CLASS map the tag itself reads, so the rule and
+   the word can never name different grades. */
+html:not([data-layout="landscape"]) .quickFlash.rc-again::before{background:var(--again)}
+html:not([data-layout="landscape"]) .quickFlash.rc-hard::before {background:var(--warn-ink)}
+html:not([data-layout="landscape"]) .quickFlash.rc-good::before {background:var(--good)}
+html:not([data-layout="landscape"]) .quickFlash.rc-easy::before {background:var(--easy)}
+html:not([data-layout="landscape"]) .qfWord{
+  grid-area:word; font-size:12.5px; max-width:none; min-width:0;
+}
+html:not([data-layout="landscape"]) .qfArrow{display:none}   /* the two rows say it */
 html:not([data-layout="landscape"]) .qfAns{
+  grid-area:ans; font-size:14.5px;
   white-space:normal; overflow:visible; text-overflow:clip;
+}
+/* The chip and the pill both lose their boxes here and keep their colour: two
+   bordered objects on a two-row line read as clutter, and the colour was
+   always the part doing the work. .qfTag keeps white-space:normal so the
+   five-second note wraps inside its own column instead of ellipsising the
+   answer -- the failure that produced "t." for "to, towards, at". */
+html:not([data-layout="landscape"]) .qfTag{
+  grid-area:tag; background:none; border:0; padding:0; white-space:normal;
+  font-weight:600;
+}
+html:not([data-layout="landscape"]) .qfIvl{
+  grid-area:ivl; background:none; border:0; padding:0;
+}
+html:not([data-layout="landscape"]) .qfIvl::before{
+  content:"\00b7"; margin-right:5px; color:var(--faint);
 }
 .hintline{margin-top:22px;font-size:13px;color:var(--faint);height:16px}
 /* The grade-reminder line (2026.08.19.4, STUDY_SYSTEM.md 5.9.1): a short
@@ -465,6 +515,19 @@ html[data-layout="landscape"][data-study-card="replace"] #gradeNote{grid-column:
 #bHard{background:var(--warn-bg);border-color:var(--warn-br)}   #bHard .lbl{color:var(--warn-ink)}
 #bGood{background:var(--good-bg);border-color:var(--good-br)}   #bGood .lbl{color:var(--good)}
 #bEasy{background:var(--easy-bg);border-color:var(--easy-br)}   #bEasy .lbl{color:var(--easy)}
+/* The hold indicator (2026.09.02.1). A ring rather than a colour change,
+   because #bEasy is ALREADY purple at rest -- "light it purple" would have
+   been invisible on the one button it has to appear on. The ring is drawn in
+   the colour of the grade the hold will actually record, and the demoted case
+   goes further and repaints the whole button in Good's family: the five-second
+   rule is about to overrule the finger, and the loudest honest way to say so
+   is for the Easy button to stop looking like the Easy button. Both states
+   have a legend on screen while they show -- the four grade buttons are all
+   visible during a hold -- which is exactly what the receipt's own colour does
+   NOT have, and why the receipt names the grade in words as well. */
+#bEasy.holdReady{box-shadow:0 0 0 3px var(--easy)}
+#bEasy.holdDemoted{background:var(--good-bg);border-color:var(--good-br);box-shadow:0 0 0 3px var(--good)}
+#bEasy.holdDemoted .lbl{color:var(--good)}
 .revealRow{flex:0 0 auto;padding:10px 12px 14px}
 .revealBtn{position:relative;width:100%;height:60px;border-radius:15px;border:1px solid var(--line);
   background:var(--panel);font-size:16px;color:var(--muted)}
@@ -2072,7 +2135,7 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
            are as constant as the labels. -->
       <button class="rate" id="bHard"><span class="lbl">Hard</span><span class="ivl" id="iHard"></span><span class="keycap">2</span></button>
       <button class="rate" id="bGood"><span class="lbl">Good</span><span class="ivl" id="iGood"></span><span class="keycap">3</span></button>
-      <button class="rate" id="bEasy"><span class="lbl">Easy</span><span class="ivl" id="iEasy"></span><span class="keycap">4</span></button>
+      <button class="rate" id="bEasy"><span class="lbl">Easy</span><span class="ivl" id="iEasy"></span><span class="keycap">4<span id="easyHoldCap"> &middot; hold Space</span></span></button>
     </div>
   </section>
 
@@ -2183,6 +2246,14 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
           <option value="1">On — one press grades a settled word Easy from the question</option>
         </select>
         <div class="fh">For a word you know the moment you see it. On a keyboard, <code>4</code> from the question side; on a phone, a "Knew it" button beside "Show answer". It only appears on a word past its first learning steps — never on one you are still learning, where getting it wrong quietly costs the most. It records Easy, and the same five-second rule applies as everywhere else, so a slow press is still recorded as Good — the answer flashes up afterwards with the grade it actually recorded, so you can see that happen. The other three grades stay behind the reveal on both devices: Hard and Good mean "I looked at it", and an "Again" you could press without looking is no use to anyone. Got one wrong? <code>Z</code> straight after corrects it to Again; on a phone, undo, reveal, and press Again.</div>
+      </div>
+      <div class="field">
+        <label for="fHoldEasy">Hold to record Easy</label>
+        <select id="fHoldEasy" class="sel">
+          <option value="1">On — keep the key or your finger down and the word is recorded Easy</option>
+          <option value="0">Off</option>
+        </select>
+        <div class="fh">The fast lane for a word you knew before the card finished turning, on the button you are already pressing. On a keyboard, hold <code>Space</code> through the reveal and let go; on a phone, press and hold anywhere on the card once the answer is showing. A tap does exactly what it always did — reveal, then Good — and letting go early records nothing, so nothing you already do changes. The Easy button lights up while you hold, in the colour of the grade that will actually be recorded: the five-second rule still applies, so on a word that took you a while to turn over it lights green rather than purple and the word is recorded Good. Turn this off if you use VoiceOver, whose own press-and-hold means something else.</div>
       </div>
       <div class="field">
         <label for="fTerm">Michaelmas begins</label>
@@ -3195,7 +3266,7 @@ const CALIBRATION_DUE_DEFAULT=new Date(2026,8,2,9,0,0).getTime();   // 2 Sept 20
 function calibrationDue(s,now){ return !!(s&&s.calibrationDueAt!=null&&Number.isFinite(s.calibrationDueAt)&&now>=s.calibrationDueAt); }
 function makeDefaults(){ return {
   version:2, created:Date.now(), calibrationDueAt:CALIBRATION_DUE_DEFAULT,
-  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, cardNotes:true, gradeReminder:true, quickRate:'off', cardShape:'replace', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, returnPerDay:5, topBarStyle:'counts', flagNames:null},
+  settings:{useTiming:true, newPerDayL:50, newPerDayE:50, retention:0.90, maxIvl:36500, rollover:6, rolloverPending:null, rolloverPendingFrom:null, deviceName:'', term:'2026-10-11', knownDays:21, weakFirst:false, cardNotes:true, gradeReminder:true, quickRate:'off', holdEasy:'on', cardShape:'replace', heatmapView:'month', heatmapAvgWindow:'month', heatmapColourMode:'volume', heatmapAccent:'coral', streakStart:null, returnPerDay:5, topBarStyle:'counts', flagNames:null},
   dir:'L', parts:null, buckets:['shaky','unseen'], theme:'light', palette:'vellum', layout:'legacy', rotate:'off', rotDay:null, rotSeen:[], cards:{}, orphans:{}, log:[], days:{}, dayNotes:{}, sinceExport:0, lastExport:null, lastPushBytes:0,
   deck:KEY, lastSync:null, syncedLogLen:null, lastRemoteAt:null, lastDevice:null, lastPushError:null, lastPushErrorAt:null, confuseGroups:{},
   // Phase 3 §C (PHASE3_4_HANDOFF.md): user-added words. Rides backup/sync/
@@ -3691,6 +3762,14 @@ function normalise(o){
   // blacklisted, for the original reason: quickRateReady() once tested for
   // 'off', so a missing or junk key read as ON.
   if(s.settings.quickRate!=='on') s.settings.quickRate='off';
+  // holdEasy: whitelisted the other way round from quickRate above, and the
+  // asymmetry is deliberate. quickRate had to read a missing key as OFF
+  // because a junk value once turned a pre-reveal grade ON by accident; this
+  // one is a gesture on a key you are already pressing, cannot grade a card
+  // you have not seen, and every save predating 2026.09.02.1 simply lacks the
+  // field -- so 'anything but off means on' is what leaves an old save
+  // behaving the way the build that introduces it behaves.
+  if(s.settings.holdEasy!=='off') s.settings.holdEasy='on';
   // cardShape: 'spread' (the old default) and 'swap' were retired in
   // 2026.09.02.0, when the receipt moved off the corners and into the card.
   // Unlike quickRate above these ARE migrated rather than left to fall back,
@@ -4073,7 +4152,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.09.02.0';
+const BUILD='2026.09.02.1';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -5030,6 +5109,11 @@ function renderCard(){
 $('revealRow').classList.remove('hidden');
   $('rateRow').classList.add('hidden');
   syncQuickBtn();   // after current is set and the row is showing: the button is per-card, not per-session
+  // Every new card starts with no hold in flight and no ring showing. Belt and
+  // braces beside the release paths -- a card can also change under a live
+  // hold (a sync merge, an undo), and the ring must never outlive the word it
+  // was armed on.
+  if(typeof disarmHold==='function'){ disarmHold(); renderEasyHoldCap(); }
   shownAt=Date.now(); thinkMs=null; pressAt=null; cardDirty=false;
   renderCounts();
 }
@@ -5242,7 +5326,11 @@ function quickRate(pressed){
 // is the fix for the receipt not looking like the card it describes.
 function renderReceipt(){
   const el=$('quickFlash');
-  if(!lastRated){ el.classList.remove('on'); el.innerHTML=''; return; }
+  // Reset rather than remove('on'): the container now also carries the grade's
+  // own rc-* class for the portrait rule down its left edge, and a stale one
+  // would colour the next word's receipt with the last word's grade.
+  el.className='quickFlash';
+  if(!lastRated){ el.innerHTML=''; return; }
   el.innerHTML='';
   const add=(cls,txt)=>{ const n=document.createElement('span'); n.className=cls; n.textContent=txt; el.appendChild(n); return n; };
   add('qfWord', lastRated.q);
@@ -5259,7 +5347,7 @@ function renderReceipt(){
   // ...and how far the word jumped, said the way the buttons themselves said
   // it a moment ago (fmtDue off the real due date, not a re-derived interval).
   add('qfIvl', (lastRated.due!=null)?fmtDue(lastRated.due,lastRated.at):fmtIvl(lastRated.ivl));
-  el.classList.add('on');
+  el.classList.add('on','rc-'+(RATING_CLASS[lastRated.rating]||'good'));
 }
 const BRACKETS=[['instant',0,2000],['under 10s',2000,10000],['10 to 30s',10000,30000],['over 30s',30000,Infinity]];
 function bracketOf(ms){ return ms==null?-1:BRACKETS.findIndex(b=>ms>=b[1]&&ms<b[2]); }
@@ -5307,6 +5395,40 @@ const GLANCE_MS=300;
 function adjustGrade(r,ms){
   if(!S.settings.useTiming||ms==null||r!==EASY) return r;
   return ms>EASY_SLOW_MS?GOOD:r;
+}
+// ---- Hold to record Easy (2026.09.02.1) ----
+// Keeping the key down past the reveal records Easy; letting go before this
+// records nothing extra. 450ms, and the number is doing two jobs at once.
+//
+// It has to clear 260ms, because rate() refuses any press landing within
+// 260ms of revealAt (the stray-double-tap guard) and a hold that the guard
+// silently ate would be the worst possible failure: the gesture would look
+// like it worked and grade nothing. 450 leaves 190ms of headroom rather than
+// sitting on the boundary.
+//
+// And it has to sit above a tap. A tap's key is down for roughly 60-120ms;
+// 450 is comfortably past any of that, so the old two-tap path is untouched
+// by construction rather than by tuning.
+//
+// NOT derived from the sub-2s think-time finding (FAST_GOOD_AND_HOLD_RESEARCH
+// .md section 2): that is about how long you spend on the QUESTION side and
+// feeds nothing here. This is how long a finger stays down, which is a
+// deliberate gesture, not a measurement of recall. The two must not be
+// conflated -- see EASY_SLOW_MS's own note on a display constant quietly
+// doing scheduling work.
+const HOLD_EASY_MS=450;
+// Pure: what a hold actually records, or null if it records nothing.
+//
+// Every rule that applies to a pressed Easy applies here unchanged, and that
+// is the point of routing through adjustGrade() rather than returning EASY:
+// a hold on a word that took more than five seconds to flip is recorded as
+// Good, exactly as pressing the button would be. The indicator reads this
+// same function while the key is still down, which is how it can show the
+// demotion BEFORE the press lands rather than reporting it afterwards.
+function holdGrade(heldMs,thinkMs){
+  if(S.settings.holdEasy==='off') return null;
+  if(!(heldMs>=HOLD_EASY_MS)) return null;
+  return adjustGrade(EASY,thinkMs);
 }
 function rate(pressed){
   // Read and cleared before anything can return early, so a quick-rate flag
@@ -6078,6 +6200,7 @@ function closeFlagPicker(){
 const SHORTCUTS_REF=[
   ['Studying',[
     ['Space / Enter','Reveal — then rate Good'],
+    ['Space, held','Record Easy'],
     ['1 – 4','Again · Hard · Good · Easy'],
     ['Z / 0','Undo the last rating'],
   ]],
@@ -11494,6 +11617,7 @@ function renderSet(){
   $('fCardNotes').value=s.cardNotes?'1':'0';
   $('fGradeRem').value=s.gradeReminder?'1':'0';
   $('fQuickRate').value=s.quickRate==='on'?'1':'0';
+  $('fHoldEasy').value=s.holdEasy==='off'?'0':'1';
   commitPendingRollover();
   $('fRoll').value=String(s.rolloverPending!=null?s.rolloverPending:(s.rollover!=null?s.rollover:4));
   if(s.rolloverPending!=null){
@@ -11547,9 +11671,106 @@ function armPressStamp(el){
 // search placeholder / the initial renderKbdToggle) now runs inside
 // bootDeck() at the bottom of the file: it reads DECK/DECK_TITLE, which no
 // longer exist at parse time (Phase 2 §2.5, async content).
-tapZone($('cardArea'),()=>{ if($('rateRow').classList.contains('hidden')) reveal(); });
+// A card tap that a hold has already graded must not also reveal the NEXT
+// card. On iOS a press-and-hold still delivers a click on release, and by the
+// time it arrives rate() has drawn the next word -- so without this the
+// gesture would grade one card and flip the following one. reveal()'s own
+// 260ms guard happens to catch it today, but that is a race won by 260ms, not
+// a rule, and this is the rule.
+let swallowCardTap=0;
+tapZone($('cardArea'),()=>{
+  if(swallowCardTap&&tooSoonAfter(Date.now(),swallowCardTap,700)) return;
+  if($('rateRow').classList.contains('hidden')) reveal();
+});
 tapZone($('revealBtn'),reveal);
 armPressStamp($('cardArea')); armPressStamp($('revealBtn'));   // both lead to reveal() -- see its own comment
+
+// ---- Hold to record Easy: one state machine, both inputs (2026.09.02.1) ----
+// The keyboard and the finger differ only in which events arm and release it.
+// One hold at a time, and it carries the id of the card it was armed on: a
+// press that outlives its own card -- the window losing focus, a sync landing,
+// anything that redraws -- must record nothing rather than land on whatever
+// word happens to be showing when the finger lifts.
+let holdArm=null;      // {from, id, viaReveal, timer} while such a press is down
+// Shown only when the gesture is on, since a keycap advertising a gesture that
+// does nothing is worse than no keycap. Landscape-only in CSS, like every
+// other keycap -- a phone has no Space to hold.
+function renderEasyHoldCap(){
+  const cap=$('easyHoldCap');
+  if(cap) cap.style.display=(S.settings.holdEasy==='off')?'none':'';
+}
+// Paints the Easy button in the colour of the grade the hold would record --
+// which is Good, not Easy, on a word that took more than five seconds to turn
+// over. Reading holdGrade() here rather than assuming EASY is the whole point:
+// the five-second rule gets to speak BEFORE the press lands, not afterwards on
+// the receipt.
+function showHoldReady(g){
+  const b=$('bEasy');
+  b.classList.toggle('holdReady', g!=null);
+  b.classList.toggle('holdDemoted', g===GOOD);
+}
+function disarmHold(){
+  if(holdArm&&holdArm.timer) clearTimeout(holdArm.timer);
+  holdArm=null;
+  showHoldReady(null);
+}
+function armHold(from,viaReveal){
+  disarmHold();
+  if(S.settings.holdEasy==='off') return;
+  if(current==null||$('rateRow').classList.contains('hidden')) return;
+  const id=current, t0=(from!=null)?from:Date.now();
+  const fire=()=>{
+    if(!holdArm||holdArm.id!==id||current!==id) return;
+    showHoldReady(holdGrade(Date.now()-t0,thinkMs));
+  };
+  holdArm={from:t0, id:id, viaReveal:!!viaReveal,
+           timer:setTimeout(fire,Math.max(0,HOLD_EASY_MS-(Date.now()-t0)))};
+}
+// True when the hold actually graded, so the caller knows whether the ordinary
+// press it would otherwise have made still needs making.
+//
+// rate(EASY), never rate(holdGrade(...)): column 12 of the log records the
+// button the finger asked for and column 1 what the scheduler was given, and
+// collapsing them here would make a hold the one press in the app whose
+// demotion cannot be counted. rate()'s own adjustGrade() call does the
+// demotion, exactly as it does for the button.
+function releaseHold(){
+  const a=holdArm;
+  disarmHold();
+  if(!a||current==null||a.id!==current) return false;
+  if($('rateRow').classList.contains('hidden')) return false;
+  if(holdGrade(Date.now()-a.from,thinkMs)==null) return false;
+  rate(EASY);
+  return true;
+}
+// Nothing arrives to release a hold if the window goes away mid-press, so the
+// arm has to be dropped by hand rather than left waiting for a keyup that will
+// never come.
+window.addEventListener('blur',disarmHold);
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) disarmHold(); });
+
+// The finger's half. Answer side only, on his call: the question-side version
+// would have meant moving reveal() from release to contact, which changes how
+// every tap in the app feels in order to add one gesture.
+if(window.PointerEvent){
+  const area=$('cardArea');
+  let hx=0, hy=0;
+  area.addEventListener('pointerdown',e=>{
+    // The flag and not-today buttons live inside the card and stop their own
+    // clicks, not their pointerdowns -- a long press on either would otherwise
+    // arm a hold and grade the word on release.
+    if(e.target.closest('button')) return;
+    if($('rateRow').classList.contains('hidden')) return;   // question side: the tap reveals, there is nothing to hold yet
+    hx=e.clientX; hy=e.clientY;
+    armHold(Date.now(),false);
+  });
+  area.addEventListener('pointermove',e=>{
+    if(holdArm&&Math.hypot(e.clientX-hx,e.clientY-hy)>12) disarmHold();   // a drag is a scroll, not a hold
+  });
+  area.addEventListener('pointerup',()=>{ if(releaseHold()) swallowCardTap=Date.now(); });
+  area.addEventListener('pointercancel',disarmHold);
+  area.addEventListener('pointerleave',disarmHold);
+}
 // Quick rate's touch entry (2026.08.20.1). Re-tests quickRateReady() rather
 // than trusting the button's own visibility: the button is hidden by class,
 // and a stale click landing on a card that is no longer eligible must grade
@@ -12503,6 +12724,7 @@ $('fGradeRem').addEventListener('change',e=>{S.settings.gradeReminder=(e.target.
 // mid-sitting and walking straight back to a card already on screen must not
 // leave the button in the state the setting used to be in.
 $('fQuickRate').addEventListener('change',e=>{S.settings.quickRate=(e.target.value==='1')?'on':'off';save();syncQuickBtn();});
+$('fHoldEasy').addEventListener('change',e=>{S.settings.holdEasy=(e.target.value==='1')?'on':'off';save();disarmHold();renderEasyHoldCap();});
 // a native <details> open/close changes its .sect/.field's height without
 // going through renderHome()/renderSet() or applyLayout() at all -- nothing
 // else would ever notice the two columns need re-balancing after one of
@@ -12595,6 +12817,20 @@ function isTyping(){
 // setups, and swallowing either would be a genuine surprise.
 const isExitKey=e=>(e.key==='s'||e.key==='S')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!isTyping();
 
+// Space's release, the other half of the branch below. A hold long enough to
+// count records Easy (or Good, if the five-second rule overrules it); a hold
+// too short records what the key always recorded -- Good if the press started
+// on the answer side, and nothing at all if it started on the question side,
+// where letting go early has always just left the card revealed.
+document.addEventListener('keyup',e=>{
+  if(e.key!==' ') return;
+  const a=holdArm;
+  if(!a) return;
+  if(!$('scStudy').classList.contains('on')||isTyping()){ disarmHold(); return; }
+  if(releaseHold()) return;
+  if(!a.viaReveal) rate(GOOD);
+});
+
 document.addEventListener('keydown',e=>{
   if($('scStudy').classList.contains('on')){
     // Armed only for the single keydown right after a quick-rate press (see
@@ -12670,7 +12906,32 @@ document.addEventListener('keydown',e=>{
       // Quick-rate's OWN Space-equivalent is untouched by this: quickRate()
       // below still grades Easy specifically, because that is a distinct,
       // deliberately Easy-only feature (2026.08.20.1), not this key.
-      if($('rateRow').classList.contains('hidden')) reveal();
+      // Auto-repeat never acts. Until 2026.09.02.1 nothing filtered it, and a
+      // held Space alternated reveal -> Good -> reveal -> Good without limit,
+      // roughly two cards a second, none of them looked at -- the two 260ms
+      // guards below set that gesture's SPEED and never its ceiling. This one
+      // line is the ceiling, and it has to come before either branch: the old
+      // behaviour ran through both of them in turn.
+      if(e.repeat) return;
+      if($('rateRow').classList.contains('hidden')){
+        reveal();
+        // The same press may carry straight on into a hold. Armed from
+        // revealAt rather than from now, so the 450ms is measured from the
+        // moment the answer appeared -- the hold is time spent looking at it.
+        if(e.key===' ') armHold(revealAt,true);
+      }
+      else if(e.key===' '&&S.settings.holdEasy!=='off'){
+        // Space grades on RELEASE now, so one key can carry two meanings: a
+        // tap is Good, a hold is Easy. The commit moves later by the length of
+        // a keypress, 60-120ms, which is why the threshold sits at 450 and not
+        // at the 260ms guard it also has to clear.
+        //
+        // Enter deliberately keeps grading on the press. It activates a
+        // focused button in its own right, so deferring it would give one
+        // keystroke a second, invisible way to act -- and it leaves an
+        // unchanged path to Good for anyone who turns the gesture off.
+        armHold(Date.now(),false);
+      }
       else rate(GOOD);
     }
     else if(!$('rateRow').classList.contains('hidden')){
