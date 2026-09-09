@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.09.02.1">
+<link rel="stylesheet" href="palettes.css?v=2026.09.09.0">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -35,7 +35,7 @@
   stays HERE, synchronous, so it still halts the parser before the app
   skeleton can flash -- it never depended on content at all.
 -->
-<script src="decks/registry.js?v=2026.09.02.1"></script>
+<script src="decks/registry.js?v=2026.09.09.0"></script>
 <!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
      number must be bumped with BUILD (sec95c pins that it matches).
      Why: these two are the only files both pages load by a fixed name, and a
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.09.02.1"></script>
+<script src="shared.js?v=2026.09.09.0"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -389,6 +389,77 @@ html[data-layout="landscape"][data-study-card="replace"] #gradeNote{grid-column:
    contrast, so hiding half of each pair behind a tap would defeat it. */
 .tieCard{border:1px solid var(--line);border-radius:12px;background:var(--panel);
   padding:12px 14px;margin-bottom:10px}
+/* The chain-merge offer. Reads as a proposal rather than a tie -- accent
+   border and ground, no rounded card competing with the ties below it. */
+/* ---- the tied-words drill (2026.09.09.0) ---- */
+/* .small is scoped to .dayDetail (the modal skin), so the two surfaces that
+   borrow its markup outside a modal have to say so. Caught by running it:
+   the chain-merge offer shipped in 2026.09.08.0 with "Merge 4" and "Not now"
+   rendering as bare text, because .tieOffer sat in #browseResults and nothing
+   there styles a .small. Same rule, same look, two more homes. */
+#scTie button.small,.tieOffer button.small{border:1px solid var(--line);
+  background:var(--raise);border-radius:9px;padding:8px 13px;font-size:12.5px;
+  color:var(--muted);cursor:pointer;font-family:inherit}
+#scTie button.small.primary,.tieOffer button.small.primary{background:var(--coral);
+  border-color:var(--coral);color:#fff}
+#scTie button.small.tieDel{color:var(--again)}
+.tdIntro{margin:2px 0 14px;max-width:44em}
+.tdIntro p{margin:0 0 8px}
+.tdStats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.tdStats>div{flex:1 1 90px;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.tdStats b{font-size:22px;font-variant-numeric:tabular-nums;line-height:1}
+.tdStats span{font-size:12px;color:var(--muted)}
+.tdAsk{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);
+  text-align:center;margin-top:6px}
+/* The term carries the same weight it has on the study card: this is a test,
+   and it should look like one rather than like a row in a list. */
+.tdTerm{font-size:clamp(24px,6vw,32px);line-height:1.2;text-align:center;
+  margin:6px 0 18px;word-break:break-word}
+.tdOpts{display:flex;flex-direction:column;gap:8px;max-width:32em;margin:0 auto}
+.tdOpt{width:100%;text-align:left;font:inherit;font-size:16px;padding:13px 15px;
+  border-radius:12px;border:1px solid var(--line);background:var(--panel);
+  color:var(--ink);cursor:pointer}
+.tdOpt:hover:not(:disabled){border-color:var(--coral)}
+.tdOpt:disabled{cursor:default}
+/* Right and wrong take the grade colours the rating buttons already use, so
+   the meaning of green and red is the same everywhere in the app. */
+.tdOpt.right{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+.tdOpt.wrong{border-color:var(--again);background:var(--again-bg);color:var(--again)}
+.tdContrast{max-width:32em;margin:18px auto 0;padding-top:14px;border-top:1px solid var(--line)}
+.tdSame{font-size:13px;color:var(--muted);background:var(--warn-bg);border:1px solid var(--warn-br);
+  border-radius:10px;padding:9px 11px;margin-bottom:10px}
+.tdMem{display:flex;gap:9px;align-items:baseline;padding:6px 0}
+.tdMem .tmSlot{width:18px;flex:0 0 auto}
+.tdMem .tmTerm{flex:0 0 42%;text-align:right;font-size:15px}
+.tdMem .tmGloss{flex:1 1 auto;font-size:14px;color:var(--muted)}
+/* The word that was actually asked, so the contrast has an anchor. */
+.tdMem.isTarget .tmTerm{font-weight:600}
+.tdMem.isTarget .tmGloss{color:var(--ink)}
+.tdLine{max-width:32em;margin:16px auto 0}
+.tdLine label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px}
+.tdLine .tdOpt2{color:var(--faint)}
+.tdLine input{width:100%;font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.tdBtns{display:flex;gap:8px;align-items:center;max-width:32em;margin:14px auto 0}
+.tdBtns .tieDel{margin-left:auto}
+.tdFoot{display:flex;justify-content:space-between;max-width:32em;margin:18px auto 0;
+  font-size:12.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.tdDone{text-align:center;padding-top:18px}
+.tdDone .tdBtns{justify-content:center}
+.tdDone .tdBtns .tieDel{margin-left:0}
+/* A Latin citation form is long -- "circa (adv. and prep. + acc.)" is 29
+   characters -- so the contrast gets more room than the answer buttons need,
+   and the term column more of it, once there is room to give. */
+@media (min-width:700px){
+  .tdContrast,.tdLine,.tdBtns,.tdFoot{max-width:42em}
+  .tdMem .tmTerm{flex:0 0 44%}
+}
+.tieOffer{border:1px solid var(--coral);background:var(--accent-soft);border-radius:12px;
+  padding:12px 14px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.tieOffer>div:first-child{flex:1 1 240px;min-width:0}
+.tieOffer .fh{margin-top:4px}
+.tieOfferBtns{display:flex;gap:8px;flex:0 0 auto;align-items:center}
 .tieCard .tieLabel{font-size:13.5px;color:var(--ink);margin-bottom:2px;display:flex;gap:8px;align-items:flex-start}
 .tieCard .tieLabel .tl{flex:1}
 .tieCard .tieLabel.empty .tl{color:var(--faint);font-style:italic}
@@ -575,6 +646,12 @@ html[data-layout="landscape"][data-study-card="replace"] #gradeNote{grid-column:
 .browseBtn{position:relative;width:100%;height:58px;border-radius:15px;
   background:var(--panel);color:var(--ink);border:1px solid var(--line);
   font-size:16px;font-weight:500;margin:-6px 0 18px}
+/* Same shape as Word list, one row down, with its own count on the right the
+   way the direction cards carry theirs. */
+.tieBtn{display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;margin-top:-12px}
+.tieBtn .tbCount{color:var(--muted);font-weight:400;font-size:14px;
+  font-variant-numeric:tabular-nums}
 .browseBtn::before{content:"";position:absolute;top:-8px;bottom:-8px;left:-6px;right:-6px}
 .toast{color:#fff}
 .sect{margin-top:26px}
@@ -815,6 +892,14 @@ html[data-layout="landscape"][data-study-card="replace"] #gradeNote{grid-column:
 /* The word currently showing in the panel. Reads as selected rather than
    hovered -- a left edge in the accent colour, which no hover state uses. */
 .wordRow.open .wrTop{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--coral)}
+/* Held after a tie (see justTied): still on screen, still pressable, visibly
+   no longer part of the filter it was found under. Struck through rather than
+   merely dimmed, because dim alone reads as "disabled" -- this row is the one
+   thing on the list you have just finished with, and it is still live. */
+.wordRow.held .term{text-decoration:line-through;text-decoration-color:var(--faint)}
+.wordRow.held .wrTop{opacity:.55}
+.wordRow.held:hover .wrTop,.wordRow.held.open .wrTop{opacity:1}
+.browseHeld{color:var(--coral);cursor:pointer;text-decoration:underline}
 .wordRow input[type=checkbox]{width:16px;height:16px;accent-color:var(--coral);flex:0 0 auto;cursor:pointer}
 .wordRow .stDot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
 .wordRow .term{flex:1 1 auto;min-width:0;font:inherit;color:inherit;background:none;
@@ -1314,6 +1399,36 @@ html[data-layout="landscape"][data-study-card="replace"] #gradeNote{grid-column:
   background:var(--toast);color:#fff;font-size:14px;padding:11px 17px;border-radius:11px;opacity:0;
   transition:opacity .2s;pointer-events:none;z-index:50;max-width:84%;text-align:center}
 .toast.on{opacity:.95}
+/* A toast you can answer (2026.09.08). The plain toast says what happened and
+   goes; this one carries the two things actually wanted next after a tie --
+   the flag, and a way out of a mistyped one -- so the word does not have to be
+   found again to reach them. Sits where the toast sits and above every overlay
+   (z-index 55 against their 45), but below .rowMenu, so a long-press menu is
+   never trapped underneath it. pointer-events are ON, unlike .toast. */
+.actBar{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(22px + env(safe-area-inset-bottom));z-index:55;max-width:min(92%,460px);
+  background:var(--toast);color:#fff;border-radius:11px;padding:8px 10px;
+  display:flex;align-items:center;gap:8px;font-size:13.5px;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
+.actBar .abTxt{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* On a phone the three controls leave the text about eighty pixels, which
+   ellipsised the one thing the bar exists to say ("Tied to ite..."). Below
+   the width where they all fit on one line, the word gets its own row and the
+   buttons sit under it. Measured against the longest headwords in the deck. */
+@media (max-width:560px){
+  .actBar{flex-wrap:wrap;row-gap:8px}
+  .actBar .abTxt{flex:1 1 100%;white-space:normal;overflow:visible;
+    text-overflow:clip;line-height:1.35}
+  .actBar>:not(.abTxt){margin-left:0}
+  .actBar .abFlags{flex:1 1 auto;justify-content:space-between}
+}
+.actBar button{font:inherit;font-size:12.5px;color:#fff;background:transparent;
+  border:1px solid rgba(255,255,255,.45);border-radius:6px;padding:4px 9px;cursor:pointer;flex:0 0 auto}
+.actBar button:hover{border-color:#fff;background:rgba(255,255,255,.12)}
+.actBar .abFlags{display:flex;gap:4px;flex:0 0 auto}
+.actBar .abFlags button{width:24px;height:24px;padding:0;display:flex;align-items:center;
+  justify-content:center;border-color:transparent;color:#fff;font-size:11px}
+.actBar .abFlags button.none{background:rgba(255,255,255,.14)}
 @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
 /* wide screens (iPad, Mac, laptops, phones in landscape): keep a phone-width
    column centred. Type no longer needs this breakpoint at all -- the
@@ -1835,6 +1950,14 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
            width, Start's shape, deliberately NOT Start's colour: one coral
            button per screen is what makes it read as the thing to press. -->
       <button class="browseBtn" id="toBrowse">Word list &#8594;</button>
+      <!-- The tied-words drill (2026.09.09.0). Beside the word list rather
+           than inside it: it is a short practice session, so it belongs next
+           to the other two things this screen starts, where its cost can be
+           weighed against theirs. Hidden entirely when there is nothing tied
+           in this direction -- a button that opens an empty screen is worse
+           than no button. -->
+      <button class="browseBtn tieBtn hidden" id="toTie">
+        <span>&#128279; Tied words</span><span class="tbCount" id="tieCount"></span></button>
       </div>
 
       <div class="sect">
@@ -2055,6 +2178,38 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
     </div>
     <div class="set">
       <div id="logBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ TIED-WORDS DRILL ============ -->
+  <!-- The one thing a tie was missing. Until 2026.09.09.0 a tie had exactly one
+       mechanical effect -- tiedTo(), which keeps two tied words out of the same
+       day's bring-back from the suspended pile -- and of the owner's 177 ties,
+       zero had both members suspended, so the whole catalogue did nothing at
+       all. Measured against his own log: tied words fail at 31.2% against 19.0%
+       untied, and his hand-tied pairs fail on the SAME DAY at 1.33x a
+       difficulty-matched baseline (2,000 re-pairings of the same cards,
+       p=0.0005), so the ties name real confusions. But 20 reviews a word had
+       not fixed them -- they hold 3.2 days against 17.9 for untied words, and
+       are 25% of every lapse he has ever had -- so more of the same practice
+       was measurably not the answer.
+       This is the other thing: juxtaposition. Birnbaum/Kornell/Bjork/Bjork
+       (2013) found spacing HARMS discrimination when it interrupts the
+       juxtaposition of confusable categories, and Little & Bjork found
+       multiple choice beats cued recall when the wrong options are genuinely
+       competitive. A tie is a hand-curated maximally-competitive distractor.
+       Deliberately its own screen, not part of review: the earlier ruling
+       against surfacing a tied pair inside ordinary review still stands (a
+       scheduler cannot tell acquisition from consolidation), and a recognition
+       test next to a recall test would corrupt both. -->
+  <section id="scTie" class="screen">
+    <div class="bar">
+      <button class="icon" id="tieBack" aria-label="Back">&#8249;</button>
+      <div class="title">Tied words</div>
+      <div class="icon" style="visibility:hidden">&middot;</div>
+    </div>
+    <div class="set">
+      <div id="tieBody"></div>
     </div>
   </section>
 
@@ -2680,6 +2835,7 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
   </section>
 </div>
 <div class="toast" id="toast"></div>
+<div class="actBar" id="actBar" hidden></div>
 <div class="wordNoteOverlay" id="wordNoteOverlay"><div class="dayDetail on" id="wordNoteDetail"></div></div>
 <div class="wordNoteOverlay" id="flagPickerOverlay"><div class="dayDetail on" id="flagPickerDetail"></div></div>
 <div class="wordNoteOverlay" id="confuseGroupOverlay"><div class="dayDetail on" id="confuseGroupDetail"></div></div>
@@ -3904,8 +4060,18 @@ function normalise(o){
     for(const k in raw){
       const v=raw[k];
       if(!v||typeof v!=='object') continue;
+      // hits/misses/lastAt: the tied-words drill's own record (2026.09.09.0).
+      // It lives on the tie rather than on the cards on purpose -- the thing
+      // being tested is the DISTINCTION, which belongs to no single word --
+      // and it rides sync and backup for free the way everything on S does.
+      // Deliberately NOT any part of the scheduler's record: a recognition
+      // drill never writes S.log or touches a card's stability, difficulty or
+      // due date (see tieDrillGrade), so nothing here can reach the fit.
+      const n=x=>Number.isFinite(x)&&x>=0?Math.min(Math.round(x),1e6):0;
       cg[k]={label:tieLabel(v.label),
-             created:Number.isFinite(v.created)?v.created:Date.now()};
+             created:Number.isFinite(v.created)?v.created:Date.now(),
+             hits:n(v.hits), misses:n(v.misses),
+             lastAt:Number.isFinite(v.lastAt)?v.lastAt:null};
     }
     s.confuseGroups=cg;
   }
@@ -4152,7 +4318,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.09.02.1';
+const BUILD='2026.09.09.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -4252,12 +4418,40 @@ let groupCreateIds=null, groupManageId=null;
 let browseDir='L', browseQuery='', browsePart=null, browseStatus='all', browseFlag=0, browseTied='all', browseDate=null, browseSelected=new Set();   // browse screen's own state
 // browseTied was a boolean until 2026.08.30.10 -- on meant "replace the list
 // with the pairs view", which is why it had to ignore every other filter: a
-// view cannot be ANDed with a filter. It is now four values. 'all' is off;
-// 'tied' and 'untied' are ordinary filters that combine with Part, Progress,
-// Flag and the search box like any other (Flag 1 + untied is the worklist of
-// flagged words with no partner yet, which is what this change exists for);
-// 'pairs' is the old view, unchanged, still deliberately filter-free.
-const BROWSE_TIED_LABEL={all:'Tied', tied:'Tied only', untied:'Not tied', pairs:'The pairs list'};
+// view cannot be ANDed with a filter. It became four values, then three:
+// the fourth, 'pairs', replaced the word list with one card per tie, and went
+// on 2026.09.09.0 when the tied-words drill took over showing a tie as an
+// object (his call -- "kill the tied pairs list, but leave the tied view").
+// What is left is three ordinary filters that combine with Part, Progress,
+// Flag and the search box like any other -- Flag 1 + untied is the worklist
+// of flagged words with no partner yet, which is what this change existed for.
+const BROWSE_TIED_LABEL={all:'Tied', tied:'Tied only', untied:'Not tied'};
+/* Rows held in place after an action that would otherwise filter them out
+   from under the reader (2026.09.08). The case that asked for it: the
+   worklist is Flag 3 + Not tied, and tying a word made it stop matching, so
+   the row vanished mid-gesture -- and with it any chance of changing that
+   word's flag, since the search box ANDs with the tie filter and could not
+   find it back either.
+
+   Held rows keep their exact place and are struck through, so the list stops
+   reflowing entirely: nothing below them moves, the scroll position holds,
+   and the next unsorted word stays where it was. They are exempted from the
+   PROPERTY filters only (Progress, Flag, Tied) -- never from direction,
+   Part, date or the search box, so a held row can only ever be one that was
+   already on screen, and never appears somewhere it had not been.
+
+   Cleared by any deliberate change of view: renderBrowse() empties the set
+   unless its caller asks to keep it (only the tie flows do, through
+   renderBrowseKeepingFolds), so every filter, sort, direction and search
+   change flushes it, as does entering Browse. The summary line offers a
+   Clear as well, for a long sorting session that wants a tidy list without
+   touching its filters. */
+let justTied=new Set();
+// Only a row already on screen can be held: adding one the filters had
+// excluded would make a NEW row appear, which is the opposite of the point.
+function holdBrowseRow(id){
+  if(document.querySelector('#browseResults .wordRow[data-id="'+CSS.escape(id)+'"]')) justTied.add(id);
+}
 // 2026.08.30 Liquid Browse pass (1B+1A, 2A, 4A, 5B). browseSort: 'alpha'
 // (deck order, the only order before this) | 'hard' (difficulty desc) | 'weak'
 // (stability asc) | 'due' (due date asc, undated/new pushed to the end so
@@ -4646,7 +4840,7 @@ const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.mat
 let almostThereWait=false;
 const show=(name,keepTiming)=>{
   const wasActive=$('scStudy').classList.contains('on')||almostThereWait;
-  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scExtract','scDemo'].forEach(s=>$(s).classList.toggle('on',s===name));
+  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scExtract','scDemo','scTie'].forEach(s=>$(s).classList.toggle('on',s===name));
   // Read by the wide-window detail-panel CSS, which can't reach #scBrowse's
   // own class from #cardInspectorOverlay -- they aren't ancestor/descendant,
   // and this is the one place that already knows which screen is live.
@@ -4661,7 +4855,13 @@ const show=(name,keepTiming)=>{
   // 2026.08.30.7 and went unnoticed there because opening the panel took a
   // deliberate press of a small button on the row, where now the row itself
   // opens it.
-  if(name==='scBrowse'){ inspectId=null; renderCardInspector(); }
+  if(name!=='scBrowse') hideActBar();   // it acts on a Browse row; it must not outlive the screen
+  // Leaving the drill commits whatever line was being typed and puts the pass
+  // back to its front screen -- a half-answered item is not worth restoring,
+  // and the queue is rebuilt from the record anyway, so the next pass leads
+  // with whatever was just missed.
+  if(name!=='scTie'&&tieQueue!==null){ saveTieDrillLine(); tieQueue=null; tieAskId=null; tiePicked=null; tieLabelDraft=null; }
+  if(name==='scBrowse'){ inspectId=null; panelStashedId=null; justTied.clear(); renderCardInspector(); }
   else if($('cardInspectorOverlay').classList.contains('on')) closeCardInspector();
   // The quick-rate Z/0 correction is armed for exactly ONE keydown (see
   // quickRate()/quickCorrectToAgain()), and the keydown listener that clears
@@ -4696,6 +4896,36 @@ const show=(name,keepTiming)=>{
 function toast(msg,ms){
   const t=$('toast'); t.textContent=msg; t.classList.add('on');
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),ms||2200);
+}
+/* The answerable toast (2026.09.08). One at a time, one subject at a time --
+   actBarCtx is what the buttons act on, and hiding the bar clears it, so a
+   press can never land on the tie before last. Undo is only offered when this
+   press actually CREATED a tie: createConfuseGroup reuses an existing one for
+   an identical member set, and undoing then would delete a tie that was
+   already there and had nothing to do with the press. */
+let actBarCtx=null;
+function hideActBar(){
+  const b=$('actBar'); clearTimeout(b._t); b.hidden=true; b.innerHTML=''; actBarCtx=null;
+}
+function showTieBar(ctx){
+  actBarCtx=ctx;
+  const b=$('actBar');
+  const fl=flagOf(ctx.id);
+  b.innerHTML='<span class="abTxt">\u{1F517} Tied to '+escHtml(ctx.withLabel)+'</span>'+
+    (ctx.flagsOpen
+      ? '<span class="abFlags">'+
+          [1,2,3,4,5,6,7].map(n=>'<button data-abflag="'+n+'" style="background:var(--flag'+n+')"'+
+            ' aria-label="'+escHtml(flagName(n))+'"'+(fl===n?' aria-pressed="true"':'')+'>'+n+'</button>').join('')+
+          '<button class="none" data-abflag="0" aria-label="No flag">∅</button></span>'
+      : '<button data-abflags="1">Flag ▾</button>')+
+    (ctx.gid?'<button data-abundo="1">Undo</button>':'')+
+    '<button data-abclose="1" aria-label="Dismiss">×</button>';
+  b.hidden=false;
+  // Long enough to notice and answer, and it does not restart on a re-render
+  // -- opening the flag row keeps the same deadline rather than extending it,
+  // so the bar can never sit there indefinitely after being forgotten.
+  clearTimeout(b._t);
+  b._t=setTimeout(hideActBar,ctx.until?Math.max(ctx.until-Date.now(),0):9000);
 }
 function fmtDays(d){
   if(d<31) return d+'d';
@@ -5961,6 +6191,93 @@ function removeFromConfuseGroup(id,gid){
   cs.confuseGroups=cs.confuseGroups.filter(g=>g!==gid); touchCard(cs);
   dissolveConfuseGroupIfThin(gid);
 }
+/* ---- one-off: the tie chains he decided on 2026-09-08 ----
+   Not a rule and not an automatic migration. 36 of his ties turned out to be
+   groups he had built one pair at a time -- circa/circiter/circum as two
+   separate ties, cieo/cito/concito/incito/stimulo/suscito as five -- because
+   the tie-from-a-word flow could only ever make a pair. Merging them by
+   transitive closure would have been wrong: 11 of the 36 joined a spelling
+   confusion to a meaning one (pecus/pectus is spelling, pecus/armentum/grex
+   is meaning), and merging every chain would have invented 66 relations he
+   never asserted. So all 36 were put to him individually and this is what he
+   answered: 35 merges, and in four of them the odd word keeps its own
+   spelling pair while the rest become one group -- pectus stays tied to
+   pecus, callidus to calidus, lorica to lorum, indoles to dolus, each of
+   those four words ending up in two ties, which memberships have always
+   allowed. The 36th (vertex/vertex/turbo) is left alone: it is two duplicate
+   rows for the same headword, a deck-content bug rather than a confusion.
+
+   Offered, never applied silently -- see renderTieChainOffer(). The offer
+   only appears while the pairs it expects are still there, so it retires
+   itself the moment it is taken, and nothing has to be written to S to
+   remember that it was. Latin-only by id, and guarded on KEY as well
+   because card ids have the same shape in both decks. ---- */
+const TIE_CHAIN_MERGES=[
+  ['L570','L571','L572'],   // circa / circiter / circum
+  ['L2802','L2803','L2979'],   // impendium / impensa / sumptus
+  ['L1204','L1497','L1972'],   // creber / densus / frequens
+  ['L2448','L2450','L2546','L2632'],   // nempe / nimirum / scilicet / videlicet
+  ['L1701','L60','L662'],   // praeclarus / clarus / illustris
+  ['L1360','L433','L895'],   // sodalis / socius / comes
+  ['L1555','L2357','L2839'],   // habena / frenum / lorum
+  ['L1750','L1752','L2160'],   // serus / serius / serius
+  ['L1856','L1935','L2261'],   // auguror / divino / auspicor
+  ['L2177','L3015','L446'],   // stultitia / vecors / stultus
+  ['L1184','L1186','L1478','L1577','L2176','L2184'],   // cieo / cito / concito / incito / stimulo / suscito
+  ['L1476','L2137','L2181'],   // comprimo / reprimo / supprimo
+  ['L2317','L2549','L2552'],   // disiungo / secerno / seiungo
+  ['L1091','L900','L901'],   // reperio / comparo / comperio
+  ['L2701','L2703','L2704'],   // contumacia / contumelia / convicium
+  ['L2404','L2819','L996'],   // iugulum / iugerum / iugum
+  ['L335','L336','L340'],   // pons / pontus / portus
+  ['L1022','L1097','L2151'],   // nefarius / sceleratus / scelestus
+  ['L624','L643','L934'],   // fallax / fraus / dolus
+  ['L1120','L1392','L475','L814'],   // supra / ultra / trans / super
+  ['L1179','L2273','L2593'],   // calidus / caleo / tepeo
+  ['L2515','L2519','L2520'],   // pudicus / puter / putidus
+  ['L1215','L459','L599'],   // demum / tandem / denique
+  ['L1136','L1793','L2403','L981'],   // vacuus / vanus / irritus / inanis
+  ['L2264','L2266','L2675'],   // baculum / basium / bustum
+  ['L1058','L1059','L1241','L2668'],   // pecus / pecus / grex / armentum
+  ['L1042','L1043','L2075'],   // onerarius / onerosus / onustus
+  ['L1522','L1848','L2880'],   // faber / artifex / opifex
+  ['L1484','L1531','L73','L955'],   // confido / fido / credo / fido
+  ['L1468','L1475','L334','L694'],   // colloco / compono / pono / loco
+  ['L2189','L2581','L823'],   // tenuis / subtilis / tener
+  ['L1277','L1607','L688'],   // lenis / lēvis / levis
+  ['L2351','L2421','L2836'],   // filum / linea / linum
+  ['L2615','L421','L83'],   // tutor / servo / custodio
+  ['L1188','L1189','L2280'],   // citerior / citra / citus
+];
+// Which of the above are still applicable: every member must be a real card,
+// and at least two of the tie's constituent pairs must still be present and
+// wholly inside the set. A pair reaching OUTSIDE the set disqualifies nothing
+// -- it is simply left alone -- but a set whose pairs he has since edited away
+// is no longer the thing he agreed to, so it is skipped rather than guessed at.
+function pendingChainMerges(){
+  if(KEY!=='vocabula.latin.v2') return [];
+  return TIE_CHAIN_MERGES.map(ids=>{
+    if(!ids.every(id=>BY_ID[id]&&S.cards[id])) return null;
+    const set=new Set(ids);
+    const subs=Object.keys(S.confuseGroups).filter(gid=>{
+      const m=wordsInConfuseGroup(gid);
+      return m.length>=2 && m.length<ids.length && m.every(x=>set.has(x));
+    });
+    return subs.length>=2 ? {ids, subs} : null;
+  }).filter(Boolean);
+}
+// Replaces each chain's constituent pairs with one group of all its members,
+// carrying over the first line any of those pairs had written on it -- the
+// label is the whole point of a tie and must not be dropped on the way.
+function applyChainMerges(){
+  const todo=pendingChainMerges();
+  todo.forEach(({ids,subs})=>{
+    const label=subs.map(gid=>S.confuseGroups[gid]&&S.confuseGroups[gid].label).find(Boolean)||'';
+    subs.forEach(deleteConfuseGroup);
+    createConfuseGroup(ids,label);
+  });
+  return todo.length;
+}
 // The stronger of the study card's two exits: out of review until brought
 // back -- by hand, or by taking the daily return the app offers once the
 // word has rested longest in the pile. Anki calls this suspend, and since
@@ -6185,8 +6502,11 @@ function closeFlagPicker(){
   saveFlagNames(); $('flagPickerOverlay').classList.remove('on');
   // The Browse panel prints the current flag's NAME under its picker, so a
   // rename made from there has to be repainted or the panel keeps showing
-  // the old one until the word is reopened.
-  if(inspectId) renderCardInspector();
+  // the old one until the word is reopened. unstash covers the phone case,
+  // where the panel that opened this editor stepped aside for it and comes
+  // back re-rendered anyway; renderCardInspector still covers the docked one.
+  if(panelStashedId!=null) unstashCardInspector();
+  else if(inspectId) renderCardInspector();
 }
 
 /* ---------- keyboard-shortcuts reference (2026.08.30.5) ----------
@@ -7161,7 +7481,8 @@ function wordRowHtml(c){
   // c.id and st are both built by this file, never read back from stored
   // state -- escaped anyway because this is the one place a value lands
   // inside an attribute, which is precisely the case escHtml() now covers.
-  return '<div class="wordRow'+(buried?' buried':'')+(inspectId===c.id?' open':'')+'" data-id="'+escHtml(c.id)+'"><div class="wrTop">'+
+  return '<div class="wordRow'+(buried?' buried':'')+(inspectId===c.id?' open':'')+
+    (justTied.has(c.id)?' held':'')+'" data-id="'+escHtml(c.id)+'"><div class="wrTop">'+
     '<input type="checkbox" class="wrCheck" data-id="'+escHtml(c.id)+'"'+checked+'>'+
     '<i class="stDot s-'+st+'"></i>'+
     browseFlagHtml(c.id,fl)+
@@ -7282,16 +7603,10 @@ function openBrowseDD(kind,btn){
     const nTied=pool.filter(isTied).length;
     const row=(v,label,count)=>'<button class="rmi'+(browseTied===v?' cur':'')+'" data-tiedv="'+v+'"><span class="rmn">'+label+'</span>'+
       (count==null?'':'<span class="rmc">'+count+'</span>')+'</button>';
-    const nPairs=Object.keys(S.confuseGroups).filter(gid=>{
-      const ids=wordsInConfuseGroup(gid);
-      return ids.length>=2 && BY_ID[ids[0]] && BY_ID[ids[0]].dir===browseDir;
-    }).length;
     html='<div class="rmHead">Ties</div>'+
       row('all','Any',pool.length)+
       row('tied','Tied only',nTied)+
-      row('untied','Not tied',pool.length-nTied)+
-      '<div class="rmHead" style="padding-top:8px">Or</div>'+
-      row('pairs','The pairs list',nPairs);
+      row('untied','Not tied',pool.length-nTied);
   } else {
     html='<div class="rmHead">Sort</div>'+
       Object.keys(BROWSE_SORT_LABEL).map(k=>'<button class="rmi'+(browseSort===k?' cur':'')+'" data-v="'+esc(k)+'"><span class="rmn">'+esc(BROWSE_SORT_LABEL[k])+'</span></button>').join('');
@@ -7311,40 +7626,216 @@ function closeBrowseDD(){ const m=$('browseDD'); if(m){ m.classList.remove('on')
 // view costs nothing and keeps both. The shape is the one a Latin textbook
 // appendix of confusables already uses -- the pair stacked, each with its
 // meaning, and a line saying what separates them.
-function renderTiedView(){
-  const gids=Object.keys(S.confuseGroups);
-  const mine=gids.map(gid=>({gid, g:S.confuseGroups[gid], ids:wordsInConfuseGroup(gid)}))
-    .filter(x=>x.ids.length>=2 && BY_ID[x.ids[0]] && BY_ID[x.ids[0]].dir===browseDir)
-    .sort((a,b)=>(b.g.created|0)-(a.g.created|0));
-  if(!mine.length){
-    // Both real routes now, since 2026.08.30 (decision 4A): the row's own
-    // "+ tie" button opens straight into the search-and-pick flow on a word
-    // with no ties yet (renderGroupManager's own searchOpen), so it is no
-    // longer the dead end this line used to warn away from.
-    return '<div class="note">Nothing tied together in this direction yet. Press + tie on a word to search for its partner, or tick two in the list and press &#128279; Tie \u2014 they show up here with the line that tells them apart.</div>';
+// Sits above the pairs list while there is anything to offer, and vanishes
+// for good once taken -- see TIE_CHAIN_MERGES. Dismissing hides it until the
+// screen is next entered, which is short enough to be a "not now" and not so
+// short that it nags on every re-render.
+let chainOfferHidden=false;
+function renderTieChainOffer(){
+  if(chainOfferHidden) return '';
+  const n=pendingChainMerges().length;
+  if(!n) return '';
+  return '<div class="tieOffer"><div><b>'+n+' of your ties are one group built as separate pairs.</b>'+
+    '<div class="fh">You tied these a pair at a time because that was the only way — '+
+    '<i>circa</i> · <i>circiter</i> · <i>circum</i> is two ties, not one group. '+
+    'Merging them makes each a single tie, so a word’s panel shows the whole set at once. '+
+    'Any line already written on a pair is kept.</div></div>'+
+    '<div class="tieOfferBtns"><button class="small primary" id="tieMergeGo">Merge '+n+'</button>'+
+    '<button class="small" id="tieMergeNo">Not now</button></div></div>';
+}
+/* ---- the tied-words drill (2026.09.09.0) ----
+   One item per tie: the term, and the tie's own meanings as the choices, so
+   the wrong answer is always the word actually confused with it. Everything
+   here is derived fresh from S.confuseGroups; the only thing written back is
+   the tie's own {hits,misses,lastAt}, which orders later passes. It never
+   writes S.log and never touches a card's s/d/due -- see tieDrillGrade. ---- */
+let tieQueue=null,      // ids of the ties in this pass, worst first; null = not started
+    tieAt=0,            // how far through
+    tieAskId=null,      // which member THIS item asks about -- see tieCurrent()
+    tiePicked=null,     // the option pressed, once an item is answered
+    tieRight=0, tieSeen=0,
+    tieLabelDraft=null; // the "what tells them apart?" box's live value
+// The gloss a card is tested ON. E-cards carry an array of terms; L-cards a
+// single string. Same shape the Tied view used, kept identical so the drill
+// and the word panel can never disagree about what a member "means".
+function tieGloss(id){ const c=BY_ID[id]; return c ? (c.dir==='E'?c.a.join(', '):c.a) : ''; }
+// Ties worth drilling, in this direction, worst first. "Worst" is the drill's
+// own record where it has one and the members' lapses where it does not --
+// so the first pass is led by the words his review history says are breaking,
+// and later passes by the ones he keeps getting wrong HERE.
+function tieDrillGroups(dir){
+  return Object.keys(S.confuseGroups)
+    .map(gid=>({gid, g:S.confuseGroups[gid], ids:wordsInConfuseGroup(gid)}))
+    .filter(x=>x.ids.length>=2 && BY_ID[x.ids[0]] && BY_ID[x.ids[0]].dir===dir)
+    .map(x=>{
+      const lapses=x.ids.reduce((n,id)=>n+((S.cards[id]&&S.cards[id].lapses)|0),0);
+      return Object.assign(x,{score:(x.g.misses|0)*10+lapses});
+    })
+    .sort((a,b)=>(b.score-a.score)||((a.g.created|0)-(b.g.created|0)));
+}
+// Which member a tie's NEXT item asks about. Derived from the tie's own
+// attempt count rather than stored or randomised: it rotates through the
+// members across passes, is the same on every device, and needs no extra
+// field. Read exactly once per item, when the item begins -- see tieCurrent().
+function tieAskIndex(x){
+  const n=((x.g.hits|0)+(x.g.misses|0));
+  return x.ids.length ? n%x.ids.length : 0;
+}
+// Every member whose gloss is the same as the target's. Measured on his own
+// data: 5 of 128 ties have two members with an IDENTICAL gloss -- nefarius
+// and scelestus are both just "wicked", impendium and impensa both
+// "expenditure, cost" -- so a single right answer would be a lie. Any of them
+// counts, and the contrast afterwards says why (see renderTieItem).
+function tieAcceptable(x,target){
+  const want=norm(tieGloss(target));
+  return x.ids.filter(id=>norm(tieGloss(id))===want);
+}
+// The whole of what a drill answer writes. Note what is absent: no S.log row,
+// no touch of cs.s / cs.d / cs.due / cs.reps / cs.lapses. Recognising a word
+// among its own confusables is not the same event as recalling it cold, and
+// feeding these to FSRS would bias every parameter fit that follows.
+function tieDrillGrade(gid,right){
+  const g=S.confuseGroups[gid]; if(!g) return;
+  if(right) g.hits=(g.hits|0)+1; else g.misses=(g.misses|0)+1;
+  g.lastAt=Date.now();
+  // The members' mod stamps move so a merge cannot drop the record, exactly
+  // as setTieLabel does -- membership lives on the cards, so they are what a
+  // sync merge actually compares.
+  wordsInConfuseGroup(gid).forEach(id=>touchCard(cardState(id)));
+}
+// Commits whatever is in the line box, if it changed. setTieLabel is the one
+// place a label is ever written, so the cap and the trim are the same here as
+// on the create dialog and the panel's own editor.
+function saveTieDrillLine(){
+  if(tieLabelDraft==null) return;
+  const x=tieCurrent(); if(!x) return;
+  if(tieLabel(tieLabelDraft)===x.g.label) return;
+  setTieLabel(x.gid,tieLabelDraft);
+  save();
+  if(inspectId) renderCardInspector();
+}
+function startTieDrill(){
+  tieQueue=tieDrillGroups(browseDir).map(x=>x.gid);
+  tieAt=0; tieAskId=null; tiePicked=null; tieRight=0; tieSeen=0; tieLabelDraft=null;
+  renderTieDrill();
+}
+function tieCurrent(){
+  if(!tieQueue||tieAt>=tieQueue.length) return null;
+  const gid=tieQueue[tieAt], g=S.confuseGroups[gid];
+  if(!g) return null;
+  const ids=wordsInConfuseGroup(gid);
+  if(ids.length<2) return null;
+  // The word being asked is pinned for the life of the item. It used to be
+  // recomputed from tieAskIndex on every render -- and since grading bumps
+  // the tie's own hits/misses, answering silently moved the target: the item
+  // redrew asking about a DIFFERENT word, with right and wrong marked on the
+  // wrong buttons. Caught by pressing an answer rather than by the suite.
+  // Re-derived whenever it is missing or no longer a member (a delete, a
+  // merge), so every path that lands on a new item gets one without having
+  // to remember to set it.
+  if(tieAskId==null||!ids.includes(tieAskId)) tieAskId=ids[tieAskIndex({g,ids})];
+  return {gid,g,ids,target:tieAskId};
+}
+// Stable per item, so answering does not reshuffle the buttons under the
+// finger the way Math.random() on every render would.
+function tieShuffle(n,seed){
+  const a=[...Array(n).keys()];
+  for(let i=a.length-1;i>0;i--){ seed=(seed*1103515245+12345)&0x7fffffff; const j=seed%(i+1); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function renderTieItem(x){
+  const target=x.target;
+  const order=tieShuffle(x.ids.length, (x.gid.length*7919)+tieAt*31+x.ids.indexOf(target));
+  const opts=order.map(i=>x.ids[i]);
+  const okSet=tieAcceptable(x,target);
+  const answered=tiePicked!=null;
+  let h='<div class="tdAsk">Which meaning?</div><div class="tdTerm">'+escHtml(BY_ID[target].q)+'</div>'+
+        '<div class="tdOpts">';
+  opts.forEach(id=>{
+    let cls='tdOpt';
+    if(answered){
+      if(okSet.includes(id)) cls+=' right';
+      else if(id===tiePicked) cls+=' wrong';
+    }
+    h+='<button class="'+cls+'" data-tdpick="'+escHtml(id)+'"'+(answered?' disabled':'')+'>'+
+       escHtml(tieGloss(id))+'</button>';
+  });
+  h+='</div>';
+  if(answered){
+    // The juxtaposition, right or wrong: this is the part the evidence is
+    // actually about, so it is never skipped for a correct answer.
+    h+='<div class="tdContrast">';
+    if(okSet.length>1){
+      h+='<div class="tdSame">The deck gives '+okSet.map(id=>'<i>'+escHtml(BY_ID[id].q.split(' ')[0])+'</i>').join(' and ')+
+         ' the same meaning, so either was right. If something separates them, this is the place to write it down.</div>';
+    }
+    x.ids.forEach(id=>{
+      const fl=flagOf(id);
+      h+='<div class="tdMem'+(id===target?' isTarget':'')+'">'+
+        '<span class="tmSlot">'+(fl?('<span class="flagDot tmFlag" style="background:var(--flag'+fl+')">'+fl+'</span>'):'')+'</span>'+
+        '<span class="tmTerm">'+escHtml(BY_ID[id].q)+'</span>'+
+        '<span class="tmGloss">'+escHtml(tieGloss(id))+'</span></div>';
+    });
+    h+='</div>';
+    // The line, asked at the only moment he both knows it and cares: 165 of
+    // his 177 ties carry none, and the timestamps say why -- 172 were made in
+    // one pass at a median of 16 seconds apart, with openConfirmGroup asking
+    // for the line in the middle of that bulk sort. Right question, wrong
+    // moment. Here he has just been shown the answer.
+    const cur=tieLabelDraft!=null?tieLabelDraft:(x.g.label||'');
+    h+='<div class="tdLine"><label for="tdLabel">'+
+       (x.g.label?'The line on this tie':'What tells them apart?')+
+       ' <span class="tdOpt2">(optional)</span></label>'+
+       '<input type="text" id="tdLabel" maxlength="'+CAP_TIE_LABEL+'" value="'+escHtml(cur)+'" '+
+       'placeholder="e.g. invisus is hateful (the s), invidus is envious (the d)"></div>';
+    h+='<div class="tdBtns"><button class="small primary" id="tdNext">'+
+       (tieAt+1>=tieQueue.length?'Finish':'Next')+'</button>'+
+       '<button class="small tieDel" data-tiedel="'+escHtml(x.gid)+'">Delete this tie</button></div>';
   }
-  return mine.map(x=>{
-    const label=x.g.label
-      ? '<span class="tl">'+escHtml(x.g.label)+'</span>'
-      : '<span class="tl">No note yet \u2014 what tells these apart?</span>';
-    return '<div class="tieCard">'+
-      '<div class="tieLabel'+(x.g.label?'':' empty')+'">'+label+
-        '<button class="tieEdit" data-tielabel="'+escHtml(x.gid)+'">'+(x.g.label?'Edit':'Add')+'</button>'+
-        // Right beside Add, his own placement. Deletes the whole tie, not one
-        // member -- on this screen a tie IS the object you are looking at,
-        // where in the word panel the same relation is one of that word's
-        // memberships and Untie removes only that word from it.
-        '<button class="tieEdit tieDel" data-tiedel="'+escHtml(x.gid)+'">Delete</button></div>'+
-      x.ids.map(id=>{
-        const c=BY_ID[id], fl=flagOf(id);
-        return '<div class="tieMember">'+
-          '<span class="tmSlot">'+(fl?('<span class="flagDot tmFlag" style="background:var(--flag'+fl+')">'+fl+'</span>'):'')+'</span>'+
-          '<span class="tmTerm">'+escHtml(c.q)+'</span>'+
-          '<span class="tmGloss">'+escHtml(c.dir==='E'?c.a.join(', '):c.a)+'</span>'+
-          '</div>';
-      }).join('')+
-      '</div>';
-  }).join('');
+  h+='<div class="tdFoot"><span>'+tieRight+' / '+tieSeen+'</span>'+
+     '<span>'+(tieAt+1)+' of '+tieQueue.length+'</span></div>';
+  return h;
+}
+function renderTieDrill(){
+  const box=$('tieBody');
+  const groups=tieDrillGroups(browseDir);
+  // Not started: the front of the screen. The chain-merge offer lives here
+  // now that the pairs list has gone -- it is about the SHAPE of the ties the
+  // drill is about to use, so it belongs in front of it rather than behind a
+  // filter menu on another screen.
+  if(tieQueue===null){
+    let h=renderTieChainOffer();
+    if(!groups.length){
+      h+='<div class="note">Nothing tied together in this direction yet. Open a word in the word list and press &#128279; Tie to another word — a tie is two or more words you keep mistaking for each other, and this screen is where you practise telling them apart.</div>';
+      box.innerHTML=h; return;
+    }
+    const unlabelled=groups.filter(x=>!x.g.label).length;
+    const words=new Set(); groups.forEach(x=>x.ids.forEach(id=>words.add(id)));
+    h+='<div class="tdIntro"><p>One word at a time, with the words you confuse it with as the other answers. '+
+       'After each one you see them side by side — that is the part that does the work.</p>'+
+       '<p class="fh">This is not review. Nothing here changes when a word is next due, and nothing is written to your record.</p></div>'+
+       '<div class="tdStats"><div><b>'+groups.length+'</b><span>ties</span></div>'+
+       '<div><b>'+words.size+'</b><span>words</span></div>'+
+       (unlabelled?'<div><b>'+unlabelled+'</b><span>with no line yet</span></div>':'')+'</div>'+
+       '<button class="startBtn" id="tdStart">Start</button>';
+    box.innerHTML=h; return;
+  }
+  const x=tieCurrent();
+  // Ran out: either the pass finished, or the current tie was deleted from
+  // under it. Both land here, and both want the same screen.
+  if(!x){
+    if(tieAt<tieQueue.length){ tieAt++; tieAskId=null; tiePicked=null; tieLabelDraft=null; return renderTieDrill(); }
+    box.innerHTML='<div class="tdDone"><div class="tdTerm">Done</div>'+
+      '<p>'+tieRight+' of '+tieSeen+' right.</p>'+
+      (tieSeen&&tieRight<tieSeen
+        ? '<p class="fh">The ones you missed come first next time.</p>'
+        : '<p class="fh">Every tie in this direction, once.</p>')+
+      '<div class="tdBtns"><button class="small primary" id="tdAgain">Go again</button>'+
+      '<button class="small" id="tdHome">Done</button></div></div>';
+    return;
+  }
+  box.innerHTML=renderTieItem(x);
+  const inp=$('tdLabel'); if(inp&&tieLabelDraft!=null) inp.focus();
 }
 // Hardest/weakest/due-soonest read S.cards directly rather than groupByPart's
 // implicit alphabetical-within-Part order, because the whole point (his own
@@ -7369,10 +7860,22 @@ function sortedForBrowse(cards){
 function renderBrowseSummary(n,total){
   const box=$('browseSummary'); if(!box) return;
   const on=!!browseQuery||browseStatus!=='all'||!!browsePart||browseDate!=null||!!browseFlag||browseTied!=='all';
+  // Held rows are counted separately from the word count, not folded into it:
+  // they are in the list DESPITE the filters, and saying so is the only thing
+  // that explains why a struck-through row is sitting under "Not tied".
+  const h=justTied.size;
   box.innerHTML='<span><b>'+n+'</b> of '+total+' words</span>'+
-    (on?'<button class="browseClearAll" id="browseClearAll">Clear all filters</button>':'<span>&mdash; the whole deck</span>');
+    (on?'<button class="browseClearAll" id="browseClearAll">Clear all filters</button>':'<span>&mdash; the whole deck</span>')+
+    (h?'<span>&mdash; '+h+' just tied <button class="browseHeld" id="browseClearHeld">Clear</button></span>':'');
 }
-function renderBrowse(){
+// keepHeld: only the tie flows pass it (via renderBrowseKeepingFolds). Every
+// other caller is a change of view, and a change of view is exactly when a
+// held row should go -- so the default clears them and no filter handler has
+// to remember to.
+function renderBrowse(keepHeld){
+  // A change of view retires both halves of the last tie's aftermath at once
+  // -- the held rows and the bar that offered to act on them.
+  if(!keepHeld){ justTied.clear(); hideActBar(); }
   $('browseDirL').classList.toggle('sel',browseDir==='L');
   $('browseDirE').classList.toggle('sel',browseDir==='E');
   $('bdtL').textContent=DECK.fwd; $('bdtE').textContent=DECK.rev;
@@ -7381,10 +7884,13 @@ function renderBrowse(){
   // button, and the word "words" is already said by the line underneath.
   $('bddL').textContent=totalL; $('bddE').textContent=totalE;
   renderBrowseBar();
+  // held: a row put in place by holdBrowseRow() this visit. It skips the
+  // three property filters below and nothing else -- see justTied's comment.
+  const held=c=>justTied.has(c.id);
   let cards=CARDS.filter(c=>c.dir===browseDir);
   if(browsePart) cards=cards.filter(c=>c.sec===browsePart);
-  if(browseStatus!=='all') cards=cards.filter(c=>statusOf(S.cards[c.id])===browseStatus);
-  if(browseFlag) cards=cards.filter(c=>flagOf(c.id)===browseFlag);
+  if(browseStatus!=='all') cards=cards.filter(c=>held(c)||statusOf(S.cards[c.id])===browseStatus);
+  if(browseFlag) cards=cards.filter(c=>held(c)||flagOf(c.id)===browseFlag);
   if(browseDate!=null){
     const touched=new Set(wordsTouchedOnDay(browseDate));
     cards=cards.filter(c=>touched.has(c.id));
@@ -7398,29 +7904,9 @@ function renderBrowse(){
   if(browseTied==='tied'||browseTied==='untied'){
     const isTied=c=>{ const cs=S.cards[c.id], gids=(cs&&cs.confuseGroups)||[];
                       return gids.some(gid=>S.confuseGroups[gid]&&wordsInConfuseGroup(gid).length>=2); };
-    cards=cards.filter(c=>isTied(c)===(browseTied==='tied'));
+    cards=cards.filter(c=>held(c)||isTied(c)===(browseTied==='tied'));
   }
   cards=filterWords(cards,browseQuery);
-  if(browseTied==='pairs'){
-    // The pairs view answers "which words do I keep confusing", which the
-    // part/status/flag filters cannot narrow meaningfully -- a tie is a
-    // relation, not a property -- so it deliberately ignores them rather
-    // than quietly returning nothing. The two filter states above are the
-    // way to ask that question WITH the other filters applied.
-    $('browseResults').innerHTML=renderTiedView();
-    // The summary line is outside this branch's early return, so without
-    // this it kept whatever the last ordinary render left there -- a word
-    // count for a view that is not showing words.
-    const nTies=Object.keys(S.confuseGroups).filter(gid=>{
-      const ids=wordsInConfuseGroup(gid);
-      return ids.length>=2 && BY_ID[ids[0]] && BY_ID[ids[0]].dir===browseDir;
-    }).length;
-    $('browseSummary').innerHTML='<span><b>'+nTies+'</b> tie'+(nTies===1?'':'s')+' in this direction</span>'+
-      '<span>&mdash; every filter is off in this view</span>';
-    $('browseDateBar').classList.toggle('hidden',true);
-    renderBulkBar();
-    return;
-  }
   renderBrowseSummary(cards.length,browseDir==='L'?totalL:totalE);
   let html='';
   if(browseSort==='alpha'){
@@ -7450,7 +7936,7 @@ function renderBrowseKeepingFolds(){
   const openSecs=new Set([...document.querySelectorAll('#browseResults details.fold[open] summary')].map(s=>s.textContent));
   const top=$('browseResults').closest('.home');
   const y=top?top.scrollTop:0;
-  renderBrowse();
+  renderBrowse(true);   // held rows survive a tie's rebuild -- that is the whole point of holding them
   document.querySelectorAll('#browseResults details.fold summary').forEach(s=>{
     if(openSecs.has(s.textContent)) s.parentElement.open=true;
   });
@@ -7577,6 +8063,12 @@ function renderHome(){
   $('ddE').textContent=qE.due.length+qE.learn.length+qE.intro.length+' ready';
   $('dirLtoE').classList.toggle('sel',S.dir==='L');
   $('dirEtoL').classList.toggle('sel',S.dir==='E');
+  // The drill's own button. Counted in the STUDY direction (S.dir), not
+  // Browse's -- this is Home, and the two are independent; the drill itself
+  // reads browseDir, which show() syncs on the way in.
+  { const nTies=tieDrillGroups(S.dir).length;
+    $('toTie').classList.toggle('hidden',!nTies);
+    $('tieCount').textContent=nTies?(nTies+' tie'+(nTies===1?'':'s')):''; }
   const q=Q;
   const n=q.due.length+q.learn.length+q.intro.length;
   $('startBtn').textContent=n?('Study '+n+' word'+(n===1?'':'s')):'Nothing due';
@@ -7897,6 +8389,46 @@ function closeWordNote(){
    for recall, the gloss, was never editable in the first place (see
    rebuildCards()'s own comment on why a gloss can never be overridden). */
 let inspectId=null;
+// Wide enough for the panel to be the docked column beside the list rather
+// than a centred modal over it -- the same 860px the CSS block that docks it
+// uses, read here so the two can never disagree about which shape is on
+// screen. Everything below turns on that difference and nothing else.
+function panelIsDock(){ return matchMedia('(min-width:860px)').matches; }
+/* Every overlay on this page shares z-index 45 (.wordNoteOverlay), so which
+   one paints on top is decided purely by DOM order -- and #cardInspectorOverlay
+   is declared LAST, after #confuseGroupOverlay and #flagPickerOverlay. On a
+   wide window that is harmless: the panel is docked to the right edge with a
+   transparent backdrop and pointer-events:none, so a centred dialog opened
+   from inside it shows through beside it. On a phone the panel is a centred
+   modal the same size and place as the dialog, and it simply buries it.
+
+   Measured at 375x812 on 2026-09-08, both dialogs the panel can open were
+   0% reachable -- 0 of 9 sample points across each dialog, against 100% at
+   1200px: "+ Tie to another word..." and Rename both appeared to do nothing,
+   and only became visible after the panel was closed by hand. That is the
+   whole of the reported "I have to close the word interface every time".
+
+   The fix is not to reorder the overlays (each one's click delegate is bound
+   by id at load, and the docked-panel CSS selects on that order) nor to raise
+   a z-index (which would put the panel over the toast). The panel simply
+   steps aside for the length of the dialog and comes back when it ends --
+   which is also what was asked for: one card on screen at a time, and the
+   word again afterwards, with its "Confused with" section now up to date. */
+let panelStashedId=null;
+function stashCardInspector(){
+  if(panelIsDock()||!inspectId||panelStashedId!=null) return;
+  panelStashedId=inspectId;
+  // .on only: inspectId stays set, because the tie flows re-render the panel
+  // on the way out and reading it back is how they know which word to re-render.
+  $('cardInspectorOverlay').classList.remove('on');
+}
+// Reopening rather than just restoring .on: openCardInspector re-renders, and
+// the panel comes back with whatever the dialog just changed already showing.
+function unstashCardInspector(){
+  const id=panelStashedId; panelStashedId=null;
+  if(id==null||!BY_ID[id]) return;
+  openCardInspector(id);
+}
 function openCardInspector(id){
   inspectId=id;
   $('cardInspectorOverlay').classList.add('on');
@@ -7914,6 +8446,10 @@ function markOpenRow(id){
 }
 function closeCardInspector(){
   inspectId=null;
+  // A deliberate close outranks any owed return: without this, closing the
+  // panel while a dialog it opened is still up would have the dialog put it
+  // back a moment later, on the phone, against the user's own press.
+  panelStashedId=null;
   $('cardInspectorOverlay').classList.remove('on');
   markOpenRow(null);
   // On a wide window the panel is a permanent dock (CSS forces it open
@@ -9520,10 +10056,17 @@ function openTieLabelEditor(gid){
 function closeConfuseGroupOverlay(){
   groupLabelId=null;
   const back=tieLabelReturnId; tieLabelReturnId=null;
-  if(back) openCardInspector(back);
   groupCreateIds=null; groupManageId=null;
   tieSearchOpen=false; tieSearchQuery='';
   $('confuseGroupOverlay').classList.remove('on');
+  // Two ways the word panel can be owed a return, and they must not both
+  // fire: tieLabelReturnId is the label editor's (it CLOSES the panel on the
+  // way in, on every width), panelStashedId is the phone-only stash above.
+  // The label editor is only ever reached from an open panel, so a stash is
+  // impossible alongside it -- but taking the explicit one first and clearing
+  // the other keeps that true by construction rather than by luck.
+  if(back){ panelStashedId=null; openCardInspector(back); }
+  else unstashCardInspector();
 }
 // dueSet: the ids in today's return offer, passed in by renderStruggling so
 // the O(pile) returnCandidates() pass runs once for the whole list rather
@@ -11828,7 +12371,7 @@ document.addEventListener('keydown',e=>{
 // explanation for reviews occasionally not making it to the gist before the
 // owner switches to another device. flushPendingPush() is a no-op if nothing
 // is pending, so this costs nothing on every other tap back to Home.
-['toHome','toHome2','toHome3','doneBack','statsBack','logBack','browseBack']
+['toHome','toHome2','toHome3','doneBack','statsBack','logBack','browseBack','tieBack']
   .forEach(id=>tapZone($(id),()=>{flushPendingPush();renderHome();show('scHome');}));
 tapZone($('toSettings'),()=>{renderSet();show('scSet');});
 tapZone($('toExtract'),openExtractSetup);
@@ -12166,6 +12709,10 @@ $('dayDetail').addEventListener('click',e=>{
 tapZone($('browseDateClear'),()=>{ browseDate=null; browseSelected.clear(); renderBrowse(); });
 tapZone($('browseAddWordBtn'),openAddWord);
 tapZone($('toBrowse'),()=>{ browseDir=S.dir; browseDate=null; browseSelected.clear(); renderBrowse(); show('scBrowse'); });
+// The drill reads browseDir like every other tie surface, so entering from
+// Home syncs it to the study direction first -- otherwise the button counts
+// one direction's ties and the screen drills the other's.
+tapZone($('toTie'),()=>{ browseDir=S.dir; tieQueue=null; renderTieDrill(); show('scTie'); });
 $('wordNoteOverlay').addEventListener('click',e=>{
   if(e.target.id==='wnSave'){
     const v=$('wnInput').value.trim(), cs=cardState(noteEditId);
@@ -12221,12 +12768,12 @@ $('cardInspectorOverlay').addEventListener('click',e=>{
   // screen that shows all seven names together, which is where you notice two
   // of them mean the same thing. flagTargetId is set so its Done button
   // reopens the picker on THIS word rather than on whatever was last current.
-  if(e.target.id==='ciRename'){ flagTargetId=inspectId; renderFlagNameEditor(); return; }
+  if(e.target.id==='ciRename'){ flagTargetId=inspectId; stashCardInspector(); renderFlagNameEditor(); return; }
   // The empty state's way in, and the "tie another" line under an existing
   // one: both open the group manager, which since 2026.08.30 opens straight
   // into its own search-and-pick rather than the dead end it used to be.
   const addTie=e.target.closest('[data-addtie]');
-  if(addTie){ e.preventDefault(); e.stopPropagation(); openGroupManager(addTie.dataset.addtie); return; }
+  if(addTie){ e.preventDefault(); e.stopPropagation(); stashCardInspector(); openGroupManager(addTie.dataset.addtie); return; }
   // ciSaveTerm (term overrides on a built-in word) removed 2026-08-20 along
   // with the rest of the feature -- see rebuildCards()'s own comment.
   if(e.target.id==='ciDelete'){
@@ -12281,10 +12828,6 @@ tapZone($('browseKbd'),()=>{ greekKbdOn=!greekKbdOn; renderKbdToggle($('browseKb
 // The only guard left is the select box, which a click still bubbles through.
 $('browseResults').addEventListener('click',e=>{
   if(e.target.closest('.wrCheck')) return;
-  // The tied view (renderTiedView) shares this container and has its own
-  // label-edit and delete buttons, handled by their own delegates further
-  // down; a press on one must not also be read as a press on a word.
-  if(e.target.closest('[data-tielabel],[data-tiedel]')) return;
   const row=e.target.closest('.wordRow'); if(!row) return;
   openBrowseRow(row.dataset.id);
 });
@@ -12391,12 +12934,13 @@ document.addEventListener('click',e=>{
 });
 addEventListener('scroll',()=>{ if($('browseDD').classList.contains('on')) closeBrowseDD(); },{passive:true,capture:true});
 $('browseSummary').addEventListener('click',e=>{
+  // Flushes the struck-through rows without touching a single filter, which
+  // is the point -- changing a filter to tidy the list would lose the place
+  // in it that the holding exists to protect.
+  if(e.target.closest('#browseClearHeld')){ justTied.clear(); renderBrowseKeepingFolds(); return; }
   if(!e.target.closest('#browseClearAll')) return;
   browsePart=null; browseStatus='all'; browseFlag=0; browseDate=null; browseQuery=''; $('browseSearch').value='';
-  // The tie filter clears with the rest -- but 'pairs' is a view, not a
-  // filter, and Clear all filters is never reachable from it anyway (that
-  // branch returns before renderBrowseSummary draws the button).
-  if(browseTied==='tied'||browseTied==='untied') browseTied='all';
+  browseTied='all';
   browseSelected.clear(); renderBrowse();
 });
 // Which row the pointer sits over, for the bare-digit flag keys above --
@@ -12454,32 +12998,6 @@ document.addEventListener('click',e=>{
   closeRowMenu();
 });
 addEventListener('scroll',()=>{ if($('rowMenu').classList.contains('on')) closeRowMenu(); },{passive:true,capture:true});
-// The label editor is the overlay's third flow, alongside create and manage.
-$('browseResults').addEventListener('click',e=>{
-  const ed=e.target.closest('[data-tielabel]');
-  if(!ed) return;
-  e.preventDefault(); e.stopPropagation();
-  openTieLabelEditor(ed.dataset.tielabel);
-});
-// Deleting a whole tie from the Tied view (2026.08.30.10). Confirmed rather
-// than undoable: the only thing a tie really holds is the line the owner
-// wrote about what separates the words, there is no undo stack for it, and
-// re-typing that line is the expensive half of making the tie. The words
-// themselves are untouched -- nothing about their scheduling or history lives
-// in a tie -- and the confirm says so, so the press is not scarier than it is.
-$('browseResults').addEventListener('click',e=>{
-  const del=e.target.closest('[data-tiedel]');
-  if(!del) return;
-  e.preventDefault(); e.stopPropagation();
-  const gid=del.dataset.tiedel, g=S.confuseGroups[gid];
-  if(!g) return;
-  const words=wordsInConfuseGroup(gid).map(x=>BY_ID[x]&&BY_ID[x].q).filter(Boolean).join(' and ');
-  if(!confirm('Delete the tie between '+words+'?'+(g.label?'\n\nThe line you wrote about them goes with it. ':'\n\n')+'Both words stay in the deck exactly as they are.')) return;
-  deleteConfuseGroup(gid); save();
-  renderBrowseKeepingFolds();
-  if(inspectId) renderCardInspector();
-  toast('Tie deleted',1300);
-});
 // Untie, from the panel (2026.08.30.10). Removes just this word from just
 // this tie; dissolveConfuseGroupIfThin() inside removeFromConfuseGroup()
 // then drops a tie left with one member. The confirm only appears when that
@@ -12501,6 +13019,84 @@ $('cardInspectorOverlay').addEventListener('click',e=>{
   if(browseTied!=='all') renderBrowseKeepingFolds();
   toast('Untied',1200);
 });
+/* The drill screen's own delegate. Both of these used to live on the pairs
+   list, which went with build 2026.09.09.0 -- the chain-merge offer because it
+   is about the shape of the ties the drill is about to use, and Delete because
+   this is now the only screen where a tie is the object in front of you (in
+   the word panel the same relation is one of that word's memberships, and
+   Untie removes only that word from it). */
+$('tieBody').addEventListener('click',e=>{
+  // The chain-merge offer. No confirm: it makes ties, destroys none, and
+  // carries every line already written -- the worst case is a group that can
+  // be split again by hand.
+  if(e.target.id==='tieMergeNo'){ chainOfferHidden=true; renderTieDrill(); return; }
+  if(e.target.id==='tieMergeGo'){
+    const n=applyChainMerges();
+    save(); renderTieDrill();
+    if(browseTied!=='all') renderBrowseKeepingFolds();
+    toast(n+' tie'+(n===1?'':'s')+' merged',1800);
+    return;
+  }
+  if(e.target.id==='tdStart'){ startTieDrill(); return; }
+  if(e.target.id==='tdAgain'){ startTieDrill(); return; }
+  if(e.target.id==='tdHome'){ tieQueue=null; show('scHome'); renderHome(); return; }
+  // An answer. Graded once -- the buttons are disabled the moment one lands,
+  // and tiePicked is what a second press would have to get past anyway.
+  const pick=e.target.closest('[data-tdpick]');
+  if(pick&&tiePicked==null){
+    const x=tieCurrent(); if(!x) return;
+    const right=tieAcceptable(x,x.target).includes(pick.dataset.tdpick);
+    tiePicked=pick.dataset.tdpick;
+    tieSeen++; if(right) tieRight++;
+    tieDrillGrade(x.gid,right);
+    save();
+    renderTieDrill();
+    return;
+  }
+  if(e.target.id==='tdNext'){
+    saveTieDrillLine();
+    tieAt++; tieAskId=null; tiePicked=null; tieLabelDraft=null;
+    renderTieDrill();
+    return;
+  }
+  const del=e.target.closest('[data-tiedel]');
+  if(del){
+    e.preventDefault();
+    const gid=del.dataset.tiedel, g=S.confuseGroups[gid];
+    if(!g) return;
+    const words=wordsInConfuseGroup(gid).map(x=>BY_ID[x]&&BY_ID[x].q).filter(Boolean).join(' and ');
+    // Confirmed rather than undoable: the only thing a tie really holds is the
+    // line written about what separates the words, there is no undo stack for
+    // it, and re-typing that line is the expensive half of making the tie. The
+    // words themselves are untouched -- nothing about their scheduling or
+    // history lives in a tie -- and the confirm says so.
+    if(!confirm('Delete the tie between '+words+'?'+(g.label?'\n\nThe line you wrote about them goes with it. ':'\n\n')+'Both words stay in the deck exactly as they are.')) return;
+    deleteConfuseGroup(gid); save();
+    tieAskId=null; tiePicked=null; tieLabelDraft=null;
+    // The pass steps past it rather than ending: tieCurrent() returns null for
+    // a tie that no longer exists, and renderTieDrill advances on that.
+    renderTieDrill();
+    if(browseTied!=='all') renderBrowseKeepingFolds();
+    if(inspectId) renderCardInspector();
+    toast('Tie deleted',1300);
+  }
+});
+// Typed into the drill's own line box. Held in tieLabelDraft rather than
+// written per keystroke, and committed by Next -- so an abandoned half-line
+// never lands on the tie, and a re-render (a delete, a merge) does not lose
+// what is being typed.
+$('tieBody').addEventListener('input',e=>{
+  if(e.target.id==='tdLabel') tieLabelDraft=e.target.value;
+});
+// Enter commits the line and moves on, the same as pressing Next -- typing a
+// line and reaching for the keyboard's own return is the obvious gesture.
+$('tieBody').addEventListener('keydown',e=>{
+  if(e.target.id!=='tdLabel'||e.key!=='Enter') return;
+  e.preventDefault();
+  saveTieDrillLine();
+  tieAt++; tieAskId=null; tiePicked=null; tieLabelDraft=null;
+  renderTieDrill();
+});
 $('cardInspectorOverlay').addEventListener('click',e=>{
   const ed=e.target.closest('[data-tielabel]');
   if(!ed) return;
@@ -12509,6 +13105,35 @@ $('cardInspectorOverlay').addEventListener('click',e=>{
   closeCardInspector();
   tieLabelReturnId=back;
   openTieLabelEditor(gid);
+});
+$('actBar').addEventListener('click',e=>{
+  if(!actBarCtx) return;
+  const ctx=actBarCtx;
+  if(e.target.closest('[data-abclose]')){ hideActBar(); return; }
+  if(e.target.closest('[data-abflags]')){
+    // Same deadline, not a fresh one -- see showTieBar's timer comment.
+    showTieBar({...ctx, flagsOpen:true, until:ctx.until||Date.now()+9000});
+    return;
+  }
+  const f=e.target.closest('[data-abflag]');
+  if(f){
+    applyFlag(cardState(ctx.id),+f.dataset.abflag);
+    save(); patchBrowseRowFlag(ctx.id);
+    if(inspectId===ctx.id) renderCardInspector();
+    hideActBar(); toast('Flagged',1100);
+    return;
+  }
+  if(e.target.closest('[data-abundo]')){
+    deleteConfuseGroup(ctx.gid);
+    save(); hideActBar();
+    // The rows this tie held are released with it: holding exists to keep a
+    // row visible after it stopped matching, and undoing means it matches
+    // again on its own.
+    (ctx.held||[]).forEach(id=>justTied.delete(id));
+    renderBrowseKeepingFolds();
+    if(inspectId) renderCardInspector();
+    toast('Untied',1200);
+  }
 });
 $('confuseGroupOverlay').addEventListener('click',e=>{
   if(e.target.id==='cgLabelSave'){
@@ -12528,10 +13153,26 @@ $('confuseGroupOverlay').addEventListener('click',e=>{
   }
   if(e.target.id==='cgCreate'){
     const label=$('cgLabel')?$('cgLabel').value:'';
-    createConfuseGroup(groupCreateIds,label);
-    save(); toast('Group created',1400);
+    const ids=groupCreateIds.slice();
+    // Read BEFORE creating: an identical member set reuses the tie it already
+    // is (see createConfuseGroup), and Undo must not offer to delete that.
+    const reused=!!tieWithMembers(ids);
+    // Held before the rebuild, because holdBrowseRow only accepts rows that
+    // are on screen NOW -- after renderBrowseKeepingFolds they are gone.
+    ids.forEach(holdBrowseRow);
+    const gid=createConfuseGroup(ids,label);
+    save();
     closeConfuseGroupOverlay(); browseSelected.clear(); renderBrowseKeepingFolds();
     if(inspectId) renderCardInspector();
+    // Whose bar it is. ids[0] is the word the tie was made FROM on the panel
+    // and row-menu routes -- renderTiePick's own handler builds the pair as
+    // [the open word, the one just picked] -- so Flag acts on the word being
+    // sorted rather than on the partner found by search. groupManageId itself
+    // cannot be read here: openConfirmGroup clears it on the way in.
+    const subject=ids[0];
+    const others=ids.filter(x=>x!==subject).map(x=>BY_ID[x]&&BY_ID[x].q).filter(Boolean);
+    showTieBar({id:subject, gid:reused?null:gid, withLabel:others.join(', ')||'—',
+                held:ids.slice(), flagsOpen:false});
     return;
   }
   const rmBtn=e.target.closest('[data-remove]');
