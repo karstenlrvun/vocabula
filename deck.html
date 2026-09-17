@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <title>Vocabula</title>
-<link rel="stylesheet" href="palettes.css?v=2026.09.09.0">
+<link rel="stylesheet" href="palettes.css?v=2026.09.17.0">
 <!--
   Phase 1 (PLATFORM_PLAN.md D1): one engine, many decks. This file replaces
   latin.html/greek.html. Which deck loads is decided here, before anything
@@ -35,7 +35,7 @@
   stays HERE, synchronous, so it still halts the parser before the app
   skeleton can flash -- it never depended on content at all.
 -->
-<script src="decks/registry.js?v=2026.09.09.0"></script>
+<script src="decks/registry.js?v=2026.09.17.0"></script>
 <!-- shared.js and palettes.css carry ?v=<BUILD> from 2026.08.20.3, and the
      number must be bumped with BUILD (sec95c pins that it matches).
      Why: these two are the only files both pages load by a fixed name, and a
@@ -47,7 +47,7 @@
      in-app browser the same day (transferSize:0 on shared.js, currentStreak
      defined, avgMsPerRating not). The query makes each build's pair a
      distinct URL, so the two can never be mismatched again. -->
-<script src="shared.js?v=2026.09.09.0"></script>
+<script src="shared.js?v=2026.09.17.0"></script>
 <script data-boot>
 (function(){
   // REGISTRY comes from decks/registry.js, loaded just above as an ordinary
@@ -102,6 +102,14 @@
 })();
 </script>
 <style>
+/* Hidden means hidden (2026.09.14.0). The browser's own rule for the hidden
+   attribute sits at the bottom of the cascade, so any display: this sheet
+   gives an element beats it -- .actBar{display:flex} drew the empty tie bar
+   (20x16px of padding in the toast colour, above every overlay, taking taps)
+   on every screen from 2026.09.08.0 until this line. One rule for the page
+   rather than one per element, so the next thing shown and hidden with the
+   attribute cannot repeat it. */
+[hidden]{display:none!important}
 :root{
   --serif:"Palatino","Palatino Linotype","Book Antiqua",Georgia,serif;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
@@ -785,43 +793,6 @@ html[data-layout="landscape"][data-study-card="replace"] #gradeNote{grid-column:
   background:var(--raise);color:var(--ink);font-family:inherit;font-size:13px;padding:9px 11px;
   box-sizing:border-box}
 .field .fh.bad{color:#c0392b}
-/* Phase 4 triage screen (#scExtract, PHASE3_4_HANDOFF.md §2) -- the card
-   itself reuses .dayDetail's own styling verbatim (border/padding/input/
-   textarea), same "one skin, several features" reuse as the word-note and
-   confuse-group modals above, just sized to the full column instead of a
-   centred 380px modal, since it sits inline on its own screen rather than
-   floating over one. */
-.triageWrap{flex:1;display:flex;flex-direction:column;min-height:0;padding:16px;overflow-y:auto;box-sizing:border-box}
-.triageCount{text-align:center;color:var(--muted);font-size:13px;margin-bottom:10px;font-variant-numeric:tabular-nums}
-.triageCard{max-width:34rem;width:100%;margin:0 auto}
-.triageCard textarea{min-height:60px}
-.triageBtns{flex:0 0 auto;display:flex;gap:9px;padding:16px 12px;max-width:34rem;margin:0 auto;width:100%;box-sizing:border-box}
-.triageBtn{flex:1;height:56px;border-radius:15px;border:1px solid var(--line);font-size:16px;font-weight:500}
-.triageBtn .keycap{display:block;margin-top:2px}
-.triageBtn.bin{background:var(--again-bg);border-color:var(--again-br);color:var(--again)}
-.triageBtn.keep{background:var(--good-bg);border-color:var(--good-br);color:var(--good)}
-/* import preview (IMPORT_PLAN.md §2E) -- same .dayDetail skin as the triage
-   card, widened to fit a table; flagged rows use the Again tint, skipped
-   lines sit under a fold in a small monospace block. */
-.impCard{max-width:56rem;width:100%;margin:0 auto}
-.impControls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
-.impControls:empty{display:none}
-.impControls .ipCol{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
-.impControls .ipCol .sel{width:auto;min-width:0;padding:6px 26px 6px 8px;height:34px;font-size:13px}
-.impControls .ipCheck{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
-.impControls button.small.on{border-color:var(--coral);color:var(--coral)}
-.impTableWrap{overflow:auto;max-height:52vh;border:1px solid var(--line);border-radius:10px;background:var(--raise)}
-.impTable{width:100%;border-collapse:collapse;font-size:13.5px}
-.impTable th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:500;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;padding:7px 9px;border-bottom:1px solid var(--line)}
-.impTable td{padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
-.impTable td.n{color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap}
-.impTable td.more{color:var(--muted);text-align:center;padding:12px}
-.impTable tr.flag td{background:var(--again-bg)}
-.impTable .ipFlag{display:block;font-size:11.5px;color:var(--again);margin-top:2px}
-.ipSkipped{font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;color:var(--muted);max-height:30vh;overflow:auto;margin:6px 0 0}
-.impBtns{max-width:56rem;flex-wrap:wrap}
-.impBtns .act{flex:1 1 10rem;height:48px}
-.impBtns .act:disabled,#trCommit:disabled{opacity:.45}
 /* manual confusable-group modal (openConfirmGroup/openGroupManager, both
    sharing #confuseGroupOverlay -- same .wordNoteOverlay/.dayDetail skin as
    the word-note modal just above, reused rather than styled a second time). */
@@ -1563,16 +1534,22 @@ html[data-layout="landscape"] .iconKeycap{
    right and hangs its own cap outward, away from the counts in the middle.
    Unmirrored, this one would hang inward and crowd them. */
 html[data-layout="landscape"] #toHome .iconKeycap{right:auto; left:-6px}
-html[data-layout="landscape"] .rate,
-html[data-layout="landscape"] .revealBtn,
-html[data-layout="landscape"] .quickBtn{
-  transition:transform .15s ease, box-shadow .15s ease;
-}
-html[data-layout="landscape"] .rate:hover,
-html[data-layout="landscape"] .revealBtn:hover,
-html[data-layout="landscape"] .quickBtn:hover{
-  transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.10);
-}
+/* No hover lift on this screen (2026.09.16.0). Until this build a pointer
+   over .rate/.revealBtn/.quickBtn raised it 2px with a shadow -- in the file
+   since its first commit. It was read off the screen as the app suggesting a
+   grade, and the reading was fair: .rate::before reaches 26px above and 14px
+   below its own button, so the pointer never had to be ON one to lift it,
+   and the Show answer bar lies wholly inside that band -- so a mouse press
+   on Show answer parked the pointer over one grade, and that grade rose on
+   every card until the mouse moved. Owner's call 2026-09-16: off for all
+   three, not the grades alone, since he rarely points and clicks at all.
+   Pressing still darkens a button (.rate:active), so a press is still
+   acknowledged, and sec156 pins the absence of any hover rule here.
+   The transition stays, narrowed to the one thing it still animates:
+   #bEasy's hold ring is a box-shadow, and this is what fades it in and out
+   while Space is held on this layout. Portrait has no transition and snaps
+   the ring on, exactly as it did before. */
+html[data-layout="landscape"] .rate{transition:box-shadow .15s ease}
 
 /* ============================================================
    Study card shape: Replace / Swap (LAYOUT_PLAN.md §6-9; "F1"/"F2" there).
@@ -2453,21 +2430,9 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
           copy wins on every device: its word states and settings take over; no ratings are lost.</div>
       </div>
       <div class="field">
-        <label for="fExtractKey">Extraction key</label>
-        <input type="text" id="fExtractKey" placeholder="extraction key" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
-        <button class="act" id="extractNewKeyBtn">Get a key</button>
-        <div class="fh">Only needed for the "Extract with the model" option on the import screen -- everything else there works with no key at all. Set once, then that screen can also send a passage of prose to the extraction service. Generate one here, then paste this exact value into the Worker with <code>wrangler secret put EXTRACT_KEY</code>. Unrelated to the sync code above — this key never leaves this device either way, and changing one never affects the other.</div>
-      </div>
-      <div class="field">
         <label>Suspended</label>
         <div class="fh" id="leechNote"> — </div>
         <button class="act" id="unsuspBtn">Bring all suspended words back</button>
-      </div>
-      <div class="field">
-        <label>New deck / import</label>
-        <button class="act" id="toExtract">Import a word list</button>
-        <button class="act hidden" id="expDeckBtn">Export deck file</button>
-        <div class="fh">Paste or open a word list -- a spreadsheet's columns, a Quizlet or Anki export, a "term — gloss" list, a chapter's vocabulary -- and turn it into its own deck, or add it to this one. Read on this device, no key needed; a preview shows what was found before anything is kept. "Export deck file" appears for a deck created on this device: it saves that deck's words as a file this same screen can import on another device (its review history travels in the ordinary backup, not here).</div>
       </div>
       <div class="field">
         <label>Instructions</label>
@@ -2549,163 +2514,6 @@ html[data-layout="landscape"] #scBrowse .home{padding:16px 28px}
     </div>
   </section>
 
-  <!-- ============ EXTRACT (Phase 4, PHASE3_4_HANDOFF.md §2) ============ -->
-  <section id="scExtract" class="screen">
-    <div class="bar">
-      <button class="icon" id="extractBack" aria-label="Back">&#8249;</button>
-      <div class="title">New deck</div>
-      <div class="icon" style="visibility:hidden">·</div>
-    </div>
-    <!-- Step 1: setup + candidate input. The local, no-key parser
-         ("Find the words", IMPORT_PLAN.md) is the primary path since
-         2026.08.17.4; the model call (4a paste-text / 4b URL, the real
-         /extract Worker route) is folded underneath as the last tier, and
-         hand-pasted JSON stays under it -- it needs no key and no model
-         call, mainly useful for testing the triage screen itself. Every
-         path feeds the exact same triageCandidates/triagePos machinery. -->
-    <div class="set" id="extractSetup">
-      <div class="setCols">
-      <div class="field">
-        <label for="exTarget">Where the words go</label>
-        <select id="exTarget" class="sel">
-          <option value="new">A new deck</option>
-          <option value="append">This deck</option>
-        </select>
-        <div class="fh">"This deck" adds them to the deck you opened this screen from, as words added by hand -- they ride its backup and sync like any other. A new deck lives on this device until you export a deck file for it (Settings).</div>
-      </div>
-      <div id="exNewFields">
-      <div class="field">
-        <label for="exTitle">Deck title</label>
-        <input type="text" id="exTitle" maxlength="60" placeholder="e.g. Aeneid I, SAT list 3, or CFA Level I formulas">
-      </div>
-      <div class="field">
-        <label for="exKind">Kind</label>
-        <select id="exKind" class="sel">
-          <option value="language">Language (title → English, both ways)</option>
-          <option value="wordlist">Word list (Word ↔ Definition)</option>
-          <option value="formula">Formula sheet (Name ↔ Formula)</option>
-        </select>
-        <div class="fh">Only sets what the two directions are called on the study screen and in Browse.</div>
-      </div>
-      <div class="field">
-        <label for="exScript">Keyboard</label>
-        <select id="exScript" class="sel">
-          <option value="latin">Latin alphabet (ordinary typing)</option>
-          <option value="greek">Greek (adds the on-screen Hoplite keyboard)</option>
-        </select>
-        <div class="fh">Only changes which virtual keyboard this deck offers when typing -- doesn't restrict what a word can actually contain either way.</div>
-      </div>
-      </div>
-      <div class="field">
-        <label for="exText">Paste text — or choose a file</label>
-        <textarea id="exText" style="min-height:260px;resize:vertical" placeholder="One entry per line — “term — gloss”, “term: gloss”, a numbered list — or columns copied from a spreadsheet, Quizlet, or Anki…"></textarea>
-        <input type="file" id="exFile" accept=".txt,.csv,.tsv,.json,.md,.pdf,.docx,.xlsx,text/plain,text/csv,text/tab-separated-values,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="hidden">
-        <button class="act" id="exFileBtn">Choose a file…</button>
-        <button class="act" id="exAiPromptBtn">Copy a prompt for an AI</button>
-        <div class="fh">Read right here on this device -- nothing is sent anywhere, no key needed. Tab-separated columns (a spreadsheet, a Quizlet or Anki export), "term — gloss" or "term: gloss" lines, numbered lists and chapter headings are all recognised, and a preview shows exactly what was found before anything is kept. A PDF with real text in it is read here too -- the columns of a printed vocabulary list come back separated, though a scan or a photograph has no text to read. A Word document's own table, or its plain paragraphs if it has no table, and the first sheet of an Excel workbook are read the same deliberate way -- neither ever leaves this device either. When a page defeats this -- a scan, a photograph, a layout that comes out wrong above -- "Copy a prompt for an AI" puts an instruction on the clipboard for a chat assistant: give it the page, read what comes back against the page yourself, then bring that text here. Worth knowing which way round the two fail: this parser gets things wrong loudly, and lists every line it skipped; a model gets them wrong quietly, and an invented gloss reads exactly like a correct one. A vocabula deck file (Settings, "Export deck file") comes back in the same way.</div>
-        <button class="act primary" id="exParseBtn" style="margin-top:12px">Find the words</button>
-        <div class="fh bad" id="exParseError"></div>
-      </div>
-      <div class="field">
-        <details class="fold">
-          <summary>Extract with the model instead</summary>
-          <input type="text" id="exUrl" placeholder="…or paste a URL" autocapitalize="off" autocorrect="off" spellcheck="false" style="margin-top:8px">
-          <div class="fh">Sends the text pasted above (or fetches the URL -- this page can't fetch another site directly) to the extraction service, which reads it and proposes candidates; each is then triaged one at a time. For a passage of prose, or a list with no shape the parser above can find. Needs an extraction key set up once in Settings first, and each call is a small paid model call.</div>
-          <button class="act" id="exExtractBtn" style="margin-top:12px">Extract candidates</button>
-          <div class="fh bad" id="exExtractError"></div>
-        </details>
-      </div>
-      <div class="field" style="border-bottom:none">
-        <details class="fold">
-          <summary>Paste JSON candidates directly instead</summary>
-          <textarea id="exPaste" style="min-height:120px;margin-top:8px" placeholder='[{"term":"amor amoris m.","gloss":"love","section":"Ch. 1","note":""}, …]'></textarea>
-          <div class="fh">A JSON array of {term, gloss, section, note} -- section and note are optional. No key, no model call, no cost -- for testing the triage screen itself.</div>
-          <button class="act" id="exBegin" style="margin-top:12px">Begin triage</button>
-        </details>
-        <div class="fh bad" id="exSetupError"></div>
-      </div>
-      </div>
-    </div>
-    <!-- Step 1b: the import preview (IMPORT_PLAN.md §2E) -- what the local
-         parser found, what it skipped and why, and the three ways on. -->
-    <div class="triageWrap hidden" id="importPreview">
-      <div class="triageCount" id="ipSummary"></div>
-      <div class="dayDetail on impCard">
-        <div class="impControls" id="ipControls">
-          <label class="ipCol">Split on
-            <select id="ipSep" class="sel">
-              <option value="auto">Auto</option>
-              <option value="tab">Tabs</option>
-              <option value="comma">Commas</option>
-              <option value="semicolon">Semicolons</option>
-              <option value="pipe">Pipes |</option>
-              <option value="emdash">Em dash —</option>
-              <option value="endash">En dash –</option>
-              <option value="dashdash">Double hyphen --</option>
-              <option value="colon">Colon :</option>
-              <option value="equals">Equals =</option>
-              <option value="hyphen">Hyphen -</option>
-              <option value="spaces">Two+ spaces</option>
-              <option value="script">Change of script (Greek → English)</option>
-              <option value="alt">Alternating lines</option>
-            </select>
-          </label>
-          <button class="small" id="ipSwap">Swap term ↔ gloss</button>
-          <label class="ipCheck" id="ipHeaderWrap"><input type="checkbox" id="ipHeader"> First row is a header</label>
-          <label class="ipCheck" id="ipCountsWrap"><input type="checkbox" id="ipCounts"> Keep trailing counts in the note</label>
-        </div>
-        <div class="impControls" id="ipMapping"></div>
-        <div class="impTableWrap"><table class="impTable" id="ipTable"></table></div>
-        <details class="fold" id="ipSkippedFold">
-          <summary id="ipSkippedSummary">Skipped lines</summary>
-          <pre class="ipSkipped" id="ipSkipped"></pre>
-        </details>
-        <div class="fh bad" id="ipError"></div>
-        <div class="fh hidden" id="ipModel">No shape found -- an extraction key is set up, so "Extract with the model instead" on the previous screen can read this text as prose.</div>
-      </div>
-      <div class="fh hidden" id="ipCaution"></div>
-      <div class="triageBtns impBtns">
-        <button class="act" id="ipBack">Back to the text</button>
-        <button class="act" id="ipTriageAll">Triage everything</button>
-        <button class="act" id="ipReviewFlagged">Review the flagged</button>
-        <button class="act primary" id="ipAcceptAll">Accept all</button>
-        <button class="act primary hidden" id="ipDeckImport">Import this deck</button>
-      </div>
-    </div>
-    <!-- Step 2: one candidate at a time. Editable in place -- "edit" isn't a
-         separate mode, Keep just commits whatever the fields currently
-         hold. Reuses the honour-round convention already established for a
-         binary keyboard choice (the drill's honour round: 1 = reject, Space/2 = accept)
-         rather than inventing a third scheme -- see the keydown handler. -->
-    <div class="triageWrap hidden" id="triageArea">
-      <div class="triageCount" id="triageCount"></div>
-      <div class="dayDetail on triageCard">
-        <input type="text" id="trTerm" placeholder="Term">
-        <input type="text" id="trGloss" placeholder="Gloss" style="margin-top:8px">
-        <input type="text" id="trSection" placeholder="Section" style="margin-top:8px">
-        <textarea id="trNote" placeholder="Note (optional)"></textarea>
-      </div>
-      <div class="triageBtns">
-        <button class="triageBtn bin" id="trBin"><span class="lbl">Bin</span><span class="keycap">1</span></button>
-        <button class="triageBtn keep" id="trKeep"><span class="lbl">Keep</span><span class="keycap">Space / 2</span></button>
-      </div>
-    </div>
-    <!-- Step 3: nothing has touched storage until this point -- Discard
-         throws the whole in-memory session away with nothing written. -->
-    <div class="done hidden" id="triageDone">
-      <div class="big" id="triageDoneBig"></div>
-      <div class="small" id="triageDoneSmall"></div>
-      <button class="act primary" id="trCommit" style="max-width:230px;margin-top:20px">Create the deck</button>
-      <button class="act" id="trDiscard" style="max-width:230px">Discard</button>
-    </div>
-  </section>
-  <!-- The exhibit screen. Built 2026.08.23, his call: aimed at somebody
-       evaluating the work, not at a first-time learner. Each panel states a
-       claim and then hands over a control that runs the real function, so a
-       reader can check the claim rather than take it. See the .dxWrap CSS
-       block for the sandboxing (there is barely any to do: `demoCard` is a
-       plain object that never enters S.cards, and save() is never called
-       from this screen). -->
   <section id="scDemo" class="screen">
     <div class="bar">
       <button class="icon" id="demoBack" aria-label="Back">&#8249;</button>
@@ -4318,7 +4126,7 @@ async function load(){
 
 /* ======================= queue ======================= */
 function activeParts(){ return (S.parts&&S.parts.length)?S.parts:SECTIONS; }
-const BUILD='2026.09.09.0';
+const BUILD='2026.09.17.0';
 const AHEAD=20*MIN;              // serve a pending learning card early if nothing else remains
 // See SNAP_GUARD's comment above schedule(). SHORT_STEP is the actual
 // correctness boundary between a genuine short step and a review whose
@@ -4840,7 +4648,7 @@ const reduceMotionMQ=(typeof window!=='undefined'&&window.matchMedia)?window.mat
 let almostThereWait=false;
 const show=(name,keepTiming)=>{
   const wasActive=$('scStudy').classList.contains('on')||almostThereWait;
-  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scExtract','scDemo','scTie'].forEach(s=>$(s).classList.toggle('on',s===name));
+  ['scHome','scStudy','scDone','scSet','scLog','scStats','scBrowse','scDemo','scTie'].forEach(s=>$(s).classList.toggle('on',s===name));
   // Read by the wide-window detail-panel CSS, which can't reach #scBrowse's
   // own class from #cardInspectorOverlay -- they aren't ancestor/descendant,
   // and this is the one place that already knows which screen is live.
@@ -8616,1323 +8424,6 @@ function closeAddWord(){ $('addWordOverlay').classList.remove('on'); }
 // Its own addEventListener is wired down in the wiring section below, same
 // reason as cardInspectorOverlay's above.
 
-/* ---- create a deck from text: the triage screen (Phase 4, §scExtract,
-   PHASE3_4_HANDOFF.md §2) and, in front of it since 2026.08.17.4, the
-   no-key import path (IMPORT_PLAN.md) -- built against hand-pasted JSON
-   first, per that doc's own order, and everything else lands upstream of
-   the same seam: startTriage()/the preview both feed the same
-   {term,gloss,section,note} candidate shape, so nothing downstream needs
-   to know or care where a candidate list came from.
-
-   State lives entirely in memory until commitTriage()/commitAppend()
-   actually runs -- "nothing enters a deck unapproved" extends to "nothing
-   touches storage at all" until the whole batch is reviewed and Create/Add
-   is pressed. Discard (or Back, mid-session) just drops these variables;
-   there is nothing to undo because nothing was ever written. */
-let triageTitle=null, triageScript='latin', triageKind='language', triageTarget='new',
-    triageCandidates=[], triagePos=0, triageKept=[], triageBinned=0;
-
-function openExtractSetup(){
-  $('exTitle').value=''; $('exScript').value='latin'; $('exKind').value='language';
-  $('exTarget').value='new'; $('exTarget').options[1].textContent='This deck ('+DECK_TITLE+')'; syncTargetFields();
-  $('exText').value=''; $('exUrl').value=''; $('exExtractError').textContent=''; $('exParseError').textContent='';
-  $('exPaste').value=''; $('exSetupError').textContent='';
-  $('exFile').value='';
-  importSource=''; importResult=null; importDeckFile=null;
-  $('extractSetup').classList.remove('hidden');
-  $('importPreview').classList.add('hidden');
-  $('triageArea').classList.add('hidden');
-  $('triageDone').classList.add('hidden');
-  show('scExtract');
-}
-// The append option names the deck this screen was opened from; the title/
-// kind/keyboard fields only mean anything for a NEW deck, so they fold away
-// when the target is "this deck" rather than sitting there looking required.
-function syncTargetFields(){
-  const append=$('exTarget').value==='append';
-  $('exNewFields').classList.toggle('hidden',append);
-}
-// The {term,gloss,section,note} schema itself (4a's real constraint too,
-// PHASE3_4_HANDOFF.md §2) -- vocabulary-only, on purpose. section/note
-// default to '' rather than being required; term/gloss must be non-empty
-// strings or the whole batch is rejected with which entry failed, rather
-// than silently dropping bad rows into the triage queue. (The import
-// parser below deliberately does NOT share this all-or-nothing rule -- see
-// its own comment: a 3,000-line paste must skip-and-flag, never reject.)
-function parseCandidates(raw){
-  let arr;
-  try{ arr=JSON.parse(raw); }catch(e){ return {error:'Not valid JSON.'}; }
-  if(!Array.isArray(arr)) return {error:'Expected a JSON array of {term, gloss, section, note}.'};
-  const out=[];
-  for(let i=0;i<arr.length;i++){
-    const c=arr[i];
-    if(!c||typeof c!=='object'||typeof c.term!=='string'||!c.term.trim()||typeof c.gloss!=='string'||!c.gloss.trim())
-      return {error:'Entry '+(i+1)+' is missing a term or gloss.'};
-    out.push({term:c.term.trim().slice(0,CAP_TERM), gloss:c.gloss.trim().slice(0,CAP_GLOSS),
-               section:(typeof c.section==='string'&&c.section.trim())?c.section.trim().slice(0,CAP_SECTION):'',
-               note:(typeof c.note==='string'&&c.note.trim())?c.note.trim().slice(0,CAP_NOTE):''});
-  }
-  return {candidates:out};
-}
-
-/* ---- import without a key: the deterministic shape parser (IMPORT_PLAN.md
-   §2B-D). Pure -- no DOM, no storage, no model -- so tests/run.sh's logic
-   slice runs it under Node against fixture text (a Quizlet export, a
-   Steadman page, DCC's CSV, an Excel paste, a numbered SAT list). Nothing
-   is inferred: a line either matches the winning rule or it is listed as
-   skipped, with the reason, for the person to see.
-
-   importAnalyse(text, opts) -> {mode, sep, columns, header, mapping, rows,
-   skipped, total, parsed, confidence, headings, countsStripped}
-     mode     'tabular' | 'lines' | 'alt' | 'none'
-     sep      which rule won ('tab','semicolon','pipe','comma' for tabular;
-              'emdash','endash','colon','equals','hyphen','spaces' for
-              lines; 'alt' for alternating term/gloss lines)
-     rows     [{term,gloss,section,note,flags:[...],line}] -- flags are
-              advisory ('overcap','longterm'); a row that can't be used at
-              all is not a row, it's in `skipped` with a reason
-     skipped  [{line, text, reason}]
-   opts: {sep:'auto'|<sep>, swap:bool, header:'auto'|true|false,
-          mapping:[role per column]|null, keepCounts:bool,
-          existingTerms:Set<norm(term)>|null}
-   The rule ORDER is the design (IMPORT_PLAN.md I4): tab first, then the
-   other delimiters only with a CONSISTENT field count and real quoting,
-   comma last of those -- `a, ab (+ abl.)` is a real Latin term, so a
-   comma alone can never win. */
-// The keyword needs a real gap before its numeral: "liberi -orum m. pl."
-// would otherwise read as "Liber I", and "capio" as "Cap. I" -- real Latin
-// words, seen in the freshers' list test run.
-const IMPORT_HEADING_RE=/^(?:chapter|ch|cap(?:itulum|ut)?|unit|lesson|part|stage|reading|week|list|group|section|topic|book|liber|lib)(?:\.\s*|\s+)(?:[0-9]{1,4}|[ivxlcIVXLC]{1,7})\b[.:)]?\s*(?:[-–—:]\s*)?(?:.{0,50})$/i;
-const IMPORT_ROMAN_RE=/^(?=[IVXLC])M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\.?$/;   // a lone Roman numeral line
-const IMPORT_NUM_RE=/^\(?\d{1,4}[.)]\s*(?=\S)/;          // "12. abate", "12) abate", "(12) abate"
-const IMPORT_BARE_NUM_RE=/^\d{1,4}\s+(?=\S)/;             // "12 abate" -- only honoured when nearly every line has it
-// Each rule's find(text) returns {index,len} for the split point, or null.
-// Ordered: the first to reach the coverage bar wins ties. 'script' is last
-// on purpose -- an explicit separator always outranks a script change.
-const IMPORT_RE_RULE=(id,re)=>({id, find:s=>{ const m=re.exec(s); return m?{index:m.index,len:m[0].length}:null; }});
-const IMPORT_LINE_SEPS=[
-  IMPORT_RE_RULE('emdash', /\s*—\s*/),
-  IMPORT_RE_RULE('endash', /\s+–\s+|\s*–\s*/),
-  IMPORT_RE_RULE('dashdash', /\s+-{2,3}\s+/),             // "--" or "---": the plain-ASCII em dash, from anyone typing on a keyboard with no real one -- a deliberate separator, unlike the single spaced hyphen below
-  IMPORT_RE_RULE('colon',  /:\s+/),
-  IMPORT_RE_RULE('equals', /\s*=\s*/),
-  IMPORT_RE_RULE('hyphen', /\s+-\s+/),                    // spaced only: "-ή, -όν" and "-orum" stay inside the term
-  IMPORT_RE_RULE('spaces', / {2,}/),
-  {id:'script', find:importScriptSplit}
-];
-// The script-boundary rule: a term in a non-Latin script followed, on the
-// same line with nothing but a space between, by a gloss in Latin script --
-// exactly what Preview / iOS put on the clipboard for a two-column Greek
-// PDF ("ἀγαθός -ή -όν good"). The split is the first token containing a
-// Latin letter, provided every token before it carries a non-Latin letter
-// (endings like "-ή," count -- they contain Greek). Never fires on a
-// Latin-script term, so a Latin list can't be mangled by it.
-const IMPORT_LATIN_LETTER=/[A-Za-z\u00C0-\u024F]/, IMPORT_NONLATIN_LETTER=/[\u0370-\u03FF\u1F00-\u1FFF\u0400-\u04FF\u0530-\u058F\u0590-\u05FF\u0600-\u06FF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/;
-// Two refinements, both from the freshers' Greek list: (1) a bracketed
-// grammatical label right after the headword -- "(adv.)", "(+ gen.)",
-// "(adv. and prep. + gen.)" -- is part of the term, not the gloss, when
-// every word inside the brackets is a grammatical abbreviation from the
-// fixed list below ("(do) wrong" and "(upper) air" fail that test and stay
-// on the gloss side); (2) an "or"/"and" between two Greek forms ("δόρυ
-// δόρατος or δορός, τό") is a connector inside the term when Greek resumes
-// right after it.
-const IMPORT_GRAM_ABBR=new Set(['adv','adj','conj','prep','gen','dat','acc','abl','nom','voc','loc','m','f','n','c','pl','sg','sing','mid','pass','act','dep','impers','indecl','comp','superl','interj','aor','pf','perf','fut','impf','pres','subj','opt','inf','ptc','part','w','+','and','or','of','with','the','a','an','usu','esp','also','only','etc','abs','trans','intrans','intr','tr','poet','rare','late','aorist','future','perfect','imperfect','present','strong','weak','middle','passive','active','pluperfect','plural','singular','masculine','feminine','neuter','irregular','defective','1st','2nd','3rd','first','second','third']);
-const IMPORT_CONNECTORS=new Set(['or','and','vel','sive','seu']);
-function importScriptSplit(text){
-  const toks=[]; const re=/\S+/g; let m;
-  while((m=re.exec(text))) toks.push({s:m[0], at:m.index});
-  let sawTerm=false;
-  for(let i=0;i<toks.length;i++){
-    const tok=toks[i].s;
-    if(IMPORT_LATIN_LETTER.test(tok)){
-      if(!sawTerm) return null;
-      const bare=tok.toLowerCase().replace(/[.,;:()]/g,'');
-      // (2) connector between two non-Latin forms
-      if(IMPORT_CONNECTORS.has(bare) && i+1<toks.length && IMPORT_NONLATIN_LETTER.test(toks[i+1].s) && !IMPORT_LATIN_LETTER.test(toks[i+1].s)) continue;
-      // (1) grammatical parenthetical opening here: every word up to ")" is an abbreviation
-      if(tok[0]==='('){
-        let j=i, okAll=true, closed=false;
-        for(;j<toks.length;j++){
-          const w=toks[j].s.toLowerCase().replace(/^\(+|[).,;:]+$/g,'').replace(/\.$/,'');
-          if(w && !IMPORT_GRAM_ABBR.has(w) && !IMPORT_NONLATIN_LETTER.test(w)){ okAll=false; break; }
-          if(/\)[.,;:]*$/.test(toks[j].s)){ closed=true; break; }
-        }
-        if(okAll && closed && j+1<toks.length){ i=j; continue; }
-      }
-      return {index:toks[i].at,len:0};
-    }
-    if(IMPORT_NONLATIN_LETTER.test(tok)) sawTerm=true;
-  }
-  return null;
-}
-const IMPORT_TAB_DELIMS=[{id:'tab',ch:'\t'},{id:'semicolon',ch:';'},{id:'pipe',ch:'|'},{id:'comma',ch:','}];
-const IMPORT_HEADER_WORDS={
-  term:['term','terms','word','words','headword','lemma','front','question','latin','greek','vocab','vocabulary','name','formula name','concept','key term'],
-  gloss:['gloss','definition','definitions','meaning','meanings','back','answer','english','translation','formula','description'],
-  section:['section','chapter','unit','lesson','topic','group','semantic group','tags','tag','category','part','stage','week','list','reading','area','deck'],
-  note:['note','notes','example','examples','sentence','comment','comments','part of speech','pos','usage','hint','mnemonic']
-};
-const IMPORT_MIN_TABULAR=0.8, IMPORT_MIN_LINES=0.6, IMPORT_MIN_ALT=0.7;
-
-// RFC-4180-ish split for one line: double-quoted fields may contain the
-// delimiter and doubled quotes. Tab-separated exports (Excel, Quizlet,
-// Anki) don't quote as a rule, but a field that happens to be wrapped in
-// quotes still gets them stripped, same as any other delimiter.
-function importSplitFields(line, ch){
-  const out=[]; let cur='', q=false;
-  for(let i=0;i<line.length;i++){
-    const c=line[i];
-    if(q){
-      if(c==='"'){ if(line[i+1]==='"'){ cur+='"'; i++; } else q=false; }
-      else cur+=c;
-    } else if(c==='"' && cur===''){ q=true; }
-    else if(c===ch){ out.push(cur); cur=''; }
-    else cur+=c;
-  }
-  out.push(cur);
-  return out.map(s=>s.trim());
-}
-function importIsGreek(s){ return /[Ͱ-Ͽἀ-῿]/.test(s); }
-function importHasMacron(s){ return /[āēīōūĀĒĪŌŪ]/.test(s); }
-function importWords(s){ return s.split(/\s+/).filter(Boolean).length; }
-// U+00B5 MICRO SIGN stands in for Greek mu in a lot of real text: PDF text
-// layers whose font mapped mu that way (the freshers' Greek list -- 264 of
-// its 983 rows), and anything typed with Option-M on a Mac keyboard. NFC
-// leaves it alone (only NFKC folds it, and NFKC would also flatten σ² to
-// σ2, wrong for a formula deck), so it is folded here explicitly, alone.
-function importFold(s){ return String(s==null?'':s).replace(/\u00b5/g,'\u03bc').normalize('NFC'); }
-function importClean(s){ return importFold(s).replace(/\s+/g,' ').trim(); }
-// Line-level clean keeps tabs and runs of spaces intact -- both are shapes
-// the detector reads (tab rule, two-plus-spaces rule); only the fields cut
-// out of a line get fully collapsed, by importClean above.
-function importCleanLine(s){ return importFold(s).replace(/\u00a0/g,' ').replace(/^[ \t]+|[ \t]+$/g,''); }
-// Header-row detection for tabular input: enough of the first row's cells
-// have to read like column names, and none of them like content.
-// A header cell is matched on its letters alone: OCR's defined-vocabulary
-// list heads its last column "Meaning(s)", which is the word "meanings" with
-// punctuation on it and was matching nothing -- so the meanings ended up in
-// the one column the positional fallback throws away.
-function importHeaderKey(s){ return String(s||'').toLowerCase().replace(/[^a-z ]+/g,'').replace(/\s+/g,' ').trim(); }
-function importLooksLikeHeader(cells){
-  let hits=0;
-  for(const c of cells){
-    const k=importHeaderKey(c);
-    if(!k) continue;
-    for(const role in IMPORT_HEADER_WORDS) if(IMPORT_HEADER_WORDS[role].indexOf(k)!==-1){ hits++; break; }
-  }
-  return hits>=2 || (cells.length===2 && hits===2) || (cells.length>=2 && hits>=1 && cells.every(c=>importWords(c)<=3 && !/[.:;—–]/.test(c)) && hits>=Math.ceil(cells.length/2));
-}
-function importAutoMapping(cells, header){
-  const n=cells.length, roles=new Array(n).fill('ignore');
-  const taken={};
-  if(header){
-    cells.forEach((c,i)=>{
-      const k=importHeaderKey(c);
-      for(const role of ['term','gloss','section','note']){
-        if(taken[role]) continue;
-        if(IMPORT_HEADER_WORDS[role].indexOf(k)!==-1){ roles[i]=role; taken[role]=true; break; }
-      }
-    });
-  }
-  // positional fill for whatever the header didn't name (or when there is none)
-  const order=['term','gloss','section','note'];
-  for(let i=0;i<n;i++){
-    if(roles[i]!=='ignore') continue;
-    const next=order.find(r=>!taken[r]);
-    if(!next) break;
-    roles[i]=next; taken[next]=true;
-  }
-  return roles;
-}
-function importAnalyse(text, opts){
-  opts=opts||{};
-  const forced=opts.sep&&opts.sep!=='auto'?opts.sep:null;
-  const src=String(text||'').replace(/^﻿/,'').replace(/\r\n?/g,'\n');
-  const all=src.split('\n').map((s,i)=>({line:i+1, text:importCleanLine(s), indent:(/^[ \t]*/.exec(s.replace(/\u00a0/g,' '))[0]).replace(/\t/g,'    ').length})).filter(l=>l.text);
-  const res={mode:'none', sep:null, columns:0, header:false, mapping:null, rows:[], skipped:[],
-             total:0, parsed:0, confidence:0, headings:0, countsStripped:0};
-  if(!all.length) return res;
-  // 1. headings, stripped out of the body and remembered as the running section
-  const body=[]; let section='';
-  const headingAt={};   // body index -> section label in force from there on
-  for(const l of all){
-    if(IMPORT_HEADING_RE.test(l.text) && !/\t/.test(l.text) && importWords(l.text)<=8){
-      section=l.text.slice(0,CAP_SECTION); res.headings++; continue;
-    }
-    // A line that is nothing but a Roman numeral ("I", "IV") is a part
-    // heading -- the freshers' lists head each part that way. Labelled
-    // "Part I" the way those decks already are. Bare digits are NOT
-    // headings: in extracted PDF text they are page numbers.
-    if(IMPORT_ROMAN_RE.test(l.text)){ section=('Part '+l.text.replace(/\.$/,'')).slice(0,CAP_SECTION); res.headings++; continue; }
-    headingAt[body.length]=section;
-    body.push(l);
-  }
-  res.total=body.length;
-  if(!body.length) return res;
-  // 2. numbering: "12." / "12)" / "(12)" prefixes are stripped per line; a bare
-  //    "12 word" prefix only when nearly every line carries one.
-  const bareNumbered=body.filter(l=>IMPORT_BARE_NUM_RE.test(l.text)).length>=Math.ceil(body.length*0.8) && body.length>=3;
-  let lines=body.map(l=>{
-    let t=l.text.replace(IMPORT_NUM_RE,'');
-    if(bareNumbered) t=t.replace(IMPORT_BARE_NUM_RE,'');
-    return {line:l.line, raw:l.text, text:t.trim(), indent:l.indent||0};
-  });
-  // A term that wrapped in the source: a line carrying no Latin-script
-  // letter at all (a headword and its endings, nothing else) followed by a
-  // line that opens with an ending fragment ("-οῦν (made of) silver") is one
-  // entry -- an ending can't start a term, so re-join before any rule runs.
-  for(let i=0;i+1<lines.length;i++){
-    if(!IMPORT_LATIN_LETTER.test(lines[i].text) && IMPORT_NONLATIN_LETTER.test(lines[i].text) && /^-\S/.test(lines[i+1].text) && lines[i].text.indexOf('\t')===-1){
-      lines[i+1]={line:lines[i].line, raw:lines[i].raw+' / '+lines[i+1].raw, text:lines[i].text+' '+lines[i+1].text, indent:lines[i].indent};
-      lines[i]=null;
-    }
-  }
-  lines=lines.filter(Boolean);
-  const n=lines.length;
-  // 3. which rule wins
-  let mode='none', sep=null, delim=null;
-  const tryTabular=(d)=>{
-    if(d.ch==='\t'){
-      const with_=lines.filter(l=>l.text.indexOf('\t')!==-1).length;
-      return with_>=Math.ceil(n*IMPORT_MIN_TABULAR) ? {ok:true, columns:0} : {ok:false};
-    }
-    const counts={};
-    lines.forEach(l=>{ const k=importSplitFields(l.text,d.ch).length; counts[k]=(counts[k]||0)+1; });
-    let best=0, bestK=0;
-    for(const k in counts) if(+k>=2 && counts[k]>best){ best=counts[k]; bestK=+k; }
-    return (bestK>=2 && best>=Math.ceil(n*IMPORT_MIN_TABULAR)) ? {ok:true, columns:bestK} : {ok:false};
-  };
-  if(forced){
-    const d=IMPORT_TAB_DELIMS.find(x=>x.id===forced);
-    if(d){ mode='tabular'; sep=d.id; delim=d.ch; }
-    else if(forced==='alt'){ mode='alt'; sep='alt'; }
-    else if(IMPORT_LINE_SEPS.find(x=>x.id===forced)){ mode='lines'; sep=forced; }
-  } else {
-    // Order is the design (IMPORT_PLAN.md I4): tab, then the delimiters a
-    // gloss never contains (semicolon, pipe), then the one-per-line
-    // separators, and only THEN comma -- a comma-separated gloss list
-    // ("good, brave, capable") is consistent enough, on a small sample, to
-    // masquerade as a two-column CSV, so a colon or dash on most lines has
-    // to be given the chance to win first. A real CSV (DCC's) has none of
-    // those on its lines and still gets here.
-    for(const d of IMPORT_TAB_DELIMS){
-      if(d.id==='comma') continue;
-      const r=tryTabular(d);
-      if(r.ok){ mode='tabular'; sep=d.id; delim=d.ch; break; }
-    }
-    if(mode==='none'){
-      let best=null;
-      // Indented lines can't be entries in layout-preserving text (they are
-      // wrapped glosses, handled as continuations below), so they don't
-      // count against a rule's coverage.
-      const base=lines.filter(l=>l.indent<4), covLines=base.length>=2?base:lines;
-      for(const s of IMPORT_LINE_SEPS){
-        const cov=covLines.filter(l=>{ const f=s.find(l.text); return f&&f.index>0; }).length/covLines.length;
-        if(cov>=IMPORT_MIN_LINES && (!best||cov>best.cov)){ best={id:s.id,cov}; }
-      }
-      if(best){ mode='lines'; sep=best.id; }
-    }
-    if(mode==='none'){
-      const d=IMPORT_TAB_DELIMS.find(x=>x.id==='comma');
-      const r=tryTabular(d);
-      if(r.ok){ mode='tabular'; sep=d.id; delim=d.ch; }
-    }
-    if(mode==='none' && n>=4){
-      // alternating term / gloss lines: a Greek or macron test settles it
-      // outright for Classics; English->English needs a short/long pattern
-      // on nearly every pair before it's believed.
-      let pairs=0, hits=0, strong=0;
-      for(let i=0;i+1<n;i+=2){
-        pairs++;
-        const a=lines[i].text, b=lines[i+1].text;
-        const sa=importIsGreek(a)||importHasMacron(a), sb=importIsGreek(b)||importHasMacron(b);
-        if(sa&&!sb){ hits++; strong++; continue; }
-        if(!sa&&!sb && importWords(a)<=4 && importWords(b)>=2 && b.length>a.length) hits++;
-      }
-      if(pairs && ((strong && hits/pairs>=IMPORT_MIN_ALT) || hits/pairs>=0.85)){ mode='alt'; sep='alt'; }
-    }
-  }
-  res.mode=mode; res.sep=sep;
-  if(mode==='none'){
-    lines.forEach(l=>res.skipped.push({line:l.line, text:l.raw, reason:'no consistent shape'}));
-    return res;
-  }
-  // 4. rows
-  const raw=[];   // [{term,gloss,section,note,line}] before caps/dedupe
-  const sectionFor=(idx)=>headingAt[idx]||'';
-  if(mode==='tabular'){
-    const table=lines.map(l=>importSplitFields(l.text, delim));
-    let columns=0; const cc={};
-    table.forEach(f=>{ cc[f.length]=(cc[f.length]||0)+1; });
-    for(const k in cc) if(cc[k]>(cc[columns]||0)) columns=+k;
-    if(delim==='\t' && columns<2){ columns=Math.max.apply(null, table.map(f=>f.length)); }
-    res.columns=columns;
-    // The header is the first COMPLETE row. Everything above it is a PDF's
-    // title page and rubric: OCR's defined-vocabulary list runs to two pages
-    // of them, some of those lines carry two columns of their own, and its
-    // copyright line spans the first and last columns with nothing between --
-    // so neither "the first line" nor "the first full-width line" finds the
-    // header. The first row with every cell filled is either the header or
-    // the first entry, and importLooksLikeHeader says which.
-    let hIdx=0;
-    for(; hIdx<table.length; hIdx++){
-      const f=table[hIdx];
-      if(f.length===columns && f.every(c=>c)) break;
-    }
-    if(hIdx>=table.length) hIdx=0;
-    const head=table[hIdx]||[];
-    const header = opts.header==='auto'||opts.header==null ? importLooksLikeHeader(head) : !!opts.header;
-    res.header=header;
-    const mapping = (opts.mapping&&opts.mapping.length===columns) ? opts.mapping.slice() : importAutoMapping(head.length===columns?head:new Array(columns).fill(''), header);
-    res.mapping=mapping;
-    const ti=mapping.indexOf('term'), gi=mapping.indexOf('gloss'), si=mapping.indexOf('section'), ni=mapping.indexOf('note');
-    table.forEach((f,idx)=>{
-      if(header&&idx===hIdx) return;
-      // Once a header row has been identified, everything above it is front
-      // matter by definition -- a title page, a rubric, a copyright line that
-      // happens to reach the last column. Those are not entries.
-      if(header&&idx<hIdx){ res.skipped.push({line:lines[idx].line, text:lines[idx].raw, reason:'above the header row'}); return; }
-      if(f.length>columns){ res.skipped.push({line:lines[idx].line, text:lines[idx].raw, reason:'has '+f.length+' columns, expected '+columns}); return; }
-      if(f.length<2){ res.skipped.push({line:lines[idx].line, text:lines[idx].raw, reason:'only one column'}); return; }
-      const get=i=>(i>=0&&i<f.length)?f[i]:'';
-      let term=get(ti), gloss=get(gi);
-      if(opts.swap){ const x=term; term=gloss; gloss=x; }
-      raw.push({term, gloss, section:get(si)||sectionFor(idx), note:get(ni), line:lines[idx].line, rawText:lines[idx].raw});
-    });
-  } else if(mode==='lines'){
-    const rule=IMPORT_LINE_SEPS.find(s=>s.id===sep);
-    let prevRow=null;   // the row the immediately preceding line produced, for wrapped glosses
-    lines.forEach((l,idx)=>{
-      const m=rule.find(l.text);
-      if(!m){
-        // A gloss that wrapped onto a second line in the source (layout-
-        // preserving PDF text indents the continuation under the gloss
-        // column): an indented, separator-less line right after a row
-        // continues that row's gloss rather than being a failed entry.
-        if(prevRow&&l.indent>=4&&l.text){ prevRow.gloss=(prevRow.gloss+' '+l.text).trim(); prevRow.rawText+=' / '+l.raw; return; }
-        prevRow=null;
-        res.skipped.push({line:l.line, text:l.raw, reason:'no separator found'}); return;
-      }
-      let term=l.text.slice(0,m.index), gloss=l.text.slice(m.index+m.len);
-      if(opts.swap){ const x=term; term=gloss; gloss=x; }
-      prevRow={term, gloss, section:sectionFor(idx), note:'', line:l.line, rawText:l.raw};
-      raw.push(prevRow);
-    });
-  } else if(mode==='alt'){
-    for(let i=0;i<n;i+=2){
-      if(i+1>=n){ res.skipped.push({line:lines[i].line, text:lines[i].raw, reason:'odd line out -- no partner line'}); break; }
-      let term=lines[i].text, gloss=lines[i+1].text;
-      if(opts.swap){ const x=term; term=gloss; gloss=x; }
-      raw.push({term, gloss, section:sectionFor(i), note:'', line:lines[i].line, rawText:lines[i].raw+' / '+lines[i+1].raw});
-    }
-  }
-  // 5. trailing occurrence counts (Steadman's "..., 12"): only when the
-  //    pattern is consistent across the batch, never on a lone number.
-  const countRe=/[,;]?\s+(\d{1,4})$/;
-  const withCount=raw.filter(r=>countRe.test(r.gloss)).length;
-  const stripCounts=raw.length>=2 && withCount>=Math.ceil(raw.length*0.5);
-  // Page numbers: in layout-preserving PDF text the number at the foot of a
-  // page lands on that page's last row. Told apart from occurrence counts
-  // by shape -- a handful of rows, and the integers run 1,2,3,... in order.
-  let stripPages=false;
-  if(!stripCounts && withCount>=3){
-    const seq=raw.filter(r=>countRe.test(r.gloss)).map(r=>+countRe.exec(r.gloss)[1]);
-    stripPages=seq.every((v,i)=>i===0||v===seq[i-1]+1);
-  }
-  // 6. normalise, cap, flag, dedupe
-  const seen=new Set();
-  raw.forEach(r=>{
-    let term=importClean(r.term), gloss=importClean(r.gloss), note=importClean(r.note), section=importClean(r.section);
-    if(stripCounts){
-      const m=countRe.exec(gloss);
-      if(m){ gloss=gloss.slice(0,m.index).trim(); res.countsStripped++; if(opts.keepCounts) note=(note?note+' · ':'')+m[1]; }
-    } else if(stripPages){
-      const m=countRe.exec(gloss);
-      if(m){ gloss=gloss.slice(0,m.index).trim(); res.pagesStripped=(res.pagesStripped||0)+1; }
-    }
-    if(!term||!gloss){ res.skipped.push({line:r.line, text:r.rawText, reason:!term?'empty term':'empty gloss'}); return; }
-    const flags=[];
-    if(term.length>CAP_TERM){ term=term.slice(0,CAP_TERM); flags.push('overcap'); }
-    if(gloss.length>CAP_GLOSS){ gloss=gloss.slice(0,CAP_GLOSS); flags.push('overcap'); }
-    if(note.length>CAP_NOTE) note=note.slice(0,CAP_NOTE);
-    if(section.length>CAP_SECTION) section=section.slice(0,CAP_SECTION);
-    if(importWords(term)>8) flags.push('longterm');
-    const key=norm(term)+'|'+norm(gloss);
-    if(seen.has(key)){ res.skipped.push({line:r.line, text:r.rawText, reason:'duplicate of an earlier line'}); return; }
-    seen.add(key);
-    if(opts.existingTerms && opts.existingTerms.has(norm(term))){ res.skipped.push({line:r.line, text:r.rawText, reason:'already in this deck'}); return; }
-    res.rows.push({term, gloss, section, note, flags, line:r.line});
-  });
-  res.parsed=res.rows.length;
-  res.confidence=res.total?res.rows.length/res.total:0;
-  return res;
-}
-// An HTML <table> from the clipboard (a range copied from Google Sheets or a
-// web page) -> tab-separated text, so the same tab rule handles it. Pure
-// string work on the parsed rows; the DOMParser call lives in the paste
-// handler, not here.
-function importRowsToTsv(rows){
-  return rows.map(cells=>cells.map(c=>importClean(c).replace(/\t/g,' ')).join('\t')).filter(l=>l.replace(/\t/g,'').trim()).join('\n');
-}
-// Every <table> in an HTML string -> tab-separated rows, via the real DOM
-// rather than guessing from flattened text. Shared by the clipboard-paste
-// sniff below and the .docx table reader further down -- same shape either
-// way once something (the browser, or mammoth) hands back real HTML.
-function importHtmlTablesToTsv(html){
-  const doc=new DOMParser().parseFromString(html,'text/html');
-  const tables=Array.from(doc.querySelectorAll('table'));
-  const lines=[];
-  tables.forEach(table=>{
-    Array.from(table.querySelectorAll('tr')).forEach(tr=>{
-      lines.push(Array.from(tr.querySelectorAll('td,th')).map(td=>td.textContent||''));
-    });
-  });
-  return {tsv:importRowsToTsv(lines), tableCount:tables.length};
-}
-// mammoth.js and SheetJS are both UMD bundles (attach window.mammoth /
-// window.XLSX), not ES modules like pdf.js -- import() can't load them, a
-// real same-origin <script> tag can. Cached per src so a second .docx/.xlsx
-// chosen in the same sitting is instant, and never re-fetched.
-const importUmdCache={};
-function importLoadUmd(src, globalName){
-  if(!importUmdCache[src]) importUmdCache[src]=new Promise((resolve,reject)=>{
-    const s=document.createElement('script');
-    s.src=src;
-    s.onload=()=>{ const g=window[globalName]; g?resolve(g):reject(new Error(globalName+' did not attach after loading '+src)); };
-    s.onerror=()=>reject(new Error('Could not load '+src));
-    document.head.appendChild(s);
-  });
-  return importUmdCache[src];
-}
-/* ---- a PDF's text layer -> text the shape parser can read (IMPORT_PLAN.md
-   §5 step 5). pdf.js hands back positioned runs, not lines, and in a
-   vocabulary list the gloss column is a TAB STOP: copying the page flattens
-   it to a single space, which is why the freshers' Latin list parsed 3002
-   rows from `pdftotext -layout` and 0 rows from a Preview copy (the
-   2026-08-18 test run). Rebuilding that boundary from x positions is the
-   whole reason to read the PDF here rather than ask for a copy of it.
-
-   importPdfLayout is pure, and deliberately library-shaped but not
-   library-bound: items arrive as {str,x,y,w,h} in VIEWPORT space (x right,
-   y DOWN from the top-left, y at the baseline), which is what
-   importPdfExtract computes from pdf.js's transforms -- so the tests drive
-   all of this with plain numbers and no pdf.js at all.
-
-   importPdfLayout(pages, opts) -> {text, mode, boundary, lines, dropped}
-     pages    [{width, height, items:[{str,x,y,w,h}]}]
-     mode     'columns'  a term|gloss tab stop was found -> emitted as TSV
-              'blocks'   side-by-side page columns -> left block, then right
-              'flow'     neither -> lines in the order they fall
-     boundary x of the gloss column, when mode is 'columns'
-     dropped  page numbers removed by geometry
-   opts: {gapMin, tol} -- the geometry knobs, defaulted below; tests pin them. */
-const IMPORT_PDF_GAP_MIN=10;    // pt: narrower than this is word spacing, not a tab stop
-const IMPORT_PDF_X_TOL=3;       // pt: two column starts this close are one column
-const IMPORT_PDF_MARGIN=0.08;   // the head/foot band of a page where a lone number is a page number
-const IMPORT_PDF_MAX_PAGES=400; // a book is not a word list; read this far and say so
-
-// Items -> visual lines, grouped by baseline rather than by pdf.js's item
-// order: a two-column page emits its columns in whatever order the content
-// stream happens to hold them, and hasEOL is only ever as good as that order.
-function importPdfPageLines(page, opts){
-  const items=((page&&page.items)||[]).filter(i=>i&&typeof i.str==='string'&&i.str.trim());
-  if(!items.length) return [];
-  const heights=items.map(i=>i.h||0).filter(h=>h>0).sort((a,b)=>a-b);
-  const med=heights.length?heights[heights.length>>1]:10;
-  const tol=Math.max(2, med*0.5);
-  const sorted=items.slice().sort((a,b)=> a.y-b.y || a.x-b.x);
-  const lines=[]; let cur=null;
-  for(const it of sorted){
-    if(cur && Math.abs(it.y-cur.y)<=tol){ cur.items.push(it); cur.y=(cur.y*cur.items.length+it.y)/(cur.items.length+1); }
-    else { cur={y:it.y, items:[it]}; lines.push(cur); }
-  }
-  lines.forEach(l=>l.items.sort((a,b)=>a.x-b.x));
-  return lines;
-}
-// The widest gap on a line, and where the run after it starts -- the raw
-// material for finding the tab stop.
-function importPdfLineGap(line){
-  let best=0, at=0;
-  for(let i=1;i<line.items.length;i++){
-    const prev=line.items[i-1], it=line.items[i];
-    const gap=it.x-(prev.x+(prev.w||0));
-    if(gap>best){ best=gap; at=it.x; }
-  }
-  return {gap:best, x:at};
-}
-// Join a run of items into text. A gap wide enough to be a space becomes one
-// space; anything tighter is concatenation, because pdf.js splits a word at
-// every font change -- "ἀπεχθάνο"+"μ"+"αι" is one word in three runs, and a
-// space between them would make it three (the freshers' Greek list again).
-function importPdfJoin(items){
-  let s='';
-  for(let i=0;i<items.length;i++){
-    const it=items[i];
-    if(i){
-      const prev=items[i-1];
-      const gap=it.x-(prev.x+(prev.w||0));
-      if(gap>=Math.max(1,(it.h||10)*0.22) || /\s$/.test(s) || /^\s/.test(it.str)) s+=' ';
-    }
-    s+=it.str;
-  }
-  return s.replace(/\s+/g,' ').trim();
-}
-// The document's tab stops: the x positions that the most lines' wide gaps
-// land on. Modal, not mean -- one term overrunning its column must not drag a
-// stop -- and there can be SEVERAL, because a defined-vocabulary list is
-// often a real table (OCR's AS Level Latin list is Latin | Notes | Part of
-// Speech | Classification | Meaning), and collapsing that to two columns
-// throws away exactly the structure the preview's column roles exist to map.
-function importPdfStops(lines, opts){
-  const gapMin=opts.gapMin||IMPORT_PDF_GAP_MIN, tol=opts.tol||IMPORT_PDF_X_TOL, xs=[];
-  for(const l of lines){
-    for(let i=1;i<l.items.length;i++){
-      const prev=l.items[i-1], it=l.items[i];
-      if(it.x-(prev.x+(prev.w||0))>=gapMin) xs.push(it.x);
-    }
-  }
-  if(!xs.length) return [];
-  xs.sort((a,b)=>a-b);
-  // cluster, then keep only the stops that most lines actually use: a gap
-  // that happens once is a wide word space, not a column.
-  const multi=lines.filter(l=>l.items.length>=2).length, bar=Math.max(3, multi*0.35), stops=[];
-  for(let i=0;i<xs.length;){
-    let j=i; while(j<xs.length && xs[j]-xs[i]<=tol*2) j++;
-    if(j-i>=bar) stops.push(xs[i+((j-i-1)>>1)]);
-    i=j;
-  }
-  return stops;
-}
-// Two entry columns printed side by side on one page are the same geometry as
-// a term|gloss list -- one stop, content either side of it -- so geometry
-// alone cannot tell them apart. What can: on a 2-up page each half is a list
-// in its own right. So ask the shape parser whether the left half ALONE reads
-// as entries; if it does, the stop is a page gutter and the columns must be
-// read down, not across. (Reaching for importAnalyse from here is a layering
-// inversion on purpose: "does this look like a list" is its judgement to make,
-// and duplicating a weaker version of it here would be worse.)
-function importPdfTwoUp(lines, stop, opts){
-  const left=[];
-  for(const l of lines){
-    const s=importPdfSplit(l, stop);
-    if(s.left.length&&s.right.length) left.push(importPdfJoin(s.left));
-  }
-  if(left.length<8) return false;
-  const r=importAnalyse(left.join('\n'), {sep:'auto', swap:false, header:'auto', mapping:null, keepCounts:false, existingTerms:null});
-  return r.mode!=='none' && r.confidence>=0.6 && r.rows.length>=5;
-}
-// The other shape: two independent blocks of entries side by side, whose
-// lines DON'T pair up. No intra-line gap can find that boundary -- most lines
-// only have items on one side of it -- so look for a vertical band of page
-// that no run ever crosses.
-function importPdfBand(lines, width, opts){
-  const B=5, n=Math.ceil(width/B), used=new Array(n).fill(false);
-  for(const l of lines) for(const it of l.items){
-    const a=Math.max(0,Math.floor(it.x/B)), b=Math.min(n-1,Math.ceil((it.x+(it.w||0))/B));
-    for(let i=a;i<=b;i++) used[i]=true;
-  }
-  let best=null, run=0;
-  for(let i=0;i<=n;i++){
-    if(i<n && !used[i]){ run++; continue; }
-    if(run*B>=20){
-      const mid=(i-run/2)*B, x=i*B;
-      // A band only counts with real content on BOTH sides of it: the empty
-      // right margin of a short-measure page is a gap the full height of the
-      // page too, and calling that a column turns plain prose into blocks.
-      let l=0, rr=0;
-      for(const ln of lines) for(const it of ln.items){ if(it.x<x-1) l++; else rr++; }
-      if(mid>width*0.25 && mid<width*0.75 && l>=3 && rr>=3 && (!best||run>best.run)) best={run, x};
-    }
-    run=0;
-  }
-  return best?best.x:null;
-}
-// Where a line's content sits relative to the boundary. An item belongs to
-// the side it STARTS on, so a long term that overruns the column still counts
-// as a term.
-function importPdfSplit(line, boundary){
-  const left=[], right=[];
-  for(const it of line.items) (it.x<boundary-1?left:right).push(it);
-  return {left, right};
-}
-// Which column an item belongs to: the one it STARTS in, so a term that
-// overruns its stop is still a term.
-function importPdfCells(line, stops){
-  const cells=new Array(stops.length+1).fill(null).map(()=>[]);
-  for(const it of line.items){
-    let c=0; while(c<stops.length && it.x>=stops[c]-1) c++;
-    cells[c].push(it);
-  }
-  return cells;
-}
-function importPdfRow(cells){
-  // A cell after the first that opens with the source's own separator (": a
-  // concise collection") keeps a colon it no longer needs, now that the column
-  // boundary says the same thing. The space is required, so a Greek ending
-  // like "-ή" is never touched.
-  const out=cells.map((c,i)=>{ const s=importPdfJoin(c); return i?s.replace(/^[:\u2013\u2014-]\s+/,''):s; });
-  while(out.length&&!out[out.length-1]) out.pop();
-  return out;
-}
-// Emit one run of lines as rows. With stops, every line becomes cells and a
-// row is tab-separated; without them each line is a row of its own, except
-// that in a block a line indented past the block's own margin is a definition
-// that wrapped. (That indent rule is deliberately NOT applied to a whole page
-// of prose, where an indent marks the START of a paragraph, not a runover.)
-function importPdfEmit(lines, stops, out, opts, indentJoin){
-  const tol=(opts.tol||IMPORT_PDF_X_TOL)*2;
-  let edge=Infinity;
-  if(indentJoin&&!stops.length) for(const l of lines) if(l.items.length) edge=Math.min(edge, l.items[0].x);
-  for(const l of lines){
-    if(!stops.length){
-      const text=importPdfJoin(l.items);
-      if(!text) continue;
-      if(indentJoin && l.items[0].x>edge+tol && out.length) out[out.length-1]+=' '+text;
-      else out.push(text);
-      continue;
-    }
-    const cells=importPdfRow(importPdfCells(l, stops));
-    if(!cells.length) continue;
-    if(cells[0]){ out.push(cells.join('\t')); continue; }
-    // Nothing in the first column. Either a gloss that wrapped -- which
-    // belongs on the end of the row above, and is typeset AT a stop -- or a
-    // centred part heading, which sits right of one ("II", 41pt further right,
-    // in the freshers' Latin list). Swallowing that heading loses the section
-    // for every row that follows it.
-    const atStop=stops.some(s=>Math.abs(l.items[0].x-s)<=tol), prev=out.length-1;
-    if(atStop && prev>=0 && out[prev].indexOf('\t')>=0){
-      const was=out[prev].split('\t');
-      cells.forEach((c,i)=>{ if(c) was[i]=(was[i]?was[i]+' ':'')+c; });
-      out[prev]=was.join('\t');
-    } else out.push(cells.filter(Boolean).join(' '));
-  }
-}
-// One side of a gutter, as lines in its own right -- so a block can have its
-// own tab stops. Two two-column lists printed side by side are four stops on
-// the page and two on each side of it, and only the second reading is true.
-function importPdfSide(lines, gutter, left){
-  const out=[];
-  for(const l of lines){
-    const s=importPdfSplit(l, gutter), run=left?s.left:s.right;
-    if(run.length) out.push({y:l.y, items:run});
-  }
-  return out;
-}
-function importPdfLayout(pages, opts){
-  opts=opts||{};
-  const perPage=(pages||[]).map(p=>({page:p, lines:importPdfPageLines(p, opts)}));
-  const all=[].concat.apply([], perPage.map(p=>p.lines));
-  if(!all.length) return {text:'', mode:'flow', boundary:null, stops:[], lines:0, dropped:0};
-  const width=(pages[0]&&pages[0].width)||595;
-  let stops=importPdfStops(all, opts), mode='columns', gutter=null;
-  // Is one of those stops a page gutter rather than a column? Try the stops
-  // nearest the middle of the page first -- that is where a gutter is.
-  for(const s of stops.slice().sort((a,b)=>Math.abs(a-width/2)-Math.abs(b-width/2))){
-    if(s>width*0.25 && s<width*0.75 && importPdfTwoUp(all, s, opts)){ gutter=s; mode='blocks'; break; }
-  }
-  if(!stops.length){
-    // No stop at all, but two blocks of entries whose lines never pair up
-    // still leave a band of page that nothing crosses.
-    const band=importPdfBand(all, width, opts);
-    if(band!==null){
-      let both=0, one=0;
-      for(const l of all){ const s=importPdfSplit(l, band); if(s.left.length&&s.right.length) both++; else one++; }
-      if(both<one*0.25){ gutter=band; stops=[band]; mode='blocks'; }
-    }
-    if(!stops.length) mode='flow';
-  }
-  const out=[];
-  let dropped=0;
-  const kept=[];
-  for(const pl of perPage){
-    const H=(pl.page&&pl.page.height)||842, keep=[];
-    for(const l of pl.lines){
-      const text=importPdfJoin(l.items);
-      if(!text) continue;
-      // A lone number in the head or foot margin is a page number. The text
-      // parser has to guess that from the number alone; here it is geometry.
-      if(/^\d{1,4}$/.test(text) && (l.y<H*IMPORT_PDF_MARGIN || l.y>H*(1-IMPORT_PDF_MARGIN))){ dropped++; continue; }
-      keep.push({line:l, text, head:(l.y<H*0.15||l.y>H*0.85)});
-    }
-    kept.push(keep);
-  }
-  // Running heads and feet: the same words, at the same height, page after
-  // page -- a repeated table header or a title bar, not content. OCR's AS
-  // Level Latin list reprints its "Latin | Notes | Part of Speech | ..."
-  // header on all thirteen of its pages. The first is left alone, so a header
-  // row that IS the first line can still be read as one.
-  const runs=new Map();
-  kept.forEach((keep,pi)=>keep.forEach(k=>{
-    if(!k.head) return;
-    // Keyed on the words alone: bucketing by height split OCR's reprinted
-    // table header across two buckets, and one copy of it survived.
-    const key=k.text;
-    if(!runs.has(key)) runs.set(key,[]);
-    if(runs.get(key).indexOf(pi)<0) runs.get(key).push(pi);
-  }));
-  const dropRun=new Set(), runSeen=new Set();
-  runs.forEach((pgs,key)=>{ if(pgs.length>=3) dropRun.add(key); });
-  const sideStops=[null,null];
-  if(mode==='blocks'){
-    [true,false].forEach((left,i)=>{ sideStops[i]=importPdfStops(importPdfSide(all, gutter, left), opts); });
-  }
-  for(let pi=0;pi<perPage.length;pi++){
-    const keep=kept[pi].filter(k=>{
-      if(!k.head) return true;
-      const key=k.text;
-      if(!dropRun.has(key)) return true;
-      if(runSeen.has(key)){ dropped++; return false; }
-      runSeen.add(key); return true;
-    });
-    const lines=keep.map(k=>k.line);
-    if(mode==='blocks'){
-      importPdfEmit(importPdfSide(lines, gutter, true),  sideStops[0], out, opts, true);
-      importPdfEmit(importPdfSide(lines, gutter, false), sideStops[1], out, opts, true);
-    } else {
-      importPdfEmit(lines, mode==='columns'?stops:[], out, opts, false);
-    }
-  }
-  return {text:out.join('\n'), mode, boundary:gutter!==null?gutter:(stops.length?stops[0]:null),
-          stops:mode==='blocks'?[gutter]:stops, lines:out.length, dropped};
-}
-// pdf.js itself: 1.7 MB in vendor/, fetched only when a PDF is actually
-// chosen, so a person who never opens one never pays for it. Text only --
-// nothing is rendered, no canvas, no fonts, and the file goes in as bytes
-// (getDocument({data}), never a URL) because the CSP allows connect-src to
-// the sync Worker and nothing else.
-let importPdfLib=null;
-async function importPdfExtract(file, onProgress){
-  if(!importPdfLib){
-    importPdfLib=await import('./vendor/pdf.min.mjs');
-    importPdfLib.GlobalWorkerOptions.workerSrc='./vendor/pdf.worker.min.mjs';
-  }
-  const pdfjs=importPdfLib;
-  // A PDF whose text is set in unembedded Helvetica/Times/Courier makes
-  // pdf.js log "Ensure that the standardFontDataUrl API parameter is
-  // provided". It is a warning, not a failure -- the text still comes out
-  // right -- and the font data is deliberately NOT vendored: it is fetched,
-  // and connect-src reaches the sync Worker and nothing else.
-  const task=pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer()), isEvalSupported:false, disableAutoFetch:true});
-  const doc=await task.promise;
-  const read=Math.min(doc.numPages, IMPORT_PDF_MAX_PAGES), pages=[];
-  try{
-    for(let p=1;p<=read;p++){
-      const page=await doc.getPage(p), vp=page.getViewport({scale:1});
-      const items=[];
-      for(const it of (await page.getTextContent()).items){
-        if(typeof it.str!=='string'||!it.str.trim()) continue;
-        const tx=pdfjs.Util.transform(vp.transform, it.transform);
-        items.push({str:it.str, x:tx[4], y:tx[5], w:it.width||0, h:Math.hypot(tx[2],tx[3])||it.height||0});
-      }
-      pages.push({width:vp.width, height:vp.height, items});
-      page.cleanup();
-      if(onProgress) onProgress(p, read, doc.numPages);
-    }
-  } finally { task.destroy(); }   // the LOADING TASK owns destroy() in pdf.js 6; doc.destroy is undefined
-  return {pages, read, numPages:doc.numPages};
-}
-// A vocabula deck file (Settings -> "Export deck file"): the content record
-// exactly as the IndexedDB `content` store holds it, plus enough of the
-// registry row to recreate it. Row ids are PRESERVED on the way back in so a
-// state backup restored on the other device re-attaches history to the same
-// cards -- the whole point of preferring this over re-triaging the source.
-function importParseDeckFile(text){
-  let o;
-  try{ o=JSON.parse(text); }catch(e){ return null; }
-  if(!o||typeof o!=='object'||o.format!=='vocabula-deck') return null;
-  const d=o.deck, c=o.content;
-  if(!d||typeof d!=='object'||typeof d.id!=='string'||!/^d[0-9a-z]+$/.test(d.id)) return {error:'This deck file has no usable deck id.'};
-  if(!c||typeof c!=='object'||!Array.isArray(c.DATA)||typeof c.KEY!=='string'||typeof c.DECK_TITLE!=='string'||!c.DECK||typeof c.DECK!=='object') return {error:'This deck file is missing its content.'};
-  const ids=new Set(), rows=[];
-  for(const r of c.DATA){
-    if(!Array.isArray(r)||r.length<5||typeof r[0]!=='string'||!r[0].trim()||typeof r[1]!=='string'||!r[1].trim()||typeof r[4]!=='string'||!/^u[0-9a-z]+$/.test(r[4])||ids.has(r[4])) continue;
-    ids.add(r[4]);
-    rows.push([r[0].trim().slice(0,CAP_TERM), r[1].trim().slice(0,CAP_GLOSS), (typeof r[2]==='string'&&r[2].trim()?r[2].trim():c.DECK_TITLE).slice(0,CAP_SECTION), 0, r[4]]);
-  }
-  if(!rows.length) return {error:'This deck file has no usable words in it.'};
-  const script=c.DECK.script==='greek'?'greek':'latin';
-  const title=String(c.DECK_TITLE).trim().slice(0,60)||'Imported deck';
-  return {
-    id:d.id, key:'vocabula.custom.'+d.id+'.v1', title, script,
-    kind:(d.kind==='wordlist'||d.kind==='formula')?d.kind:'language',
-    content:{
-      DATA:rows,
-      CHANGES:Array.isArray(c.CHANGES)?c.CHANGES:[],
-      DECK:{script, fwd:typeof c.DECK.fwd==='string'?c.DECK.fwd:title+' → English', rev:typeof c.DECK.rev==='string'?c.DECK.rev:'English → '+title,
-            mottos:Array.isArray(c.DECK.mottos)&&c.DECK.mottos.length?c.DECK.mottos:[['Little by little, a little becomes a lot.','—Tanzanian proverb']]},
-      KEY:'vocabula.custom.'+d.id+'.v1', DECK_TITLE:title
-    }
-  };
-}
-// Direction labels per deck kind (IMPORT_PLAN.md I6) -- fixes the old
-// hard-coded "<title> → English", which was wrong for anything that isn't a
-// language deck: an SAT list is English -> English, a formula sheet is
-// name -> formula.
-function deckLabelsFor(kind, title){
-  if(kind==='wordlist') return {fwd:'Word → Definition', rev:'Definition → Word'};
-  if(kind==='formula') return {fwd:'Name → Formula', rev:'Formula → Name'};
-  return {fwd:title+' → English', rev:'English → '+title};
-}
-
-/* ---- the import preview (IMPORT_PLAN.md §2E) -- the screen in front of
-   triage: what the parser found, what it skipped and why, the controls that
-   change how it reads the text (separator, swap, header row, column roles,
-   trailing counts), and the three ways out: Accept all, Review the flagged,
-   Triage everything. Re-runs the pure parser on every control change; the
-   source text itself is never mutated. ---- */
-let importSource='', importResult=null, importDeckFile=null, importNote='';
-let importOpts={sep:'auto', swap:false, header:'auto', mapping:null, keepCounts:false};
-function existingTermSet(){
-  const s=new Set();
-  try{ DATA.forEach(r=>s.add(norm(r[0]))); }catch(e){}
-  return s;
-}
-function readTargetChoice(){
-  triageTarget=$('exTarget').value==='append'?'append':'new';
-  triageKind=$('exKind').value||'language';
-  triageScript=($('exScript').value==='greek')?'greek':'latin';
-  triageTitle=triageTarget==='append'?DECK_TITLE:$('exTitle').value.trim();
-}
-function startImportPreview(text, note){
-  importSource=text; importDeckFile=null; importNote=note||'';
-  importOpts={sep:'auto', swap:false, header:'auto', mapping:null, keepCounts:false};
-  $('extractSetup').classList.add('hidden');
-  $('triageArea').classList.add('hidden');
-  $('triageDone').classList.add('hidden');
-  $('importPreview').classList.remove('hidden');
-  renderImportPreview();
-}
-function findWords(note){
-  readTargetChoice();
-  const text=$('exText').value;
-  if(!text.trim()){ $('exParseError').textContent='Paste some text, or choose a file, first.'; return; }
-  $('exParseError').textContent='';
-  // A deck file carries its own title, kind and script -- it needs nothing
-  // from the fields above, so it's recognised before the title gate.
-  const deckFile=/^\s*\{/.test(text)?importParseDeckFile(text):null;
-  if(deckFile){ if(deckFile.error){ $('exParseError').textContent=deckFile.error; return; } startDeckFilePreview(deckFile); return; }
-  if(triageTarget==='new'&&!triageTitle){ $('exParseError').textContent='Give the deck a title first.'; return; }
-  // a pasted/chosen JSON candidate array takes the same road as the JSON fold
-  if(/^\s*\[/.test(text)){
-    const r=parseCandidates(text);
-    if(!r.error){ importCandidatesToPreview(r.candidates); return; }
-  }
-  startImportPreview(text, note);
-}
-// A candidate array that arrived ready-made (a .json file, or JSON pasted
-// into the main box) still goes through the preview -- so the counts,
-// duplicates and caps show, and Accept-all is available -- by rendering it
-// as tab-separated text the parser reads back exactly.
-function importCandidatesToPreview(cands){
-  const tsv=importRowsToTsv(cands.map(c=>[c.term,c.gloss,c.section||'',c.note||'']));
-  startImportPreview('term\tgloss\tsection\tnote\n'+tsv);
-}
-/* ---- Which rows the preview actually shows. The table is capped for the
-   DOM's sake, and a cap spent entirely on the TOP is the worst possible
-   sample: the front matter is at the top, while a column boundary that
-   drifts on page 40 of a 64-page PDF sits in the middle and is invisible
-   until you are already studying the wrong answer. So the cap buys three
-   windows -- the start, the middle, and the end. Pure, so the tests can
-   pin the arithmetic. */
-function importPreviewSlices(n, show){
-  if(n<=show) return [[0,n]];
-  const head=Math.round(show*0.5), midN=Math.round(show*0.25), tailN=show-head-midN;
-  const m0=Math.floor((n-midN)/2), t0=n-tailN;
-  if(m0<=head || t0<=m0+midN) return [[0,show]];   // too few rows for three clean windows
-  return [[0,head],[m0,m0+midN],[t0,n]];
-}
-// The prompt the "Copy a prompt for an AI" button puts on the clipboard, for
-// the sources this parser can't read: a scan, a photograph, a page whose
-// columns it gets wrong. The rules are all about fencing the model in --
-// a parser fails loudly and a model fails quietly, and an invented gloss
-// looks exactly like a correct one, so the only defence is to forbid
-// invention and demand that anything unreadable be declared.
-const IMPORT_AI_PROMPT=[
-  'Turn this vocabulary list into tab-separated lines -- one entry per line, in this shape:',
-  '',
-  'term<TAB>gloss',
-  '',
-  'Rules:',
-  '- Copy exactly what is printed. Do not translate, correct, modernise, expand abbreviations, or add anything that is not on the page.',
-  '- Keep accents, breathings and macrons exactly as printed.',
-  '- Keep grammatical information (principal parts, genitive endings, gender, "+ acc") with the term, in the order printed.',
-  '- One printed entry is one line. Where a page has two columns of entries side by side, read the whole of one column before starting the other.',
-  '- If the list is divided into parts, chapters or lessons, put that name in a third tab-separated column.',
-  '- If you cannot read an entry with confidence, leave it out and list it at the end under a line reading SKIPPED.',
-  '- Output nothing else: no commentary, no headings, no numbering, no markdown.'
-].join('\n');
-function importFlagLabel(f){ return f==='overcap'?'cut to length':f==='longterm'?'long term — check the split':f; }
-function renderImportPreview(){
-  const opts=Object.assign({}, importOpts, {existingTerms: triageTarget==='append'?existingTermSet():null});
-  const r=importAnalyse(importSource, opts);
-  importResult=r;
-  const flagged=r.rows.filter(x=>x.flags.length).length;
-  const sepName={tab:'tabs',semicolon:'semicolons',pipe:'pipes',comma:'commas',emdash:'em dashes',endash:'en dashes',dashdash:'double hyphens',colon:'colons',equals:'equals signs',hyphen:'hyphens',spaces:'runs of spaces',script:'the change of script',alt:'alternating lines'}[r.sep]||'';
-  $('ipSummary').textContent = r.mode==='none'
-    ? 'No consistent shape found in '+r.total+' line'+(r.total===1?'':'s')
-    : r.rows.length+' word'+(r.rows.length===1?'':'s')+' found · '+r.skipped.length+' skipped · '+flagged+' flagged'
-      +(sepName?' · split on '+sepName:'')+(r.header?' · header row':'')+(r.headings?' · '+r.headings+' heading'+(r.headings===1?'':'s'):'')
-      +(r.countsStripped?' · trailing counts '+(importOpts.keepCounts?'kept in notes':'dropped'):'');
-  if(importNote) $('ipSummary').textContent+=' · '+importNote;
-  // controls
-  $('ipSep').value=importOpts.sep;
-  $('ipSwap').classList.toggle('on',!!importOpts.swap);
-  $('ipHeaderWrap').classList.toggle('hidden', r.mode!=='tabular');
-  $('ipHeader').checked=!!r.header;
-  $('ipCountsWrap').classList.toggle('hidden', !r.countsStripped && !importOpts.keepCounts);
-  $('ipCounts').checked=!!importOpts.keepCounts;
-  // column roles, tabular only
-  const map=$('ipMapping'); map.innerHTML='';
-  if(r.mode==='tabular' && r.columns>=2 && r.mapping){
-    const roles=[['term','Term'],['gloss','Gloss'],['section','Section'],['note','Note'],['ignore','Ignore']];
-    r.mapping.forEach((role,i)=>{
-      const lab=document.createElement('label'); lab.className='ipCol';
-      lab.appendChild(document.createTextNode('Column '+(i+1)+' '));
-      const sel=document.createElement('select'); sel.className='sel'; sel.dataset.col=i;
-      roles.forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; if(v===role) o.selected=true; sel.appendChild(o); });
-      lab.appendChild(sel); map.appendChild(lab);
-    });
-  }
-  // the table itself -- capped for the DOM's sake; the count line above is the truth
-  const SHOW=400;
-  const slices=importPreviewSlices(r.rows.length, SHOW);
-  let html='<thead><tr><th>#</th><th>Term</th><th>Gloss</th><th>Section</th><th>Note</th></tr></thead><tbody>';
-  let shown=0, at=0;
-  slices.forEach(([a,b])=>{
-    if(a>at) html+='<tr><td colspan="5" class="more">… '+(a-at)+' row'+(a-at===1?'':'s')+' not shown …</td></tr>';
-    for(let i=a;i<b;i++){
-      const x=r.rows[i];
-      html+='<tr'+(x.flags.length?' class="flag"':'')+'><td class="n">'+(i+1)+'</td><td>'+escHtml(x.term)+'</td><td>'+escHtml(x.gloss)+'</td><td>'+escHtml(x.section)+'</td><td>'+escHtml(x.note)
-           +(x.flags.length?'<span class="ipFlag">'+escHtml(x.flags.map(importFlagLabel).join(', '))+'</span>':'')+'</td></tr>';
-    }
-    shown+=b-a; at=b;
-  });
-  if(at<r.rows.length) html+='<tr><td colspan="5" class="more">… '+(r.rows.length-at)+' row'+(r.rows.length-at===1?'':'s')+' not shown …</td></tr>';
-  if(!r.rows.length) html+='<tr><td colspan="5" class="more">'+(r.mode==='none'?'Try a separator from the list above, or check the skipped lines below.':'Nothing usable — check the skipped lines below.')+'</td></tr>';
-  html+='</tbody>';
-  $('ipTable').innerHTML=html;
-  // skipped lines
-  $('ipSkippedFold').classList.toggle('hidden', !r.skipped.length);
-  $('ipSkippedSummary').textContent=r.skipped.length+' skipped line'+(r.skipped.length===1?'':'s');
-  $('ipSkipped').textContent=r.skipped.slice(0,300).map(s=>'line '+s.line+' — '+s.reason+'\n    '+s.text).join('\n')+(r.skipped.length>300?'\n… and '+(r.skipped.length-300)+' more':'');
-  // buttons
-  // Said where it matters -- above the button that keeps the batch -- and only
-  // when the batch is big enough that nobody is reading every row.
-  const cau=$('ipCaution');
-  if(r.rows.length>25){
-    cau.classList.remove('hidden');
-    cau.textContent='What a parser gets wrong, it gets wrong quietly: one boundary read a word too far turns every gloss on that page into the wrong answer, and a word learnt wrong is worse than one never imported. '
-      +(shown<r.rows.length
-        ? 'Check a few rows against the original — the table shows '+shown+' of '+r.rows.length+', from the start, the middle and the end, so read past the first screen.'
-        : 'Check a few rows against the original before keeping them.');
-  } else cau.classList.add('hidden');
-  $('ipAcceptAll').disabled=!r.rows.length;
-  $('ipAcceptAll').textContent=triageTarget==='append'?'Add all '+r.rows.length+' to '+DECK_TITLE:'Accept all '+r.rows.length;
-  $('ipReviewFlagged').disabled=!flagged;
-  $('ipReviewFlagged').textContent='Review the flagged'+(flagged?' ('+flagged+')':'');
-  $('ipTriageAll').disabled=!r.rows.length;
-  $('ipModel').classList.toggle('hidden', !(r.mode==='none' && loadExtractKey()));
-  $('ipDeckImport').classList.add('hidden');
-  $('ipControls').classList.remove('hidden');
-}
-// The deck-file variant of the same screen: read-only rows, one way out.
-function startDeckFilePreview(df){
-  importDeckFile=df; importSource=''; importResult=null;
-  $('extractSetup').classList.add('hidden');
-  $('triageArea').classList.add('hidden'); $('triageDone').classList.add('hidden');
-  $('importPreview').classList.remove('hidden');
-  $('ipSummary').textContent='Deck file: “'+df.title+'” · '+df.content.DATA.length+' word'+(df.content.DATA.length===1?'':'s')+' · '+(df.kind==='wordlist'?'word list':df.kind==='formula'?'formula sheet':'language deck');
-  $('ipControls').classList.add('hidden'); $('ipMapping').innerHTML='';
-  let html='<thead><tr><th>#</th><th>Term</th><th>Gloss</th><th>Section</th></tr></thead><tbody>';
-  df.content.DATA.slice(0,400).forEach((r,i)=>{ html+='<tr><td class="n">'+(i+1)+'</td><td>'+escHtml(r[0])+'</td><td>'+escHtml(r[1])+'</td><td>'+escHtml(r[2])+'</td></tr>'; });
-  if(df.content.DATA.length>400) html+='<tr><td colspan="4" class="more">… and '+(df.content.DATA.length-400)+' more</td></tr>';
-  $('ipTable').innerHTML=html+'</tbody>';
-  $('ipSkippedFold').classList.add('hidden');
-  ['ipAcceptAll','ipReviewFlagged','ipTriageAll'].forEach(id=>$(id).classList.add('hidden'));
-  $('ipModel').classList.add('hidden');
-  const already=userDeckExists(df.id);
-  $('ipDeckImport').classList.remove('hidden');
-  $('ipDeckImport').disabled=already;
-  $('ipDeckImport').textContent=already?'Already on this device':'Import this deck';
-  $('ipError').textContent=already?'A deck with this id is already on this device — open it from the launcher.':'';
-}
-function userDeckExists(id){
-  try{ const v=JSON.parse(localStorage.getItem(USER_DECKS_KEY)); return Array.isArray(v)&&v.some(d=>d&&d.id===id); }catch(e){ return false; }
-}
-function leaveImportPreview(){
-  $('importPreview').classList.add('hidden');
-  ['ipAcceptAll','ipReviewFlagged','ipTriageAll'].forEach(id=>$(id).classList.remove('hidden'));
-  $('ipError').textContent='';
-  $('extractSetup').classList.remove('hidden');
-}
-// The three ways out of the preview. Accept-all skips triage entirely for
-// what the parser found (IMPORT_PLAN.md I2 -- a parser fails by class, not
-// by row; the flagged rows are the class); Review-the-flagged pre-keeps the
-// clean rows and triages only the flagged; Triage-everything is the old
-// one-at-a-time pass for a source that isn't trusted.
-function importAcceptAll(){
-  if(!importResult||!importResult.rows.length) return;
-  finishTriageWith(importResult.rows.map(x=>({term:x.term,gloss:x.gloss,section:x.section,note:x.note})));
-}
-function importReviewFlagged(){
-  if(!importResult) return;
-  const clean=[], flagged=[];
-  importResult.rows.forEach(x=>{ (x.flags.length?flagged:clean).push({term:x.term,gloss:x.gloss,section:x.section,note:x.note}); });
-  if(!flagged.length){ importAcceptAll(); return; }
-  $('importPreview').classList.add('hidden');
-  startTriage(triageTitle, triageScript, flagged, clean);
-}
-function importTriageAll(){
-  if(!importResult||!importResult.rows.length) return;
-  $('importPreview').classList.add('hidden');
-  startTriage(triageTitle, triageScript, importResult.rows.map(x=>({term:x.term,gloss:x.gloss,section:x.section,note:x.note})));
-}
-// Everything decided, nothing written yet: land on the same done screen a
-// completed triage pass lands on, so Create/Add/Discard is one place.
-function finishTriageWith(kept){
-  triageCandidates=[]; triagePos=0; triageKept=kept; triageBinned=0;
-  $('importPreview').classList.add('hidden');
-  renderTriageCard();
-}
-
-// Shared tail end of every entry point (hand-pasted JSON, the preview's
-// triage buttons, the real extraction call) -- everything up to here differs
-// (where the candidates came from, what can go wrong getting them),
-// everything from here on is identical: seed the triage state and show the
-// first card. preKept: rows already accepted without triage (the preview's
-// "Review the flagged"), counted in the running total from the start.
-function startTriage(title,script,candidates,preKept){
-  triageTitle=title; triageScript=script; triageCandidates=candidates;
-  triagePos=0; triageKept=preKept?preKept.slice():[]; triageBinned=0;
-  $('extractSetup').classList.add('hidden');
-  renderTriageCard();
-}
-function beginTriage(){
-  readTargetChoice();
-  if(triageTarget==='new'&&!triageTitle){ $('exSetupError').textContent='Give the deck a title first.'; return; }
-  const r=parseCandidates($('exPaste').value);
-  if(r.error){ $('exSetupError').textContent=r.error; return; }
-  if(!r.candidates.length){ $('exSetupError').textContent='No candidates to triage.'; return; }
-  $('exSetupError').textContent='';
-  startTriage(triageTitle, triageScript, r.candidates);
-}
-// The real extraction call (4a paste-text, 4b a URL instead) -- POSTs to
-// the Worker's /extract route (schema-constrained server-side, see
-// worker.js's own careful-pass comment; a URL is fetched there too, never
-// from this page directly -- CORS blocks a static page from fetching an
-// arbitrary third-party origin itself) and feeds the result into the exact
-// same triage machinery beginTriage() above uses, so nothing downstream of
-// this needs to know or care which path a candidate list came from. Since
-// the import work this is the LAST tier, reached by choice (IMPORT_PLAN.md
-// I1): the local parser is the front door and needs no key at all.
-async function extractCandidates(){
-  readTargetChoice();
-  if(triageTarget==='new'&&!triageTitle){ $('exExtractError').textContent='Give the deck a title first.'; return; }
-  const text=$('exText').value.trim(), url=$('exUrl').value.trim();
-  if(text&&url){ $('exExtractError').textContent='Paste text OR a URL, not both.'; return; }
-  if(!text&&!url){ $('exExtractError').textContent='Paste some text or a URL first.'; return; }
-  const key=loadExtractKey();
-  if(!key){ $('exExtractError').textContent='Set up an extraction key in Settings first.'; return; }
-  $('exExtractError').textContent='';
-  const btn=$('exExtractBtn'); btn.disabled=true; const label=btn.textContent; btn.textContent=url?'Fetching…':'Extracting…';
-  try{
-    const r=await fetch(SYNC_ENDPOINT+'/extract',{method:'POST',headers:{'Content-Type':'application/json','X-Extract-Key':key},body:JSON.stringify(url?{url}:{text})});
-    if(r.status===401){ $('exExtractError').textContent='That key isn’t accepted by the Worker -- check Settings and the Worker’s own EXTRACT_KEY match.'; return; }
-    if(r.status===429){ $('exExtractError').textContent='Daily extraction limit reached -- try again tomorrow.'; return; }
-    if(r.status===503){ $('exExtractError').textContent='Extraction isn’t configured on the Worker yet.'; return; }
-    if(r.status===422){ $('exExtractError').textContent=(await r.text())||'Could not use that URL.'; return; }
-    if(!r.ok){ $('exExtractError').textContent='Extraction failed (HTTP '+r.status+'). Try again in a moment.'; return; }
-    const j=await r.json();
-    if(!j||!Array.isArray(j.candidates)){ $('exExtractError').textContent='The extraction service returned something unusable.'; return; }
-    if(!j.candidates.length){ $('exExtractError').textContent='No vocabulary found there.'; return; }
-    $('importPreview').classList.add('hidden');
-    startTriage(triageTitle, triageScript, j.candidates);
-  }catch(e){
-    $('exExtractError').textContent='Could not reach the extraction service -- check the connection and try again.';
-  }finally{
-    btn.disabled=false; btn.textContent=label;
-  }
-}
-function renderTriageCard(){
-  if(triagePos>=triageCandidates.length){
-    $('triageArea').classList.add('hidden');
-    $('triageDone').classList.remove('hidden');
-    $('triageDoneBig').textContent=triageKept.length+' word'+(triageKept.length===1?'':'s')+' kept';
-    $('triageDoneSmall').textContent=triageBinned+' binned. Nothing has been added anywhere yet — '+
-      (triageTarget==='append'
-        ? 'Add puts them into '+DECK_TITLE+'; Discard throws this whole session away.'
-        : 'Create makes "'+triageTitle+'" a real deck; Discard throws this whole session away.');
-    $('trCommit').textContent=triageTarget==='append'?'Add to '+DECK_TITLE:'Create the deck';
-    $('trCommit').disabled=!triageKept.length;
-    return;
-  }
-  $('triageArea').classList.remove('hidden');
-  $('triageDone').classList.add('hidden');
-  $('triageCount').textContent=(triagePos+1)+' of '+triageCandidates.length+' · '+triageKept.length+' kept · '+triageBinned+' binned';
-  const c=triageCandidates[triagePos];
-  $('trTerm').value=c.term; $('trGloss').value=c.gloss; $('trSection').value=c.section||(triageTarget==='append'?'Added words':triageTitle); $('trNote').value=c.note||'';
-}
-// kind: 'keep' commits whatever the fields currently hold (editing IS just
-// typing into them -- there is no separate edit mode), 'bin' discards the
-// candidate untouched. Either way, advance -- this is a one-way pass, same
-// as Study's own next(): no going back to reconsider a binned word, same
-// "keep it simple" reasoning that screen's own comments give for not
-// building a full undo stack around a linear queue.
-function triageDecide(kind){
-  if(triagePos>=triageCandidates.length) return;
-  if(kind==='keep'){
-    const term=$('trTerm').value.trim(), gloss=$('trGloss').value.trim();
-    if(!term||!gloss){ toast('Term and gloss can’t be empty',1800); return; }
-    triageKept.push({term:term.slice(0,CAP_TERM), gloss:gloss.slice(0,CAP_GLOSS),
-                       section:($('trSection').value.trim()||(triageTarget==='append'?'Added words':triageTitle)).slice(0,CAP_SECTION),
-                       note:$('trNote').value.trim().slice(0,CAP_NOTE)});
-  } else triageBinned++;
-  triagePos++;
-  renderTriageCard();
-}
-function discardTriage(){
-  triageTitle=null; triageCandidates=[]; triagePos=0; triageKept=[]; triageBinned=0;
-  importSource=''; importResult=null; importDeckFile=null;
-  flushPendingPush(); renderHome(); show('scHome');
-}
-// Notes typed during triage for a NEW deck have nowhere to live yet: S is
-// this deck's state, and the new deck's own S only exists once it boots.
-// They're parked in localStorage under the new deck's id and applied by
-// bootDeck() on that deck's first launch (applyPendingNotes), then removed.
-// Before this, a note kept in triage for a new deck was silently dropped at
-// Create -- collected in triageKept, never written anywhere.
-const PENDING_NOTES_PREFIX='vocabula.pendingNotes.';
-function parkPendingNotes(deckId, pairs){
-  const notes={};
-  pairs.forEach(p=>{ if(p.note) notes[p.id]=p.note; });
-  if(!Object.keys(notes).length) return;
-  try{ localStorage.setItem(PENDING_NOTES_PREFIX+deckId, JSON.stringify(notes)); }catch(e){}
-}
-function applyPendingNotes(){
-  let raw=null;
-  try{ raw=localStorage.getItem(PENDING_NOTES_PREFIX+DECK_ID); }catch(e){ return 0; }
-  if(!raw) return 0;
-  let n=0;
-  try{
-    const notes=JSON.parse(raw);
-    if(notes&&typeof notes==='object') for(const rid in notes){
-      const v=notes[rid];
-      if(typeof v==='string'&&v.trim()&&BY_ID['L'+rid]){ cardState('L'+rid).note=v.trim().slice(0,CAP_NOTE); n++; }
-    }
-  }catch(e){}
-  try{ localStorage.removeItem(PENDING_NOTES_PREFIX+DECK_ID); }catch(e){}
-  return n;
-}
-// Mints a new deck id ('d'+base36 -- its own namespace, disjoint from card
-// ids' 'u' prefix and from decks/registry.js's short static ids), writes
-// its content record into IndexedDB (the 'content' store IDB_VERSION 3
-// creates) and a matching row into the localStorage user-deck list
-// (shared.js's USER_DECKS_KEY, mergeRegistry()), then jumps straight into
-// the new deck -- it boots through the exact same resolveContent()/
-// bootContent() path as latin/greek from here on, just with source:'idb'
-// instead of 'file'. Row ids reuse mintRowId() (Phase 3 §C) -- the same
-// 'u'+base36 scheme, so a device-created deck's own rows are minted exactly
-// the same way a word added to an existing deck is.
-async function commitTriage(){
-  if(!triageKept.length) return;
-  if(triageTarget==='append'){ commitAppend(); return; }
-  const deckId='d'+Math.random().toString(36).slice(2,11);
-  const key='vocabula.custom.'+deckId+'.v1';
-  const pairs=triageKept.map(c=>({row:[c.term,c.gloss,c.section||triageTitle,0,mintRowId()], note:c.note||''}));
-  const rows=pairs.map(p=>p.row);
-  const labels=deckLabelsFor(triageKind, triageTitle);
-  const content={
-    DATA:rows,
-    CHANGES:[['created',['Created '+new Date().toLocaleDateString()+' from '+rows.length+' triaged word'+(rows.length===1?'':'s')+'.']]],
-    DECK:{script:triageScript, fwd:labels.fwd, rev:labels.rev,
-          mottos:[['Little by little, a little becomes a lot.','—Tanzanian proverb']]},
-    KEY:key, DECK_TITLE:triageTitle
-  };
-  const row={id:deckId, key, title:triageTitle, script:triageScript, kind:triageKind, words:rows.length,
-              blurb:rows.length+' word'+(rows.length===1?'':'s')+', created '+new Date().toLocaleDateString(),
-              archived:false, source:'idb'};
-  const ok=await writeUserDeck(deckId, content, row);
-  if(!ok){ toast('Could not create the deck — try again',2200); return; }
-  parkPendingNotes(deckId, pairs.map(p=>({id:p.row[4], note:p.note})));
-  location.href='deck.html?deck='+deckId;
-}
-// The one place a device-created deck's two records get written -- the
-// content record (IndexedDB) and the registry row (localStorage) -- shared
-// by triage/import and by a deck-file import, so the two can't drift.
-async function writeUserDeck(deckId, content, row){
-  try{
-    const db=await openIDB();
-    if(!db) throw new Error('IndexedDB unavailable');
-    await new Promise((resolve,reject)=>{
-      const tx=db.transaction('content','readwrite');
-      tx.objectStore('content').put(content, deckId);
-      tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);
-    });
-    let list=[];
-    try{ const v=JSON.parse(localStorage.getItem(USER_DECKS_KEY)); if(Array.isArray(v)) list=v; }catch(e){}
-    list=list.filter(d=>!(d&&d.id===deckId));
-    list.push(row);
-    localStorage.setItem(USER_DECKS_KEY, JSON.stringify(list));
-    return true;
-  }catch(e){
-    console.error(e);
-    return false;
-  }
-}
-// Append into the OPEN deck (IMPORT_PLAN.md I7): the Phase 3 §C path, one
-// customRows push per kept row, notes onto the new cards' own state, one
-// rebuild, one save. Same as adding each word by hand from Browse, in bulk.
-function commitAppend(){
-  if(!triageKept.length) return;
-  const added=[];
-  triageKept.forEach(c=>{
-    const rid=mintRowId();
-    S.customRows.push([c.term.slice(0,CAP_TERM), c.gloss.slice(0,CAP_GLOSS), (c.section||'Added words').slice(0,CAP_SECTION), 0, rid]);
-    added.push({rid, note:c.note||''});
-  });
-  rebuildCards();
-  added.forEach(a=>{ if(a.note) cardState('L'+a.rid).note=a.note.slice(0,CAP_NOTE); });
-  save();
-  const n=added.length;
-  triageTitle=null; triageCandidates=[]; triagePos=0; triageKept=[]; triageBinned=0;
-  importSource=''; importResult=null;
-  toast(n+' word'+(n===1?'':'s')+' added to '+DECK_TITLE, 2000);
-  renderHome(); show('scHome');
-}
-// A deck file coming back in (Settings -> Export deck file, on the other
-// device): same two records, same ids, no re-triage. Refuses if the id is
-// already here -- there is no deck delete (D3: archive, not delete), so
-// "replace" would need its own design; open the existing one instead.
-async function importDeckFileCommit(){
-  const df=importDeckFile;
-  if(!df) return;
-  if(userDeckExists(df.id)){ $('ipError').textContent='That deck is already on this device.'; return; }
-  const row={id:df.id, key:df.key, title:df.title, script:df.script, kind:df.kind, words:df.content.DATA.length,
-              blurb:df.content.DATA.length+' word'+(df.content.DATA.length===1?'':'s')+', imported '+new Date().toLocaleDateString(),
-              archived:false, source:'idb'};
-  const ok=await writeUserDeck(df.id, df.content, row);
-  if(!ok){ toast('Could not import the deck — try again',2200); return; }
-  location.href='deck.html?deck='+df.id;
-}
-// Settings -> "Export deck file": the pristine content record (BASE_CONTENT
-// -- never DATA, which has this device's customRows unioned in; those ride
-// the state backup) plus the registry row. Only offered for a deck that
-// lives on this device (source:'idb'); Latin/Greek are files already.
-function exportDeckFile(){
-  const entry=window.DECK_ENTRY;
-  if(!entry||entry.source!=='idb'||!BASE_CONTENT){ toast('Only a deck created on this device can be exported this way',2200); return; }
-  const out={format:'vocabula-deck', version:1, exported:new Date().toISOString(),
-             deck:{id:entry.id, key:entry.key, title:entry.title, script:entry.script, kind:entry.kind||'language'},
-             content:{DATA:BASE_DATA, CHANGES:BASE_CONTENT.CHANGES, DECK:BASE_CONTENT.DECK, KEY:BASE_CONTENT.KEY, DECK_TITLE:BASE_CONTENT.DECK_TITLE}};
-  const blob=new Blob([JSON.stringify(out)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='vocabula-deck-'+entry.id+'-'+new Date().toISOString().slice(0,10)+'.json';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-  toast('Deck file saved',1600);
-}
-
 /* ---- manual confusable-group modal (createConfuseGroup/addToConfuseGroup/
    removeFromConfuseGroup above are the actual data mutations; everything
    here is thin UI over them). Two flows share one overlay/dayDetail pair,
@@ -10618,8 +9109,47 @@ function renderSync(){
     el.textContent='Synced '+txt+' as '+deviceLabel()+(age>DAY?' — check this device has been online and the code matches.':'.');
   }
 }
+// The Greek-first line (2026.09.17.0, his call). A diagnostic test on
+// 6 October 2026 examines Greek in both directions and Latin not at all, so
+// the day is split 45 minutes Greek, 15 Latin. Latin's due count is around
+// 2,000 and Greek's a fraction of that, and the bigger number is what decides
+// which icon gets tapped -- the wrong deck wins on the strength of a number
+// that means nothing for the test. One line at the top of Latin's Home says
+// so, and only Latin's: Greek's Home has nothing to warn about.
+//
+// The date is hard-coded because it is one fixed event, not a preference:
+// giving it a setting would mean a stored key, a Settings field and a thing
+// to maintain for ever, for a reminder with eighteen days to live. Nothing
+// here is stored and nothing is dismissable -- the line simply stops
+// rendering once the day is past. DELETE AFTER 6 OCT 2026: this constant,
+// greekFirstDue(), its line in renderWarn(), and test section 157.
+const GREEK_FIRST_UNTIL='2026-10-06';
+// True only on the Latin deck, and only on or before the test day.
+//
+// Matched on KEY -- the deck's real storage key, decks/registry.js's `key`
+// field and each content file's own const -- rather than on DECK_ID or
+// DECK.script. KEY is the identifier a backup file carries in its `deck`
+// marker and the one the rest of this file trusts to say which deck it is;
+// the other two are display-level names.
+//
+// The plain calendar date, deliberately not dayKey(): the test is on a
+// calendar day, and reading it through the rollover setting would make a
+// 3 a.m. sitting count as the day before for no gain. Pure, so the tests can
+// drive it without a DOM -- renderWarn() itself needs #homeWarn and there is
+// no DOM in the harness.
+function greekFirstDue(key,now){
+  if(key!=='vocabula.latin.v2') return false;
+  const d=new Date(now==null?Date.now():now), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())<=GREEK_FIRST_UNTIL;
+}
 function renderWarn(qE){
   const w=$('homeWarn'); if(!w||!S) return; let h='';
+  // First in the box, so it is the first thing above the ready counts and
+  // Start -- the numbers it is arguing with. Plain .warn, no class of its
+  // own: it is a notice, it wants the palette's own notice colours, and
+  // every theme already defines them.
+  if(greekFirstDue(typeof KEY==='undefined'?'':KEY,Date.now()))
+    h+='<div class="warn">Greek first. Forty-five minutes there before this deck, whatever this count says.</div>';
   if(!storageOK)
     h+='<div class="warn bad">This device is refusing to save. Export a backup now and check that Safari is not in Private Browsing.</div>';
   const since=S.sinceExport||0, syncing=!!loadSyncCode();
@@ -10872,14 +9402,11 @@ function loadSyncShared(){
   let cur={};
   try{ cur=JSON.parse(localStorage.getItem(SYNC_SHARED_KEY))||{}; }catch(e){}
   if(cur&&typeof cur==='object'&&Object.prototype.hasOwnProperty.call(cur,'__proto__')) delete cur['__proto__'];
-  // extractKey (Phase 4a) rides in the same shared object as syncCode/
-  // deviceName -- one shared-across-both-decks localStorage blob, same
-  // reason deviceName already lives here, NOT because the two secrets are
-  // related. They're independent on purpose (see the Settings field's own
-  // comment): this is just where "small things every deck+the launcher
-  // agree on" already lives.
+  // One shared-across-both-decks localStorage blob for the small things every
+  // deck and the launcher agree on. It also carried an extractKey until the
+  // import feature was removed in 2026.09.16.1; the field is no longer read or
+  // written, and an old stored value is simply dropped on the next write.
   const out={syncCode:(typeof cur.syncCode==='string')?cur.syncCode:'', deviceName:(typeof cur.deviceName==='string')?cur.deviceName:'',
-             extractKey:(typeof cur.extractKey==='string')?cur.extractKey:'',
              installId:(typeof cur.installId==='string'&&INSTALL_ID_RE.test(cur.installId))?cur.installId:''};
   let changed=false;
   try{
@@ -10914,7 +9441,7 @@ function saveSyncShared(g){
   try{
     let cur={}; try{ cur=JSON.parse(localStorage.getItem(SYNC_SHARED_KEY))||{}; }catch(e){}
     if(cur&&typeof cur==='object'&&Object.prototype.hasOwnProperty.call(cur,'__proto__')) delete cur['__proto__'];
-    const next=Object.assign({},cur,{syncCode:g.syncCode||'', deviceName:g.deviceName||'', extractKey:g.extractKey||''});
+    const next=Object.assign({},cur,{syncCode:g.syncCode||'', deviceName:g.deviceName||''});
     if(g.installId) next.installId=g.installId;
     localStorage.setItem(SYNC_SHARED_KEY, JSON.stringify(next));
   }catch(e){}
@@ -10987,16 +9514,6 @@ function installLabelFrom(name,platform,kind){
 }
 function loadSyncCode(){ return loadSyncShared().syncCode||''; }
 function saveSyncCode(code){ const g=loadSyncShared(); g.syncCode=code||''; saveSyncShared(g); }
-function loadExtractKey(){ return loadSyncShared().extractKey||''; }
-function saveExtractKey(key){ const g=loadSyncShared(); g.extractKey=key||''; saveSyncShared(g); }
-// A dense random token (32 bytes, hex) rather than randomSyncCode()'s
-// readable alphabet -- this one is generated and copied by hand into a
-// `wrangler secret put` prompt, never read aloud or retyped, so entropy per
-// character matters more than "hard to transcribe wrong" does.
-function randomExtractKey(){
-  const bytes=crypto.getRandomValues(new Uint8Array(32));
-  return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
 // A readable, hard-to-transcribe-wrong code: no 0/O/1/I. Same alphabet and
 // shape as riverbank's/cotidie-'s, so a code looks the same across the apps.
 function randomSyncCode(){
@@ -12120,10 +10637,6 @@ function renderSet(){
   $('fMaxReset').style.display=(s.maxIvl>=36500)?'none':'block';
   $('fDevice').value=s.deviceName||'';
   $('fSyncCode').value=loadSyncCode();
-  $('fExtractKey').value=loadExtractKey();
-  // "Export deck file" only means anything for a deck that lives on this
-  // device (source:'idb'); Latin/Greek are files already.
-  $('expDeckBtn').classList.toggle('hidden', !(window.DECK_ENTRY&&window.DECK_ENTRY.source==='idb'));
   { const n=$('syncNote'); if(n){
       const code=loadSyncCode();
       n.textContent=!code ? 'Sync is off on this device.'
@@ -12374,185 +10887,6 @@ document.addEventListener('keydown',e=>{
 ['toHome','toHome2','toHome3','doneBack','statsBack','logBack','browseBack','tieBack']
   .forEach(id=>tapZone($(id),()=>{flushPendingPush();renderHome();show('scHome');}));
 tapZone($('toSettings'),()=>{renderSet();show('scSet');});
-tapZone($('toExtract'),openExtractSetup);
-// Mid-triage, losing progress is a real cost (the whole point is a
-// keyboard-driven pass through possibly dozens of candidates) -- confirmed
-// the same way every other real-loss action in this file is (Erase all
-// progress, switching sync off). Before triage has even started, or once
-// it's finished, there is nothing to lose and this is a plain "go back".
-tapZone($('extractBack'),()=>{
-  if(triageCandidates.length && triagePos<triageCandidates.length && !$('triageArea').classList.contains('hidden')){
-    if(!confirm('Discard this triage session? Nothing has been saved yet.')) return;
-  }
-  discardTriage();
-});
-tapZone($('exBegin'),beginTriage);
-tapZone($('exExtractBtn'),extractCandidates);
-// The no-key import path (IMPORT_PLAN.md): the local parser, its preview,
-// the file picker, and the deck-file export.
-tapZone($('exParseBtn'),()=>findWords());
-$('exTarget').addEventListener('change',syncTargetFields);
-tapZone($('exFileBtn'),()=>$('exFile').click());
-// navigator.clipboard needs a secure context (it has one: https, or localhost
-// while working on it); the textarea fallback is for anything older.
-tapZone($('exAiPromptBtn'),async()=>{
-  let ok=false;
-  try{ await navigator.clipboard.writeText(IMPORT_AI_PROMPT); ok=true; }
-  catch(e){
-    try{
-      const ta=document.createElement('textarea');
-      ta.value=IMPORT_AI_PROMPT; ta.setAttribute('readonly','');
-      ta.style.cssText='position:fixed;top:-1000px;left:0;opacity:0';
-      document.body.appendChild(ta); ta.select();
-      ok=document.execCommand('copy');
-      document.body.removeChild(ta);
-    }catch(e2){}
-  }
-  toast(ok?'Prompt copied — give it to a chat assistant with the page':'Could not copy — the prompt is in the manual, §8',2600);
-});
-$('exFile').addEventListener('change',e=>{
-  const f=e.target.files&&e.target.files[0];
-  e.target.value='';
-  if(!f) return;
-  if(/\.pdf$/i.test(f.name)||f.type==='application/pdf'){ importPdfPick(f); return; }
-  if(/\.docx$/i.test(f.name)||f.type.indexOf('wordprocessingml')!==-1){ importDocxPick(f); return; }
-  if(/\.xlsx$/i.test(f.name)||f.type.indexOf('spreadsheetml')!==-1){ importXlsxPick(f); return; }
-  const rd=new FileReader();
-  rd.onload=()=>{ $('exText').value=String(rd.result||''); $('exParseError').textContent=''; findWords(); };
-  rd.onerror=()=>{ $('exParseError').textContent='Could not read that file.'; };
-  rd.readAsText(f);
-});
-// A PDF is the one file kind that isn't already text. The extracted text
-// lands in the same box as a paste, so it can be read and edited before
-// anything is parsed -- and the summary line says which shape was found,
-// because a wrong guess about the gloss column is the failure worth seeing.
-async function importPdfPick(f){
-  const msg=$('exParseError');
-  msg.textContent='Reading “'+f.name+'”…';
-  try{
-    const got=await importPdfExtract(f,(p,n)=>{ msg.textContent='Reading page '+p+' of '+n+'…'; });
-    if(!got.pages.some(p=>p.items.length)){
-      msg.textContent='There is no text in that PDF — it’s a scan. Let the phone read it instead (Live Text, or Preview’s text selection on a Mac) and paste the words in.';
-      return;
-    }
-    const lay=importPdfLayout(got.pages,{});
-    $('exText').value=lay.text;
-    msg.textContent='';
-    findWords('from a PDF, '+got.read+' page'+(got.read===1?'':'s')
-      +(got.read<got.numPages?' of '+got.numPages:'')
-      +' · '+(lay.mode==='blocks'?'two page columns, left then right'
-              :lay.mode!=='columns'?'no column found'
-              :lay.stops.length>1?(lay.stops.length+1)+' columns kept'
-              :'gloss column kept as a tab')
-      +(lay.dropped?' · '+lay.dropped+' page number'+(lay.dropped===1?'':'s')+' dropped':''));
-  }catch(err){
-    msg.textContent=(err&&err.name==='PasswordException')?'That PDF is locked with a password.':'Could not read that PDF.';
-  }
-}
-// A Word document, read for the same reason a PDF is: opening it in Word
-// first just to copy from it is a real ask, and IMPORT_PLAN.md names tutor
-// handouts as exactly this case. mammoth's convertToHtml (not
-// extractRawText) is what makes a real Word TABLE usable -- a glossary is
-// as likely to be one as a page of loose paragraphs -- by handing the
-// result to the SAME table -> TSV path the clipboard paste below already
-// has, rather than a second table detector. Any table found wins outright:
-// surrounding prose in a document built around one real table is almost
-// always instructions, not more vocabulary. No table -> one line per
-// paragraph, read exactly like a paste of that same text would be.
-let importDocxLib=null;
-async function importDocxExtract(file){
-  if(!importDocxLib) importDocxLib=await importLoadUmd('./vendor/mammoth.browser.min.js','mammoth');
-  const result=await importDocxLib.convertToHtml({arrayBuffer:await file.arrayBuffer()});
-  const {tsv,tableCount}=importHtmlTablesToTsv(result.value);
-  if(tableCount) return {text:tsv, mode:'table', tableCount};
-  const doc=new DOMParser().parseFromString(result.value,'text/html');
-  const paras=Array.from(doc.body.querySelectorAll('p,li,h1,h2,h3,h4,h5,h6'))
-                    .map(p=>(p.textContent||'').trim()).filter(Boolean);
-  return {text:paras.join('\n'), mode:paras.length?'prose':'empty', tableCount:0};
-}
-async function importDocxPick(f){
-  const msg=$('exParseError');
-  msg.textContent='Reading “'+f.name+'”…';
-  try{
-    const got=await importDocxExtract(f);
-    if(got.mode==='empty'){ msg.textContent='There is no readable text in that document.'; return; }
-    $('exText').value=got.text;
-    msg.textContent='';
-    findWords('from a Word document · '+(got.mode==='table'
-      ?got.tableCount+' table'+(got.tableCount===1?'':'s')+' found, read as columns'
-      :'no table found, read as plain paragraphs'));
-  }catch(err){
-    msg.textContent='Could not read that document.';
-  }
-}
-// SheetJS's own sheet_to_json(header:1) already returns exactly the array-
-// of-arrays importRowsToTsv expects -- no new row logic, only the file
-// reading and which sheet to use. Only the FIRST sheet: the real cases here
-// (a formula sheet, a vocab list) are almost always one sheet, and reading
-// several blindly risks a second sheet's own header row being misread as
-// data -- only line 1 of the combined text is ever checked for header-
-// likeness. sheetCount says plainly when more were left unread, rather
-// than silently dropping them.
-let importXlsxLib=null;
-async function importXlsxExtract(file){
-  if(!importXlsxLib) importXlsxLib=await importLoadUmd('./vendor/xlsx.mini.min.js','XLSX');
-  const XLSX=importXlsxLib;
-  const wb=XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array'});
-  const names=wb.SheetNames||[];
-  if(!names.length) return {text:'', sheetName:null, sheetCount:0};
-  const rows=XLSX.utils.sheet_to_json(wb.Sheets[names[0]],{header:1,raw:false,defval:''});
-  return {text:importRowsToTsv(rows), sheetName:names[0], sheetCount:names.length};
-}
-async function importXlsxPick(f){
-  const msg=$('exParseError');
-  msg.textContent='Reading “'+f.name+'”…';
-  try{
-    const got=await importXlsxExtract(f);
-    if(!got.sheetName){ msg.textContent='There are no sheets in that workbook.'; return; }
-    $('exText').value=got.text;
-    msg.textContent='';
-    findWords('from “'+got.sheetName+'”'+(got.sheetCount>1?' (1 of '+got.sheetCount+' sheets — the rest weren’t read)':''));
-  }catch(err){
-    msg.textContent='Could not read that workbook.';
-  }
-}
-// A range copied from Google Sheets / a web page arrives as an HTML <table>
-// alongside plain text; Excel and Numbers already put tab-separated text
-// in text/plain. Prefer the plain text whenever it has tabs; otherwise turn
-// the table into tab-separated lines so the same tab rule reads it.
-$('exText').addEventListener('paste',e=>{
-  const cd=e.clipboardData; if(!cd) return;
-  const plain=cd.getData('text/plain')||'', html=cd.getData('text/html')||'';
-  if(!html||/\t/.test(plain)||!/<table/i.test(html)) return;
-  try{
-    const {tsv}=importHtmlTablesToTsv(html);
-    if(!tsv) return;
-    e.preventDefault();
-    const ta=e.target, s=ta.selectionStart||0, en=ta.selectionEnd||0;
-    ta.value=ta.value.slice(0,s)+tsv+ta.value.slice(en);
-  }catch(err){ /* fall back to the browser's own plain-text paste */ }
-});
-tapZone($('ipBack'),leaveImportPreview);
-tapZone($('ipAcceptAll'),importAcceptAll);
-tapZone($('ipReviewFlagged'),importReviewFlagged);
-tapZone($('ipTriageAll'),importTriageAll);
-tapZone($('ipDeckImport'),importDeckFileCommit);
-$('ipSep').addEventListener('change',e=>{ importOpts.sep=e.target.value; importOpts.mapping=null; renderImportPreview(); });
-tapZone($('ipSwap'),()=>{ importOpts.swap=!importOpts.swap; renderImportPreview(); });
-$('ipHeader').addEventListener('change',e=>{ importOpts.header=!!e.target.checked; importOpts.mapping=null; renderImportPreview(); });
-$('ipCounts').addEventListener('change',e=>{ importOpts.keepCounts=!!e.target.checked; renderImportPreview(); });
-$('ipMapping').addEventListener('change',e=>{
-  const sel=e.target; if(!sel||sel.dataset.col==null||!importResult||!importResult.mapping) return;
-  const m=importResult.mapping.slice(); const col=+sel.dataset.col, role=sel.value;
-  // one column per role, except Ignore -- giving this column a role takes it off whichever column had it
-  if(role!=='ignore') m.forEach((r,i)=>{ if(i!==col&&r===role) m[i]='ignore'; });
-  m[col]=role; importOpts.mapping=m; renderImportPreview();
-});
-tapZone($('expDeckBtn'),exportDeckFile);
-tapZone($('trBin'),()=>triageDecide('bin'));
-tapZone($('trKeep'),()=>triageDecide('keep'));
-tapZone($('trCommit'),commitTriage);
-tapZone($('trDiscard'),discardTriage);
 tapZone($('toStats'),()=>{renderStats();show('scStats');});
 tapZone($('statsDirL'),()=>{S.dir='L';save();renderStats();});
 tapZone($('statsDirE'),()=>{S.dir='E';save();renderStats();});
@@ -13262,19 +11596,6 @@ tapZone($('syncNewCodeBtn'),async ()=>{
   newCodeBusy=false;
   btn.disabled=false; btn.textContent='Get a code for this device'; field.disabled=false;
 });
-// Extraction key (Phase 4a) -- no network call here, unlike newSyncCode():
-// there's nothing to push to yet, this only ever generates and stores a
-// value on THIS device. The matching Worker secret is set by hand
-// (wrangler secret put), outside anything this app can do -- see the
-// field's own .fh copy and worker.js's own deploy comment.
-tapZone($('extractNewKeyBtn'),()=>{
-  if(loadExtractKey()&&!confirm('This device already has an extraction key. Replace it? The Worker’s own copy (set separately, by hand) would then need updating to match, or extraction stops working until it does.')) return;
-  const key=randomExtractKey();
-  saveExtractKey(key);
-  renderSet();
-  toast('New key generated -- copy it into the Worker with wrangler secret put',3600);
-});
-$('fExtractKey').addEventListener('change',e=>{ saveExtractKey(e.target.value.trim()); });
 // Home screen's own one-tap push (§syncRow), so getting the last review or two
 // across before switching devices never requires a trip to Settings. Clears
 // any still-debounced auto-push first so an explicit tap here doesn't leave a
@@ -13694,17 +12015,6 @@ document.addEventListener('keydown',e=>{
       undoStack=[]; next(); if(current) show('scStudy');
     }
   }
-  else if($('scExtract').classList.contains('on') && !$('triageArea').classList.contains('hidden') &&
-          !(document.activeElement && ['trTerm','trGloss','trSection','trNote'].includes(document.activeElement.id))){
-    // Guarded out of the four triage fields themselves -- a Latin/Greek/
-    // English term or gloss containing the letter i/o (nearly all of them)
-    // would otherwise get eaten mid-edit. Same 1/I = reject, Space/O =
-    // accept convention the drill's honour round established for exactly
-    // this shape of binary choice -- kept when that screen went, since the
-    // convention outlived it.
-    if(e.key==='1') triageDecide('bin');
-    else if(e.key==='2'||e.key===' '){ e.preventDefault(); triageDecide('keep'); }
-  }
   else if($('scBrowse').classList.contains('on')){
     // Decision 2A: point at a row, press a digit -- Browse's own equivalent
     // of the study screen's Ctrl+digit above, so it toggles the same way
@@ -13956,9 +12266,10 @@ function paintBootTheme(){
 // shaped {DATA,CHANGES,DECK,KEY,DECK_TITLE}. `source` says where a deck's
 // content lives: 'file' = decks/<id>.js (latin/greek; a row with no source
 // field at all means the same, which is why those two registry rows needed
-// no edit), 'idb' = an IndexedDB `content` record (Phase 4's on-device
-// decks -- IDB_VERSION 3 creates the store, and the triage screen's commit
-// step is what actually writes into it; see openAddDeck()/commitTriage()).
+// no edit), 'idb' = an IndexedDB `content` record (an on-device deck). The
+// import screen that used to write those records was removed in 2026.09.16.1
+// -- this read path stays so a deck already sitting on a device still loads,
+// but nothing in the app creates one any more.
 // The file branch injects a classic script tag rather than import():
 // decks/<id>.js is a plain script declaring globals, and as an ES module
 // those consts would be module-scoped and invisible out here. No
@@ -14062,10 +12373,6 @@ function bootFail(err){
       // re-adopts it via the same orphans path a stale reference always
       // used. Must run before anything below that reads CARDS/BY_ID.
       rebuildCards(); S=normalise(S);
-      // Notes kept in triage when THIS deck was created on this device were
-      // parked under its id (parkPendingNotes) -- its own S didn't exist yet.
-      // First boot picks them up; the persistNow() just below writes them.
-      applyPendingNotes();
       applyTheme(); applyLayout(); renderHome(); show('scHome');
       // Phase 2 (PHASE2_PLAN.md §2.3): refresh the summary record once at boot
       // even if nothing gets rated this sitting, so the launcher isn't showing
